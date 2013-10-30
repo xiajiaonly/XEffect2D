@@ -1,1 +1,1 @@
-copy folder examplexxxx to folder XEffect¡£
+Copy folder examplexxxx to folder XEffect¡£
