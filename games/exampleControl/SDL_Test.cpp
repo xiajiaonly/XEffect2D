@@ -10,8 +10,9 @@
 //#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )	//隐藏控制台的编译说明
 #endif
 
-int SDL_event(SDL_Surface *screen);	//下面是事件处理函数，例如：键盘事件或者鼠标事件
+int SDL_event();	//下面是事件处理函数，例如：键盘事件或者鼠标事件
 
+char tempData[sizeof(_XButton)*2 + sizeof(_XSlider)*2];
 _XButton Button;		//按钮
 _XButton ButtonCopy;
 _XButtonEx ButtonEx;	//特殊按钮
@@ -42,12 +43,10 @@ void cbMouseOn(void *pClass,int ID)
 {
 	printf("MouseOn ID:%d\n",ID);
 }
-
 void cbMouseDown(void *pClass,int ID)
 {
 	printf("MouseDown ID:%d\n",ID);
 }
-
 void cbMouseUp(void *pClass,int ID)
 {
 	printf("MouseUp ID:%d\n",ID);
@@ -55,17 +54,13 @@ void cbMouseUp(void *pClass,int ID)
 
 int main(int argc, char **argv)
 {
-	Uint32 interval;	//两次调用之间的时间差			
-	SDL_Surface *screen = NULL;	//窗口绘图面
-	int quit = 0;
-
-	//建立窗体
-	screen = initWindow(1280,720,"Xiajia");	
-	if(screen == NULL)
-	{
+	int stepTime;	//两次调用之间的时间差			
+	if(initWindow(1280,720,"Xiajia") == NULL)
+	{//建立窗体
 		printf("Window init error!\n");
 		return 0;
 	}
+	//_XLogbook::GetInstance().initLog("Log.txt");
 #if WITH_OBJECT_MANAGER
 	_XObjectManager::GetInstance().init();
 #endif
@@ -78,7 +73,6 @@ int main(int argc, char **argv)
 	//初始化按钮
 	_XButtonTexture ButtonTexture;
 	ButtonTexture.init("pic/Button/B_00.png","pic/Button/B_01.png","pic/Button/B_02.png","pic/Button/B_03.png");
-
 	Button.init(_XVector2(0.0f,30.0f),_XRect(10.0f,7.0f,119.0f,58.0f),ButtonTexture,"xiajia",FontUnicode,0.5f,_XVector2(64.0f,32.0f));
 	Button.setCallbackFun(NULL,NULL,cbMouseOn,cbMouseDown,cbMouseUp,NULL);
 	Button.setSize(1.0f,1.0f);
@@ -89,7 +83,6 @@ int main(int argc, char **argv)
 	ButtonCopy.setPosition(0.0f,100.0f);
 	ButtonCopy.setCaptionText("你好个屁");
 	ButtonCopy.disable();
-
 	_XButtonTexture ButtonTextureEx;
 	ButtonTextureEx.init("pic/ButtonEx/B_00.png","pic/ButtonEx/B_01.png","pic/ButtonEx/B_02.png","pic/ButtonEx/B_03.png");
 	_XVector2 ButtonExArea[6];
@@ -164,7 +157,7 @@ int main(int argc, char **argv)
 	Radios.setRadioText("我蛋疼而且要爆了",1);
 	Radios.setRadioText("我要爆了",2);
 	Radios.setRadioText("我已经爆了",3);
-	Radios.setRadioText("I have Boom",4);
+	Radios.setRadioText("I have a boom!",4);
 	Radios.setChoosed(3);
 
 	RadiosCopy.setACopy(Radios);
@@ -196,8 +189,8 @@ int main(int argc, char **argv)
 	ProgressCopy.setColor(_XFColor(1.0f,1.0f,1.0f,0.5f));
 	//下面是多行文本显示
 	_XSliderTexture SliderTextureH;
-	SliderTextureH.init("pic/MutiText/BL_00.png","pic/MutiText/BL_01.png","pic/MutiText/BL_02.png","pic/MutiText/BL_03.png",
-		"pic/MutiText/B_00.png","pic/MutiText/B_01.png","pic/MutiText/B_02.png","pic/MutiText/B_03.png");
+	SliderTextureH.init("pic/MutiText/SliderH/BL_00.png","pic/MutiText/SliderH/BL_01.png","pic/MutiText/SliderH/BL_02.png","pic/MutiText/SliderH/BL_03.png",
+		"pic/MutiText/SliderH/B_00.png","pic/MutiText/SliderH/B_01.png","pic/MutiText/SliderH/B_02.png","pic/MutiText/SliderH/B_03.png");
 	_XSlider SliderH;
 	SliderH.init(_XVector2(200.0f,200.0f),_XRect(0.0f,0.0f,512.0f - 40.0f,32.0f),_XRect(0.0f,0.0f,32.0f,32.0f),SliderTextureH,_XSLIDER_TYPE_HORIZONTAL,100.0f,0.0f);
 	_XControlManager::GetInstance().decreaseAObject(&SliderH);
@@ -205,8 +198,8 @@ int main(int argc, char **argv)
 	_XObjectManager::GetInstance().decreaseAObject(&SliderH);
 #endif
 	_XSliderTexture SliderTextureV;
-	SliderTextureV.init("pic/MutiText/BLH_00.png","pic/MutiText/BLH_01.png","pic/MutiText/BLH_02.png","pic/MutiText/BLH_03.png",
-		"pic/MutiText/BH_00.png","pic/MutiText/BH_01.png","pic/MutiText/BH_02.png","pic/MutiText/BH_03.png");
+	SliderTextureV.init("pic/MutiText/SliderV/BLH_00.png","pic/MutiText/SliderV/BLH_01.png","pic/MutiText/SliderV/BLH_02.png","pic/MutiText/SliderV/BLH_03.png",
+		"pic/MutiText/SliderV/BH_00.png","pic/MutiText/SliderV/BH_01.png","pic/MutiText/SliderV/BH_02.png","pic/MutiText/SliderV/BH_03.png");
 	_XSlider SliderV;
 	SliderV.init(_XVector2(200.0f,200.0f),_XRect(0.0f,0.0f,32.0f,512.0f - 40.0f),_XRect(0.0f,0.0f,32.0f,32.0f),SliderTextureV,_XSLIDER_TYPE_VERTICAL,100.0f,0.0f);
 	_XControlManager::GetInstance().decreaseAObject(&SliderV);
@@ -223,12 +216,12 @@ int main(int argc, char **argv)
 	MutiTextCopy.setSize(0.5f,0.5f);
 	MutiTextCopy.setPosition(790.0f,150.0f);
 	MutiTextCopy.setTextColor(_XFColor(1.0f,1.0f,1.0f,1.0f));
-//	MutiTextCopy.disActive();
-//	MutiTextCopy.disVisiable();
+	MutiTextCopy.disActive();
+	MutiTextCopy.disVisiable();
 	//多列列表框
 	_XSliderTexture SliderTextureHX;
-	SliderTextureHX.init("pic/MutiList/BL_00.png","pic/MutiList/BL_01.png","pic/MutiList/BL_02.png","pic/MutiList/BL_03.png",
-		"pic/MutiList/B_00.png","pic/MutiList/B_01.png","pic/MutiList/B_02.png","pic/MutiList/B_03.png");
+	SliderTextureHX.init("pic/MutiList/SliderH/BL_00.png","pic/MutiList/SliderH/BL_01.png","pic/MutiList/SliderH/BL_02.png","pic/MutiList/SliderH/BL_03.png",
+		"pic/MutiList/SliderH/B_00.png","pic/MutiList/SliderH/B_01.png","pic/MutiList/SliderH/B_02.png","pic/MutiList/SliderH/B_03.png");
 	_XSlider SliderHX;
 	SliderHX.init(_XVector2(200.0f,200.0f),_XRect(0.0f,0.0f,512.0f - 40.0f,32.0f),_XRect(0.0f,0.0f,32.0f,32.0f),SliderTextureHX,_XSLIDER_TYPE_HORIZONTAL,100.0f,0.0f);
 	_XControlManager::GetInstance().decreaseAObject(&SliderHX);
@@ -236,8 +229,8 @@ int main(int argc, char **argv)
 	_XObjectManager::GetInstance().decreaseAObject(&SliderHX);
 #endif
 	_XSliderTexture SliderTextureVX;
-	SliderTextureVX.init("pic/MutiList/BLH_00.png","pic/MutiList/BLH_01.png","pic/MutiList/BLH_02.png","pic/MutiList/BLH_03.png",
-		"pic/MutiList/BH_00.png","pic/MutiList/BH_01.png","pic/MutiList/BH_02.png","pic/MutiList/BH_03.png");
+	SliderTextureVX.init("pic/MutiList/SliderV/BLH_00.png","pic/MutiList/SliderV/BLH_01.png","pic/MutiList/SliderV/BLH_02.png","pic/MutiList/SliderV/BLH_03.png",
+		"pic/MutiList/SliderV/BH_00.png","pic/MutiList/SliderV/BH_01.png","pic/MutiList/SliderV/BH_02.png","pic/MutiList/SliderV/BH_03.png");
 	_XSlider SliderVX;
 	SliderVX.init(_XVector2(200.0f,200.0f),_XRect(0.0f,0.0f,32.0f,512.0f - 40.0f),_XRect(0.0f,0.0f,32.0f,32.0f),SliderTextureVX,_XSLIDER_TYPE_VERTICAL,100.0f,0.0f);
 	_XControlManager::GetInstance().decreaseAObject(&SliderVX);
@@ -248,9 +241,9 @@ int main(int argc, char **argv)
 	MutiListTexture.init("pic/MutiList/E_back.png","pic/MutiList/E_disable.png","pic/MutiList/E_Select.png","pic/MutiList/E_move.png","pic/MutiList/E_Title.png","pic/MutiList/E_TitleEnd.png");
 	MutiList.init(_XVector2(610.0f,450.0f),_XRect(4.0f,4.0f,508.0f,508.0f),MutiListTexture,FontUnicode,1.0f,3,24/*,MouseRightButtonMenu*/,SliderVX,SliderHX);
 	char tempChar[] = "Boxxx"; 
-	for(int i = 0;i < 24;i++)
+	for(int i = 0;i < 24;++ i)
 	{
-		for(int j = 0; j < 3;j++)
+		for(int j = 0; j < 3;++ j)
 		{
 			tempChar[3] = (i * 4 + j) /10 + '0';
 			tempChar[4] = (i * 4 + j) %10 + '0';
@@ -270,10 +263,17 @@ int main(int argc, char **argv)
 	//初始化下拉菜单
 	_XComboTexture ComboTexture;
 	ComboTexture.init("pic/Combo/C_back.png","pic/Combo/C_disable.png",
-		"pic/Combo/C_rightButtomEnable.png","pic/Combo/C_rightButtomOn.png","pic/Combo/C_rightButtomDown.png","pic/Combo/C_rightButtomDisable.png",
-		"pic/Combo/C_downMenuUpEnable.png","pic/Combo/C_downMenuUpOn.png","pic/Combo/C_downMenuUpDown.png","pic/Combo/C_downMenuUpDisable.png",
-		"pic/Combo/C_downMenuEnable.png","pic/Combo/C_downMenuOn.png","pic/Combo/C_downMenuDown.png","pic/Combo/C_downMenuDisable.png",
-		"pic/Combo/C_downMenuDownEnable.png","pic/Combo/C_downMenuDownOn.png","pic/Combo/C_downMenuDownDown.png","pic/Combo/C_downMenuDownDisable.png");
+		"pic/Combo/RightButton/C_rightButtomEnable.png","pic/Combo/RightButton/C_rightButtomOn.png",
+		"pic/Combo/RightButton/C_rightButtomDown.png","pic/Combo/RightButton/C_rightButtomDisable.png",
+
+		"pic/Combo/MenuUpButton/C_downMenuUpEnable.png","pic/Combo/MenuUpButton/C_downMenuUpOn.png",
+		"pic/Combo/MenuUpButton/C_downMenuUpDown.png","pic/Combo/MenuUpButton/C_downMenuUpDisable.png",
+
+		"pic/Combo/MenuButton/C_downMenuEnable.png","pic/Combo/MenuButton/C_downMenuOn.png",
+		"pic/Combo/MenuButton/C_downMenuDown.png","pic/Combo/MenuButton/C_downMenuDisable.png",
+
+		"pic/Combo/MenuDownButton/C_downMenuDownEnable.png","pic/Combo/MenuDownButton/C_downMenuDownOn.png",
+		"pic/Combo/MenuDownButton/C_downMenuDownDown.png","pic/Combo/MenuDownButton/C_downMenuDownDisable.png");
 	Combo.init(ComboTexture,_XVector2(250.0f,190.0f),_XRect(8.0f,1.0f,217.0f,43.0f),_XRect(6.0f,1.0f,48.0f,43.0f),_XRect(8.0f,1.0f,261.0f,23.0f),
 		_XRect(8.0f,1.0f,261.0f,39.0f),_XRect(8.0f,1.0f,261.0f,23.0f),10,5,FontUnicode,1.0f);
 	Combo.setMenuStr("This input is long",0);
@@ -285,27 +285,33 @@ int main(int argc, char **argv)
 	ComboCopy.setACopy(Combo);
 	ComboCopy.setPosition(250.0f,160.0f);
 	ComboCopy.setSize(_XVector2(0.5,0.5));
+	printf("Now ctrl sum:%d\n",_XControlManager::GetInstance().getObjSum());
+#if WITH_OBJECT_MANAGER
+	printf("Now obj sum:%d\n",_XObjectManager::GetInstance().getNowObjectSum());
+#endif
+	int frameOrder = 0;
 
-	while (!quit) 
+	while(!SDL_event()) 
 	{
-		quit = SDL_event(screen);
-		interval = getFrameTiming();
+		stepTime = getFrameTiming();
+		//_XLogbook::GetInstance().addLogInfoNull("NO %d Frame Time:%d\n",frameOrder,interval);
 		
-		engineMove(interval);	//引擎的更新内容
+		engineMove(stepTime);	//引擎的更新内容
 		clearScreen();			//清除屏幕
 
 		updateScreen();			//更新屏幕的内容
-		
+		++ frameOrder;
 		SDL_Delay(1);
 	}
+	//_XLogbook::GetInstance().releaseLog();
 	releaseSDL();
 	return 0;	
 }
 
 //下面是事件处理函数，例如：键盘事件或者鼠标事件
-int SDL_event(SDL_Surface *screen)
+int SDL_event()
 {
-	int flag =0;
+	int ret =0;
 	SDL_Event event;		//SDL事件句柄
 
 	while(SDL_PollEvent(&event)) 
@@ -313,7 +319,7 @@ int SDL_event(SDL_Surface *screen)
 		switch(event.type)
 		{
 		case SDL_QUIT:
-			flag = 1;
+			ret = 1;
 			break;
 		case SDL_KEYUP:
 			break;
@@ -332,7 +338,7 @@ int SDL_event(SDL_Surface *screen)
 			case SDLK_RALT:
 				break;
 			case SDLK_F1:
-				SDL_WM_ToggleFullScreen(screen);
+				SDL_WM_ToggleFullScreen(XEE_screen);
 				break;
 			case SDLK_RIGHT:
 				break;
@@ -365,5 +371,5 @@ int SDL_event(SDL_Surface *screen)
 		}
 		inputEvent(event);
 	}
-	return flag;
+	return ret;
 }
