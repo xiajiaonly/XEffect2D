@@ -346,92 +346,92 @@ void _XGemMatrix::resetMatrix()
 	}
 }
 
-int _XGemMatrix::init(int resoursePosition)
+int _XGemMatrix::init(_XResourcePosition resoursePosition)
 {
 	if(m_isInited != 0) return 1;
 	//¶ÁÈ¡Í¼Æ¬×ÊÔ´
-	if(m_gemTex[0][0].load("pic/object/gem_00_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[0][1].load("pic/object/gem_00_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[0][2].load("pic/object/gem_00_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[0][3].load("pic/object/gem_00_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[0][0].load("ResourcePack/pic/object/gem_00_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[0][1].load("ResourcePack/pic/object/gem_00_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[0][2].load("ResourcePack/pic/object/gem_00_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[0][3].load("ResourcePack/pic/object/gem_00_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[1][0].load("pic/object/gem_01_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[1][1].load("pic/object/gem_01_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[1][2].load("pic/object/gem_01_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[1][3].load("pic/object/gem_01_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[1][0].load("ResourcePack/pic/object/gem_01_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[1][1].load("ResourcePack/pic/object/gem_01_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[1][2].load("ResourcePack/pic/object/gem_01_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[1][3].load("ResourcePack/pic/object/gem_01_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[2][0].load("pic/object/gem_02_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[2][1].load("pic/object/gem_02_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[2][2].load("pic/object/gem_02_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[2][3].load("pic/object/gem_02_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[2][0].load("ResourcePack/pic/object/gem_02_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[2][1].load("ResourcePack/pic/object/gem_02_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[2][2].load("ResourcePack/pic/object/gem_02_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[2][3].load("ResourcePack/pic/object/gem_02_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[3][0].load("pic/object/gem_03_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[3][1].load("pic/object/gem_03_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[3][2].load("pic/object/gem_03_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[3][3].load("pic/object/gem_03_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[3][0].load("ResourcePack/pic/object/gem_03_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[3][1].load("ResourcePack/pic/object/gem_03_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[3][2].load("ResourcePack/pic/object/gem_03_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[3][3].load("ResourcePack/pic/object/gem_03_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[4][0].load("pic/object/gem_04_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[4][1].load("pic/object/gem_04_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[4][2].load("pic/object/gem_04_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[4][3].load("pic/object/gem_04_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[4][0].load("ResourcePack/pic/object/gem_04_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[4][1].load("ResourcePack/pic/object/gem_04_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[4][2].load("ResourcePack/pic/object/gem_04_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[4][3].load("ResourcePack/pic/object/gem_04_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[5][0].load("pic/object/gem_05_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[5][1].load("pic/object/gem_05_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[5][2].load("pic/object/gem_05_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[5][3].load("pic/object/gem_05_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[5][0].load("ResourcePack/pic/object/gem_05_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[5][1].load("ResourcePack/pic/object/gem_05_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[5][2].load("ResourcePack/pic/object/gem_05_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[5][3].load("ResourcePack/pic/object/gem_05_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[6][0].load("pic/object/gem_06_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[6][1].load("pic/object/gem_06_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[6][2].load("pic/object/gem_06_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[6][3].load("pic/object/gem_06_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[6][0].load("ResourcePack/pic/object/gem_06_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[6][1].load("ResourcePack/pic/object/gem_06_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[6][2].load("ResourcePack/pic/object/gem_06_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[6][3].load("ResourcePack/pic/object/gem_06_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[7][0].load("pic/object/gem_07_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[7][1].load("pic/object/gem_07_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[7][2].load("pic/object/gem_07_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[7][3].load("pic/object/gem_07_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[7][0].load("ResourcePack/pic/object/gem_07_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[7][1].load("ResourcePack/pic/object/gem_07_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[7][2].load("ResourcePack/pic/object/gem_07_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[7][3].load("ResourcePack/pic/object/gem_07_03.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTex[8][0].load("pic/object/shield.png",resoursePosition) == 0) return 0;
-//	if(m_gemTex[8][1].load("pic/object/gem_07_01.png",resoursePosition) == 0) return 0;
-//	if(m_gemTex[8][2].load("pic/object/gem_07_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTex[8][3].load("pic/object/shield_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[8][0].load("ResourcePack/pic/object/shield.png",resoursePosition) == 0) return 0;
+//	if(m_gemTex[8][1].load("ResourcePack/pic/object/gem_07_01.png",resoursePosition) == 0) return 0;
+//	if(m_gemTex[8][2].load("ResourcePack/pic/object/gem_07_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTex[8][3].load("ResourcePack/pic/object/shield_00.png",resoursePosition) == 0) return 0;
 
-	if(m_gemTexTools[0].load("pic/object/Boom.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[1].load("pic/object/Light.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[2].load("pic/object/ColorBoom.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[3].load("pic/object/mirror.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[4].load("pic/object/AddBullet.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[5].load("pic/object/Tool_energy.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[6].load("pic/object/Tool_gold.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[7].load("pic/object/Tool_energyChange.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[8].load("pic/object/Tool_10Free.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[9].load("pic/object/Tool_time.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[10].load("pic/object/black.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[11].load("pic/object/mirror+.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[12].load("pic/object/Light+.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[13].load("pic/object/GoldBox.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[14].load("pic/object/Buff_00.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[15].load("pic/object/Buff_01.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[16].load("pic/object/Buff_02.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[17].load("pic/object/Buff_03.png",resoursePosition) == 0) return 0;
-	if(m_gemTexTools[18].load("pic/object/Buff_04.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[0].load("ResourcePack/pic/object/Boom.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[1].load("ResourcePack/pic/object/Light.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[2].load("ResourcePack/pic/object/ColorBoom.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[3].load("ResourcePack/pic/object/mirror.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[4].load("ResourcePack/pic/object/AddBullet.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[5].load("ResourcePack/pic/object/Tool_energy.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[6].load("ResourcePack/pic/object/Tool_gold.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[7].load("ResourcePack/pic/object/Tool_energyChange.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[8].load("ResourcePack/pic/object/Tool_10Free.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[9].load("ResourcePack/pic/object/Tool_time.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[10].load("ResourcePack/pic/object/black.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[11].load("ResourcePack/pic/object/mirror+.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[12].load("ResourcePack/pic/object/Light+.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[13].load("ResourcePack/pic/object/GoldBox.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[14].load("ResourcePack/pic/object/Buff_00.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[15].load("ResourcePack/pic/object/Buff_01.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[16].load("ResourcePack/pic/object/Buff_02.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[17].load("ResourcePack/pic/object/Buff_03.png",resoursePosition) == 0) return 0;
+	if(m_gemTexTools[18].load("ResourcePack/pic/object/Buff_04.png",resoursePosition) == 0) return 0;
 
-	if(m_boomFrame.init("pic/UI/Boom_00/Boom_00_000.png",resoursePosition) == 0) return 0;
-	if(m_boomFrame_00.init("pic/UI/Boom_01/Boom_000.png",resoursePosition) == 0) return 0;
-	if(m_boomFrame_01.init("pic/UI/Boom_02/Boom_000.png",resoursePosition) == 0) return 0;
-	if(m_boomFrame_02.init("pic/UI/Effect_01/Effect_000.png",resoursePosition) == 0) return 0;
-	if(m_boomFrame_03.init("pic/UI/Effect_02/Effect_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[0].init("pic/object/Light_00/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[1].init("pic/object/Light_01/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[2].init("pic/object/Light_02/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[3].init("pic/object/Light_03/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[4].init("pic/object/Light_04/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[5].init("pic/object/Light_05/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[6].init("pic/object/Light_06/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_lightFrame[7].init("pic/object/Light_07/ligth_000.png",resoursePosition) == 0) return 0;
-	if(m_runFrame.init("pic/object/RoleLight/RoleLight_000.png",resoursePosition) == 0) return 0;
+	if(m_boomFrame.init("ResourcePack/pic/UI/Boom_00/Boom_00_000.png",resoursePosition) == 0) return 0;
+	if(m_boomFrame_00.init("ResourcePack/pic/UI/Boom_01/Boom_000.png",resoursePosition) == 0) return 0;
+	if(m_boomFrame_01.init("ResourcePack/pic/UI/Boom_02/Boom_000.png",resoursePosition) == 0) return 0;
+	if(m_boomFrame_02.init("ResourcePack/pic/UI/Effect_01/Effect_000.png",resoursePosition) == 0) return 0;
+	if(m_boomFrame_03.init("ResourcePack/pic/UI/Effect_02/Effect_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[0].init("ResourcePack/pic/object/Light_00/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[1].init("ResourcePack/pic/object/Light_01/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[2].init("ResourcePack/pic/object/Light_02/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[3].init("ResourcePack/pic/object/Light_03/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[4].init("ResourcePack/pic/object/Light_04/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[5].init("ResourcePack/pic/object/Light_05/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[6].init("ResourcePack/pic/object/Light_06/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_lightFrame[7].init("ResourcePack/pic/object/Light_07/ligth_000.png",resoursePosition) == 0) return 0;
+	if(m_runFrame.init("ResourcePack/pic/object/RoleLight/RoleLight_000.png",resoursePosition) == 0) return 0;
 
 #if MAP_EDIT_MODE
-	if(m_gemNum.init("pic/UI/number_00.png",_XVector2I(25,32),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_gemNum.init("ResourcePack/pic/UI/number_00.png",_XVector2(25,32),_XVector2(10,1),resoursePosition) == 0) return 0;
 	m_gemNum.setAngle(90.0f);
 	m_gemNum.setPosition(52.0f,138.0f);
 	m_gemNum.setSize(0.5f,0.5f);

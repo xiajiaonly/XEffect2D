@@ -21,7 +21,6 @@
 #define PC_FREE_VERSION (0) //给个人玩的免费版本
 
 extern XMusicHandle BGMusicHandle[6];	//声音的句柄
-extern _XMusic BGmusic;					//播放背景音乐的类
 
 //#define GOLD_RATE (2)			//摧毁宝石之后宝石能量与获得金币的兑换关系
 #define LINE_BOOM_ENERGY (8)	//线性道具
@@ -67,7 +66,7 @@ extern _XMusic BGmusic;					//播放背景音乐的类
 #define USER_HEAD_SUM (20)
 
 #define USE_FBO (1)		//是否使用FBO来产生爆炸震动效果以及拖尾效果
-#define USE_SHADER (1)	//是否使用shader来处理掉拖尾造成的残影
+#define USE_SHADER (0)	//是否使用shader来处理掉拖尾造成的残影
 
 enum _XBULLET_TYPE
 {
@@ -100,7 +99,7 @@ public:
 	_XTextureData m_bulletTex_X1;	//道具增强型子弹
 	_XFrameEx m_bulletFrame;	//子弹的动画
 	_XFrameEx m_bulletBoom;	//子弹的动画
-	int init(int resoursePosition = 0);
+	int init(_XResourcePosition resoursePosition = RESOURCE_LOCAL_FOLDER);
 	_XBulletTexture();
 };
 
@@ -291,7 +290,7 @@ private:
 	_XFrameEx m_toolsBoom;	//反道具爆炸效果的特效
 	char m_toolsBoomFlag;
 
-	int m_resoursePosition;
+	_XResourcePosition m_resoursePosition;
 	int m_BGPicOrder;	//应该显示的背景编号
 	_XSprite m_backGround_00;
 	_XSprite m_backGround_01;
@@ -320,7 +319,7 @@ private:
 	_XVector2 m_smallStarSpeed[SMALL_STAR_SUM];		//当前小行星的速度
 	_XMoveData m_smallStarMoveData;
 
-	int smallStarInit(int resoursePosition);
+	int smallStarInit(_XResourcePosition resoursePosition);
 	void smallStarMove(int delay);
 	void smallStarDraw();
 //---------------------------------------
@@ -337,7 +336,7 @@ private:
 	int m_faceGameTimer;		//游戏计时
 	char m_faceTextRandom;
 
-	int faceInit(int resoursePosition);
+	int faceInit(_XResourcePosition resoursePosition);
 	void faceMove(int delay);
 	void faceDraw();
 //public:
@@ -405,7 +404,7 @@ private:
 
 	int m_userBuffTimer;	//威力加强时的特效计时
 
-	int userBuffInit(int resoursePosition);
+	int userBuffInit(_XResourcePosition resoursePosition);
 	void userBuffMove(int delay);
 	void userBuffDraw();
 	void clearAllBuff()
@@ -451,7 +450,7 @@ private:
 	int  m_toolsEffectStage[6];
 	_XMoveData m_toolsEffectData[6];
 
-	int toolsEffectInit(int resoursePosition);
+	int toolsEffectInit(_XResourcePosition resoursePosition);
 	void toolsEffectMove(int delay);
 	void toolsEffectDraw();
 //---------------------------------------
@@ -524,7 +523,7 @@ private:
 	float m_energyAlpha;
 	char m_energyAlphaStage;
 	void numberOfEnergyGlare(int interval);	//能量数字较小时闪烁的动作
-	int UIBoardInit(int resoursePosition);
+	int UIBoardInit(_XResourcePosition resoursePosition);
 
 	//用于显示每次增加的分数的数值
 	_XNumber m_goldAddNum[MAX_BULLET_SUM];
@@ -543,7 +542,7 @@ private:
 	float m_goldBoxSize[MAX_BULLET_SUM];
 	char m_goledBoxEffectFlag[MAX_BULLET_SUM];
 	char m_goldBoxTex[MAX_BULLET_SUM];
-	int goldBoxEffectInit(int resoursePosition);
+	int goldBoxEffectInit(_XResourcePosition resoursePosition);
 	void goldBoxEffectmove(int interval);
 	void goldBoxEffectDraw();
 	void findAGoldBoxEffect(int mode,_XVector2 position,int sum);
@@ -557,7 +556,7 @@ private:
 
 	void findGoldFly(int level,_XVector2 position);
 	void goldFlyMove(int interval);
-	int goldAddAndFlyInit(int resoursePosition);
+	int goldAddAndFlyInit(_XResourcePosition resoursePosition);
 
 	//枪的状态
 	char m_isGunColorBoom;	//枪是否拥有色彩炸弹的效果
@@ -578,7 +577,7 @@ private:
 	float m_PrograssAlphaTemp;
 	float m_levelFiniedSum;
 	float m_levelFiniedArmSum;
-	int processInit(int resoursePosition);
+	int processInit(_XResourcePosition resoursePosition);
 	void processMove(int interval);
 
 	//下面是关于随机道具的一些变量
@@ -602,7 +601,7 @@ private:
 //	_XSprite m_toolsTextSprite;	//随机道具的精灵
 //	float m_toolsTextAlpha;
 
-	int toolsInit(int resoursePosition);
+	int toolsInit(_XResourcePosition resoursePosition);
 	void toolsMove(int interval);
 	int canGetTools(_XGemMatrix *gems,_XVector2 position);	//判断是否可以获得道具
 	void toolsDoProc(_XVector2 position,_XGEM_TYPE type);	//道具产生效果的函数
@@ -623,7 +622,7 @@ private:
 	float m_gameHeadTextY;
 	float m_gameHeadSize;
 	float m_gameHeadAlpha;
-	int gameHeadInit(int resoursePosition);
+	int gameHeadInit(_XResourcePosition resoursePosition);
 	void gameHeadDraw();
 	void gameHeadMove(int interval);
 	//下面是游戏过程中的文字提示
@@ -639,7 +638,7 @@ private:
 	float m_gamePlaySize;
 	float m_gamePlayTextY;
 	int m_gamePlayOverTimer;
-	int gamePlayInit(int resoursePosition);
+	int gamePlayInit(_XResourcePosition resoursePosition);
 	void gamePlayDraw();
 	void gamePlayMove(int interval);
 	//下面是关于游戏胜利的一些变量
@@ -671,7 +670,7 @@ private:
 	int m_gameWinNum_03_01;	//能量的分数
 	float m_gameWinNum_04_00;	//额外奖励的文字
 	float m_gameWinNum_04_01;	//额外奖励的文字
-	int gameWinInit(int resoursePosition);
+	int gameWinInit(_XResourcePosition resoursePosition);
 	void gameWinDraw();
 	void gameWinMove(int interval);
 	//下面是玩家死亡的变量
@@ -681,7 +680,7 @@ private:
 	float m_gameLostAlpha;
 	float m_gameLostY;
 	int m_gameLostTimer;
-	int gameLostInit(int resoursePosition);
+	int gameLostInit(_XResourcePosition resoursePosition);
 	void gameLostDraw();
 	void gameLostMove(int interval);
 	//下面是demo界面的变量
@@ -692,7 +691,7 @@ private:
 	float m_gameDemoText2Alpha;
 	float m_gameDemoText1Size;
 	float m_gameDemoBGX;
-	int gameDemoInit(int resoursePosition);
+	int gameDemoInit(_XResourcePosition resoursePosition);
 	void gameDemoDraw();
 	void gameDemoMove(int interval);
 //	void gameStartGame();
@@ -738,7 +737,7 @@ private:
 	float m_inputNameY;
 	float m_inputAlpha;
 	int m_inputNameTimer;
-	int gameOrderInit(int resoursePosition);
+	int gameOrderInit(_XResourcePosition resoursePosition);
 	void gameOrderDraw();
 	void gameOrderDrawUp();
 	void gameOrderMove(int interval);
@@ -762,7 +761,7 @@ private:
 	_XNumber m_orderShowNum;
 	char m_orderShowFlag;	//用于标记是否是从idle界面中进入的 1:是，0:否
 	float m_orderShowBGY;
-	int orderShowInit(int resoursePosition);
+	int orderShowInit(_XResourcePosition resoursePosition);
 	void orderShowDraw();
 	void orderShowMove(int interval);
 	void showOrder(int x,int y,int order,int flag);
@@ -771,7 +770,7 @@ private:
 	_XSprite m_gameAllOverText;
 	float m_gameAllOverY;
 	int m_gameAllOverTimer;
-	int gameAllOverInit(int resoursePosition);
+	int gameAllOverInit(_XResourcePosition resoursePosition);
 	void gameAllOverDraw();
 	void gameAllOverMove(int interval);
 	//下面是关于时间限制的变量
@@ -784,7 +783,7 @@ private:
 	int m_gameTimerStage;			//时间的显示阶段
 	float m_gameTiemrX;
 	float m_gameTimerAlpha;
-	int gameTimerInit(int resoursePosition);
+	int gameTimerInit(_XResourcePosition resoursePosition);
 	void gameTimerDraw();
 	void gameTimerMove(int interval);
 	void setGameTimerReset(int mode = 0);	//设置计时重新开始
@@ -822,7 +821,7 @@ private:
 	float m_canUserGunY;
 	float m_canUserGunAlpha;
 	float m_canUserGunSize;
-	int weaponInfoInit(int resoursePosition);	//界面初始化
+	int weaponInfoInit(_XResourcePosition resoursePosition);	//界面初始化
 	void weaponInfoDraw();
 	void waeponInfoMove(int interval);
 //+++++++++++++++++++++++++++++++++++++++++++
@@ -846,7 +845,7 @@ private:
 	int m_timerLowStage;
 	float m_timerLowY;
 
-	int warnningInit(int resoursePosition);	//界面初始化
+	int warnningInit(_XResourcePosition resoursePosition);	//界面初始化
 	void warnningDraw();
 	void warnningMove(int interval);
 	//下面是关于发炮弹的震动效果
@@ -875,7 +874,7 @@ private:
 	int m_helpMoveStage;			//移动的标志
 
 	void setHelpPosition(float x,float y);
-	int helpInit(int resoursePosition);	//界面初始化
+	int helpInit(_XResourcePosition resoursePosition);	//界面初始化
 	void helpDraw();
 	void helpMove(int interval);
 	void setHelpEnd()
@@ -938,7 +937,7 @@ public:
 	}
 	void configKeyProc(CONFIG_KEY key);
 private:
-	int configInit(int resoursePosition);
+	int configInit(_XResourcePosition resoursePosition);
 	void configDraw();
 	void configMove(int interval);
 private:
@@ -976,7 +975,7 @@ private:
 	float m_instructionPosition;
 	float m_instructionMode;
 	int m_instructionTimer;
-	int instructInit(int resoursePosition);
+	int instructInit(_XResourcePosition resoursePosition);
 	void instructDraw();
 	void instructMove(int interval);
 	//下面是与彩票相关的数据
@@ -1088,7 +1087,7 @@ public:
 		}
 	}
 private:
-	int ticketInit(int resoursePosition);
+	int ticketInit(_XResourcePosition resoursePosition);
 	void ticketDraw();
 	void ticketMove(int interval);
 
@@ -1105,7 +1104,7 @@ public:
 		char temp[32];
 		sprintf(temp,"%3d+%d",m_creditSum,m_configData.coinToCredit);
 		m_creditNum.setNumber(temp);
-		m_sound.play(m_soundCoinIn);
+		_XSound::GetInstance().play(m_soundCoinIn);
 		writeRecordData();
 	}
 	void addEnergy()
@@ -1118,7 +1117,7 @@ public:
 			m_creditNum.setNumber(temp);
 		//	m_energyArmSum += 1000;
 			energyAdd((m_configData.oneCreditEnergy + 1) * 400);
-			m_sound.play(m_soundAddEnergy);
+			_XSound::GetInstance().play(m_soundAddEnergy);
 		}
 	}
 private:
@@ -1130,7 +1129,6 @@ private:
 	int bulletBoom(_XVector2 position,_XBULLET_TYPE type,_XGemMatrix *gems);	//榴弹炸开的处理
 
 	//下面是关于声音部分的定义
-	_XSound m_sound;
 	XSoundHandle m_soundGun_00;
 	XSoundHandle m_soundGun_01;
 	XSoundHandle m_soundGun_02;
@@ -1171,9 +1169,9 @@ private:
 	XSoundHandle m_soundScreenDown;
 	XSoundHandle m_soundScreenUp;
 	XSoundHandle m_soundColorBoom;
-	int soundInit(int resoursePosition);
+	int soundInit(_XResourcePosition resoursePosition);
 public:
-	int init(_XGemMatrix *gems,int resoursePosition = 0);
+	int init(_XGemMatrix *gems,_XResourcePosition resoursePosition = RESOURCE_LOCAL_FOLDER);
 	void drawDown();
 	void draw();
 	void drawUp();

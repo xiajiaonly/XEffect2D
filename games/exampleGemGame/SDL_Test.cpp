@@ -18,10 +18,7 @@
 #define WINDOWS_WIDTH (1280)
 #define WINDOWS_HIGHT (720)
 
-//引擎的_XTextureData 好像还有问题。
-
-//下面是事件处理函数，例如：键盘事件或者鼠标事件
-int SDL_event(SDL_Surface *screen);
+int inputEvent();	//下面是事件处理函数，例如：键盘事件或者鼠标事件
 
 _XGun gameGun;
 _XGemMatrix gameGemMatrix;
@@ -49,24 +46,19 @@ _XVector2 mousePoint;
 GLuint m_gameAllTex;
 #endif
 
-int main()
+int main(int argc, char **argv)
 {
 	Uint32 interval;	//两次调用之间的时间差			
-	SDL_Surface *screen = NULL;	//窗口绘图面
-	int quit = 0;
 	//建立窗体
-#if PC_FREE_VERSION
-	screen = initWindow(WINDOWS_WIDTH,WINDOWS_HIGHT,"Destruction of precious stones",0);	
+	_XWindowData tmp(WINDOWS_WIDTH,WINDOWS_HIGHT);
+	tmp.windowTitle = "Destruction of precious stones";
+#if PC_FREE_VERSION	
+	tmp.isFullScreen = 0;
 #else
-//	screen = initWindow(WINDOWS_WIDTH,WINDOWS_HIGHT,"Destruction of precious stones",1,0);	
-//	screen = initWindow(WINDOWS_WIDTH,WINDOWS_HIGHT,"Destruction of precious stones",1);	
-	screen = initWindow(WINDOWS_WIDTH,WINDOWS_HIGHT,"Destruction of precious stones",0);	
+	//tmp.isFullScreen = 1;
+	tmp.isFullScreen = 0;
 #endif
-	if(screen == NULL)
-	{
-		printf("Window init error!\n");
-		return 0;
-	}
+	if(!initWindowEx(tmp)) REPORT_ERROR("建立窗体失败");
 	//下面是关于游戏手柄方面的数据
 	SDL_Joystick *g_pJoy00 = NULL;
 	if(SDL_NumJoysticks() > 0)
@@ -81,14 +73,8 @@ int main()
 		}
 	}
 
-	Loading.init(_XVector2(WINDOWS_WIDTH,WINDOWS_HIGHT),1);
+	Loading.init(_XVector2(WINDOWS_WIDTH,WINDOWS_HIGHT),RESOURCE_LOCAL_PACK);
 	Loading.setStart();
-
-//	while(1)
-//	{//等待Loading开始
-//		if(Loading.m_isEnd == 1) break;
-//		Sleep(10);
-//	}
 
 #if PC_FREE_VERSION
 	m_gameAllTex =  EmptyTexture(2048,1024);
@@ -101,14 +87,14 @@ int main()
 #endif
 
 
-	if(_XAllTexture::GetInstance().init(1) == 0) return 0;
+	if(_XAllTexture::GetInstance().init(RESOURCE_LOCAL_PACK) == 0) return 0;
 
-	if(gameGemMatrix.init(1) == 0) 
+	if(gameGemMatrix.init(RESOURCE_LOCAL_PACK) == 0) 
 	{
 		Loading.setEnd();
 		return 0;
 	}
-	if(gameGun.init(&gameGemMatrix,1) == 0) 
+	if(gameGun.init(&gameGemMatrix,RESOURCE_LOCAL_PACK) == 0) 
 	{
 		Loading.setEnd();
 		return 0;
@@ -120,22 +106,15 @@ int main()
 		return 0;
 	}
 	Loading.setEnd();
-//	while(1)
-//	{//等待Loading结束
-//		if(Loading.m_isEnd == 2) break;
-//		Sleep(10);
-//	}
 
 	_XResourcePack::GetInstance().release();
 #ifdef DEBUG_DATA
 	int maxPixel = 0;
 #endif
 
-	while (!quit) 
+	while(!inputEvent()) 
 	{
-		quit = SDL_event(screen);
-		interval = getFrameTiming();
-		engineMove(interval);
+		interval = XEE::engineIdle();
 		interval = (float)(interval) * gameGun.buffTimerRate();
 		keyProc(interval);
 
@@ -176,7 +155,7 @@ int main()
 		m_gameAllSprite.draw(&m_gameAllTex);
 #endif
 
-		updateScreen();
+		XEE::updateScreen();
 #ifdef DEBUG_DATA
 		if(XEE_AllPixel > maxPixel)
 		{
@@ -184,7 +163,6 @@ int main()
 			printf("Max:%f\n",maxPixel/(1280.0f * 720.0f));
 		}
 #endif
-		SDL_Delay(1);
 	}
 
 	if(SDL_JoystickOpened(0))
@@ -253,7 +231,7 @@ void keyProc(int interval)
 	}
 }
 
-int SDL_event(SDL_Surface *screen)
+int inputEvent()
 {
 	int flag =0;
 	SDL_Event event;		//SDL事件句柄
@@ -428,9 +406,6 @@ int SDL_event(SDL_Surface *screen)
 			case SDLK_LALT:
 				//gameGemMatrix.readMatrix(0);
 				break;
-			case SDLK_F1:
-				SDL_WM_ToggleFullScreen(screen);
-				break;
 			case SDLK_RIGHT:
 				keyMoveUpDownState = 1;
 			//	gameGun.inputName(INPUT_KEY_RIGHT);
@@ -568,16 +543,8 @@ int SDL_event(SDL_Surface *screen)
 			}
 #endif
 			break;
-		case SDL_MOUSEBUTTONUP:
-			if(event.button.button == 1)
-			{//左键
-			}else
-			if(event.button.button == 3)
-			{//右键
-			}
-			break;
 		}
-		inputEvent(event);
+		//inputEvent(event);	//注意这里有问题
 	}
 	return flag;
 }

@@ -8,12 +8,12 @@
 #include "XEffeEngine.h"
 #include "XOSDefine.h"
 
-#ifdef OS_WINDOWS
+#ifdef XEE_OS_WINDOWS
 #include "windows.h"
 class _XLoading
 {
 private:
-	int m_resoursePosition;	//资源位置 0:外部 1:内部
+	_XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
 public:
 	float m_loadPresent;		//载入进度
 	char m_isShow;			//是否显示载入内容
@@ -30,7 +30,7 @@ public:
 
 public:
 	static DWORD WINAPI loadingProc(void * pParam);	//载入的线程
-	void init(_XVector2 windowSize,int resoursePosition = 0);
+	void init(_XVector2 windowSize,_XResourcePosition resoursePosition = RESOURCE_LOCAL_FOLDER);
 	void move();				//进度条动作
 	void draw();				//描绘进度条
 	void setStart();			//设置开始进度条
@@ -55,7 +55,7 @@ inline void _XLoading::move()
 		m_gameTitleMoveData.move(10);
 		if(m_gameTitleMoveData.getIsEnd())
 		{
-			m_gameTitleMoveData.reset(120.0f,350.0f,0.05f,MOVE_DATA_MODE_LINE);
+			m_gameTitleMoveData.set(120.0f,350.0f,0.05f,MOVE_DATA_MODE_LINE);
 		}
 		m_loadingTextLight.setPosition(680.0f + 128.0f - 32.0f,350.0f - 256.0f + 32.0f + m_gameTitleMoveData.getNowData());
 	}

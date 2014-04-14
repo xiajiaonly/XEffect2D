@@ -7,7 +7,7 @@
 #include "XResourcePack.h"
 
 XMusicHandle BGMusicHandle[6];	//声音的句柄
-_XMusic BGmusic;					//播放背景音乐的类
+//_XMusic _XMusic::GetInstance();					//播放背景音乐的类
 
 #define GOLD_FLY_ARM_X (98)
 #define GOLD_FLY_ARM_Y (150)
@@ -37,16 +37,16 @@ void _XGun::initShaderFromText()	//从文件中初始化sheder的代码
 #endif
 #endif
 
-int _XGun::init(_XGemMatrix *gems,int resoursePosition)
+int _XGun::init(_XGemMatrix *gems,_XResourcePosition resoursePosition)
 {
 	if(m_isInited != 0) return 1;
 	if(gems == NULL) return 0;
 	m_gems = gems;
 	m_resoursePosition = resoursePosition;
-	if(m_cameraLogo.init("pic/UI/camera.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_cameraLogo.init("ResourcePack/pic/UI/camera.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_cameraLogo.setPosition(1200.0f,638.0f);
 	m_cameraLogo.setAngle(90);
-	if(m_cameraNotSupply.init("pic/UI/notsupply.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_cameraNotSupply.init("ResourcePack/pic/UI/notsupply.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_cameraNotSupply.setPosition(1200.0f,638.0f);
 	m_cameraNotSupply.setAngle(90);
 	m_cameraNotSupply.setAlpha(0.0f);
@@ -69,22 +69,22 @@ int _XGun::init(_XGemMatrix *gems,int resoursePosition)
 	m_camera.m_cameraSprite.setAngle(90);
 	m_camera.m_cameraSprite.setPosition(388,240);
 	m_camera.setStop();
-	if(m_takePhotoAttention.init("pic/UI/takePhotoTitle.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_takePhotoAttention.init("ResourcePack/pic/UI/takePhotoTitle.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_takePhotoAttention.setPosition(290,290);
 	m_takePhotoAttention.setAngle(90);
-	if(m_cameraBG.init("pic/UI/cameraBG.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_cameraBG.init("ResourcePack/pic/UI/cameraBG.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_cameraBG.setPosition(388 - 96,240 - 136);
 	m_cameraBG.setAngle(90);
-	if(m_takePhotoTex00.init("pic/UI/TakePhoto00.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_takePhotoTex00.init("ResourcePack/pic/UI/TakePhoto00.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_takePhotoTex00.setPosition(388 + 96,240 + 56);
 	m_takePhotoTex00.setAngle(90);
-	if(m_takePhotoTex01.init("pic/UI/TakePhoto01.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_takePhotoTex01.init("ResourcePack/pic/UI/TakePhoto01.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_takePhotoTex01.setPosition(388 + 96,240 + 56);
 	m_takePhotoTex01.setAngle(90);
-	if(m_takePhotoTex02.init("pic/UI/TakePhoto02.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_takePhotoTex02.init("ResourcePack/pic/UI/TakePhoto02.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_takePhotoTex02.setPosition(388 + 96,240 + 56);
 	m_takePhotoTex02.setAngle(90);
-	if(m_takePhotoTex03.init("pic/UI/TakePhoto03.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
+	if(m_takePhotoTex03.init("ResourcePack/pic/UI/TakePhoto03.png",m_resoursePosition) == 0) return 0;	//初始化摄像头的背景
 	m_takePhotoTex03.setPosition(388 - 96,240 - 8);
 	m_takePhotoTex03.setAngle(90);
 //	if(m_cameraHead.init(CAMERA_WIDTH,CAMERA_HIGHT,0) == 0) return 0;
@@ -196,75 +196,75 @@ int _XGun::init(_XGemMatrix *gems,int resoursePosition)
 	{
 		updataHeadTex(i);
 	}
-	m_sound.setAllVolume(m_configData.volume * 10.0f / 100.0f * 128);
+	_XSound::GetInstance().setAllVolume(m_configData.volume * 10.0f / 100.0f * 128);
 
 	m_BGPicOrder = 0;
 	//if(m_backGround_00.init("normalResource/BG_00.jpg",resoursePosition) == 0) return 0;
-	if(m_backGround_00.init("pic/BG_00.png",resoursePosition) == 0) return 0;
+	if(m_backGround_00.init("ResourcePack/pic/BG_00.png",resoursePosition) == 0) return 0;
 	m_backGround_00.setPosition(0.0f,0.0f);
 	//if(m_backGround_01.init("normalResource/BG_01.jpg",resoursePosition) == 0) return 0;
-	if(m_backGround_01.init("pic/BG_01.png",resoursePosition) == 0) return 0;
+	if(m_backGround_01.init("ResourcePack/pic/BG_01.png",resoursePosition) == 0) return 0;
 	m_backGround_01.setPosition(0.0f,0.0f);
 	//if(m_backGround_02.init("normalResource/BG_02.jpg",resoursePosition) == 0) return 0;
-	if(m_backGround_02.init("pic/BG_02.png",resoursePosition) == 0) return 0;
+	if(m_backGround_02.init("ResourcePack/pic/BG_02.png",resoursePosition) == 0) return 0;
 	m_backGround_02.setPosition(0.0f,0.0f);
 	//if(m_backGround_03.init("normalResource/BG_03.jpg",resoursePosition) == 0) return 0;
-	if(m_backGround_03.init("pic/BG_03.png",resoursePosition) == 0) return 0;
+	if(m_backGround_03.init("ResourcePack/pic/BG_03.png",resoursePosition) == 0) return 0;
 	m_backGround_03.setPosition(0.0f,0.0f);
 	//if(m_backGround_04.init("normalResource/BG_04.jpg",resoursePosition) == 0) return 0;
-	if(m_backGround_04.init("pic/BG_04.png",resoursePosition) == 0) return 0;
+	if(m_backGround_04.init("ResourcePack/pic/BG_04.png",resoursePosition) == 0) return 0;
 	m_backGround_04.setPosition(0.0f,0.0f);
 
-	if(m_star[0].init("pic/star/Space_M0.png",resoursePosition) == 0) return 0;
+	if(m_star[0].init("ResourcePack/pic/star/Space_M0.png",resoursePosition) == 0) return 0;
 	m_starSpeed[0].set(0.001f,0.01f);
-	if(m_star[1].init("pic/star/Space_M5.png",resoursePosition) == 0) return 0;
+	if(m_star[1].init("ResourcePack/pic/star/Space_M5.png",resoursePosition) == 0) return 0;
 	m_starSpeed[1].set(0.001f,0.01f);
-	if(m_star[2].init("pic/star/Space_M2.png",resoursePosition) == 0) return 0;
+	if(m_star[2].init("ResourcePack/pic/star/Space_M2.png",resoursePosition) == 0) return 0;
 	m_starSpeed[2].set(0.001f,0.01f);
-	if(m_star[3].init("pic/star/Space_M3.png",resoursePosition) == 0) return 0;
+	if(m_star[3].init("ResourcePack/pic/star/Space_M3.png",resoursePosition) == 0) return 0;
 	m_starSpeed[3].set(0.001f,0.01f);
-	if(m_star[4].init("pic/star/Space_M6.png",resoursePosition) == 0) return 0;
+	if(m_star[4].init("ResourcePack/pic/star/Space_M6.png",resoursePosition) == 0) return 0;
 	m_starSpeed[4].set(0.001f,0.01f);
-	if(m_star[5].init("pic/star/Space_M1.png",resoursePosition) == 0) return 0;
+	if(m_star[5].init("ResourcePack/pic/star/Space_M1.png",resoursePosition) == 0) return 0;
 	m_starSpeed[5].set(0.001f,0.01f);
-	if(m_star[6].init("pic/star/Space_M4.png",resoursePosition) == 0) return 0;
+	if(m_star[6].init("ResourcePack/pic/star/Space_M4.png",resoursePosition) == 0) return 0;
 	m_starSpeed[6].set(0.001f,0.01f);
-	if(m_star[7].init("pic/star/Space_N0.png",resoursePosition) == 0) return 0;
+	if(m_star[7].init("ResourcePack/pic/star/Space_N0.png",resoursePosition) == 0) return 0;
 	m_starSpeed[7].set(0.001f,0.01f);
-	if(m_star[8].init("pic/star/Space_N1.png",resoursePosition) == 0) return 0;
+	if(m_star[8].init("ResourcePack/pic/star/Space_N1.png",resoursePosition) == 0) return 0;
 	m_starSpeed[8].set(0.001f,0.01f);
-	if(m_star[9].init("pic/star/Space_N2.png",resoursePosition) == 0) return 0;
+	if(m_star[9].init("ResourcePack/pic/star/Space_N2.png",resoursePosition) == 0) return 0;
 	m_starSpeed[9].set(0.001f,0.01f);
-	if(m_star[10].init("pic/star/Space_N3.png",resoursePosition) == 0) return 0;
+	if(m_star[10].init("ResourcePack/pic/star/Space_N3.png",resoursePosition) == 0) return 0;
 	m_starSpeed[10].set(0.001f,0.01f);
-	if(m_star[11].init("pic/star/Space_N4.png",resoursePosition) == 0) return 0;
+	if(m_star[11].init("ResourcePack/pic/star/Space_N4.png",resoursePosition) == 0) return 0;
 	m_starSpeed[11].set(0.001f,0.01f);
-	if(m_star[12].init("pic/star/Space_N5.png",resoursePosition) == 0) return 0;
+	if(m_star[12].init("ResourcePack/pic/star/Space_N5.png",resoursePosition) == 0) return 0;
 	m_starSpeed[12].set(0.001f,0.01f);
 	for(int i = 0;i < 13;++ i)
 	{
 		m_starFlag[i] = 0;
 	}
 
-	if(m_gunTex_00.load("pic/gun/Gun_000.png",resoursePosition) == 0) return 0;
-	if(m_gunTex_01.load("pic/gun/Gun_001.png",resoursePosition) == 0) return 0;
-	if(m_gunTex_02.load("pic/gun/Gun_002.png",resoursePosition) == 0) return 0;
-	if(m_gunTex_03.load("pic/gun/Gun_003.png",resoursePosition) == 0) return 0;
-	if(m_gunTex_04.load("pic/gun/Gun_004.png",resoursePosition) == 0) return 0;
-	if(m_gunTex_05.load("pic/gun/Gun_005.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_00.load("ResourcePack/pic/gun/Gun_000.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_01.load("ResourcePack/pic/gun/Gun_001.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_02.load("ResourcePack/pic/gun/Gun_002.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_03.load("ResourcePack/pic/gun/Gun_003.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_04.load("ResourcePack/pic/gun/Gun_004.png",resoursePosition) == 0) return 0;
+	if(m_gunTex_05.load("ResourcePack/pic/gun/Gun_005.png",resoursePosition) == 0) return 0;
 	if(m_gunSprite.init(m_gunTex_00.texture.m_w,m_gunTex_00.texture.m_h) == 0) return 0;
 	m_gunSprite.setAngle(m_gunAngle);
 	m_gunSprite.setPosition(-64.0f,360.0f - 128.0f);
 
-	if(m_gunFireTex_00.load("pic/gun/BB_000_00.png",resoursePosition) == 0) return 0;
-	if(m_gunFireTex_01.load("pic/gun/BB_001_00.png",resoursePosition) == 0) return 0;
-	if(m_gunFireTex_02.load("pic/gun/BB_002_00.png",resoursePosition) == 0) return 0;
-	if(m_gunFireTex_03.load("pic/gun/BB_003_00.png",resoursePosition) == 0) return 0;
-	if(m_gunFireTex_04.load("pic/gun/BB_004_00.png",resoursePosition) == 0) return 0;
-	if(m_gunFireTex_05.load("pic/gun/BB_005_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_00.load("ResourcePack/pic/gun/BB_000_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_01.load("ResourcePack/pic/gun/BB_001_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_02.load("ResourcePack/pic/gun/BB_002_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_03.load("ResourcePack/pic/gun/BB_003_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_04.load("ResourcePack/pic/gun/BB_004_00.png",resoursePosition) == 0) return 0;
+	if(m_gunFireTex_05.load("ResourcePack/pic/gun/BB_005_00.png",resoursePosition) == 0) return 0;
 	if(m_gunFireSprite_00.init(m_gunFireTex_00.texture.m_w,m_gunFireTex_00.texture.m_h) == 0) return 0;
 
-	if(m_BGSider[0].init("pic/UI/LineSider.png",resoursePosition) == 0) return 0;
+	if(m_BGSider[0].init("ResourcePack/pic/UI/LineSider.png",resoursePosition) == 0) return 0;
 	m_BGSider[0].setPosition(0.0f,0.0f);
 	m_BGSider[1].setACopy(m_BGSider[0]);
 	m_BGSider[1].setPosition(0.0f,720.0f - 16.0f);
@@ -274,13 +274,13 @@ int _XGun::init(_XGemMatrix *gems,int resoursePosition)
 
 	if(goldAddAndFlyInit(resoursePosition) == 0) return 0;
 	if(m_bulletTex.init(resoursePosition) == 0) return 0;
-	if(m_toolsBoom.init("pic/UI/Effect_00/Effect_000.png",resoursePosition) == 0) return 0;
+	if(m_toolsBoom.init("ResourcePack/pic/UI/Effect_00/Effect_000.png",resoursePosition) == 0) return 0;
 //	m_toolsBoom.setACopy(m_gems->m_boomFrame_00);
 	m_toolsBoom.setAttribute(_XVector2(-55.0f,360.0f - 512.0f - 5.0f),0,1,0,0.01f,0);
 	m_toolsBoom.setAngle(90.0f);
 	m_toolsBoomFlag = 0;
 
-	if(m_colorBoomFrame.init("pic/UI/Boom_03/Boom_000.png",resoursePosition) == 0) return 0;
+	if(m_colorBoomFrame.init("ResourcePack/pic/UI/Boom_03/Boom_000.png",resoursePosition) == 0) return 0;
 	m_colorBoomFrame.setAttribute(_XVector2(-256 + 16.0f,104.0f),0,0,0,0.05f,0);
 
 	if(processInit(resoursePosition) == 0) return 0;
@@ -335,19 +335,19 @@ int _XGun::init(_XGemMatrix *gems,int resoursePosition)
 	m_UIShakeStage = 0;
 
 	//初始化背景音乐
-	BGMusicHandle[0] = BGmusic.addMusic("Music/BG_00.mp3");
+	BGMusicHandle[0] = _XMusic::GetInstance().addMusic("Music/BG_00.mp3");
 	if(BGMusicHandle[0] < 0) return 0;
-	BGMusicHandle[1] = BGmusic.addMusic("Music/BG_01.mp3");
+	BGMusicHandle[1] = _XMusic::GetInstance().addMusic("Music/BG_01.mp3");
 	if(BGMusicHandle[1] < 0) return 0;
-	BGMusicHandle[2] = BGmusic.addMusic("Music/BG_02.mp3");
+	BGMusicHandle[2] = _XMusic::GetInstance().addMusic("Music/BG_02.mp3");
 	if(BGMusicHandle[2] < 0) return 0;
-	BGMusicHandle[3] = BGmusic.addMusic("Music/BG_03.mp3");
+	BGMusicHandle[3] = _XMusic::GetInstance().addMusic("Music/BG_03.mp3");
 	if(BGMusicHandle[3] < 0) return 0;
-	BGMusicHandle[4] = BGmusic.addMusic("Music/BG_04.mp3");
+	BGMusicHandle[4] = _XMusic::GetInstance().addMusic("Music/BG_04.mp3");
 	if(BGMusicHandle[4] < 0) return 0;
-	BGMusicHandle[5] = BGmusic.addMusic("Music/BG_05.mp3");
+	BGMusicHandle[5] = _XMusic::GetInstance().addMusic("Music/BG_05.mp3");
 	if(BGMusicHandle[5] < 0) return 0;
-	BGmusic.setMusicVolume(m_configData.volume * 10.0f / 100.0f * 128);
+	_XMusic::GetInstance().setMusicVolume(m_configData.volume * 10.0f / 100.0f * 128);
 
 #if USE_FBO
 	if(m_fbo.init(2048,1024) == 0) return 0;
@@ -375,18 +375,18 @@ int _XGun::init(_XGemMatrix *gems,int resoursePosition)
 	return 1;
 }
 
-int _XGun::toolsEffectInit(int resoursePosition)
+int _XGun::toolsEffectInit(_XResourcePosition resoursePosition)
 {
-	if(m_toolsEffect[0].init("pic/UI/ToolsEffect02.png",resoursePosition) == 0) return 0;	//分数
+	if(m_toolsEffect[0].init("ResourcePack/pic/UI/ToolsEffect02.png",resoursePosition) == 0) return 0;	//分数
 	m_toolsEffect[0].setAngle(90.0f);
 	m_toolsEffect[0].setPosition(-18.0f + 1087.0f - 4.0f,150.0f + 317.0f - 75.0f);
-	if(m_toolsEffect[1].init("pic/UI/ToolsEffect00.png",resoursePosition) == 0) return 0;	//金币
+	if(m_toolsEffect[1].init("ResourcePack/pic/UI/ToolsEffect00.png",resoursePosition) == 0) return 0;	//金币
 	m_toolsEffect[1].setAngle(90.0f);
 	m_toolsEffect[1].setPosition(-28.0f,150.0f - 32.0f);
 	m_toolsEffect[2].setACopy(m_toolsEffect[1]);	//能量
 	m_toolsEffect[2].setAngle(90.0f);
 	m_toolsEffect[2].setPosition(-97.0f,150.0f - 32.0f);
-	if(m_toolsEffect[3].init("pic/UI/ToolsEffect01.png",resoursePosition) == 0) return 0;	//时间
+	if(m_toolsEffect[3].init("ResourcePack/pic/UI/ToolsEffect01.png",resoursePosition) == 0) return 0;	//时间
 	m_toolsEffect[3].setAngle(90.0f);
 	m_toolsEffect[3].setPosition(819.0f,250.0f);
 	m_toolsEffect[4].setACopy(m_toolsEffect[1]);	//减少能量
@@ -416,7 +416,7 @@ void _XGun::toolsEffectMove(int delay)
 		case 1:
 			m_toolsEffect[i].setAlpha(0.0f);
 			m_toolsEffect[i].setSize(10.0f,10.0f);
-			m_toolsEffectData[i].reset(0.0f,1.0f,0.25f);
+			m_toolsEffectData[i].set(0.0f,1.0f,0.25f);
 			m_toolsEffectStage[i] = 2;
 			break;
 		case 2://出现
@@ -426,7 +426,7 @@ void _XGun::toolsEffectMove(int delay)
 			if(m_toolsEffectData[i].getIsEnd() != 0)
 			{
 				m_toolsEffectStage[i] = 3;
-				m_toolsEffectData[i].reset(1.0f,0.0f,0.1f,MOVE_DATA_MODE_COS_MULT);
+				m_toolsEffectData[i].set(1.0f,0.0f,0.1f,MOVE_DATA_MODE_COS_MULT);
 			}
 			break;
 		case 3://消失
@@ -446,7 +446,7 @@ void _XGun::toolsEffectMove(int delay)
 		{
 		case 1:
 			m_toolsEffect[i].setAlpha(0.5f);
-			m_toolsEffectData[i].reset(0.5f,1.0f,0.25f,MOVE_DATA_MODE_LINE,-1);
+			m_toolsEffectData[i].set(0.5f,1.0f,0.25f,MOVE_DATA_MODE_LINE,-1);
 			m_toolsEffectStage[i] = 2;
 			break;
 		case 2://闪烁
@@ -455,7 +455,7 @@ void _XGun::toolsEffectMove(int delay)
 			break;
 		case 3://消失
 			m_toolsEffect[i].setAlpha(1.0f);
-			m_toolsEffectData[i].reset(1.0f,0.0f,0.1f);
+			m_toolsEffectData[i].set(1.0f,0.0f,0.1f);
 			m_toolsEffectStage[i] = 4;
 			break;
 		case 4:
@@ -481,34 +481,34 @@ void _XGun::toolsEffectDraw()
 	}
 }
 
-int _XGun::userBuffInit(int resoursePosition)
+int _XGun::userBuffInit(_XResourcePosition resoursePosition)
 {
-	if(m_userBuffLogo[0].init("pic/object/Buff_10.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[0].init("ResourcePack/pic/object/Buff_10.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[0].setAngle(90.0f);
 	//m_userBuffLogo[0].setPosition(215.0f - 2.0f,640.0f + 32.0f);
 	m_userBuffLogo[0].setPosition(2.0f,670.0f);
 	m_userBuffLogo[0].setAlpha(0.0f);
-	if(m_userBuffLogo[1].init("pic/object/Buff_11.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[1].init("ResourcePack/pic/object/Buff_11.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[1].setAngle(90.0f);
 	//m_userBuffLogo[1].setPosition(215.0f - 2.0f + 37.0f,640.0f + 32.0f);
 	m_userBuffLogo[1].setPosition(2.0f + 34.0f,670.0f);
 	m_userBuffLogo[1].setAlpha(0.0f);
-	if(m_userBuffLogo[2].init("pic/object/Buff_12.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[2].init("ResourcePack/pic/object/Buff_12.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[2].setAngle(90.0f);
 	//m_userBuffLogo[2].setPosition(215.0f - 2.0f + 74.0f,640.0f + 32.0f);
 	m_userBuffLogo[2].setPosition(2.0f + 68.0f,670.0f);
 	m_userBuffLogo[2].setAlpha(0.0f);
-	if(m_userBuffLogo[3].init("pic/object/Buff_13.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[3].init("ResourcePack/pic/object/Buff_13.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[3].setAngle(90.0f);
 	//m_userBuffLogo[3].setPosition(215.0f - 2.0f,640.0f - 39.0f + 32.0f);
 	m_userBuffLogo[3].setPosition(2.0f + 102.0f,670.0f);
 	m_userBuffLogo[3].setAlpha(0.0f);
-	if(m_userBuffLogo[4].init("pic/object/Buff_14.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[4].init("ResourcePack/pic/object/Buff_14.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[4].setAngle(90.0f);
 	//m_userBuffLogo[4].setPosition(215.0f - 2.0f + 37.0f,640.0f - 39.0f + 32.0f);
 	m_userBuffLogo[4].setPosition(2.0f + 136.0f,670.0f);
 	m_userBuffLogo[4].setAlpha(0.0f);
-	if(m_userBuffLogo[5].init("pic/object/Buff_15.png",resoursePosition) == 0) return 0;
+	if(m_userBuffLogo[5].init("ResourcePack/pic/object/Buff_15.png",resoursePosition) == 0) return 0;
 	m_userBuffLogo[5].setAngle(90.0f);
 	//m_userBuffLogo[5].setPosition(215.0f - 2.0f + 74.0f,640.0f - 39.0f + 32.0f);
 	m_userBuffLogo[5].setPosition(2.0f + 170.0f,670.0f);
@@ -551,9 +551,9 @@ void _XGun::userBuffMove(int delay)
 			{
 			case 1:	//准备出现
 				m_userBuffLogo[i].setAlpha(0.0f);
-				m_userBuffData[i].reset(0.0f,1.0f,0.1f);
+				m_userBuffData[i].set(0.0f,1.0f,0.1f);
 				m_userBuffFlag[i] = 2;
-				if(i == 1) m_sound.enableAllSlowDown();	//时间减慢的道具造成声音也减慢
+				if(i == 1) _XSound::GetInstance().enableAllSlowDown();	//时间减慢的道具造成声音也减慢
 				break;
 			case 2:
 				m_userBuffData[i].move(delay);
@@ -571,7 +571,7 @@ void _XGun::userBuffMove(int delay)
 				if(m_userBuffReleaseTime[i] < 3000)
 				{//进入闪烁
 					m_userBuffFlag[i] = 5;
-					m_userBuffData[i].reset(1.0f,0.5f,0.5f,MOVE_DATA_MODE_LINE,-1);
+					m_userBuffData[i].set(1.0f,0.5f,0.5f,MOVE_DATA_MODE_LINE,-1);
 				}
 				break;
 			case 5:
@@ -582,7 +582,7 @@ void _XGun::userBuffMove(int delay)
 				if(i == 5) m_toolsEffectStage[5] = 3;	//免费射击的道具
 				if(i == 4) m_toolsEffectStage[4] = 3;	//免费射击的道具
 				m_userBuffLogo[i].setAlpha(1.0f);
-				m_userBuffData[i].reset(1.0f,0.0f,0.1f);
+				m_userBuffData[i].set(1.0f,0.0f,0.1f);
 				m_userBuffFlag[i] = 7;
 				if(i == 2) m_gunIsFlash = 0;	//退出时取消闪烁
 				break;
@@ -592,7 +592,7 @@ void _XGun::userBuffMove(int delay)
 				if(m_userBuffData[i].getIsEnd() != 0)
 				{
 					m_userBuffFlag[i] = 0;
-					if(i == 1) m_sound.disableAllSlowDown();	//时间减慢的道具造成声音也减慢
+					if(i == 1) _XSound::GetInstance().disableAllSlowDown();	//时间减慢的道具造成声音也减慢
 				}
 				break;
 			}
@@ -609,31 +609,31 @@ void _XGun::userBuffDraw()
 	}
 }
 
-int _XGun::faceInit(int resoursePosition)
+int _XGun::faceInit(_XResourcePosition resoursePosition)
 {
-	if(m_girlFace[0].init("pic/UI/face/Face000.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[0].init("ResourcePack/pic/UI/face/Face000.png",resoursePosition) == 0) return 0;
 	m_girlFace[0].setPosition(200.0f,18.0f);
 	m_girlFace[0].setAngle(90.0f);
-	if(m_girlFace[1].init("pic/UI/face/Face001.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[1].init("ResourcePack/pic/UI/face/Face001.png",resoursePosition) == 0) return 0;
 	m_girlFace[1].setPosition(200.0f,18.0f);
 	m_girlFace[1].setAngle(90.0f);
-	if(m_girlFace[2].init("pic/UI/face/Face002.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[2].init("ResourcePack/pic/UI/face/Face002.png",resoursePosition) == 0) return 0;
 	m_girlFace[2].setPosition(200.0f,18.0f);
 	m_girlFace[2].setAngle(90.0f);
-	if(m_girlFace[3].init("pic/UI/face/Face003.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[3].init("ResourcePack/pic/UI/face/Face003.png",resoursePosition) == 0) return 0;
 	m_girlFace[3].setPosition(200.0f,18.0f);
 	m_girlFace[3].setAngle(90.0f);
-	if(m_girlFace[4].init("pic/UI/face/Face004.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[4].init("ResourcePack/pic/UI/face/Face004.png",resoursePosition) == 0) return 0;
 	m_girlFace[4].setPosition(200.0f,18.0f);
 	m_girlFace[4].setAngle(90.0f);
-	if(m_girlFace[5].init("pic/UI/face/Face005.png",resoursePosition) == 0) return 0;
+	if(m_girlFace[5].init("ResourcePack/pic/UI/face/Face005.png",resoursePosition) == 0) return 0;
 	m_girlFace[5].setPosition(200.0f,18.0f);
 	m_girlFace[5].setAngle(90.0f);
 
-	if(m_faceBG.init("pic/UI/face/Board.png",resoursePosition) == 0) return 0;
+	if(m_faceBG.init("ResourcePack/pic/UI/face/Board.png",resoursePosition) == 0) return 0;
 	m_faceBG.setPosition(200.0f,134.0f);
 	//m_faceBG.setAngle(90.0f);
-	if(m_faceText.init("pic/UI/Font/FontUnicode30_T000.png",_XVector2I(30,30),_XVector2I(34,34),4,resoursePosition) == 0) return 0;
+	if(m_faceText.init("ResourcePack/pic/UI/Font/FontUnicode30_T000.png",_XVector2(30,30),_XVector2(34,34),4,resoursePosition) == 0) return 0;
 	m_faceText.setPosition(280.0f,180.0f);
 	m_faceText.setAngle(90.0f);
 	m_faceText.setString("让我们尽情破坏吧!我期待很久了.");
@@ -675,7 +675,7 @@ void _XGun::faceMove(int delay)
 		m_faceBG.setAlpha(0.0f);
 		m_faceText.setColor(-1.0f,-1.0f,-1.0f,0.0f);
 
-		m_faceMoveData.reset(0.0f,1.0f,0.2f);
+		m_faceMoveData.set(0.0f,1.0f,0.2f);
 		m_faceStage = 2;
 		break;
 	case 2://显示背景
@@ -739,7 +739,7 @@ void _XGun::faceMove(int delay)
 		}
 		break;
 	case 5:	//准备消失
-		m_faceMoveData.reset(0.0f,1.0f,0.5f);
+		m_faceMoveData.set(0.0f,1.0f,0.5f);
 		m_faceStage = 6;
 		break;
 	case 6:
@@ -775,20 +775,20 @@ void _XGun::faceDraw()
 	}
 }
 
-int _XGun::smallStarInit(int resoursePosition)
+int _XGun::smallStarInit(_XResourcePosition resoursePosition)
 {
-	if(m_smallStar[0].init("pic/star/Space_N0.png",resoursePosition) == 0) return 0;
-	if(m_smallStar[1].init("pic/star/Space_N1.png",resoursePosition) == 0) return 0;
-	if(m_smallStar[2].init("pic/star/Space_N2.png",resoursePosition) == 0) return 0;
-	if(m_smallStar[3].init("pic/star/Space_N3.png",resoursePosition) == 0) return 0;
-	if(m_smallStar[4].init("pic/star/Space_N4.png",resoursePosition) == 0) return 0;
-	if(m_smallStar[5].init("pic/star/Space_N5.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[0].init("ResourcePack/pic/star/Space_N0.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[1].init("ResourcePack/pic/star/Space_N1.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[2].init("ResourcePack/pic/star/Space_N2.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[3].init("ResourcePack/pic/star/Space_N3.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[4].init("ResourcePack/pic/star/Space_N4.png",resoursePosition) == 0) return 0;
+	if(m_smallStar[5].init("ResourcePack/pic/star/Space_N5.png",resoursePosition) == 0) return 0;
 	for(int i = 0;i < SMALL_STAR_SUM;++ i)
 	{
 		m_smallSrarStage[i] = 0;
 	}
 	//m_smallStarM = 2.0f;
-	m_smallStarMoveData.reset(3.0f,88.0f,0.0001f,MOVE_DATA_MODE_LINE,-1);
+	m_smallStarMoveData.set(3.0f,88.0f,0.0001f,MOVE_DATA_MODE_LINE,-1);
 	return 1;
 }
 
@@ -810,7 +810,7 @@ void _XGun::smallStarMove(int delay)
 					m_smallStarSpeed[i].set((random(100) / 100.0f * 0.9f + 0.1f ) * 0.1f,(random(100) / 100.0f - 0.5f) * 0.01f);
 				}else
 				{
-					m_smallStarPosition[i].set(900.0f + randomPS() * 400.0f,720.0f + 128.0f);
+					m_smallStarPosition[i].set(900.0f + gaussRand() * 400.0f,720.0f + 128.0f);
 					float temp = random(100)/100.0f * 0.8f + 0.2f;
 					m_smallStarSize[i].set(temp,temp);
 					temp = (random(100) / 100.0f * 0.9f + 0.1f ) * 0.05f;
@@ -848,45 +848,45 @@ void _XGun::smallStarDraw()
 	}
 }
 
-int _XGun::soundInit(int resoursePosition)
+int _XGun::soundInit(_XResourcePosition resoursePosition)
 {
-	if((m_soundGun_00 = m_sound.addSound("Sound/gun_00.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_01 = m_sound.addSound("Sound/gun_01.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_02 = m_sound.addSound("Sound/gun_02.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_03 = m_sound.addSound("Sound/gun_03.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_04 = m_sound.addSound("Sound/gun_04.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_05 = m_sound.addSound("Sound/gun_05.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGun_06 = m_sound.addSound("Sound/gun_06.wav",resoursePosition)) < 0) return 0;
-	if((m_soundBoom_00 = m_sound.addSound("Sound/Boom_00.wav",resoursePosition)) < 0) return 0;
-	if((m_soundBoom_01 = m_sound.addSound("Sound/Boom_01.wav",resoursePosition)) < 0) return 0;
-	if((m_soundBoom_02 = m_sound.addSound("Sound/Boom_02.wav",resoursePosition)) < 0) return 0;
-	if((m_soundBoom_03 = m_sound.addSound("Sound/Boom_03.wav",resoursePosition)) < 0) return 0;
-	if((m_soundBoom_04 = m_sound.addSound("Sound/Boom_04.wav",resoursePosition)) < 0) return 0;
-	if((m_soundCoinIn = m_sound.addSound("Sound/CoinIn.wav",resoursePosition)) < 0) return 0;
-	if((m_soundSumAdd_00 = m_sound.addSound("Sound/SumAdd_00.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTimerOver = m_sound.addSound("Sound/TimeOverSound.wav",resoursePosition)) < 0) return 0;
-	if((m_soundStarAdd = m_sound.addSound("Sound/StarAdd.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTextDown = m_sound.addSound("Sound/TextDown.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTimer_00 = m_sound.addSound("Sound/Timer_00.wav",resoursePosition)) < 0) return 0;
-	//if((m_soundTimer_01 = m_sound.addSound("Sound/Timer_01.wav",resoursePosition)) < 0) return 0;
-	if((m_soundAddEnergy = m_sound.addSound("Sound/AddEnegy.wav",resoursePosition)) < 0) return 0;
-	if((m_soundChangeGun = m_sound.addSound("Sound/changeGun.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTextMove_00 = m_sound.addSound("Sound/TextMove_00.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTextMove_01 = m_sound.addSound("Sound/TextMove_01.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTypeIn = m_sound.addSound("Sound/TypeIn.wav",resoursePosition)) < 0) return 0;
-	if((m_soundTypeMove = m_sound.addSound("Sound/TypeMove.wav",resoursePosition)) < 0) return 0;
-	if((m_soundHitGem = m_sound.addSound("Sound/hitGem.wav",resoursePosition)) < 0) return 0;
-	if((m_soundHitShield = m_sound.addSound("Sound/hotDun.wav",resoursePosition)) < 0) return 0;
-	if((m_soundGemBreak = m_sound.addSound("Sound/gemBreak.wav",resoursePosition)) < 0) return 0;
-	if((m_soundEnergyFree = m_sound.addSound("Sound/energyIn.wav",resoursePosition)) < 0) return 0;
-	if((m_soundHitSide = m_sound.addSound("Sound/hitSide.wav",resoursePosition)) < 0) return 0;
-	if((m_soundSJTools = m_sound.addSound("Sound/SJTools.wav",resoursePosition)) < 0) return 0;
-	if((m_soundFSTools = m_sound.addSound("Sound/FSTools.wav",resoursePosition)) < 0) return 0;
-	if((m_soundScreenDown = m_sound.addSound("Sound/ScreenDown.wav",resoursePosition)) < 0) return 0;
-	if((m_soundScreenUp = m_sound.addSound("Sound/ScreenUp.wav",resoursePosition)) < 0) return 0;
-	if((m_soundColorBoom = m_sound.addSound("Sound/HitColorBoom.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_00 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_00.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_01 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_01.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_02 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_02.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_03 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_03.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_04 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_04.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_05 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_05.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGun_06 = _XSound::GetInstance().addSound("ResourcePack/Sound/gun_06.wav",resoursePosition)) < 0) return 0;
+	if((m_soundBoom_00 = _XSound::GetInstance().addSound("ResourcePack/Sound/Boom_00.wav",resoursePosition)) < 0) return 0;
+	if((m_soundBoom_01 = _XSound::GetInstance().addSound("ResourcePack/Sound/Boom_01.wav",resoursePosition)) < 0) return 0;
+	if((m_soundBoom_02 = _XSound::GetInstance().addSound("ResourcePack/Sound/Boom_02.wav",resoursePosition)) < 0) return 0;
+	if((m_soundBoom_03 = _XSound::GetInstance().addSound("ResourcePack/Sound/Boom_03.wav",resoursePosition)) < 0) return 0;
+	if((m_soundBoom_04 = _XSound::GetInstance().addSound("ResourcePack/Sound/Boom_04.wav",resoursePosition)) < 0) return 0;
+	if((m_soundCoinIn = _XSound::GetInstance().addSound("ResourcePack/Sound/CoinIn.wav",resoursePosition)) < 0) return 0;
+	if((m_soundSumAdd_00 = _XSound::GetInstance().addSound("ResourcePack/Sound/SumAdd_00.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTimerOver = _XSound::GetInstance().addSound("ResourcePack/Sound/TimeOverSound.wav",resoursePosition)) < 0) return 0;
+	if((m_soundStarAdd = _XSound::GetInstance().addSound("ResourcePack/Sound/StarAdd.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTextDown = _XSound::GetInstance().addSound("ResourcePack/Sound/TextDown.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTimer_00 = _XSound::GetInstance().addSound("ResourcePack/Sound/Timer_00.wav",resoursePosition)) < 0) return 0;
+	//if((m_soundTimer_01 = _XSound::GetInstance().addSound("ResourcePack/Sound/Timer_01.wav",resoursePosition)) < 0) return 0;
+	if((m_soundAddEnergy = _XSound::GetInstance().addSound("ResourcePack/Sound/AddEnegy.wav",resoursePosition)) < 0) return 0;
+	if((m_soundChangeGun = _XSound::GetInstance().addSound("ResourcePack/Sound/changeGun.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTextMove_00 = _XSound::GetInstance().addSound("ResourcePack/Sound/TextMove_00.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTextMove_01 = _XSound::GetInstance().addSound("ResourcePack/Sound/TextMove_01.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTypeIn = _XSound::GetInstance().addSound("ResourcePack/Sound/TypeIn.wav",resoursePosition)) < 0) return 0;
+	if((m_soundTypeMove = _XSound::GetInstance().addSound("ResourcePack/Sound/TypeMove.wav",resoursePosition)) < 0) return 0;
+	if((m_soundHitGem = _XSound::GetInstance().addSound("ResourcePack/Sound/hitGem.wav",resoursePosition)) < 0) return 0;
+	if((m_soundHitShield = _XSound::GetInstance().addSound("ResourcePack/Sound/hotDun.wav",resoursePosition)) < 0) return 0;
+	if((m_soundGemBreak = _XSound::GetInstance().addSound("ResourcePack/Sound/gemBreak.wav",resoursePosition)) < 0) return 0;
+	if((m_soundEnergyFree = _XSound::GetInstance().addSound("ResourcePack/Sound/energyIn.wav",resoursePosition)) < 0) return 0;
+	if((m_soundHitSide = _XSound::GetInstance().addSound("ResourcePack/Sound/hitSide.wav",resoursePosition)) < 0) return 0;
+	if((m_soundSJTools = _XSound::GetInstance().addSound("ResourcePack/Sound/SJTools.wav",resoursePosition)) < 0) return 0;
+	if((m_soundFSTools = _XSound::GetInstance().addSound("ResourcePack/Sound/FSTools.wav",resoursePosition)) < 0) return 0;
+	if((m_soundScreenDown = _XSound::GetInstance().addSound("ResourcePack/Sound/ScreenDown.wav",resoursePosition)) < 0) return 0;
+	if((m_soundScreenUp = _XSound::GetInstance().addSound("ResourcePack/Sound/ScreenUp.wav",resoursePosition)) < 0) return 0;
+	if((m_soundColorBoom = _XSound::GetInstance().addSound("ResourcePack/Sound/HitColorBoom.wav",resoursePosition)) < 0) return 0;
 
-	m_sound.slowDownAllInit(3);
+	_XSound::GetInstance().slowDownAllInit(3);
 	return 1;
 }
 
@@ -1162,14 +1162,14 @@ int _XGun::initUserData()
 	return 1;
 }
 
-int _XGun::gameOrderInit(int resoursePosition)
+int _XGun::gameOrderInit(_XResourcePosition resoursePosition)
 {
-//	if(m_gameOrderFont.init("pic/UI/Font/FontUnicode30_T000.png",_XVector2I(30,30),_XVector2I(34,34),4,resoursePosition) == 0) return 0;
+//	if(m_gameOrderFont.init("ResourcePack/pic/UI/Font/FontUnicode30_T000.png",_XVector2(30,30),_XVector2(34,34),4,resoursePosition) == 0) return 0;
 //	m_gameOrderFont.setAngle(90.0f);
 //	m_gameOrderFont.setPosition(1070,90);
 //	m_gameOrderFont.setString("欢迎进入新的冒险!");
 //	m_gameOrderFontInput.setACopy(m_gameOrderFont);
-	if(m_gameOrderFontInput.init("pic/UI/Font/FontUnicode30_T000.png",_XVector2I(30,30),_XVector2I(34,34),4,resoursePosition) == 0) return 0;
+	if(m_gameOrderFontInput.init("ResourcePack/pic/UI/Font/FontUnicode30_T000.png",_XVector2(30,30),_XVector2(34,34),4,resoursePosition) == 0) return 0;
 	m_gameOrderFontInput.setAngle(90.0f);
 	m_gameOrderFontInput.setPosition(296,234);
 	m_gameOrderFontInput.setString("请输入您的称呼:");
@@ -1181,10 +1181,10 @@ int _XGun::gameOrderInit(int resoursePosition)
 //	m_gameOrderNumber_01.setAngle(90.0f);
 //	m_gameOrderNumber_01.setNumber(100000);
 //	m_gameOrderNumber_01.setPosition(1067,527);
-//	if(m_gameOrderText_00.init("pic/UI/OrderText.png",resoursePosition) == 0) return 0;
+//	if(m_gameOrderText_00.init("ResourcePack/pic/UI/OrderText.png",resoursePosition) == 0) return 0;
 //	m_gameOrderText_00.setAngle(90);
 //	m_gameOrderText_00.setPosition(540.0f,402.0f);
-//	if(m_gameOrderText_01.init("pic/UI/OrderText_00.png",resoursePosition) == 0) return 0;
+//	if(m_gameOrderText_01.init("ResourcePack/pic/UI/OrderText_00.png",resoursePosition) == 0) return 0;
 //	m_gameOrderText_01.setAngle(90);
 //	m_gameOrderText_01.setPosition(540.0f,320.0f);
 //	m_showGameOrderFlag = 0;
@@ -1193,7 +1193,7 @@ int _XGun::gameOrderInit(int resoursePosition)
 	m_gameOrderProMD.setACopy(m_nowLevelProcess);
 	m_gameOrderProMD.setPosition(1140.0f,50.0f + 64.0f);
 	m_gameOrderProMD.setClipRect(0,0,32,1);
-	if(m_gameOrderProUP.init("pic/UI/Progress/PU_01.png",resoursePosition) == 0) return 0;
+	if(m_gameOrderProUP.init("ResourcePack/pic/UI/Progress/PU_01.png",resoursePosition) == 0) return 0;
 	m_gameOrderProUP.setPosition(1140.0f,50.0f + 64.0f);
 	m_gameOrderProNumber.setACopy(m_goldAddNum[0]);
 	m_gameOrderProNumber.setAngle(90.0f);
@@ -1201,10 +1201,10 @@ int _XGun::gameOrderInit(int resoursePosition)
 	m_gameOrderProNumber.setNumber(10);
 	m_gameOrderProMoveNumber.setArmNumber(0.0f);
 
-	if(m_gameInputNameBG.init("pic/UI/GameOrderNameBG.png",resoursePosition) == 0) return 0;
+	if(m_gameInputNameBG.init("ResourcePack/pic/UI/GameOrderNameBG.png",resoursePosition) == 0) return 0;
 	m_gameInputNameBG.setAngle(90);
 	m_gameInputNameBG.setPosition(100.0f,320.0f);
-	if(m_inputNameFont.init("pic/UI/GameOrderFont.png",_XVector2I(20,24),_XVector2I(12,8),resoursePosition) == 0) return 0;
+	if(m_inputNameFont.init("ResourcePack/pic/UI/GameOrderFont.png",_XVector2(20,24),_XVector2(12,8),resoursePosition) == 0) return 0;
 	m_inputNameFont.setAngle(90);
 	m_userheadName[0].setACopy(m_inputNameFont);
 	m_userheadName[0].setAngle(90);
@@ -1549,7 +1549,7 @@ void _XGun::inputName(INPUT_NAME_KEY key)
 				{
 					m_gameCounter = 4;
 				}
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{//输入完成
 				m_gameCounter = 4;
@@ -1561,7 +1561,7 @@ void _XGun::inputName(INPUT_NAME_KEY key)
 			m_inputCharMove = 0.0f;
 			m_inputCharFlag = 1;
 			if(m_nowChoose > 'Z') m_nowChoose = 'A';
-			m_sound.play(m_soundTypeMove);
+			_XSound::GetInstance().play(m_soundTypeMove);
 		}else
 		if(key == INPUT_KEY_RIGHT && m_inputCharFlag == 0)
 		{
@@ -1569,7 +1569,7 @@ void _XGun::inputName(INPUT_NAME_KEY key)
 			m_inputCharMove = 0.0f;
 			m_inputCharFlag = -1;
 			if(m_nowChoose < 'A') m_nowChoose = 'Z';
-			m_sound.play(m_soundTypeMove);
+			_XSound::GetInstance().play(m_soundTypeMove);
 		}
 	}
 }
@@ -1596,7 +1596,7 @@ void _XGun::inPutNameMove(int interval)
 			m_gameInputNameBG.setPosition(100.0f,920.0f);
 			m_inputNameTimer = 60000;
 			m_gameCounter = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 			m_inputNameFont.setColor(-1.0f,-1.0f,-1.0f,m_inputAlpha);
 			m_gameOrderFontInput.setPosition(296,234);
 			m_gameOrderFontInput.setColor(-1.0f,-1.0f,-1.0f,m_inputAlpha);
@@ -1792,7 +1792,7 @@ void _XGun::inPutNameMove(int interval)
 		{//所有元素退场
 			m_gameCounter = 10;
 			m_inputNameY = 0.0f;
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}else
 		if(m_gameCounter == 10)
 		{
@@ -1836,18 +1836,18 @@ int _XGun::getNowOrder()
 	return 1;
 }
 
-int _XGun::orderShowInit(int resoursePosition)
+int _XGun::orderShowInit(_XResourcePosition resoursePosition)
 {
 	//if(m_orderShowBG.init("normalResource/UI/GameOrderBG.jpg",resoursePosition) == 0) return 0;	//大背景，小背景
-	if(m_orderShowBG.init("pic/UIBG/GameOrderBG.png",resoursePosition) == 0) return 0;	//大背景，小背景
+	if(m_orderShowBG.init("ResourcePack/pic/UIBG/GameOrderBG.png",resoursePosition) == 0) return 0;	//大背景，小背景
 	m_orderShowBG.setPosition(0.0f,0.0f);
-	if(m_orderShowBG1.init("pic/UI/GameOrderBG1.png",resoursePosition) == 0) return 0;	//大背景，小背景
+	if(m_orderShowBG1.init("ResourcePack/pic/UI/GameOrderBG1.png",resoursePosition) == 0) return 0;	//大背景，小背景
 	m_orderShowBG1.setAngle(90);
-	if(m_orderShowBG2.init("pic/UI/GameOrderBG2.png",resoursePosition) == 0) return 0;	//大背景，小背景
+	if(m_orderShowBG2.init("ResourcePack/pic/UI/GameOrderBG2.png",resoursePosition) == 0) return 0;	//大背景，小背景
 	m_orderShowBG2.setAngle(90);
-	if(m_orderShowText.init("pic/UI/GameOrder.png",resoursePosition) == 0) return 0;	//大背景，小背景
+	if(m_orderShowText.init("ResourcePack/pic/UI/GameOrder.png",resoursePosition) == 0) return 0;	//大背景，小背景
 	m_orderShowText.setAngle(90);
-	if(m_orderShowNum.init("pic/UI/GameOrderNumber.png",_XVector2I(45,64),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_orderShowNum.init("ResourcePack/pic/UI/GameOrderNumber.png",_XVector2(45,64),_XVector2(10,1),resoursePosition) == 0) return 0;
 	m_orderShowNum.setAngle(90);
 	m_orderShowNum.setDistance(-9.0f);
 	return 1;
@@ -1900,7 +1900,7 @@ void _XGun::orderShowDraw()
 				if(tempSum != m_soundShowOrderTemp)
 				{
 					m_soundShowOrderTemp = tempSum;
-					m_sound.play(m_soundTextMove_01);
+					_XSound::GetInstance().play(m_soundTextMove_01);
 				}
 			}else
 			if(m_gameCounter > 3 && m_gameCounter < 6)
@@ -1945,7 +1945,7 @@ void _XGun::orderShowMove(int interval)
 			m_orderShowBG.setPosition(1280.0f,0.0f);
 			m_inputNameFont.setColor(1.0f,1.0f,1.0f,1.0f);
 			m_gameCounter = 1;
-			m_sound.play(m_soundScreenDown);
+			_XSound::GetInstance().play(m_soundScreenDown);
 		}else
 		if(m_gameCounter == 1)
 		{//背景落下
@@ -2025,15 +2025,15 @@ void _XGun::showOrder(int x,int y,int order,int flag)
 	m_inputNameFont.draw();
 }
 
-int _XGun::weaponInfoInit(int resoursePosition)
+int _XGun::weaponInfoInit(_XResourcePosition resoursePosition)
 {
-	if(m_weaponInfoBG_00.init("pic/UI/weapon_00.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoBG_00.init("ResourcePack/pic/UI/weapon_00.png",resoursePosition) == 0) return 0;
 	m_weaponInfoBG_00.setAngle(90);
 	m_weaponInfoBG_00.setPosition(874.0f,300.0f);
 	m_weaponInfoBG_10.setACopy(m_weaponInfoBG_00);
 	m_weaponInfoBG_10.setAngle(90);
 	m_weaponInfoBG_10.setPosition(874.0f,300.0f);
-	if(m_weaponInfoBG_01.init("pic/UI/weapon_01.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoBG_01.init("ResourcePack/pic/UI/weapon_01.png",resoursePosition) == 0) return 0;
 	m_weaponInfoBG_01.setAngle(90);
 	m_weaponInfoBG_01.setPosition(0.0f,15.0f);
 	m_weaponInfoBG_02.setACopy(m_weaponInfoBG_01);
@@ -2046,7 +2046,7 @@ int _XGun::weaponInfoInit(int resoursePosition)
 	m_weaponInfoBG_05.setPosition(280.0f,15.0f);
 	m_weaponInfoBG_06.setACopy(m_weaponInfoBG_01);
 	m_weaponInfoBG_06.setPosition(350.0f,15.0f);
-	if(m_weaponInfoLK_00.init("pic/UI/weapon_lock.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLK_00.init("ResourcePack/pic/UI/weapon_lock.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLK_00.setAngle(90);
 	m_weaponInfoLK_00.setPosition(0.0f + 16.0f,15.0f + 16.0f);
 	m_weaponInfoLK_01.setACopy(m_weaponInfoLK_00);
@@ -2060,22 +2060,22 @@ int _XGun::weaponInfoInit(int resoursePosition)
 	m_weaponInfoLK_05.setACopy(m_weaponInfoLK_00);
 	m_weaponInfoLK_05.setPosition(350.0f + 16.0f,15.0f + 16.0f);
 
-	if(m_weaponInfoLG_00.init("pic/UI/weapon_02_00.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_00.init("ResourcePack/pic/UI/weapon_02_00.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_00.setAngle(90);
 	m_weaponInfoLG_00.setPosition(16.0f,15.0f);
-	if(m_weaponInfoLG_01.init("pic/UI/weapon_02_01.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_01.init("ResourcePack/pic/UI/weapon_02_01.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_01.setAngle(90);
 	m_weaponInfoLG_01.setPosition(86.0f,15.0f);
-	if(m_weaponInfoLG_02.init("pic/UI/weapon_02_02.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_02.init("ResourcePack/pic/UI/weapon_02_02.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_02.setAngle(90);
 	m_weaponInfoLG_02.setPosition(156.0f,15.0f);
-	if(m_weaponInfoLG_03.init("pic/UI/weapon_02_03.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_03.init("ResourcePack/pic/UI/weapon_02_03.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_03.setAngle(90);
 	m_weaponInfoLG_03.setPosition(226.0f,15.0f);
-	if(m_weaponInfoLG_04.init("pic/UI/weapon_02_04.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_04.init("ResourcePack/pic/UI/weapon_02_04.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_04.setAngle(90);
 	m_weaponInfoLG_04.setPosition(296.0f,15.0f);
-	if(m_weaponInfoLG_05.init("pic/UI/weapon_02_05.png",resoursePosition) == 0) return 0;
+	if(m_weaponInfoLG_05.init("ResourcePack/pic/UI/weapon_02_05.png",resoursePosition) == 0) return 0;
 	m_weaponInfoLG_05.setAngle(90);
 	m_weaponInfoLG_05.setPosition(366.0f,15.0f);
 
@@ -2438,22 +2438,22 @@ void _XGun::waeponInfoMove(int interval)
 	}
 }
 
-int _XGun::ticketInit(int resoursePosition)
+int _XGun::ticketInit(_XResourcePosition resoursePosition)
 {
-	if(m_ticketLog.init("pic/UI/Ticket_logo.png",resoursePosition) == 0) return 0;
+	if(m_ticketLog.init("ResourcePack/pic/UI/Ticket_logo.png",resoursePosition) == 0) return 0;
 	m_ticketLog.setAngle(90);
 	m_ticketLog.setPosition(1150.0f,30.0f);
-	if(m_ticketLog0.init("pic/UI/Ticket_logo0.png",resoursePosition) == 0) return 0;
+	if(m_ticketLog0.init("ResourcePack/pic/UI/Ticket_logo0.png",resoursePosition) == 0) return 0;
 	m_ticketLog0.setAngle(90);
 	m_ticketLog0.setPosition(1150.0f,30.0f);
 	m_ticketLog0.setAlpha(0.0f);
-	if(m_ticketText00.init("pic/UI/NoTicket_00.png",resoursePosition) == 0) return 0;
+	if(m_ticketText00.init("ResourcePack/pic/UI/NoTicket_00.png",resoursePosition) == 0) return 0;
 	m_ticketText00.setAngle(90);
 	m_ticketText00.setPosition(990.0f,320.0f);
-	if(m_ticketText01.init("pic/UI/NoTicket_01.png",resoursePosition) == 0) return 0;
+	if(m_ticketText01.init("ResourcePack/pic/UI/NoTicket_01.png",resoursePosition) == 0) return 0;
 	m_ticketText01.setAngle(90);
 	m_ticketText01.setPosition(990.0f,320.0f);
-	if(m_ticketNumber.init("pic/UI/TicketSum.png",_XVector2I(64,64),_XVector2I(11,1),resoursePosition) == 0) return 0;
+	if(m_ticketNumber.init("ResourcePack/pic/UI/TicketSum.png",_XVector2(64,64),_XVector2(11,1),resoursePosition) == 0) return 0;
 	m_ticketNumber.setAngle(90);
 	m_ticketNumber.setDistance(-10.0f);
 	m_ticketNumber.setPosition(1240.0f,110.0f);
@@ -2675,11 +2675,11 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 		if(m_configNowChoose < -1) 
 		{
 			m_configNowChoose = -1;
-			m_sound.play(m_soundTypeIn);
+			_XSound::GetInstance().play(m_soundTypeIn);
 		}else 
 		{
 			m_configChooseStage = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}
 
 		if(m_configNowChoose < 6) m_configChoose.setPosition(408.0f - 30.0f * m_configNowChoose,330.0f);
@@ -2690,11 +2690,11 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 		if(m_configNowChoose > 8) 
 		{
 			m_configNowChoose = 8;
-			m_sound.play(m_soundTypeIn);
+			_XSound::GetInstance().play(m_soundTypeIn);
 		}else 
 		{
 			m_configChooseStage = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}
 		if(m_configNowChoose < 6) m_configChoose.setPosition(408.0f - 30.0f * m_configNowChoose,330.0f);
 		else m_configChoose.setPosition(408.0f - 30.0f * (m_configNowChoose + 2),330.0f);
@@ -2706,17 +2706,17 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.levelSum < 0)
 			{
 				m_configData.levelSum = 0;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 0)
 		{
 			if(m_configData.isTicketNeed != 0) m_configData.isTicketNeed = 0;
 			else m_configData.isTicketNeed = 1;
-			m_sound.play(m_soundSumAdd_00);
+			_XSound::GetInstance().play(m_soundSumAdd_00);
 		}else
 		if(m_configNowChoose == 1)
 		{
@@ -2724,17 +2724,17 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.ticketSum < 0) 
 			{
 				m_configData.ticketSum = 0;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 2)
 		{
 			if(m_configData.isAutoShoot != 0) m_configData.isAutoShoot = 0;
 			else m_configData.isAutoShoot = 1;
-			m_sound.play(m_soundSumAdd_00);
+			_XSound::GetInstance().play(m_soundSumAdd_00);
 		}else
 		if(m_configNowChoose == 3)
 		{
@@ -2742,10 +2742,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.coinToCredit < 1) 
 			{
 				m_configData.coinToCredit = 1;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 4)
@@ -2754,10 +2754,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.oneCreditEnergy < 0) 
 			{
 				m_configData.oneCreditEnergy = 0;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 5)
@@ -2766,10 +2766,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.volume < 0) 
 			{
 				m_configData.volume = 0;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}
 		break;
@@ -2780,17 +2780,17 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.levelSum > 4)
 			{
 				m_configData.levelSum = 4;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 0)
 		{
 			if(m_configData.isTicketNeed != 0) m_configData.isTicketNeed = 0;
 			else m_configData.isTicketNeed = 1;
-			m_sound.play(m_soundSumAdd_00);
+			_XSound::GetInstance().play(m_soundSumAdd_00);
 		}else
 		if(m_configNowChoose == 1)
 		{
@@ -2798,17 +2798,17 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.ticketSum > 2) 
 			{
 				m_configData.ticketSum = 2;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 2)
 		{
 			if(m_configData.isAutoShoot != 0) m_configData.isAutoShoot = 0;
 			else m_configData.isAutoShoot = 1;
-			m_sound.play(m_soundSumAdd_00);
+			_XSound::GetInstance().play(m_soundSumAdd_00);
 		}else
 		if(m_configNowChoose == 3)
 		{
@@ -2816,10 +2816,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.coinToCredit > 5) 
 			{
 				m_configData.coinToCredit = 5;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 4)
@@ -2828,10 +2828,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.oneCreditEnergy > 4) 
 			{
 				m_configData.oneCreditEnergy = 4;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}else
 		if(m_configNowChoose == 5)
@@ -2840,10 +2840,10 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			if(m_configData.volume > 10) 
 			{
 				m_configData.volume = 10;
-				m_sound.play(m_soundTypeIn);
+				_XSound::GetInstance().play(m_soundTypeIn);
 			}else
 			{
-				m_sound.play(m_soundSumAdd_00);
+				_XSound::GetInstance().play(m_soundSumAdd_00);
 			}
 		}
 		break;
@@ -2862,8 +2862,8 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			writeRecordData();
 			m_configChooseStage = 1;
 			m_configBackData = m_configData;
-			m_sound.setAllVolume(m_configData.volume * 10.0f / 100.0f * 128);
-			BGmusic.setMusicVolume(m_configData.volume * 10.0f / 100.0f * 128);
+			_XSound::GetInstance().setAllVolume(m_configData.volume * 10.0f / 100.0f * 128);
+			_XMusic::GetInstance().setMusicVolume(m_configData.volume * 10.0f / 100.0f * 128);
 			//刷新一下下面显示的值
 			char temp[32];
 			sprintf(temp,"%3d+%d",m_creditSum,m_configData.coinToCredit);
@@ -2875,53 +2875,53 @@ void _XGun::configKeyProc(CONFIG_KEY key)
 			m_configChooseStage = 1;
 			m_configData = m_configBackData;
 		}
-		m_sound.play(m_soundStarAdd);
+		_XSound::GetInstance().play(m_soundStarAdd);
 		break;
 	}
 }
 
-int _XGun::configInit(int resoursePosition)
+int _XGun::configInit(_XResourcePosition resoursePosition)
 {
-	if(m_configBG.init("pic/UI/GameConfig/GameConfigBG.png",resoursePosition) == 0) return 0;
+	if(m_configBG.init("ResourcePack/pic/UI/GameConfig/GameConfigBG.png",resoursePosition) == 0) return 0;
 	m_configBG.setAngle(90);
 	m_configBG.setPosition(215.0f,100.0f);
-	if(m_configText_00.init("pic/UI/GameConfig/isTicketNeed.png",resoursePosition) == 0) return 0;
+	if(m_configText_00.init("ResourcePack/pic/UI/GameConfig/isTicketNeed.png",resoursePosition) == 0) return 0;
 	m_configText_00.setAngle(90);
 	m_configText_00.setPosition(408.0f,335.0f);
-	if(m_configText_01.init("pic/UI/GameConfig/ticketSum.png",resoursePosition) == 0) return 0;
+	if(m_configText_01.init("ResourcePack/pic/UI/GameConfig/ticketSum.png",resoursePosition) == 0) return 0;
 	m_configText_01.setAngle(90);
 	m_configText_01.setPosition(408.0f - 30.0f,335.0f);
-	if(m_configText_02.init("pic/UI/GameConfig/coinToCredit.png",resoursePosition) == 0) return 0;
+	if(m_configText_02.init("ResourcePack/pic/UI/GameConfig/coinToCredit.png",resoursePosition) == 0) return 0;
 	m_configText_02.setAngle(90);
 	m_configText_02.setPosition(408.0f - 90.0f,335.0f);
-	if(m_configText_03.init("pic/UI/GameConfig/oneCreditEnergy.png",resoursePosition) == 0) return 0;
+	if(m_configText_03.init("ResourcePack/pic/UI/GameConfig/oneCreditEnergy.png",resoursePosition) == 0) return 0;
 	m_configText_03.setAngle(90);
 	m_configText_03.setPosition(408.0f - 120.0f,335.0f);
-	if(m_configText_04.init("pic/UI/GameConfig/volume.png",resoursePosition) == 0) return 0;
+	if(m_configText_04.init("ResourcePack/pic/UI/GameConfig/volume.png",resoursePosition) == 0) return 0;
 	m_configText_04.setAngle(90);
 	m_configText_04.setPosition(408.0f - 150.0f,335.0f);
-	if(m_configText_05.init("pic/UI/GameConfig/AllCoin.png",resoursePosition) == 0) return 0;
+	if(m_configText_05.init("ResourcePack/pic/UI/GameConfig/AllCoin.png",resoursePosition) == 0) return 0;
 	m_configText_05.setAngle(90);
 	m_configText_05.setPosition(408.0f - 180.0f,335.0f);
-	if(m_configText_06.init("pic/UI/GameConfig/AllTicket.png",resoursePosition) == 0) return 0;
+	if(m_configText_06.init("ResourcePack/pic/UI/GameConfig/AllTicket.png",resoursePosition) == 0) return 0;
 	m_configText_06.setAngle(90);
 	m_configText_06.setPosition(408.0f - 210.0f,335.0f);
-	if(m_configText_07.init("pic/UI/GameConfig/reset.png",resoursePosition) == 0) return 0;
+	if(m_configText_07.init("ResourcePack/pic/UI/GameConfig/reset.png",resoursePosition) == 0) return 0;
 	m_configText_07.setAngle(90);
 	m_configText_07.setPosition(408.0f - 240.0f,335.0f);
-	if(m_configText_08.init("pic/UI/GameConfig/Save.png",resoursePosition) == 0) return 0;
+	if(m_configText_08.init("ResourcePack/pic/UI/GameConfig/Save.png",resoursePosition) == 0) return 0;
 	m_configText_08.setAngle(90);
 	m_configText_08.setPosition(408.0f - 270.0f,335.0f);
-	if(m_configText_09.init("pic/UI/GameConfig/Exit.png",resoursePosition) == 0) return 0;
+	if(m_configText_09.init("ResourcePack/pic/UI/GameConfig/Exit.png",resoursePosition) == 0) return 0;
 	m_configText_09.setAngle(90);
 	m_configText_09.setPosition(408.0f - 300.0f,335.0f);
-	if(m_configText_10.init("pic/UI/GameConfig/AutoShoot.png",resoursePosition) == 0) return 0;
+	if(m_configText_10.init("ResourcePack/pic/UI/GameConfig/AutoShoot.png",resoursePosition) == 0) return 0;
 	m_configText_10.setAngle(90);
 	m_configText_10.setPosition(408.0f - 60.0f,335.0f);
-	if(m_configText_11.init("pic/UI/GameConfig/LevelSum.png",resoursePosition) == 0) return 0;
+	if(m_configText_11.init("ResourcePack/pic/UI/GameConfig/LevelSum.png",resoursePosition) == 0) return 0;
 	m_configText_11.setAngle(90);
 	m_configText_11.setPosition(408.0f + 30.0f,335.0f);
-	if(m_configChoose.init("pic/UI/GameConfig/Choose.png",resoursePosition) == 0) return 0;
+	if(m_configChoose.init("ResourcePack/pic/UI/GameConfig/Choose.png",resoursePosition) == 0) return 0;
 	m_configChoose.setAngle(90);
 	m_configChoose.setPosition(408.0f,330.0f);
 	m_configFont.setACopy(m_gameOrderFontInput);
@@ -3064,7 +3064,7 @@ void _XGun::configMove(int interval)
 			m_configText_10.setPosition(408.0f - 60.0f,335.0f + m_configRealY);
 			m_configText_11.setPosition(408.0f + 30.0f,335.0f + m_configRealY);
 			m_configChoose.setPosition(408.0f,330.0f + m_configRealY);
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}else
 		if(m_configStage == 2)
 		{//出现
@@ -3113,7 +3113,7 @@ void _XGun::configMove(int interval)
 			m_configText_11.setPosition(408.0f + 30.0f,335.0f + m_configRealY);
 			if(m_configNowChoose < 5) m_configChoose.setPosition(408.0f - 30.0f * m_configNowChoose,330.0f + m_configRealY);
 			else m_configChoose.setPosition(408.0f - 30.0f * (m_configNowChoose + 2),330.0f + m_configRealY);
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}else
 		if(m_configStage == 5)
 		{//退出
@@ -3164,12 +3164,12 @@ void _XGun::configMove(int interval)
 	}
 }
 
-int _XGun::helpInit(int resoursePosition)
+int _XGun::helpInit(_XResourcePosition resoursePosition)
 {
-	if(m_helpText.init("pic/UI/Help_Text.png",resoursePosition) == 0) return 0;
+	if(m_helpText.init("ResourcePack/pic/UI/Help_Text.png",resoursePosition) == 0) return 0;
 	m_helpText.setAngle(90);
 	//m_helpText.setPosition(270.0f,43.0f);
-	if(m_helpPic.init("pic/UI/Help.png",resoursePosition) == 0) return 0;
+	if(m_helpPic.init("ResourcePack/pic/UI/Help.png",resoursePosition) == 0) return 0;
 	m_helpPic.setAngle(0);
 	//m_helpPic.setPosition(270.0f,43.0f);
 	m_helpAngle = 0.0f;
@@ -3268,18 +3268,18 @@ void _XGun::helpMove(int interval)
 	}
 }
 
-int _XGun::warnningInit(int resoursePosition)
+int _XGun::warnningInit(_XResourcePosition resoursePosition)
 {
-	if(m_energyLowFace.init("pic/UI/EnergyLow.png",resoursePosition) == 0) return 0;
+	if(m_energyLowFace.init("ResourcePack/pic/UI/EnergyLow.png",resoursePosition) == 0) return 0;
 	m_energyLowFace.setAngle(90);
 	m_energyLowFace.setPosition(290.0f,63.0f);
-	if(m_energyLowText.init("pic/UI/EnergyLowtext.png",resoursePosition) == 0) return 0;
+	if(m_energyLowText.init("ResourcePack/pic/UI/EnergyLowtext.png",resoursePosition) == 0) return 0;
 	m_energyLowText.setAngle(90);
 	m_energyLowText.setPosition(70.0f,333.0f);
-	if(m_timerLowFace.init("pic/UI/TimerLow.png",resoursePosition) == 0) return 0;
+	if(m_timerLowFace.init("ResourcePack/pic/UI/TimerLow.png",resoursePosition) == 0) return 0;
 	m_timerLowFace.setAngle(90);
 	m_timerLowFace.setPosition(400.0f,87.0f);
-	if(m_timerLowText.init("pic/UI/TimerLowText.png",resoursePosition) == 0) return 0;
+	if(m_timerLowText.init("ResourcePack/pic/UI/TimerLowText.png",resoursePosition) == 0) return 0;
 	m_timerLowText.setAngle(90);
 	m_timerLowText.setPosition(188.0f,401.0f);
 	m_energyLowStage = 0;
@@ -3312,7 +3312,7 @@ void _XGun::warnningMove(int interval)
 			m_energyLowText.setPosition(70.0f,333.0f);
 			m_energyLowY = 0.0f;
 			m_energyLowStage = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}
 		m_upEnergySum = m_energyArmSum;
 	}
@@ -3334,7 +3334,7 @@ void _XGun::warnningMove(int interval)
 		{
 			m_energyLowY = 0.0f;
 			m_energyLowStage = 3;
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}
 	}else
 	if(m_energyLowStage == 3)
@@ -3357,7 +3357,7 @@ void _XGun::warnningMove(int interval)
 			m_timerLowText.setPosition(70.0f,293.0f);
 			m_timerLowY = 0.0f;
 			m_timerLowStage = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}
 		m_upTimerSum = m_gamePlayTimer;
 	}
@@ -3379,7 +3379,7 @@ void _XGun::warnningMove(int interval)
 		{
 			m_timerLowY = 0.0f;
 			m_timerLowStage = 3;
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}
 	}else
 	if(m_timerLowStage == 3)
@@ -3395,17 +3395,17 @@ void _XGun::warnningMove(int interval)
 	}
 }
 
-int _XGun::gameTimerInit(int resoursePosition)
+int _XGun::gameTimerInit(_XResourcePosition resoursePosition)
 {
-	if(m_gameTimerBG.init("pic/UI/GameTimerBG.png",resoursePosition) == 0) return 0;//用于测试
+	if(m_gameTimerBG.init("ResourcePack/pic/UI/GameTimerBG.png",resoursePosition) == 0) return 0;//用于测试
 	m_gameTimerBG.setAngle(90);
 	m_gameTimerBG.setPosition(819.0f,250.0f);
-	if(m_gameTimerNum.init("pic/UI/GameTimerNum.png",_XVector2I(45,64),_XVector2I(11,1),resoursePosition) == 0) return 0;
+	if(m_gameTimerNum.init("ResourcePack/pic/UI/GameTimerNum.png",_XVector2(45,64),_XVector2(11,1),resoursePosition) == 0) return 0;
 	m_gameTimerNum.setAngle(90);
 	m_gameTimerNum.setPosition(1109.0f,274.0f);
 	m_gameTimerNum.setNumber("12+56");
 	m_gameTimerNum.setDistance(-4.0f);
-	if(m_gameTimerAutoShoot.init("pic/UI/GameTimerAutoShoot.png",resoursePosition) == 0) return 0;//用于测试
+	if(m_gameTimerAutoShoot.init("ResourcePack/pic/UI/GameTimerAutoShoot.png",resoursePosition) == 0) return 0;//用于测试
 	m_gameTimerAutoShoot.setAngle(90);
 	m_gameTimerAutoShoot.setPosition(100.0f,330.0f);
 
@@ -3545,7 +3545,7 @@ void _XGun::gameTimerMove(int interval)
 			if(temp[3] == ' ') temp[3] = '0';
 			m_gameTimerNum.setNumber(temp);
 			m_gameTimerStage = 2;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}else
 		if(m_gameTimerStage == 2)
 		{//背景出现
@@ -3594,7 +3594,7 @@ void _XGun::gameTimerMove(int interval)
 			if(m_soundTimerOld != (int)(m_gamePlayTimer/1000) && m_gamePlayTimer < 10000)
 			{
 				m_soundTimerOld = (int)(m_gamePlayTimer/1000);
-				m_sound.play(m_soundTimer_00);
+				_XSound::GetInstance().play(m_soundTimer_00);
 			}
 		}else
 		if(m_gameTimerStage == 5)
@@ -3604,7 +3604,7 @@ void _XGun::gameTimerMove(int interval)
 		{//准备退出阶段
 			m_gameTiemrX = 0.0f;
 			m_gameTimerStage = 7;
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}else
 		if(m_gameTimerStage == 7)
 		{//退出阶段
@@ -3668,7 +3668,7 @@ void _XGun::gameTimerMove(int interval)
 			if(m_soundTimerOld != (int)(m_gamePlayTimer/1000) && m_gamePlayTimer < 10000)
 			{
 				m_soundTimerOld = (int)(m_gamePlayTimer/1000);
-				m_sound.play(m_soundTimer_00);
+				_XSound::GetInstance().play(m_soundTimer_00);
 			}
 		}else
 		if(m_gameTimerStage == 5)
@@ -3698,9 +3698,9 @@ void _XGun::gameTimerMove(int interval)
 	}
 }
 
-int _XGun::gameAllOverInit(int resoursePosition)
+int _XGun::gameAllOverInit(_XResourcePosition resoursePosition)
 {
-	if(m_gameAllOverText.init("pic/UI/GameAllOverText.png",resoursePosition) == 0) return 0;
+	if(m_gameAllOverText.init("ResourcePack/pic/UI/GameAllOverText.png",resoursePosition) == 0) return 0;
 	m_gameAllOverText.setAngle(90);
 	m_gameAllOverText.setPosition(400.0f,320.0f);
 
@@ -3724,7 +3724,7 @@ void _XGun::gameAllOverMove(int interval)
 			m_gameAllOverText.setPosition(400.0f,720.0f + 320.0f);
 			m_gameAllOverY = 0.0f;
 			m_gameCounter = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}else
 		if(m_gameCounter == 1)
 		{//进场
@@ -3789,7 +3789,7 @@ void _XGun::gameAllOverMove(int interval)
 			m_gameLostNum.setColor(-1.0f,-1.0f,-1.0f,1.0f);
 			m_gameAllOverY = 0.0f;
 			m_gameCounter = 5;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 			m_takePhotoNeedShow = 1;
 		}else
 		if(m_gameCounter == 5)
@@ -3847,45 +3847,45 @@ void _XGun::gameAllOverMove(int interval)
 	}
 }
 
-int _XGun::UIBoardInit(int resoursePosition)
+int _XGun::UIBoardInit(_XResourcePosition resoursePosition)
 {//初始化分数面板的一些东西
-//	if(m_creditSprite.init("pic/UI/credit.png",resoursePosition) == 0) return 0;
+//	if(m_creditSprite.init("ResourcePack/pic/UI/credit.png",resoursePosition) == 0) return 0;
 //	m_creditSprite.setAngle(90.0f);
 //	m_creditSprite.setPosition(-88.0f,150.0f);
 
-	if(m_creditText.init("pic/UI/creditText.png",resoursePosition) == 0) return 0;
+	if(m_creditText.init("ResourcePack/pic/UI/creditText.png",resoursePosition) == 0) return 0;
 	m_creditText.setAngle(90.0f);
 	m_creditText.setPosition(-103.0f,560.0f);
 
-	//if(m_scoresSprite.init("pic/UI/scores.png",resoursePosition) == 0) return 0;
+	//if(m_scoresSprite.init("ResourcePack/pic/UI/scores.png",resoursePosition) == 0) return 0;
 	//m_scoresSprite.setAngle(90.0f);
 	//m_scoresSprite.setPosition(-18.0f,150.0f);
 
-	if(m_scoresText.init("pic/UI/scoresText.png",resoursePosition) == 0) return 0;
+	if(m_scoresText.init("ResourcePack/pic/UI/scoresText.png",resoursePosition) == 0) return 0;
 	m_scoresText.setAngle(90.0f);
 	m_scoresText.setPosition(-18.0f + 1087.0f,150.0f + 317.0f);
 
-	if(m_goldSprite.init("pic/UI/gold.png",resoursePosition) == 0) return 0;
+	if(m_goldSprite.init("ResourcePack/pic/UI/gold.png",resoursePosition) == 0) return 0;
 	m_goldSprite.setAngle(90.0f);
 	m_goldSprite.setPosition(-28.0f,150.0f);
-	if(m_energySprite.init("pic/UI/energy.png",resoursePosition) == 0) return 0;
+	if(m_energySprite.init("ResourcePack/pic/UI/energy.png",resoursePosition) == 0) return 0;
 	m_energySprite.setAngle(90.0f);
 	m_energySprite.setPosition(-98.0f,150.0f);
-	if(m_lowEnergy.init("pic/object/LowZEnergy.png",resoursePosition) == 0) return 0;
+	if(m_lowEnergy.init("ResourcePack/pic/object/LowZEnergy.png",resoursePosition) == 0) return 0;
 	m_lowEnergy.setAngle(90.0f);
 	m_lowEnergy.setPosition(8.0f,388.0f - 352.0f + 42.0f);
-	if(m_energyAddNum.init("pic/UI/number_02.png",_XVector2I(20,32),_XVector2I(12,1),resoursePosition) == 0) return 0;
+	if(m_energyAddNum.init("ResourcePack/pic/UI/number_02.png",_XVector2(20,32),_XVector2(12,1),resoursePosition) == 0) return 0;
 	m_energyAddNum.setAngle(90.0f);
 	m_energyAddNum.setPosition(40.0f,269.0f);
 	m_energyAddNum.setNumber("+100");
 	m_energyAddStage = 0;
 	//能量进度条
-	if(m_energyBar.init("pic/UI/EnergyProcess.png",resoursePosition) == 0) return 0;
+	if(m_energyBar.init("ResourcePack/pic/UI/EnergyProcess.png",resoursePosition) == 0) return 0;
 	m_energyBar.setPosition(-19.0f,128.0f);
 	m_energyBarDown.setACopy(m_energyBar);
 	m_energyBarDown.setPosition(-19.0f,128.0f);
 	//彩票进度条
-	if(m_ticketBar.init("pic/UI/TicketProcess.png",resoursePosition) == 0) return 0;
+	if(m_ticketBar.init("ResourcePack/pic/UI/TicketProcess.png",resoursePosition) == 0) return 0;
 	//m_ticketBar.setAlpha(0.75f);
 	m_ticketBar.setPosition(1172.0f,116.0f);
 	m_ticketBarDown.setACopy(m_ticketBar);
@@ -3893,9 +3893,9 @@ int _XGun::UIBoardInit(int resoursePosition)
 	m_ticketBarDown.setColor(1.0f,0.0f,0.0f,1.0f);
 	m_ticketBar.setClipRect(0.0f,0.0f,64.0f,0.0f);
 	//下面需要从记录文件中读取相关数据
-	if(m_creditNum.init("pic/UI/number_03.png",_XVector2I(20,32),_XVector2I(11,1),resoursePosition) == 0) return 0;
-	if(m_scoresNum.init("pic/UI/number_04.png",_XVector2I(20,32),_XVector2I(10,1),resoursePosition) == 0) return 0;
-	if(m_energyNum.init("pic/UI/number_00.png",_XVector2I(25,32),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_creditNum.init("ResourcePack/pic/UI/number_03.png",_XVector2(20,32),_XVector2(11,1),resoursePosition) == 0) return 0;
+	if(m_scoresNum.init("ResourcePack/pic/UI/number_04.png",_XVector2(20,32),_XVector2(10,1),resoursePosition) == 0) return 0;
+	if(m_energyNum.init("ResourcePack/pic/UI/number_00.png",_XVector2(25,32),_XVector2(10,1),resoursePosition) == 0) return 0;
 	m_goldNum.setACopy(m_energyNum);
 
 	m_creditNum.setAngle(90.0f);
@@ -3977,13 +3977,13 @@ void _XGun::gunShakeMove(int interval)
 	}
 }
 
-int _XGun::goldAddAndFlyInit(int resoursePosition)
+int _XGun::goldAddAndFlyInit(_XResourcePosition resoursePosition)
 {
 	for(int i = 0;i < MAX_BULLET_SUM;++ i)
 	{
 		if(i == 0)
 		{
-			if(m_goldAddNum[i].init("pic/UI/number_01.png",_XVector2I(24,32),_XVector2I(12,1),resoursePosition) == 0) return 0;
+			if(m_goldAddNum[i].init("ResourcePack/pic/UI/number_01.png",_XVector2(24,32),_XVector2(12,1),resoursePosition) == 0) return 0;
 			m_goldAddNum[i].setDistance(-1.0f);
 		}else
 		{
@@ -4003,7 +4003,7 @@ int _XGun::goldAddAndFlyInit(int resoursePosition)
 	{
 		if(i == 0)
 		{
-			if(m_goldFly[i].init("pic/UI/Gold/GCA_000.png",resoursePosition) == 0) return 0;
+			if(m_goldFly[i].init("ResourcePack/pic/UI/Gold/GCA_000.png",resoursePosition) == 0) return 0;
 		}else
 		{
 			m_goldFly[i].setACopy(m_goldFly[0]);
@@ -4019,24 +4019,24 @@ int _XGun::goldAddAndFlyInit(int resoursePosition)
 	return 1;
 }
 
-int _XGun::processInit(int resoursePosition)
+int _XGun::processInit(_XResourcePosition resoursePosition)
 {//初始化一些游戏相关的参数
 	m_levelFiniedSum = 0.0f;
 	m_levelFiniedArmSum = 0.0f;
-	if(m_nowLevelProcessB.init("pic/UI/Progress/PB_00.png",resoursePosition) == 0) return 0;
+	if(m_nowLevelProcessB.init("ResourcePack/pic/UI/Progress/PB_00.png",resoursePosition) == 0) return 0;
 	m_nowLevelProcessB.setPosition(1115.0f,50.0f + 64);
-	if(m_nowLevelProcessU.init("pic/UI/Progress/PU_00.png",resoursePosition) == 0) return 0;
+	if(m_nowLevelProcessU.init("ResourcePack/pic/UI/Progress/PU_00.png",resoursePosition) == 0) return 0;
 	m_nowLevelProcessU.setPosition(1115.0f,50.0f + 64);
-	if(m_nowLevelProcess.init("pic/UI/Progress/PM_00.png",resoursePosition) == 0) return 0;
+	if(m_nowLevelProcess.init("ResourcePack/pic/UI/Progress/PM_00.png",resoursePosition) == 0) return 0;
 	m_nowLevelProcess.setPosition(1115.0f,50.0f + 64);
 	m_nowLevelProcess.setClipRect(0,0,32,0);
-//	if(m_nowLevelProcessN.init("normalResource/Number.png",_XVector2I(15,30),_XVector2I(8,2),resoursePosition) == 0) return 0;
+//	if(m_nowLevelProcessN.init("normalResource/Number.png",_XVector2(15,30),_XVector2(8,2),resoursePosition) == 0) return 0;
 //	m_nowLevelProcessN.setPosition(1172.0f,50.0f + 290.0f);
 //	m_nowLevelProcessN.setAngle(90);
 //	m_nowLevelProcessN.setNumber("0 %");
-	if(m_nowLevelProcessLight.init("pic/UI/ProgressLight.png",resoursePosition) == 0) return 0;
+	if(m_nowLevelProcessLight.init("ResourcePack/pic/UI/ProgressLight.png",resoursePosition) == 0) return 0;
 	m_nowLevelProcessLight.setPosition(1115.0f - 47,- 142);
-	if(m_nowLevelProcessLage.init("pic/UI/Progresslage.png",resoursePosition) == 0) return 0;
+	if(m_nowLevelProcessLage.init("ResourcePack/pic/UI/Progresslage.png",resoursePosition) == 0) return 0;
 	m_nowLevelProcessLage.setPosition(1115.0f,562.0f);
 	m_nowLevelProcessLage.setAngle(90);
 	m_levelProcessBoom.setACopy(m_gems->m_boomFrame);
@@ -4107,67 +4107,67 @@ void _XGun::processMove(int interval)
 	}
 }
 
-int _XGun::gameWinInit(int resoursePosition)
+int _XGun::gameWinInit(_XResourcePosition resoursePosition)
 {
-	if(m_gameWinBG.init("pic/UI/GameOverBGBoard.png",resoursePosition) == 0) return 0;
+	if(m_gameWinBG.init("ResourcePack/pic/UI/GameOverBGBoard.png",resoursePosition) == 0) return 0;
 	m_gameWinBG.setAngle(90);
 	m_gameWinBG.setPosition(400.0f,100.0f);
-	if(m_gameWinBGUp.init("pic/UI/GameOverBGBoardUp.png",resoursePosition) == 0) return 0;
+	if(m_gameWinBGUp.init("ResourcePack/pic/UI/GameOverBGBoardUp.png",resoursePosition) == 0) return 0;
 	m_gameWinBGUp.setAngle(90);
 	m_gameWinBGUp.setPosition(400.0f,100.0f);
-	if(m_gameWinText00.init("pic/UI/LevelOverText_01.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText00.init("ResourcePack/pic/UI/LevelOverText_01.png",resoursePosition) == 0) return 0;
 	m_gameWinText00.setAngle(90);
 	m_gameWinText00.setPosition(550.0f - 20.0f,200.0f - 30.0f);
-	if(m_gameWinText01.init("pic/UI/LevelOverText_03.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText01.init("ResourcePack/pic/UI/LevelOverText_03.png",resoursePosition) == 0) return 0;
 	m_gameWinText01.setAngle(90);
 	m_gameWinText01.setPosition(550.0f - 85.0f,200.0f - 30.0f);
-	if(m_gameWinText02.init("pic/UI/LevelOverText_04.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText02.init("ResourcePack/pic/UI/LevelOverText_04.png",resoursePosition) == 0) return 0;
 	m_gameWinText02.setAngle(90);
 	m_gameWinText02.setPosition(550.0f - 150.0f,200.0f);
-	if(m_gameWinText03.init("pic/UI/LevelOverText_05.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText03.init("ResourcePack/pic/UI/LevelOverText_05.png",resoursePosition) == 0) return 0;
 	m_gameWinText03.setAngle(90);
 	m_gameWinText03.setPosition(550.0f - 215.0f,200.0f);
-	if(m_gameWinText04.init("pic/UI/LevelOverText_06.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText04.init("ResourcePack/pic/UI/LevelOverText_06.png",resoursePosition) == 0) return 0;
 	m_gameWinText04.setAngle(90);
 	m_gameWinText04.setPosition(550.0f - 280.0f,200.0f);
-	if(m_gameWinText05.init("pic/UI/LevelOverText_07.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText05.init("ResourcePack/pic/UI/LevelOverText_07.png",resoursePosition) == 0) return 0;
 	m_gameWinText05.setAngle(90);
 	m_gameWinText05.setPosition(550.0f - 315.0f,200.0f);
-	if(m_gameWinText06.init("pic/UI/LevelOverText_08.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText06.init("ResourcePack/pic/UI/LevelOverText_08.png",resoursePosition) == 0) return 0;
 	m_gameWinText06.setAngle(90);
 	m_gameWinText06.setPosition(550.0f - 315.0f,200.0f);
-	if(m_gameWinText07.init("pic/UI/LevelOverText_09.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText07.init("ResourcePack/pic/UI/LevelOverText_09.png",resoursePosition) == 0) return 0;
 	m_gameWinText07.setAngle(90);
 	m_gameWinText07.setPosition(550.0f - 315.0f,200.0f);
-	if(m_gameWinText08.init("pic/UI/LevelOverText_10.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText08.init("ResourcePack/pic/UI/LevelOverText_10.png",resoursePosition) == 0) return 0;
 	m_gameWinText08.setAngle(90);
 	m_gameWinText08.setPosition(550.0f - 315.0f,200.0f);
-	if(m_gameWinText09.init("pic/UI/LevelOverText_11.png",resoursePosition) == 0) return 0;
+	if(m_gameWinText09.init("ResourcePack/pic/UI/LevelOverText_11.png",resoursePosition) == 0) return 0;
 	m_gameWinText09.setAngle(90);
 	m_gameWinText09.setPosition(550.0f - 315.0f,200.0f);
 
-	if(m_gameWinNum.init("pic/UI/LevelOverNumber_00.png",_XVector2I(30,64),_XVector2I(16,1),resoursePosition) == 0) return 0;
+	if(m_gameWinNum.init("ResourcePack/pic/UI/LevelOverNumber_00.png",_XVector2(30,64),_XVector2(16,1),resoursePosition) == 0) return 0;
 	m_gameWinNum.setAngle(90);
 	m_gameWinNum.setPosition(810.0f,380.0f);
 	m_gameWinNum.setNumber("95.0%");
 
-	if(m_gameWinStar_00.load("pic/UI/Starr_00.png",resoursePosition) == 0) return 0;
-	if(m_gameWinStar_01.load("pic/UI/Starr_01.png",resoursePosition) == 0) return 0;
+	if(m_gameWinStar_00.load("ResourcePack/pic/UI/Starr_00.png",resoursePosition) == 0) return 0;
+	if(m_gameWinStar_01.load("ResourcePack/pic/UI/Starr_01.png",resoursePosition) == 0) return 0;
 	m_gameWinStar.init(m_gameWinStar_00.texture.m_w,m_gameWinStar_00.texture.m_h);
 	m_gameWinStar.setAngle(90);
 	m_gameWinStar.setPosition(695.0f + 20.0f,380.0f);
 	return 1;
 }
 
-int _XGun::gameLostInit(int resoursePosition)
+int _XGun::gameLostInit(_XResourcePosition resoursePosition)
 {
-	if(m_gameLostBG.init("pic/UI/GameLostBG.png",resoursePosition) == 0) return 0;
+	if(m_gameLostBG.init("ResourcePack/pic/UI/GameLostBG.png",resoursePosition) == 0) return 0;
 	m_gameLostBG.setAngle(90);
 	m_gameLostBG.setPosition(550.0f,230.0f);
-	if(m_gameLostText.init("pic/UI/GameLostText.png",resoursePosition) == 0) return 0;
+	if(m_gameLostText.init("ResourcePack/pic/UI/GameLostText.png",resoursePosition) == 0) return 0;
 	m_gameLostText.setAngle(90);
 	m_gameLostText.setPosition(613.0f,290.0f);
-	if(m_gameLostNum.init("pic/UI/GameLostNum.png",_XVector2I(80,128),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_gameLostNum.init("ResourcePack/pic/UI/GameLostNum.png",_XVector2(80,128),_XVector2(10,1),resoursePosition) == 0) return 0;
 	m_gameLostNum.setAngle(90);
 	m_gameLostNum.setPosition(820.0f,320.0f);
 	m_gameLostNum.setNumber("5");
@@ -4228,7 +4228,7 @@ void _XGun::gameLostMove(int interval)
 			{
 				m_gameLostAlpha = 1.0f;
 				m_gameCounter = 2;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 			m_gameLostBG.setAlpha(m_gameLostAlpha);
 		}else
@@ -4255,14 +4255,14 @@ void _XGun::gameLostMove(int interval)
 			if(int(m_gameLostTimer / 1000) != m_soundTimerOverOld)
 			{
 				m_soundTimerOverOld = int(m_gameLostTimer / 1000);
-				m_sound.play(m_soundTimerOver);
+				_XSound::GetInstance().play(m_soundTimerOver);
 			}
 		}else
 		if(m_gameCounter == 4)
 		{//进入退出阶段
 			m_gameLostY = 0.0f;
 			m_gameCounter = 5;
-			m_sound.play(m_soundTextMove_00);
+			_XSound::GetInstance().play(m_soundTextMove_00);
 		}else
 		if(m_gameCounter == 5)
 		{//退出阶段
@@ -4282,8 +4282,8 @@ void _XGun::gameLostMove(int interval)
 		{//进入落幕
 			m_gameLostY = 0.0f;
 			m_gameCounter = 7;
-			m_sound.play(m_soundTextMove_00);
-			BGmusic.fadeOutMusic(800);
+			_XSound::GetInstance().play(m_soundTextMove_00);
+			_XMusic::GetInstance().fadeOutMusic(800);
 		}else
 		if(m_gameCounter == 7)
 		{//进入名字输入界面
@@ -4326,7 +4326,7 @@ void _XGun::gameLostMove(int interval)
 			m_gameLostNum.setColor(-1.0f,-1.0f,-1.0f,1.0f);
 			m_gameLostY = 0.0f;
 			m_gameCounter = 9;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 			m_takePhotoNeedShow = 1;
 		}else
 		if(m_gameCounter == 9)
@@ -4405,18 +4405,18 @@ void _XGun::gameLostMove(int interval)
 	}
 }
 
-int _XGun::gameDemoInit(int resoursePosition)
+int _XGun::gameDemoInit(_XResourcePosition resoursePosition)
 {
 	//if(m_gameDemoBG.init("normalResource/UI/GameLogoBG.jpg",resoursePosition) == 0) return 0;
-	if(m_gameDemoBG.init("pic/UIBG/GameLogoBG.png",resoursePosition) == 0) return 0;
+	if(m_gameDemoBG.init("ResourcePack/pic/UIBG/GameLogoBG.png",resoursePosition) == 0) return 0;
 	m_gameDemoBG.setPosition(0.0f,0.0f);
-	if(m_gameDemoText1.init("pic/UI/GameLogoText.png",resoursePosition) == 0) return 0;
+	if(m_gameDemoText1.init("ResourcePack/pic/UI/GameLogoText.png",resoursePosition) == 0) return 0;
 	m_gameDemoText1.setAngle(90);
 	m_gameDemoText1.setPosition(550.0f,262.0f);
-	if(m_gameDemoText2.init("pic/UI/QTB.png",resoursePosition) == 0) return 0;
+	if(m_gameDemoText2.init("ResourcePack/pic/UI/QTB.png",resoursePosition) == 0) return 0;
 	m_gameDemoText2.setAngle(90);
 	m_gameDemoText2.setPosition(200.0f,294.0f);
-	if(m_gameDemoText3.init("pic/UI/QKSYX.png",resoursePosition) == 0) return 0;
+	if(m_gameDemoText3.init("ResourcePack/pic/UI/QKSYX.png",resoursePosition) == 0) return 0;
 	m_gameDemoText3.setAngle(90);
 	m_gameDemoText3.setPosition(200.0f - 128.0f,294.0f);
 	return 1;
@@ -4454,9 +4454,9 @@ void _XGun::gameDemoMove(int interval)
 			//进入demo界面的时候保存一次数据(为什么要这么做，用于测试吗？)
 		//	writeRecordData();
 		//	writeRecordData();
-			m_sound.play(m_soundScreenDown);
+			_XSound::GetInstance().play(m_soundScreenDown);
 			m_instructionTimer = 0;
-			BGmusic.fadeInMusic(BGMusicHandle[0],-1,200);
+			_XMusic::GetInstance().fadeInMusic(BGMusicHandle[0],-1,200);
 		}else
 		if(m_gameCounter == 1)
 		{//背景落下
@@ -4570,8 +4570,8 @@ void _XGun::gameDemoMove(int interval)
 				m_gameDemoBGX = 0.0f;
 				m_gameCounter = 5;
 				m_gameHeadBG.setPosition(0.0f,0.0f);
-				m_sound.play(m_soundScreenUp);
-				BGmusic.fadeOutMusic(800);
+				_XSound::GetInstance().play(m_soundScreenUp);
+				_XMusic::GetInstance().fadeOutMusic(800);
 			}
 		}else
 		if(m_gameCounter == 5)
@@ -4591,33 +4591,33 @@ void _XGun::gameDemoMove(int interval)
 	}
 }
 
-int _XGun::toolsInit(int resoursePosition)
+int _XGun::toolsInit(_XResourcePosition resoursePosition)
 {
-//	if(m_tools_00.load("pic/object/AddEnergy.png",resoursePosition) == 0) return 0;
-//	if(m_tools_01.load("pic/object/AddGold.png",resoursePosition) == 0) return 0;
-//	if(m_tools_02.load("pic/object/GoldToEnergy.png",resoursePosition) == 0) return 0;
-//	if(m_tools_03.load("pic/object/10sFree.png",resoursePosition) == 0) return 0;
-//	if(m_tools_04.load("pic/object/Timer.png",resoursePosition) == 0) return 0;
-	if(m_tools_00.load("pic/object/Tool_energy.png",resoursePosition) == 0) return 0;
-	if(m_tools_01.load("pic/object/Tool_gold.png",resoursePosition) == 0) return 0;
-	if(m_tools_02.load("pic/object/Tool_energyChange.png",resoursePosition) == 0) return 0;
-	if(m_tools_03.load("pic/object/Tool_10Free.png",resoursePosition) == 0) return 0;
-	if(m_tools_04.load("pic/object/Tool_time.png",resoursePosition) == 0) return 0;
-	if(m_tools_05.load("pic/object/Buff_00.png",resoursePosition) == 0) return 0;
-	if(m_tools_06.load("pic/object/Buff_01.png",resoursePosition) == 0) return 0;
-	if(m_tools_07.load("pic/object/Buff_02.png",resoursePosition) == 0) return 0;
-	if(m_tools_08.load("pic/object/Buff_03.png",resoursePosition) == 0) return 0;
-	if(m_tools_09.load("pic/object/Buff_04.png",resoursePosition) == 0) return 0;
+//	if(m_tools_00.load("ResourcePack/pic/object/AddEnergy.png",resoursePosition) == 0) return 0;
+//	if(m_tools_01.load("ResourcePack/pic/object/AddGold.png",resoursePosition) == 0) return 0;
+//	if(m_tools_02.load("ResourcePack/pic/object/GoldToEnergy.png",resoursePosition) == 0) return 0;
+//	if(m_tools_03.load("ResourcePack/pic/object/10sFree.png",resoursePosition) == 0) return 0;
+//	if(m_tools_04.load("ResourcePack/pic/object/Timer.png",resoursePosition) == 0) return 0;
+	if(m_tools_00.load("ResourcePack/pic/object/Tool_energy.png",resoursePosition) == 0) return 0;
+	if(m_tools_01.load("ResourcePack/pic/object/Tool_gold.png",resoursePosition) == 0) return 0;
+	if(m_tools_02.load("ResourcePack/pic/object/Tool_energyChange.png",resoursePosition) == 0) return 0;
+	if(m_tools_03.load("ResourcePack/pic/object/Tool_10Free.png",resoursePosition) == 0) return 0;
+	if(m_tools_04.load("ResourcePack/pic/object/Tool_time.png",resoursePosition) == 0) return 0;
+	if(m_tools_05.load("ResourcePack/pic/object/Buff_00.png",resoursePosition) == 0) return 0;
+	if(m_tools_06.load("ResourcePack/pic/object/Buff_01.png",resoursePosition) == 0) return 0;
+	if(m_tools_07.load("ResourcePack/pic/object/Buff_02.png",resoursePosition) == 0) return 0;
+	if(m_tools_08.load("ResourcePack/pic/object/Buff_03.png",resoursePosition) == 0) return 0;
+	if(m_tools_09.load("ResourcePack/pic/object/Buff_04.png",resoursePosition) == 0) return 0;
 	m_toolsSprite.init(m_tools_00.texture.m_w,m_tools_00.texture.m_h);
 	m_toolsSprite.setAngle(90);
 	m_toolsSprite.setAlpha(0);
 	m_toolsSize = 0.0f;
 	m_toolsFlag = 0;
 	m_toolsAlpha = 0.0f;
-//	if(m_toolsTimerText.init("pic/UI/BigNumber.png",_XVector2I(64,128),_XVector2I(10,1),resoursePosition) == 0) return 0;
+//	if(m_toolsTimerText.init("ResourcePack/pic/UI/BigNumber.png",_XVector2(64,128),_XVector2(10,1),resoursePosition) == 0) return 0;
 //	m_toolsTimerText.setAngle(90);
 //	m_toolsTimerText.setPosition(250,100);
-//	if(m_toolsTextSprite.init("pic/UI/FreeShootText.png",resoursePosition)== 0) return 0;
+//	if(m_toolsTextSprite.init("ResourcePack/pic/UI/FreeShootText.png",resoursePosition)== 0) return 0;
 //	m_toolsTextSprite.setAngle(90);
 //	m_toolsTextSprite.setPosition(150,100);
 	return 1;
@@ -4703,7 +4703,7 @@ void _XGun::toolsMove(int interval)
 	//	if(m_soundTimerOld_01 != (int)(m_toolsTimer/1000))
 	//	{
 	//		m_soundTimerOld_01 = (int)(m_toolsTimer/1000);
-	//		m_sound.play(m_soundTimer_01);
+	//		_XSound::GetInstance().play(m_soundTimer_01);
 	//	}
 	}
 }
@@ -4950,21 +4950,21 @@ void _XGun::toolsDraw()
 	}
 }
 
-int _XGun::gameHeadInit(int resoursePosition)
+int _XGun::gameHeadInit(_XResourcePosition resoursePosition)
 {//下面是游戏头的初始化
-	if(m_gameHeadNum.init("pic/UI/LevelSum.png",_XVector2I(70,128),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_gameHeadNum.init("ResourcePack/pic/UI/LevelSum.png",_XVector2(70,128),_XVector2(10,1),resoursePosition) == 0) return 0;
 	m_gameHeadNum.setAngle(90);
 	m_gameHeadNum.setNumber(m_nowLevel + 1);
 	m_gameHeadNum.setPosition(820.0f,310.0f);
 	m_gameHeadNum.setDistance(-15.0f);
-	if(m_gameHeadText.init("pic/UI/LevelText.png",resoursePosition) == 0) return 0;
+	if(m_gameHeadText.init("ResourcePack/pic/UI/LevelText.png",resoursePosition) == 0) return 0;
 	m_gameHeadText.setAngle(90);
 	m_gameHeadText.setPosition(500.0f,280.0f);
-	if(m_gameHeadBGLevelInfo.init("pic/UI/LevelInfoText.png",resoursePosition) == 0) return 0;
+	if(m_gameHeadBGLevelInfo.init("ResourcePack/pic/UI/LevelInfoText.png",resoursePosition) == 0) return 0;
 	m_gameHeadBGLevelInfo.setAngle(90);
 	m_gameHeadBGLevelInfo.setPosition(400.0f,312.0f);
 	//if(m_gameHeadBG.init("normalResource/UI/GameHeadBG.jpg",resoursePosition) == 0) return 0;
-	if(m_gameHeadBG.init("pic/UIBG/GameHeadBG.png",resoursePosition) == 0) return 0;
+	if(m_gameHeadBG.init("ResourcePack/pic/UIBG/GameHeadBG.png",resoursePosition) == 0) return 0;
 	m_gameHeadBG.setPosition(0,0);
 	return 1;
 }
@@ -5012,7 +5012,7 @@ void _XGun::gameHeadMove(int interval)
 			m_isGunColorBoom = 0;	//彩色弹标志初始化
 
 			m_gameCounter = 1;
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}else
 		if(m_gameCounter == 1)
 		{//文字进入
@@ -5073,7 +5073,7 @@ void _XGun::gameHeadMove(int interval)
 			{
 				m_gameHeadTextY = 0.0f;
 				m_gameCounter = 4;
-				m_sound.play(m_soundTextMove_00);
+				_XSound::GetInstance().play(m_soundTextMove_00);
 			}
 		}else
 		if(m_gameCounter == 4)
@@ -5222,7 +5222,7 @@ void _XGun::gameHeadMove(int interval)
 
 				m_backGroungPosition = 0.0f;
 				m_gameCounter = 5;
-				m_sound.play(m_soundScreenUp);
+				_XSound::GetInstance().play(m_soundScreenUp);
 			}
 			m_gameHeadText.setPosition(500.0f,280.0f - (280.0f + 512.0f) * sin(m_gameHeadTextY));
 			m_gameHeadBGLevelInfo.setPosition(400.0f,312.0f - (312.0f + 512.0f) * sin(m_gameHeadTextY));
@@ -5237,10 +5237,10 @@ void _XGun::gameHeadMove(int interval)
 				m_gameStage = GAME_STAGE_GAMEPLAY;
 				m_gameCounter = 0;
 				m_levelFlagStage = 2;
-				if(BGmusic.fadeInMusic(BGMusicHandle[1 + (m_nowLevel % 5)],-1,200) == 0)
+				if(_XMusic::GetInstance().fadeInMusic(BGMusicHandle[1 + (m_nowLevel % 5)],-1,200) == 0)
 				{
 				//	Sleep(100);
-				//	BGmusic.fadeInMusic(BGMusicHandle[1 + (m_nowLevel % 5)],-1,200);
+				//	_XMusic::GetInstance().fadeInMusic(BGMusicHandle[1 + (m_nowLevel % 5)],-1,200);
 				}
 				printf("Play music %d:\n",1 + (m_nowLevel % 5));
 				if(m_nowLevel == 0)
@@ -5255,25 +5255,25 @@ void _XGun::gameHeadMove(int interval)
 	}
 }
 
-int _XGun::gamePlayInit(int resoursePosition)
+int _XGun::gamePlayInit(_XResourcePosition resoursePosition)
 {//下面是游戏过程中的一些文字的初始化
-	if(m_gamePlayText00.init("pic/UI/LevelOverText.png",resoursePosition) == 0) return 0;
+	if(m_gamePlayText00.init("ResourcePack/pic/UI/LevelOverText.png",resoursePosition) == 0) return 0;
 	m_gamePlayText00.setAngle(90);
 	m_gamePlayText00.setPosition(600.0f,300.0f);
-	if(m_gamePlayText01.init("pic/UI/LevelOverText_00.png",resoursePosition) == 0) return 0;
+	if(m_gamePlayText01.init("ResourcePack/pic/UI/LevelOverText_00.png",resoursePosition) == 0) return 0;
 	m_gamePlayText01.setAngle(90);
 	m_gamePlayText01.setPosition(500.0f,300.0f);
-	if(m_gamePlayText02.init("pic/UI/LevelOverText_12.png",resoursePosition) == 0) return 0;
+	if(m_gamePlayText02.init("ResourcePack/pic/UI/LevelOverText_12.png",resoursePosition) == 0) return 0;
 	m_gamePlayText02.setAngle(90);
 	m_gamePlayText02.setPosition(400.0f,100.0f);
 
-	if(m_gamePlayNum.init("pic/UI/BigNumber.png",_XVector2I(64,128),_XVector2I(10,1),resoursePosition) == 0) return 0;
+	if(m_gamePlayNum.init("ResourcePack/pic/UI/BigNumber.png",_XVector2(64,128),_XVector2(10,1),resoursePosition) == 0) return 0;
 	//m_gamePlayNum.setACopy(m_toolsTimerText);			//数字
 	m_gamePlayNum.setAngle(90);
 	m_gamePlayNum.setPosition(720.0f,280.0f);
 	m_gamePlayTicketSum = 0;
 	m_gamePlayNum.setNumber(m_gamePlayTicketSum);
-	if(m_gamePlayLogo00.init("pic/UI/scoreLogo.png",resoursePosition) == 0) return 0;
+	if(m_gamePlayLogo00.init("ResourcePack/pic/UI/scoreLogo.png",resoursePosition) == 0) return 0;
 	m_gamePlayLogo00.setAngle(90);
 	m_gamePlayLogo00.setPosition(400.0f,550.0f);
 	m_gamePlayLogo01.setACopy(m_goldBoxTicketLogo);		//图标01
@@ -5322,7 +5322,7 @@ void _XGun::gamePlayMove(int interval)
 			m_gamePlayLogo01.setPosition(606.0f,920.0f);
 			m_gameCounter = 2;
 			setGameTimerEnd(0);
-			m_sound.play(m_soundTextMove_01);
+			_XSound::GetInstance().play(m_soundTextMove_01);
 		}else
 		if(m_gameCounter == 2)
 		{//0文字出现
@@ -5337,7 +5337,7 @@ void _XGun::gamePlayMove(int interval)
 				m_gamePlayAlpha = 1.0f;
 				m_gamePlaySize = 1.0f;
 				m_gameCounter = 3;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 			m_gamePlayText00.setAlpha(m_gamePlayAlpha);
 			m_gamePlayText00.setSize(m_gamePlaySize,m_gamePlaySize);
@@ -5414,7 +5414,7 @@ void _XGun::gamePlayMove(int interval)
 			{
 				m_gamePlayTextY = 0;
 				m_gameCounter = 6;
-				m_sound.play(m_soundTextMove_00);
+				_XSound::GetInstance().play(m_soundTextMove_00);
 			}
 		}else
 		if(m_gameCounter == 6)
@@ -5492,7 +5492,7 @@ void _XGun::gameWinDraw()
 			if(tempSum != m_soundStarSumOld)
 			{
 				m_soundStarSumOld = tempSum;
-				m_sound.play(m_soundStarAdd);
+				_XSound::GetInstance().play(m_soundStarAdd);
 			}
 		}
 		m_gameWinText02.draw();
@@ -5553,7 +5553,7 @@ void _XGun::gameWinMove(int interval)
 			m_gameWinText08.setPosition(235.0f,920.0f);
 			m_gameWinText09.setPosition(235.0f,920.0f);
 			m_gameCounter = -1;
-			BGmusic.fadeOutMusic(800);
+			_XMusic::GetInstance().fadeOutMusic(800);
 			//显示头像
 			if(m_faceGameTimer < 10000) m_nowFaceOrder = 1;
 			else if(m_faceGameTimer < 30000) m_nowFaceOrder = 2;
@@ -5587,7 +5587,7 @@ void _XGun::gameWinMove(int interval)
 			{
 				m_gameWinBGAlpha = 1.0f;
 				m_gameCounter = 2;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 			m_gameWinBG.setAlpha(m_gameWinBGAlpha);
 			m_gameWinBGUp.setAlpha(m_gameWinBGAlpha);
@@ -5624,7 +5624,7 @@ void _XGun::gameWinMove(int interval)
 				m_gameWinNum_00_00 += tempSum;
 				if(m_soundSumAddTimer == 0)
 				{
-					m_sound.play(m_soundSumAdd_00);
+					_XSound::GetInstance().play(m_soundSumAdd_00);
 				}
 				m_soundSumAddTimer += interval;
 				if(m_soundSumAddTimer > 80) m_soundSumAddTimer = 0;
@@ -5650,7 +5650,7 @@ void _XGun::gameWinMove(int interval)
 				}
 				m_gameWinTextY = 0;
 				m_gameCounter = 4;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 		}else
 		if(m_gameCounter == 4)
@@ -5674,7 +5674,7 @@ void _XGun::gameWinMove(int interval)
 				m_gameWinNum_01_01 = 1.0f;
 				m_gameWinTextY = 0.0f;
 				m_gameCounter = 6;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 		}else
 		if(m_gameCounter == 6)
@@ -5709,7 +5709,7 @@ void _XGun::gameWinMove(int interval)
 				m_gameWinNum_02_00 += tempSum;
 				if(m_soundSumAddTimer == 0)
 				{
-					m_sound.play(m_soundSumAdd_00);
+					_XSound::GetInstance().play(m_soundSumAdd_00);
 				}
 				m_soundSumAddTimer += interval;
 				if(m_soundSumAddTimer > 80) m_soundSumAddTimer = 0;
@@ -5717,7 +5717,7 @@ void _XGun::gameWinMove(int interval)
 			{
 				m_gameWinTextY = 0;
 				m_gameCounter = 8;
-				m_sound.play(m_soundTextMove_01);
+				_XSound::GetInstance().play(m_soundTextMove_01);
 			}
 		}else
 		if(m_gameCounter == 8)
@@ -5751,7 +5751,7 @@ void _XGun::gameWinMove(int interval)
 				m_gameWinNum_03_00 += tempSum;
 				if(m_soundSumAddTimer == 0)
 				{
-					m_sound.play(m_soundSumAdd_00);
+					_XSound::GetInstance().play(m_soundSumAdd_00);
 				}
 				m_soundSumAddTimer += interval;
 				if(m_soundSumAddTimer > 80) m_soundSumAddTimer = 0;
@@ -5769,7 +5769,7 @@ void _XGun::gameWinMove(int interval)
 					|| m_nowLevel == 4)
 				{//只有第一关才会有额外奖励
 					m_gameCounter = 10;
-					m_sound.play(m_soundTextMove_01);
+					_XSound::GetInstance().play(m_soundTextMove_01);
 				}else
 				{
 					m_gameCounter = 12;
@@ -5837,7 +5837,7 @@ void _XGun::gameWinMove(int interval)
 					if(m_nowLevel >= 1) m_canUserGunType = GUN_TYPE_02;else 
 					if(m_nowLevel >= 0) m_canUserGunType = GUN_TYPE_01; 
 					else m_canUserGunType = GUN_TYPE_00; 
-					m_sound.play(m_soundTextDown);
+					_XSound::GetInstance().play(m_soundTextDown);
 				}
 			}
 			if(m_nowLevel == 0)
@@ -5884,7 +5884,7 @@ void _XGun::gameWinMove(int interval)
 					}else
 					{
 						m_gameCounter = 13;
-						m_sound.play(m_soundScreenDown);
+						_XSound::GetInstance().play(m_soundScreenDown);
 					}
 				}else
 				{
@@ -5896,7 +5896,7 @@ void _XGun::gameWinMove(int interval)
 					}else
 					{
 						m_gameCounter = 13;
-						m_sound.play(m_soundScreenDown);
+						_XSound::GetInstance().play(m_soundScreenDown);
 					}
 				}
 			}
@@ -6324,20 +6324,20 @@ void _XGun::move(int interval)
 		if(retFlag != 0 && flag == 0)  flag = retFlag;
 		else if(retFlag != 0 && retFlag != flag) flag = 3;
 	}
-	if(flag != 0) m_sound.play(m_soundHitSide);
-	if(flag == 1) m_BGSiderMoveData[0].reset(0.0f,1.0f,0.5f); else
-	if(flag == 2) m_BGSiderMoveData[1].reset(0.0f,1.0f,0.5f); else
+	if(flag != 0) _XSound::GetInstance().play(m_soundHitSide);
+	if(flag == 1) m_BGSiderMoveData[0].set(0.0f,1.0f,0.5f); else
+	if(flag == 2) m_BGSiderMoveData[1].set(0.0f,1.0f,0.5f); else
 	if(flag == 3) 
 	{
-		m_BGSiderMoveData[0].reset(0.0f,1.0f,0.5f);
-		m_BGSiderMoveData[1].reset(0.0f,1.0f,0.5f);
+		m_BGSiderMoveData[0].set(0.0f,1.0f,0.5f);
+		m_BGSiderMoveData[1].set(0.0f,1.0f,0.5f);
 	}
 	if(m_isGunColorBoom != 0)
 	{
 		if(m_colorBoomFrame.getIsEnd() != 0)
 		{
 			m_colorBoomFrame.reset();
-			m_sound.play(m_soundEnergyFree);
+			_XSound::GetInstance().play(m_soundEnergyFree);
 		}
 		m_colorBoomFrame.move(interval);
 	}
@@ -6788,7 +6788,7 @@ void _XGun::upgradeGun()
 		m_gunType = GUN_TYPE_00;
 		m_gunShootSpeed = GUN_SHOOT_SPEED_00;
 	}
-	m_sound.play(m_soundChangeGun);
+	_XSound::GetInstance().play(m_soundChangeGun);
 	checkGunType();
 }
 
@@ -6937,7 +6937,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
-			m_sound.play(m_soundGun_06);
+			_XSound::GetInstance().play(m_soundGun_06);
 
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_00);
@@ -6955,7 +6955,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
-			m_sound.play(m_soundGun_00);
+			_XSound::GetInstance().play(m_soundGun_00);
 
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_00);
@@ -6971,7 +6971,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
-			m_sound.play(m_soundGun_01);
+			_XSound::GetInstance().play(m_soundGun_01);
 			
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_01);
@@ -6989,7 +6989,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
-			m_sound.play(m_soundGun_02);
+			_XSound::GetInstance().play(m_soundGun_02);
 			
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_02);
@@ -7007,7 +7007,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
-			m_sound.play(m_soundGun_03);
+			_XSound::GetInstance().play(m_soundGun_03);
 			
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_03);
@@ -7025,7 +7025,7 @@ void _XGun::shoot()
 			int order = findAFreeBullet();
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 		
-			m_sound.play(m_soundGun_04);
+			_XSound::GetInstance().play(m_soundGun_04);
 			
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_04);
@@ -7044,7 +7044,7 @@ void _XGun::shoot()
 			if(order < 0) return;	//找不到有效地子弹，发射失败
 			
 			m_isLightShoot = 1;
-			m_sound.play(m_soundGun_05);
+			_XSound::GetInstance().play(m_soundGun_05);
 			
 			gunShootBulletInit(order);
 			shootEnergyDecrease(GUN_SHOOT_ENERGY_05);
@@ -7127,8 +7127,8 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 				}
 			}
 		}
-		m_sound.play(m_soundBoom_01);
-		m_fboShakeData.reset(100.0f,0.0f,0.1f);
+		_XSound::GetInstance().play(m_soundBoom_01);
+		m_fboShakeData.set(100.0f,0.0f,0.1f);
 	}else
 	if(type == GEM_TYPE_09)
 	{//水平炸弹的处理
@@ -7144,7 +7144,7 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 				}
 			}
 		}
-		m_sound.play(m_soundBoom_02);
+		_XSound::GetInstance().play(m_soundBoom_02);
 	}else
 	if(type == GEM_TYPE_10)
 	{//垂直炸弹的处理
@@ -7160,14 +7160,14 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 				}
 			}
 		}
-		m_sound.play(m_soundBoom_02);
+		_XSound::GetInstance().play(m_soundBoom_02);
 	}else
 	if(type == GEM_TYPE_11)
 	{//彩色炸弹
 	//	if(m_isLightShoot == 0)
 	//	{//激光炮不会触发彩色蛋
 			m_isGunColorBoom = 1;
-			m_sound.play(m_soundColorBoom);
+			_XSound::GetInstance().play(m_soundColorBoom);
 	//	}
 	}else
 	if(type == GEM_TYPE_14)
@@ -7185,7 +7185,7 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 				if(AddBulletSum >= 20)break;
 			}
 		}
-		m_sound.play(m_soundBoom_04);
+		_XSound::GetInstance().play(m_soundBoom_04);
 	}else
 	if(type == GEM_TYPE_21)
 	{//扣除能量的道具
@@ -7196,7 +7196,7 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 		m_toolsBoom.reset();
 		m_gunIsFlash = 1;
 		m_gunFlashTime = 500;
-		m_sound.play(m_soundBoom_01);
+		_XSound::GetInstance().play(m_soundBoom_01);
 	}else
 	if(type == GEM_TYPE_22)
 	{//击中宝箱的道具
@@ -7230,12 +7230,12 @@ int _XGun::crashToolsProc(_XGemMatrix *gems,_XGEM_TYPE type,_XVector2 tempPoint1
 			{//什么也没有
 			}
 		}
-		m_sound.play(m_soundBoom_01);
+		_XSound::GetInstance().play(m_soundBoom_01);
 	}else
 	if(type >= GEM_TYPE_16 && type <= GEM_TYPE_27)
 	{
 		toolsDoProc(tempPoint1,type);
-		m_sound.play(m_soundSJTools);
+		_XSound::GetInstance().play(m_soundSJTools);
 	}
 	return result;
 }
@@ -7418,14 +7418,14 @@ int _XGun::lightBulletProc(_XGemMatrix *gems,int order)
 						gems->m_gem[j].m_energy = 0.0f;
 						gems->m_gem[j].setEnd();
 						addTicketInput(gems->m_gem[j].m_type,gems->m_gem[j].m_size);
-						m_sound.play(m_soundGemBreak);
+						_XSound::GetInstance().play(m_soundGemBreak);
 					}else
 					{
 						if(gems->m_gem[j].m_energy <= LINE_BULLET_DESTROY)
 						{
 							gems->m_gem[j].m_energy = 0.0f;
 							gems->m_gem[j].setEnd();
-							m_sound.play(m_soundGemBreak);
+							_XSound::GetInstance().play(m_soundGemBreak);
 							addTicketInput(gems->m_gem[j].m_type,gems->m_gem[j].m_size);
 
 							//tempAddSum = gemBasicEnergy[gems->m_gem[j].m_type] * gems->m_gem[j].m_size * GOLD_RATE;
@@ -7499,13 +7499,13 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 						if(m_bullet[i].m_bulletType == BULLET_TYPE_02)
 						{//如果是榴弹的话子弹会炸开
 							nowAddSum += bulletBoom(tempPoint,BULLET_TYPE_02,gems);
-							m_sound.play(m_soundBoom_03);
+							_XSound::GetInstance().play(m_soundBoom_03);
 						}else
 						if(m_bullet[i].m_bulletType == BULLET_TYPE_03)
 						{//如果是高能榴弹炮的话，这里范围扫描,这样处理会有问题，需要先做销毁处理然后在做下面的处理，这样道具就被摧毁掉了，反射的道具无效了
 							nowAddSum += bulletBoom(tempPoint,BULLET_TYPE_03,gems);
 							m_bullet[i].setOver();
-							m_sound.play(m_soundBoom_00);
+							_XSound::GetInstance().play(m_soundBoom_00);
 							break;
 						}
 						if(gems->m_gem[j].m_type >= GEM_TYPE_08)
@@ -7528,7 +7528,7 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 									m_bullet[i].m_speed.set(0.8f * sin((180.0f - m_bullet[i].m_angle) * ANGLE_TO_RADIAN),
 										0.8f * cos((180.0f - m_bullet[i].m_angle) * ANGLE_TO_RADIAN));
 									m_bullet[i].m_bulletType = BULLET_TYPE_X1;
-									m_sound.play(m_soundFSTools);
+									_XSound::GetInstance().play(m_soundFSTools);
 								}else
 								if(gems->m_gem[j].m_type == GEM_TYPE_13)
 								{//镜面反射炸弹,改变子弹的方向和能量,子弹变成加强型的子弹
@@ -7539,7 +7539,7 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 									m_bullet[i].m_speed.set(0.8f * sin((180.0f - m_bullet[i].m_angle) * ANGLE_TO_RADIAN),
 										0.8f * cos((180.0f - m_bullet[i].m_angle) * ANGLE_TO_RADIAN));
 									m_bullet[i].m_bulletType = BULLET_TYPE_X1;
-									m_sound.play(m_soundFSTools);
+									_XSound::GetInstance().play(m_soundFSTools);
 								}
 								if(m_bullet[i].m_energy < 1)
 								{//子弹消失
@@ -7550,7 +7550,7 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 							{
 								gems->m_gem[j].m_energy -= m_bullet[i].m_energy;
 								m_bullet[i].setOver();
-								m_sound.play(m_soundHitGem);
+								_XSound::GetInstance().play(m_soundHitGem);
 							}
 						}else
 						{//宝石
@@ -7564,13 +7564,13 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 									addTicketInput(gems->m_gem[j].m_type,gems->m_gem[j].m_size);
 									nowAddSum += colorBulletProc(gems,gems->m_gem[j].m_type);
 									m_bullet[i].setOver();
-									m_sound.play(m_soundGemBreak);
+									_XSound::GetInstance().play(m_soundGemBreak);
 									break;
 								}else
 								{
 								//	gems->m_gem[j].m_isGlare = 100;
 								//	m_bullet[i].setOver();
-								//	m_sound.play(m_soundHitShield);
+								//	_XSound::GetInstance().play(m_soundHitShield);
 								//	break;
 									if(m_bullet[i].m_energy >= gems->m_gem[j].m_energy)
 									{
@@ -7580,14 +7580,14 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 										gems->m_gem[j].m_energy = 0.0f;
 										gems->m_gem[j].setEnd();
 										addTicketInput(gems->m_gem[j].m_type,gems->m_gem[j].m_size);
-										m_sound.play(m_soundGemBreak);
+										_XSound::GetInstance().play(m_soundGemBreak);
 									}else
 									{
 										gems->m_gem[j].m_energy -= m_bullet[i].m_energy;
 										m_bullet[i].m_energy = 0.0f;
 										m_bullet[i].setOver();
 										gems->m_gem[j].m_isGlare = 100;
-										m_sound.play(m_soundHitShield);
+										_XSound::GetInstance().play(m_soundHitShield);
 									}
 									break;
 								}
@@ -7613,7 +7613,7 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 										m_bullet[i].m_energy -= gems->m_gem[j].m_energy;
 									}
 									if(m_bullet[i].m_energy < 0.5f) m_bullet[i].setOver();
-									m_sound.play(m_soundGemBreak);
+									_XSound::GetInstance().play(m_soundGemBreak);
 									gems->m_gem[j].m_energy = 0.0f;
 									gems->m_gem[j].setEnd();
 									addTicketInput(gems->m_gem[j].m_type,gems->m_gem[j].m_size);
@@ -7642,7 +7642,7 @@ void _XGun::crashProc(_XGemMatrix *gems)//子弹的碰撞处理
 									gems->m_gem[j].m_energy -= tempDamage;
 									gems->m_gem[j].m_isGlare = 100;
 									m_bullet[i].setOver();
-									m_sound.play(m_soundHitGem);
+									_XSound::GetInstance().play(m_soundHitGem);
 
 									if(m_bullet[i].m_bulletType == BULLET_TYPE_X0)
 									{//搜索所有的宝石，并处理
@@ -7821,7 +7821,7 @@ int _XBullet::init(_XVector2 position,_XVector2 speed,float energy,float angle,_
 	if(tex == NULL) return 0;
 	if(energy <= 0) return 0;
 	m_speed = speed;
-	m_nowSpeedData.reset(0.25f,1.2f,0.1f,MOVE_DATA_MODE_COS_MULT);
+	m_nowSpeedData.set(0.25f,1.2f,0.1f,MOVE_DATA_MODE_COS_MULT);
 	m_energy = energy;
 	m_angle = angle;
 	m_tex = tex;
@@ -8097,21 +8097,21 @@ _XBullet::_XBullet()
 {
 }
 
-int _XBulletTexture::init(int resoursePosition)
+int _XBulletTexture::init(_XResourcePosition resoursePosition)
 {
 	if(m_isInited == 1) return 1;
-	if(m_bulletTex_00.load("pic/gun/BB_000_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_01.load("pic/gun/BB_001_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_02.load("pic/gun/BB_002_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_03.load("pic/gun/BB_003_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_04.load("pic/gun/BB_004_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_05.load("pic/gun/BB_005_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_X0.load("pic/gun/BBC_000_01.png",resoursePosition) == 0) return 0;
-	if(m_bulletTex_X1.load("pic/gun/BBS_000_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_00.load("ResourcePack/pic/gun/BB_000_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_01.load("ResourcePack/pic/gun/BB_001_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_02.load("ResourcePack/pic/gun/BB_002_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_03.load("ResourcePack/pic/gun/BB_003_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_04.load("ResourcePack/pic/gun/BB_004_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_05.load("ResourcePack/pic/gun/BB_005_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_X0.load("ResourcePack/pic/gun/BBC_000_01.png",resoursePosition) == 0) return 0;
+	if(m_bulletTex_X1.load("ResourcePack/pic/gun/BBS_000_01.png",resoursePosition) == 0) return 0;
 
-	if(m_bulletFrame.init("pic/UI/Boom_04/Boom_000.png",resoursePosition) == 0) return 0;
+	if(m_bulletFrame.init("ResourcePack/pic/UI/Boom_04/Boom_000.png",resoursePosition) == 0) return 0;
 	m_bulletFrame.setAttribute(_XVector2(0.0f,0.0f),0,1,0,0.05f,0);
-	if(m_bulletBoom.init("pic/UI/BulletBoom/BulletBoom_000.png",resoursePosition) == 0) return 0;
+	if(m_bulletBoom.init("ResourcePack/pic/UI/BulletBoom/BulletBoom_000.png",resoursePosition) == 0) return 0;
 	m_bulletBoom.setAttribute(_XVector2(0.0f,0.0f),0,1,0,0.05f,0);
 	
 	m_isInited = 1;
@@ -8123,10 +8123,10 @@ _XBulletTexture::_XBulletTexture()
 {
 }
 
-int _XGun::instructInit(int resoursePosition)
+int _XGun::instructInit(_XResourcePosition resoursePosition)
 {
 	//if(m_instructionBG.init("normalResource/instruction.jpg",resoursePosition) == 0) return 0;		//说明界面的文字图
-	if(m_instructionBG.init("pic/instruction.png",resoursePosition) == 0) return 0;		//说明界面的文字图
+	if(m_instructionBG.init("ResourcePack/pic/instruction.png",resoursePosition) == 0) return 0;		//说明界面的文字图
 	m_instructionBG.setPosition(0.0f,0.0f);
 	m_instructionOBJ_00.init(m_gems->m_gemTexTools[0].texture.m_w,m_gems->m_gemTexTools[0].texture.m_h);		//说明界面的物件贴图
 	m_instructionOBJ_00.setAngle(90);
@@ -8170,46 +8170,46 @@ int _XGun::instructInit(int resoursePosition)
 	m_instructionOBJ_12.init(m_gems->m_gemTexTools[0].texture.m_w,m_gems->m_gemTexTools[0].texture.m_h);
 	m_instructionOBJ_12.setAngle(90);
 	m_instructionOBJ_12.setPosition(1030.0f - 440.0f,80.0f);
-	if(m_instructionText_00.init("pic/UI/instruction/instruction_00.png",resoursePosition) == 0) return 0;		//说明界面的文字图
+	if(m_instructionText_00.init("ResourcePack/pic/UI/instruction/instruction_00.png",resoursePosition) == 0) return 0;		//说明界面的文字图
 	m_instructionText_00.setAngle(90);
 	m_instructionText_00.setPosition(810.0f - 0.0f,405.0f);
-	if(m_instructionText_01.init("pic/UI/instruction/instruction_01.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_01.init("ResourcePack/pic/UI/instruction/instruction_01.png",resoursePosition) == 0) return 0;
 	m_instructionText_01.setAngle(90);
 	m_instructionText_01.setPosition(810.0f - 110.0f,405.0f);
-	if(m_instructionText_02.init("pic/UI/instruction/instruction_02.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_02.init("ResourcePack/pic/UI/instruction/instruction_02.png",resoursePosition) == 0) return 0;
 	m_instructionText_02.setAngle(90);
 	m_instructionText_02.setPosition(810.0f - 220.0f,405.0f);
-	if(m_instructionText_03.init("pic/UI/instruction/instruction_03.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_03.init("ResourcePack/pic/UI/instruction/instruction_03.png",resoursePosition) == 0) return 0;
 	m_instructionText_03.setAngle(90);
 	m_instructionText_03.setPosition(810.0f - 330.0f,405.0f);
-	if(m_instructionText_04.init("pic/UI/instruction/instruction_04.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_04.init("ResourcePack/pic/UI/instruction/instruction_04.png",resoursePosition) == 0) return 0;
 	m_instructionText_04.setAngle(90);
 	m_instructionText_04.setPosition(810.0f - 440.0f,405.0f);
-	if(m_instructionText_05.init("pic/UI/instruction/instruction_05.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_05.init("ResourcePack/pic/UI/instruction/instruction_05.png",resoursePosition) == 0) return 0;
 	m_instructionText_05.setAngle(90);
 	m_instructionText_05.setPosition(810.0f - 550.0f,405.0f);
-	if(m_instructionText_06.init("pic/UI/instruction/instruction_06.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_06.init("ResourcePack/pic/UI/instruction/instruction_06.png",resoursePosition) == 0) return 0;
 	m_instructionText_06.setAngle(90);
 	m_instructionText_06.setPosition(810.0f - 660.0f,405.0f);
-	if(m_instructionText_07.init("pic/UI/instruction/instruction_07.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_07.init("ResourcePack/pic/UI/instruction/instruction_07.png",resoursePosition) == 0) return 0;
 	m_instructionText_07.setAngle(90);
 	m_instructionText_07.setPosition(810.0f - 770.0f,405.0f);
-	if(m_instructionText_13.init("pic/UI/instruction/instruction_13.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_13.init("ResourcePack/pic/UI/instruction/instruction_13.png",resoursePosition) == 0) return 0;
 	m_instructionText_13.setAngle(90);
 	m_instructionText_13.setPosition(810.0f - 880.0f,405.0f);
-	if(m_instructionText_08.init("pic/UI/instruction/instruction_08.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_08.init("ResourcePack/pic/UI/instruction/instruction_08.png",resoursePosition) == 0) return 0;
 	m_instructionText_08.setAngle(90);
 	m_instructionText_08.setPosition(810.0f - 0.0f,405.0f);
-	if(m_instructionText_09.init("pic/UI/instruction/instruction_09.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_09.init("ResourcePack/pic/UI/instruction/instruction_09.png",resoursePosition) == 0) return 0;
 	m_instructionText_09.setAngle(90);
 	m_instructionText_09.setPosition(810.0f - 110.0f,405.0f);
-	if(m_instructionText_10.init("pic/UI/instruction/instruction_10.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_10.init("ResourcePack/pic/UI/instruction/instruction_10.png",resoursePosition) == 0) return 0;
 	m_instructionText_10.setAngle(90);
 	m_instructionText_10.setPosition(810.0f - 220.0f,405.0f);
-	if(m_instructionText_11.init("pic/UI/instruction/instruction_11.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_11.init("ResourcePack/pic/UI/instruction/instruction_11.png",resoursePosition) == 0) return 0;
 	m_instructionText_11.setAngle(90);
 	m_instructionText_11.setPosition(810.0f - 330.0f,405.0f);
-	if(m_instructionText_12.init("pic/UI/instruction/instruction_12.png",resoursePosition) == 0) return 0;
+	if(m_instructionText_12.init("ResourcePack/pic/UI/instruction/instruction_12.png",resoursePosition) == 0) return 0;
 	m_instructionText_12.setAngle(90);
 	m_instructionText_12.setPosition(810.0f - 440.0f,405.0f);
 	return 1;
@@ -8298,7 +8298,7 @@ void _XGun::instructMove(int interval)
 			m_instructionText_10.setPosition(810.0f - 220.0f,720.0f + 405.0f);
 			m_instructionText_11.setPosition(810.0f - 330.0f,720.0f + 405.0f);
 			m_instructionText_12.setPosition(810.0f - 440.0f,720.0f + 405.0f);
-			m_sound.play(m_soundScreenDown);
+			_XSound::GetInstance().play(m_soundScreenDown);
 			m_gameCounter = 1;
 			if(m_instructionMode != 0)
 			{
@@ -8433,7 +8433,7 @@ void _XGun::instructMove(int interval)
 					if(m_instructionTemp <= PI_HALF * i && m_instructionPosition > PI_HALF * i)
 					{
 						m_instructionTemp = m_instructionPosition;
-						m_sound.play(m_soundTextMove_01);
+						_XSound::GetInstance().play(m_soundTextMove_01);
 					}
 				}
 			}else
@@ -8503,7 +8503,7 @@ void _XGun::instructMove(int interval)
 					if(m_instructionTemp <= PI_HALF * i && m_instructionPosition > PI_HALF * i)
 					{
 						m_instructionTemp = m_instructionPosition;
-						m_sound.play(m_soundTextMove_01);
+						_XSound::GetInstance().play(m_soundTextMove_01);
 					}
 				}
 				userHeadMove(interval,0.0f);
@@ -8552,7 +8552,7 @@ void _XGun::instructMove(int interval)
 			m_instructionPosition += interval;
 			if(m_instructionPosition >= 10000 || (m_creditSum >= m_configData.coinToCredit || m_energyArmSum > 0.0f))
 			{
-				m_sound.play(m_soundScreenUp);
+				_XSound::GetInstance().play(m_soundScreenUp);
 				m_gameCounter = 5;
 				m_instructionPosition = 0.0f;
 			}
@@ -8614,10 +8614,10 @@ void _XGun::instructMove(int interval)
 	}
 }
 
-int _XGun::goldBoxEffectInit(int resoursePosition)
+int _XGun::goldBoxEffectInit(_XResourcePosition resoursePosition)
 {
-	if(m_goldBoxTicketLogo.init("pic/UI/TicketLogo.png",resoursePosition) == 0) return 0;
-	if(m_goldBoxEnergyLogo.init("pic/UI/EnergyLogo.png",resoursePosition) == 0) return 0;
+	if(m_goldBoxTicketLogo.init("ResourcePack/pic/UI/TicketLogo.png",resoursePosition) == 0) return 0;
+	if(m_goldBoxEnergyLogo.init("ResourcePack/pic/UI/EnergyLogo.png",resoursePosition) == 0) return 0;
 	for(int i = 0;i < MAX_BULLET_SUM;++ i)
 	{
 		m_goldBoxNum[i].setACopy(m_goldAddNum[0]);

@@ -111,8 +111,8 @@ public:
 	int canCrash();	//这个宝石是否能被打
 };
 
-#define GAME_DATA_FILE_NAME "gameData.txt"
-#define GAME_DATA_MATRIX_FILE_NAME "gemMatrix_000.txt"
+#define GAME_DATA_FILE_NAME "ResourcePack/gameData.txt"
+#define GAME_DATA_MATRIX_FILE_NAME "ResourcePack/gemMatrix_000.txt"
 
 struct _XHelpData
 {
@@ -205,7 +205,7 @@ public:
 
 public:
 	void resetMatrix();	//每个新的玩家都会重新你选择随机的6关
-	int init(int resoursePosition = 0);
+	int init(_XResourcePosition resoursePosition = RESOURCE_LOCAL_FOLDER);
 	int initInsideData();
 	int readMatrixFromTxt(int matrixOrder);
 	int readMatrix(int matrixOrder);
