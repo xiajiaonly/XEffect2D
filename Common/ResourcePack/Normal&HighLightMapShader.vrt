@@ -1,0 +1,38 @@
+/*varying vec2 TexCoord;
+
+void main(void)
+{
+	TexCoord = gl_MultiTexCoord0.st;
+	gl_Position = ftransform();
+}
+*/
+
+//uniform float lightRadius;	//灯的半径
+
+varying vec2 TexCoord;	//纹理位置
+varying vec3 lightDir;	//灯的方向	0
+varying vec3 viewDir;	//观察者的方向	0
+
+void main(void)
+{
+	float lightRadius = 1.0;	//这个数据是需要传入的
+	
+    vec3 vertexPos = vec3(gl_ModelViewMatrix * gl_Vertex);
+    
+    vec3 n = normalize(gl_NormalMatrix * gl_Normal);
+    vec3 t = normalize(gl_NormalMatrix * gl_MultiTexCoord0.xyz);
+    vec3 b = cross(n, t) * gl_MultiTexCoord0.w;
+    
+	mat3 tbnMatrix = mat3(t.x, b.x, n.x,
+						t.y, b.y, n.y,
+						t.z, b.z, n.z);
+
+    lightDir = (gl_LightSource[1].position.xyz - vertexPos) / lightRadius;
+    lightDir = tbnMatrix * lightDir;
+
+    viewDir = vertexPos;
+    viewDir = tbnMatrix * viewDir;
+    
+    TexCoord = gl_MultiTexCoord0.st;
+	gl_Position = ftransform();
+}

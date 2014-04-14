@@ -1,0 +1,17 @@
+#version 120
+
+uniform mat4x4 ShadowMatrix;
+
+varying vec4 ShadowMapTexCoord;
+varying vec3 Normal,LightDirection;
+
+void main()
+{
+	vec4 Position = gl_ModelViewMatrix * gl_Vertex;
+	ShadowMapTexCoord = ShadowMatrix * Position;
+	Normal = gl_NormalMatrix * gl_Normal;
+	LightDirection = gl_LightSource[1].position.xyz - Position.xyz;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+	gl_Position = gl_ProjectionMatrix * Position;
+}

@@ -1,0 +1,40 @@
+#version 120
+
+uniform mat4x4 ShadowMatrix;
+
+varying vec4 ShadowMapTexCoord;
+varying vec3 Normal;
+varying vec3 LightDirection;
+
+varying vec2 TexCoord;	//纹理位置
+varying vec3 lightDir;	//灯的方向	0
+varying vec3 viewDir;	
+
+void main()
+{
+	vec4 Position = gl_ModelViewMatrix * gl_Vertex;
+	ShadowMapTexCoord = ShadowMatrix * Position;
+	Normal = gl_NormalMatrix * gl_Normal;
+	LightDirection = gl_LightSource[1].position.xyz - Position.xyz;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+	gl_Position = gl_ProjectionMatrix * Position;
+	
+	
+	float lightRadius = 1.0;	//这个数据是需要传入的
+	vec3 vertexPos = vec3(gl_ModelViewMatrix * gl_Vertex);
+    
+    vec3 n = normalize(gl_NormalMatrix * gl_Normal);
+    vec3 t = normalize(gl_NormalMatrix * gl_MultiTexCoord0.xyz);
+    vec3 b = cross(n, t) * gl_MultiTexCoord0.w;
+    
+	mat3 tbnMatrix = mat3(t.x, b.x, n.x,
+						t.y, b.y, n.y,
+						t.z, b.z, n.z);
+
+    lightDir = (gl_LightSource[1].position.xyz - vertexPos) / lightRadius;
+    lightDir = tbnMatrix * lightDir;
+
+    viewDir = vertexPos;
+    viewDir = tbnMatrix * viewDir;
+}
