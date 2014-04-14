@@ -51,7 +51,6 @@ public:
 	_XCombo Combo;			//ÏÂÀ­²Ëµ¥
 	_XCombo ComboCopy;
 	_XSliderEx tmpSldEx;
-	_XPasswordPad passwordPad;
 };
 
 #endif

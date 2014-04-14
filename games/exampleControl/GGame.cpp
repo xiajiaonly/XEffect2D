@@ -1,5 +1,5 @@
 #include "GGame.h"
-#define RES_POS (RESOURCE_LOCAL_PACK)//(RESOURCE_LOCAL_FOLDER)//
+#define RES_POS (RESOURCE_LOCAL_FOLDER)//(RESOURCE_LOCAL_PACK)//
 void sliderChange(void *pClass,int ID)
 {
 	_GGame &g = *(_GGame *)pClass;
@@ -21,7 +21,7 @@ void cbMouseUp(void *pClass,int ID)
 bool _GGame::init()
 {
 	//_XLogbook::GetInstance().initLog("Log.txt");
-	if(_XAllTexture::GetInstance().init(RES_POS) == 0) return 0;	//拿一个资源优化做测试用例
+	//if(_XAllTexture::GetInstance().init(RES_POS) == 0) return 0;	//拿一个资源优化做测试用例
 #if WITH_OBJECT_MANAGER
 	_XObjectManager::GetInstance().init(RES_POS);
 #endif
@@ -48,13 +48,9 @@ bool _GGame::init()
 
 	ButtonEx.initPlus("ResourcePack/pic/ButtonEx","静",1.0f,FontUnicode,RES_POS);
 	ButtonEx.setPosition(150.0f,30.0f);
-	//ButtonExCopy.setACopy(ButtonEx);
-	_XVector2 tmpArea[6];
-	tmpArea[0].set(38,20);tmpArea[1].set(13,64);tmpArea[2].set(38,109);
-	tmpArea[3].set(91,109);tmpArea[4].set(116,64);tmpArea[5].set(91,20);
-	ButtonExCopy.initWithoutTex(tmpArea,6,"忍",FontUnicode,_XVector2(64.0f,64.0f));
+	ButtonExCopy.setACopy(ButtonEx);
 	ButtonExCopy.setPosition(280.0f,30.0f);
-	//ButtonExCopy.setCaptionText("忍");
+	ButtonExCopy.setCaptionText("忍");
 	//初始化复选框
 	CheckTexture.initEx("ResourcePack/pic/Check",RES_POS);
 
@@ -250,13 +246,6 @@ bool _GGame::init()
 	tmpSldEx.initWithoutTex(_XRect(0.0f,0.0f,32.0f,256.0f),1000.0f,0.0f,SLIDER_TYPE_VERTICAL,_XVector2(48.0f,0.0f));
 	tmpSldEx.setFontEx("测试:%.2f",XEE::systemFont,1.0f);
 
-//	passwordPad.initPlus("ResourcePack/pic/PasswardPad",XEE::systemFont,RESOURCE_LOCAL_FOLDER);
-	passwordPad.initWithoutTex(XEE::systemFont);
-	passwordPad.setStart(0);
-	char password[] = "123456";
-	passwordPad.setPassword(password);
-	passwordPad.setPosition(_XVector2(1020.0f,450.0f));
-
 	printf("Now ctrl sum:%d\n",_XControlManager::GetInstance().getObjSum());
 #if WITH_OBJECT_MANAGER
 	printf("Now obj sum:%d\n",_XObjectManager::GetInstance().getNowObjectSum());
@@ -271,7 +260,6 @@ void _GGame::draw()
 {
 	drawLine(638,360,642,360);
 	drawLine(640,358,640,362);
-	passwordPad.draw();
 }
 void _GGame::input(const _XInputEvent &input)
 {
