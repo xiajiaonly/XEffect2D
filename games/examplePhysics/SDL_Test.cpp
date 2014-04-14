@@ -9,8 +9,8 @@
 
 int inputEvent();	//下面是事件处理函数，例如：键盘事件或者鼠标事件
 
-_XLiquidBalls LiquidBalls;
-int stepEnter = 0;
+_XRigidBalls RigidBalls;
+_XBool stepEnter = XFalse;
 
 int main(int argc, char **argv)
 {
@@ -35,40 +35,40 @@ int main(int argc, char **argv)
 	_XSprite Sprite;
 	Sprite.init("ResourcePack/pic/GC.png");
 	Sprite.setSize(0.5f,0.5f);
-	LiquidBalls.init(128,128);
-	LiquidBalls.setEnable(1);
-	LiquidBalls.addOneLine(_XVector2(  50.0f,  50.0f),_XVector2(1000.0f,  50.0f));
-	LiquidBalls.addOneLine(_XVector2(  50.0f, 700.0f),_XVector2(1000.0f, 700.0f));
-	LiquidBalls.addOneLine(_XVector2(  50.0f,  50.0f),_XVector2(  50.0f, 700.0f));
-	LiquidBalls.addOneLine(_XVector2(1000.0f,  50.0f),_XVector2(1000.0f, 700.0f));
-	//LiquidBalls.addOneLine(_XVector2( 300.0f, 600.0f),_XVector2( 800.0f, 100.0f));
-	LiquidBalls.addOneLine(_XVector2( 300.0f, 300.0f),_XVector2( 500.0f, 300.0f));
-	LiquidBalls.addOneLine(_XVector2( 300.0f, 300.0f),_XVector2( 300.0f, 500.0f));
-	LiquidBalls.addOneLine(_XVector2( 300.0f, 500.0f),_XVector2( 500.0f, 500.0f));
-	LiquidBalls.addOneLine(_XVector2( 500.0f, 300.0f),_XVector2( 500.0f, 500.0f));
-	//LiquidBalls.addOneLine(_XVector2( 300.0f, 600.0f),_XVector2( 800.0f, 100.0f));
-	LiquidBalls.addOneLine(_XVector2( 600.0f, 400.0f),_XVector2( 700.0f, 300.0f));
-	LiquidBalls.addOneLine(_XVector2( 600.0f, 400.0f),_XVector2( 700.0f, 500.0f));
-	LiquidBalls.addOneLine(_XVector2( 700.0f, 300.0f),_XVector2( 800.0f, 400.0f));
-	LiquidBalls.addOneLine(_XVector2( 700.0f, 500.0f),_XVector2( 800.0f, 400.0f));
+	RigidBalls.init(128,128);
+	RigidBalls.setEnable(1);
+	RigidBalls.addOneLine(_XVector2(  50.0f,  50.0f),_XVector2(1000.0f,  50.0f));
+	RigidBalls.addOneLine(_XVector2(  50.0f, 700.0f),_XVector2(1000.0f, 700.0f));
+	RigidBalls.addOneLine(_XVector2(  50.0f,  50.0f),_XVector2(  50.0f, 700.0f));
+	RigidBalls.addOneLine(_XVector2(1000.0f,  50.0f),_XVector2(1000.0f, 700.0f));
+	//RigidBalls.addOneLine(_XVector2( 300.0f, 600.0f),_XVector2( 800.0f, 100.0f));
+	RigidBalls.addOneLine(_XVector2( 300.0f, 300.0f),_XVector2( 500.0f, 300.0f));
+	RigidBalls.addOneLine(_XVector2( 300.0f, 300.0f),_XVector2( 300.0f, 500.0f));
+	RigidBalls.addOneLine(_XVector2( 300.0f, 500.0f),_XVector2( 500.0f, 500.0f));
+	RigidBalls.addOneLine(_XVector2( 500.0f, 300.0f),_XVector2( 500.0f, 500.0f));
+	//RigidBalls.addOneLine(_XVector2( 300.0f, 600.0f),_XVector2( 800.0f, 100.0f));
+	RigidBalls.addOneLine(_XVector2( 600.0f, 400.0f),_XVector2( 700.0f, 300.0f));
+	RigidBalls.addOneLine(_XVector2( 600.0f, 400.0f),_XVector2( 700.0f, 500.0f));
+	RigidBalls.addOneLine(_XVector2( 700.0f, 300.0f),_XVector2( 800.0f, 400.0f));
+	RigidBalls.addOneLine(_XVector2( 700.0f, 500.0f),_XVector2( 800.0f, 400.0f));
 	//测试7
-	//LiquidBalls.addOneBall(_XVector2(500.0f + 34.0f,300.0f),32.0f,1000.0f,_XVector2(-500,2.0f),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(500.0f + 34.0f,300.0f),32.0f,1000.0f,_XVector2(-500,2.0f),0.05f,0.0f,64.0f);
 	//测试6
-	//LiquidBalls.addOneBall(_XVector2(400.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(400.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
 	//测试5
-	//LiquidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(332.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(332.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
 	//测试2
-	//LiquidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(365.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(430.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(495.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(560.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(365.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(430.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(495.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(560.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
 	//测试4
-	//LiquidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
-	//LiquidBalls.addOneBall(_XVector2(300.0f,166.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(300.0f,166.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
 	//测试3
-	//LiquidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
+	//RigidBalls.addOneBall(_XVector2(300.0f,100.0f),32.0f,1000.0f,_XVector2(0,0),0.05f,0.0f,64.0f);
 	//下面是一个技术测试
 	//_XVector2 L1S(100,500);
 	//_XVector2 L1E(1000,500);
@@ -90,36 +90,36 @@ int main(int argc, char **argv)
 	while(!inputEvent())
 	{
 		interval = XEE::engineIdle();
-		if(stepEnter == 1)
+		if(stepEnter)
 		{
-			//stepEnter = 0;
-			LiquidBalls.move(interval * 10);
+			//stepEnter = XFalse;
+			RigidBalls.move(interval * 10);
 		}
 
 		//清除屏幕
 		XEE::clearScreen();
 
-		if(LiquidBalls.getIsEnable() != 0) 
+		if(RigidBalls.getIsEnable() != 0) 
 		{
-			for(int i = 0;i < LiquidBalls.m_liquidBallSum;++ i)
+			for(int i = 0;i < RigidBalls.m_rigidBallSum;++ i)
 			{
-				if(LiquidBalls.getBallIsEnable(i) != 0)
+				if(RigidBalls.getBallIsEnable(i) != 0)
 				{
-					Sprite.setSize(LiquidBalls.m_pRigidBall[i].m_radius / 32.0f,LiquidBalls.m_pRigidBall[i].m_radius / 32.0f);
-					Sprite.setPosition(LiquidBalls.getBallPosition(i).x - 32.0f,LiquidBalls.getBallPosition(i).y - 32.0f);
+					Sprite.setSize(RigidBalls.m_pRigidBall[i].m_radius / 32.0f,RigidBalls.m_pRigidBall[i].m_radius / 32.0f);
+					Sprite.setPosition(RigidBalls.getBallPosition(i).x - 32.0f,RigidBalls.getBallPosition(i).y - 32.0f);
 					Sprite.draw();
 				}
 			}
 		}
 		//在区域画上线
-		if(LiquidBalls.getIsEnable() != 0) 
+		if(RigidBalls.getIsEnable() != 0) 
 		{
-			for(int i = 0;i < LiquidBalls.m_lineSum;++ i)
+			for(int i = 0;i < RigidBalls.m_lineSum;++ i)
 			{
-				if(LiquidBalls.m_pLine[i].getIsEnable() != 0)
+				if(RigidBalls.m_pLine[i].getIsEnable())
 				{
-					drawLine(LiquidBalls.m_pLine[i].getStartPosition().x,LiquidBalls.m_pLine[i].getStartPosition().y,
-						LiquidBalls.m_pLine[i].getEndPosition().x,LiquidBalls.m_pLine[i].getEndPosition().y,1);
+					drawLine(RigidBalls.m_pLine[i].getStartPosition().x,RigidBalls.m_pLine[i].getStartPosition().y,
+						RigidBalls.m_pLine[i].getEndPosition().x,RigidBalls.m_pLine[i].getEndPosition().y,1);
 				}
 			}
 		}
@@ -154,29 +154,28 @@ int inputEvent()
 					ballSum ++;
 					printf("ball Sum:%d\n",ballSum);
 					temp = random(50) / 100.0f + 0.5;
-					//LiquidBalls.addOneBall(_XVector2(100.0f,400.0f),32.0f,1000.0f,_XVector2(10.0f,-15.0f),0.05f,0.0f,64.0f);
-					//LiquidBalls.addOneBall(_XVector2(100.0f,100.0f),32.0f * temp,1000.0f * temp * temp,_XVector2(30.0f * temp,30.0f * temp),0.05f,0.0f,64.0f);
-					LiquidBalls.addOneBall(_XVector2(100.0f,100.0f),16.0f * temp,1000.0f * temp * temp,_XVector2(30.0f * temp,30.0f * temp),0.05f,0.0f,64.0f);
-					//LiquidBalls.addOneBall(_XVector2(784.957458,522.088379),14.56,1000.0f * temp * temp,_XVector2(14.407974,92.833084),0.05f,0.0f,64.0f);
+					//RigidBalls.addOneBall(_XVector2(100.0f,400.0f),32.0f,1000.0f,_XVector2(10.0f,-15.0f),0.05f,0.0f,64.0f);
+					//RigidBalls.addOneBall(_XVector2(100.0f,100.0f),32.0f * temp,1000.0f * temp * temp,_XVector2(30.0f * temp,30.0f * temp),0.05f,0.0f,64.0f);
+					RigidBalls.addOneBall(_XVector2(100.0f,100.0f),16.0f * temp,1000.0f * temp * temp,_XVector2(30.0f * temp,30.0f * temp),0.05f,0.0f,64.0f);
+					//RigidBalls.addOneBall(_XVector2(784.957458,522.088379),14.56,1000.0f * temp * temp,_XVector2(14.407974,92.833084),0.05f,0.0f,64.0f);
 					//测试1
-					//LiquidBalls.addOneBall(_XVector2(450.0f,150.0f),32.0f,1000.0f,_XVector2(10,10),0.05f,0.0f,64.0f);		//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
-					//LiquidBalls.addOneBall(_XVector2(200.0f,200.0f),32.0f,1000.0f,_XVector2(-10,-10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
-					//LiquidBalls.addOneBall(_XVector2(250.0f,500.0f),32.0f,1000.0f,_XVector2(-10,10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
-					//LiquidBalls.addOneBall(_XVector2(800.0f,250.0f),32.0f,1000.0f,_XVector2(10,-10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
+					//RigidBalls.addOneBall(_XVector2(450.0f,150.0f),32.0f,1000.0f,_XVector2(10,10),0.05f,0.0f,64.0f);		//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
+					//RigidBalls.addOneBall(_XVector2(200.0f,200.0f),32.0f,1000.0f,_XVector2(-10,-10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
+					//RigidBalls.addOneBall(_XVector2(250.0f,500.0f),32.0f,1000.0f,_XVector2(-10,10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
+					//RigidBalls.addOneBall(_XVector2(800.0f,250.0f),32.0f,1000.0f,_XVector2(10,-10),0.05f,0.0f,64.0f);	//存在问题1(发生同时碰撞时会存在问题)	已经解决，是由于标记错误造成
 					//测试2
-					//LiquidBalls.addOneBall(_XVector2(900.0f,100.0f),32.0f,1000.0f,_XVector2(-20,0),0.05f,0.0f,64.0f);	//存在问题2(多次碰撞之后的累计误差)
+					//RigidBalls.addOneBall(_XVector2(900.0f,100.0f),32.0f,1000.0f,_XVector2(-20,0),0.05f,0.0f,64.0f);	//存在问题2(多次碰撞之后的累计误差)
 					//测试4
-					//LiquidBalls.addOneBall(_XVector2(100.0f,133.0f),32.0f,1000.0f,_XVector2(30,0),0.05f,0.0f,64.0f);	//有时候会存在问题1
+					//RigidBalls.addOneBall(_XVector2(100.0f,133.0f),32.0f,1000.0f,_XVector2(30,0),0.05f,0.0f,64.0f);	//有时候会存在问题1
 					//测试3
-					//LiquidBalls.addOneBall(_XVector2(100.0f,100.0f),32.0f,1000.0f,_XVector2(10,0),0.05f,0.0f,64.0f);
-					//LiquidBalls.addOneBall(_XVector2(500.0f,100.0f),32.0f,1000.0f,_XVector2(-10,0),0.05f,0.0f,64.0f);
+					//RigidBalls.addOneBall(_XVector2(100.0f,100.0f),32.0f,1000.0f,_XVector2(10,0),0.05f,0.0f,64.0f);
+					//RigidBalls.addOneBall(_XVector2(500.0f,100.0f),32.0f,1000.0f,_XVector2(-10,0),0.05f,0.0f,64.0f);
 					break;
 				case XKEY_R:
-					if(LiquidBalls.m_haveError != 0) LiquidBalls.m_haveError = 0;
+					if(RigidBalls.m_haveError) RigidBalls.m_haveError = XFalse;
 					break;
 				case XKEY_D:
-					if(stepEnter == 0) stepEnter = 1;
-					else stepEnter = 0;
+					stepEnter = !stepEnter;
 					break;
 				}
 			}
