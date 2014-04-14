@@ -844,7 +844,7 @@ void _XSprite::draw()
 	drawInside();
 
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glUseProgram(0);	
-	if(m_pShader == NULL) m_pShader->disShader();
+	if(m_pShader != NULL) m_pShader->disShader();
 	glDisable(GL_BLEND);
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPopAttrib();
 }
