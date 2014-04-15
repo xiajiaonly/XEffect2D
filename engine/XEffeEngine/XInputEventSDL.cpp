@@ -1,11 +1,8 @@
 #include "XInputEventSDL.h"
 #include "XWindowCommon.h"
 
-bool getInputEventSDL(_XInputEvent &event)
+bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL的输入事件转换成XEE的输入事件
 {
-	SDL_Event tmpEvent;		//SDL事件句柄
-	if(SDL_PollEvent(&tmpEvent) == 0) return false;
-	//下面转换事件
 	switch(tmpEvent.type)
 	{
 	case SDL_QUIT:event.type = EVENT_EXIT;break;

@@ -15,24 +15,25 @@ XMusicHandle BGMusicHandle[6];	//声音的句柄
 
 #if USE_FBO
 #if USE_SHADER
-int m_shaderHandle;			//shader的句柄
-int textureHandle;			//shader中贴图的句柄
-void useShader()			//具体使用shader的函数
-{
-	glUseProgram(m_shaderHandle);
-	static char flag = 0;
-	if(0 == flag)
-	{
-		//设置shader的参数
-		textureHandle = glGetUniformLocation(m_shaderHandle, "Texture");
-		glUniform1i(textureHandle,0);
-		flag = 1;
-	}
-}
+//int m_shaderHandle;			//shader的句柄
+//int textureHandle;			//shader中贴图的句柄
+//void useShader()			//具体使用shader的函数
+//{
+//	glUseProgram(m_shaderHandle);
+//	static char flag = 0;
+//	if(0 == flag)
+//	{
+//		//设置shader的参数
+//		textureHandle = glGetUniformLocation(m_shaderHandle, "Texture");
+//		glUniform1i(textureHandle,0);
+//		flag = 1;
+//	}
+//}
 void _XGun::initShaderFromText()	//从文件中初始化sheder的代码
 {
-	setShader("ClearAlpha.vrt", "ClearAlpha.frg",m_shaderHandle,m_resoursePosition);
+//	setShader("ClearAlpha.vrt", "ClearAlpha.frg",m_shaderHandle,m_resoursePosition);
 //	setShader("ClearAlpha.vrt", "ClearAlpha.frg",m_shaderHandle,0);
+	m_tmpSader.init("ResourcePack/ClearAlpha.vrt", "ResourcePack/ClearAlpha.frg",m_resoursePosition);
 }
 #endif
 #endif
@@ -356,7 +357,8 @@ int _XGun::init(_XGemMatrix *gems,_XResourcePosition resoursePosition)
 	m_fboSprite.init(2048,1024);
 	m_fboSprite.setPosition(0.0f,0.0f);
 #if USE_SHADER
-	m_fboSprite.m_pShaderProc = useShader;
+	//m_fboSprite.m_pShaderProc = useShader;
+	m_fboSprite.setShaderClass(&m_tmpSader);
 #else
 	m_fboSprite.setAlpha(0.9f);
 #endif
@@ -367,7 +369,7 @@ int _XGun::init(_XGemMatrix *gems,_XResourcePosition resoursePosition)
 
 #if USE_FBO
 #if USE_SHADER
-	initShaderFromText();
+	//initShaderFromText();
 #endif
 #endif
 
@@ -6003,7 +6005,9 @@ void _XGun::draw()
 			else tempTex = m_fbo.getTexture(0);
 #if USE_SHADER
 			m_fboSprite.setBlendType(1,0);
-			m_fboSprite.m_pShaderProc = useShader;	//设置shader效果
+			m_fboSprite.setShaderClass(&m_tmpSader);
+			m_tmpSader.connectTexture("Texture",&tempTex);
+			//m_fboSprite.m_pShaderProc = useShader;	//设置shader效果
 #else
 			m_fboSprite.setBlendType(1,0);
 			m_fboSprite.setAlpha(0.9f);
@@ -6167,7 +6171,8 @@ void _XGun::draw()
 		if(m_fboOrder == 0) tempTex = m_fbo.getTexture(0);
 		else tempTex = m_fbo.getTexture(1);
 #if USE_SHADER
-		m_fboSprite.m_pShaderProc = NULL;	//取消shader效果
+		m_fboSprite.setShaderClass(NULL);
+		//m_fboSprite.m_pShaderProc = NULL;	//取消shader效果
 		m_fboSprite.setBlendType(4,5);
 		m_fboSprite.setAlpha(1.0f);
 #else

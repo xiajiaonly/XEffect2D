@@ -66,7 +66,7 @@ extern XMusicHandle BGMusicHandle[6];	//声音的句柄
 #define USER_HEAD_SUM (20)
 
 #define USE_FBO (1)		//是否使用FBO来产生爆炸震动效果以及拖尾效果
-#define USE_SHADER (0)	//是否使用shader来处理掉拖尾造成的残影
+#define USE_SHADER (1)	//是否使用shader来处理掉拖尾造成的残影
 
 enum _XBULLET_TYPE
 {
@@ -355,6 +355,7 @@ private:
 	int m_fboOrder;
 	_XMoveData m_fboShakeData;
 #if USE_SHADER
+	_XShaderGLSL m_tmpSader;
 	void initShaderFromText();	//从文件中初始化sheder的代码
 #endif
 public:

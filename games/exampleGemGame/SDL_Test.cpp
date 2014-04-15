@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 		g_pJoy00 = NULL;
 	}
 
-	SDL_Quit();
+	XEE::release();
 	return 0;	
 }
 
@@ -545,6 +545,8 @@ int inputEvent()
 			break;
 		}
 		//inputEvent(event);	//注意这里有问题
+		_XInputEvent tmpEvent;
+		if(SDLEventToInputEvent(tmpEvent,event)) XEE::inputEvent(tmpEvent);
 	}
 	return flag;
 }
