@@ -369,7 +369,7 @@ int _XGun::init(_XGemMatrix *gems,_XResourcePosition resoursePosition)
 
 #if USE_FBO
 #if USE_SHADER
-	//initShaderFromText();
+	initShaderFromText();
 #endif
 #endif
 
@@ -5993,7 +5993,8 @@ void _XGun::draw()
 	static int tempUpFlag = 0;
 	if(m_fboShakeData.getIsEnd() != 0)
 	{
-		m_fbo.useFBO(1280,720);
+	//	m_fbo.useFBO(1280,720);
+		m_fbo.useFBO();
 		m_fbo.attachTex(m_fboOrder);
 		if(tempUpFlag == 0)
 		{
