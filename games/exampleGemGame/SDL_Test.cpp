@@ -3,6 +3,7 @@
 //Version:    1.0.0
 //Date:       2011.12.10
 //--------------------------------
+//Environment="PATH=%PATH%;..\..\engine\dll\libfreetype;..\..\engine\dll\SDL;..\..\engine\dll\gl;..\..\engine\dll\MemoryPool;"	//需要设置dll路径
 #include "XEffeEngine.h"
 #include "XResourcePack.h"
 #include "XLoading.h"
