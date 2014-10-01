@@ -17,17 +17,23 @@ enum _X3DDrawMode
 	DRAW_MODE_POINT,
 };
 
-extern void drawLine(const _XVector3 &ps,const _XVector3 &pe,const _XFColor & color = _XFColor(1.0f,1.0f,1.0f,1.0f));							//画一条指定线段
-extern void drawLine(const _XVector3 &ps,const _XVector3 &n,float len,const _XFColor & color = _XFColor(1.0f,1.0f,1.0f,1.0f));					//画一条指定线段
-extern void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const _XFColor & color = _XFColor(1.0f,1.0f,1.0f,1.0f));	//描绘一个指定的三角形
-extern void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const _XVector3 &n,const _XFColor & color = _XFColor(1.0f,1.0f,1.0f,1.0f));	//描绘一个指定的三角形
-extern void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angle,const _XFColor & color = _XFColor(1.0f,1.0f,1.0f,1.0f));	//描绘一个盒子
+extern void drawLine(const _XVector3 &ps,const _XVector3 &pe,const _XFColor & color = _XFColor::white);							//画一条指定线段
+extern void drawLine(const _XVector3 &ps,const _XVector3 &n,float len,const _XFColor & color = _XFColor::white);				//画一条指定线段
+extern void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const _XFColor & color = _XFColor::white);	//描绘一个指定的三角形
+extern void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const _XVector3 &n,const _XFColor & color = _XFColor::white);	//描绘一个指定的三角形
+extern void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angle,const _XFColor & color = _XFColor::white);	//描绘一个盒子
+extern void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angle,unsigned int tex);	//描绘一个带贴图的盒子
+
 extern void drawBall(const _XVector3 &center,float r,const _XVector3 &angle,const _XFColor & color);
 extern void drawArray(const float *p,int w,int h);
 extern void drawArray(const float *p,int w,int h,unsigned int tex);
 extern void drawBox(GLfloat size);
 extern void drawPlane(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const _XVector3 &p3,
 					  const _XVector3 &n,const _XFColor & color = _XFColor::white);
+extern void drawCuboid(const _XVector3 &pos,	//位置
+	const _XVector3 &size,	//长方体的尺寸，长宽高
+	const _XVector3 &angle,//长方体的角度
+	const _XFColor &color);	//描绘长方体
 //gluLookAt
 extern _XMatrix4x4 calLookAtMatrix(const _XVector3 &eyePos,const _XVector3 &LookAtPos,const _XVector3 &up);
 //gluPerspective
@@ -52,6 +58,13 @@ extern _XMatrix4x4 getRotateZ(float angle);
 extern _XMatrix4x4 getTranslate(const _XVector3 &p);
 extern _XMatrix4x4 getScale(const _XVector3 &s);
 extern void drawOrigin();
+//根据方向向量，计算旋转角度，基准是(1,0,0);也就是将v(1,0,0)转到d的方向上需要的角度
+inline _XVector3 getAngleFromDirection(const _XVector3 & d)
+{
+	float z = atan2(d.y,sqrt(d.x * d.x + d.z * d.z));
+	float y = -atan2(d.z,d.x);
+	return _XVector3(0.0f,y,z);
+}
 
 class _XBasic3DObject
 {
@@ -63,7 +76,15 @@ protected:
 	bool m_needUpdateMatrix;
 	_XMatrix4x4 m_matrix;
 	_XMatrix4x4 m_multMatrix;
+
+	_XVector3 m_areaPoint[8];	//碰撞盒子的8个点，用于裁剪计算
 public:
+	virtual _XVector3 getAreaPoint(int index) const
+	{
+		if(index < 0 || index >= 8) return _XVector3::zero;
+		return m_areaPoint[index];
+	}
+	virtual _XMatrix4x4 getMatrix()const{return m_matrix;}
 	virtual void setPosition(const _XVector3 &pos) 
 	{
 		m_position = pos;
@@ -74,7 +95,7 @@ public:
 		m_position.set(x,y,z);
 		m_needUpdateMatrix = true;
 	}
-	virtual _XVector3 getPosition() {return m_position;}
+	virtual _XVector3 getPosition()const{return m_position;}
 	virtual void setSize(const _XVector3 &size) 
 	{
 		m_size = size;
@@ -85,7 +106,7 @@ public:
 		m_size.set(x,y,z);
 		m_needUpdateMatrix = true;
 	}
-	virtual _XVector3 getSize() {return m_size;}
+	virtual _XVector3 getSize()const{return m_size;}
 	virtual void setAngle(const _XVector3 &angle) 
 	{
 		m_angle = angle;
@@ -101,10 +122,10 @@ public:
 		m_multMatrix = mtrx;
 		m_needUpdateMatrix = true;
 	}
-	virtual _XVector3 getAngle() {return m_angle;}
+	virtual _XVector3 getAngle()const{return m_angle;}
 	virtual void setColor(const _XFColor &color) {m_color = color;}
 	virtual void setColor(float r,float g,float b,float a){m_color.setColor(r,g,b,a);}
-	virtual _XFColor getColor() {return m_color;}
+	virtual _XFColor getColor()const{return m_color;}
 	virtual void updateMatrix()
 	{
 		if(!m_needUpdateMatrix) return;

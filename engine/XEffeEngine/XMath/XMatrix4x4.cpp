@@ -5,6 +5,8 @@
 //--------------------------------
 #include "XMatrix4x4.h"
 #include "XVector4.h"
+const _XMatrix4x4 _XMatrix4x4::identity(1.0f,0.0f,0.0f,0.0f, 0.0f,1.0f,0.0f,0.0f, 0.0f,0.0f,1.0f,0.0f, 0.0f,0.0f,0.0f,1.0f);	//µ•Œªæÿ’Û
+
 _XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
 {
 	//Optimise for matrices in which bottom row is (0, 0, 0, 1) in both matrices
@@ -107,7 +109,7 @@ _XVector4 _XMatrix4x4::getRow(int position) const
 		return _XVector4(data[3],data[7],data[11],data[15]);
 		break;
 	default:
-		return _XVector4();
+		return _XVector4::zero;
 		break;
 	}
 }

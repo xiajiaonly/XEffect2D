@@ -1,7 +1,7 @@
 //inline 函数的定义
 inline void _XVector4::reset()//重置这个点
 {
-	x = 0.0f;y = 0.0f;z = 0.0f;w = 0.0f;
+	x = y = z = w = 0.0f;
 }
 inline void _XVector4::add(float a,float b,float c,float d)//设置这个点的值
 {
@@ -21,11 +21,11 @@ inline _XVector4 _XVector4::operator + (const _XVector4& temp) const
 }
 inline void _XVector4::getRotate(float angle,const _XVector3 &v)	//向量v转动角度angle之后的四元素
 {
-	float sinA = sin(angle * 0.5f * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * 0.5f * DEGREE2RADIAN);
 	x = sinA * v.x;
 	y = sinA * v.y;
 	z = sinA * v.z;
-	w = cos(angle * 0.5f * ANGLE_TO_RADIAN);
+	w = cos(angle * 0.5f * DEGREE2RADIAN);
 }
 inline void _XVector4::getFromPlane(const _XVector3 &normal,const _XVector3 &point)
 {//没有经过验证
@@ -33,6 +33,15 @@ inline void _XVector4::getFromPlane(const _XVector3 &normal,const _XVector3 &poi
 	y = normal.y;
 	z = normal.z;
 	w = -(point.x * x + point.y * y + point.z * z);
+}
+inline void _XVector4::getFromPlane(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2)
+{
+	x = p0.y*(p1.z - p2.z) + p1.y*(p2.z - p0.z) + p2.y*(p0.z-p1.z);
+	y = p0.z*(p1.x - p2.x) + p1.z*(p2.x - p0.x) + p2.z*(p0.x-p1.x);
+	z = p0.x*(p1.y - p2.y) + p1.x*(p2.y - p0.y) + p2.x*(p0.y-p1.y);
+	w = -(p0.x*(p1.y*p2.z - p2.y*p1.z) +
+		p1.x*(p2.y*p0.z - p0.y*p2.z) +
+		p2.x*(p0.y*p1.z - p1.y*p0.z));
 }
 inline float _XVector4::getLength() const
 {
@@ -63,7 +72,8 @@ inline _XVector4 _XVector4::operator * (const float& temp) const
 }
 inline _XVector4 _XVector4::operator / (const float& temp) const
 {
-	return _XVector4(x / temp,y / temp,z / temp,w / temp);
+	if(temp == 0.0f) return *this;
+	return operator * (1.0f / temp);
 }
 inline void _XVector4::operator += (const float& temp)
 {
@@ -88,10 +98,8 @@ inline void _XVector4::operator *= (const float& temp)
 }
 inline void _XVector4::operator /= (const float& temp)
 {
-	x /= temp;
-	y /= temp;
-	z /= temp;
-	w /= temp;
+	if(temp == 0.0f) return;
+	operator *= (1.0f / temp);
 }
 inline _XVector4 _XVector4::conjugate() const
 {

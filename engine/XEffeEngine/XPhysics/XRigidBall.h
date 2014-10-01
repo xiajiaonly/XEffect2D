@@ -101,8 +101,8 @@ public:
 		crashProc(timeDelay);
 	}
 	void crashProc(int timeDelay);
-	_XBool addOneBall(const _XVector2& position,float radius,float mass,_XVector2 speed,float airResistance,float adhereRate,float adhereRadius);	//增加一个例子，返回增加是否成功
-	_XBool addOneLine(const _XVector2& startPosition,_XVector2 endPosition);
+	_XBool addOneBall(const _XVector2& position,float radius,float mass,const _XVector2 &speed,float airResistance,float adhereRate,float adhereRadius);	//增加一个例子，返回增加是否成功
+	_XBool addOneLine(const _XVector2& startPosition,const _XVector2 &endPosition);
 	_XRigidBalls();
 	void setEnable(_XBool isEnable)	{m_isEnable = isEnable;}
 	_XBool getIsEnable() const {return m_isEnable;}

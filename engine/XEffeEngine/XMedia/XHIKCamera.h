@@ -13,8 +13,8 @@
 #include "HIK/HCNetSDK.h"
 #include "HIK/plaympeg4.h"
 
-#pragma comment(lib, "../lib/HIK/PlayCtrl.lib")
-#pragma comment(lib, "../lib/HIK/HCNetSDK.lib")
+#pragma comment(lib, "../../engine/lib/HIK/PlayCtrl.lib")
+#pragma comment(lib, "../../engine/lib/HIK/HCNetSDK.lib")
 
 //接下来将其封装成单子系统
 class _XHIKCamera:public _XCameraBasic

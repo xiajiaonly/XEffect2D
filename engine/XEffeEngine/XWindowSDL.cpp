@@ -1,9 +1,9 @@
 #include "XWindowSDL.h"
 #include "XLogBook.h"
 
-bool _XWindowSDL::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
+//bool _XWindowSDL::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
+bool _XWindowSDL::createWindow(int width,int height,const char *,int isFullScreen,int withFrame)
 {
-	SDL_Surface *screen;
 	const SDL_VideoInfo* info = NULL;	//显示设备信息
 	int bpp = 0;			//窗口色深
 	int flags = 0;			//某个标记
@@ -13,7 +13,7 @@ bool _XWindowSDL::createWindow(int width,int height,const char *windowTitle,int 
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) 
 	{//初始化SDL
 		fprintf(stderr,"Video initialization failed: %s\n",SDL_GetError());
-		AddLogInfoNull("Video initialization failed: %s\n",SDL_GetError());
+		LogNull("Video initialization failed: %s\n",SDL_GetError());
 		return false;
 	}
 	atexit(SDL_Quit);				//退出时退出SDL
@@ -22,24 +22,29 @@ bool _XWindowSDL::createWindow(int width,int height,const char *windowTitle,int 
 	bpp = info->vfmt->BitsPerPixel;	//获得显示色深
 	
 	// ----- OpenGL attribute setting via SDL --------------- 
-	//SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 4);		//设置红色位宽
-	//SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 4);		//设置绿色位宽
-	//SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 4);		//设置蓝色位宽
-	//SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 4);		//设置蓝色位宽
-	//bpp = 16;
+	//SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	//SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);		//设置蓝色位宽
+	//bpp = 24;
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);	//使得STENCIL生效，能产生镜面效果。
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 2);	//设置双缓存
-	//SDL_NOFRAME没有边框的
-	if(isFullScreen != 0) flags = SDL_OPENGL | SDL_FULLSCREEN;			//设置为全屏
-	else flags = SDL_OPENGL | SDL_DOUBLEBUF;
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);	//设置双缓存
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,1);	//设置平滑处理,没有生效，多重采样要生效的话必须要SDL_GL_DOUBLEBUFFER为1
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,4);
+
+	//SDL_NOFRAME没有边框的 |SDL_RESIZABLE
+	if(isFullScreen != 0) flags = SDL_RESIZABLE | SDL_OPENGL | SDL_FULLSCREEN;			//设置为全屏
+	else flags = SDL_RESIZABLE | SDL_OPENGL | SDL_DOUBLEBUF;
 	if(withFrame == 0) flags |= SDL_NOFRAME;
 	//窗口标志符
-	if((screen = SDL_SetVideoMode(width, height, bpp, flags)) == 0) 
+	if((m_screen = SDL_SetVideoMode(width, height, bpp, flags)) == NULL) 
 	{//初始化窗口信息
 		fprintf(stderr, "Video mode set failed: %s\n", SDL_GetError());
-		AddLogInfoNull("Video mode set failed: %s\n", SDL_GetError());
+		LogNull("Video mode set failed: %s\n", SDL_GetError());
         return false;
 	}
+	//initMultisample(wglGetCurrentDC());	//这里使用wglext的方式设置多重采样，不过好像没有生效，原因尚不明确,需要进一步的测试
 	return true;
 }
 //int SDLKeyToXEEKeyMap[] =

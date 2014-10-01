@@ -83,7 +83,7 @@ public:
 		m_sprite.setBlendType(m_blendTypeScr,m_blendTypeDst);
 	}
 
-	_XBool init(const _XNumberTexture *numberTexture,_XVector2 size);		
+	_XBool init(const _XNumberTexture *numberTexture,const _XVector2 &size);		
 	void draw();
 
 	void setSize(const _XVector2& size);		//设置字体的显示大小
@@ -100,20 +100,11 @@ public:
 	_XBool setACopy(const _XNumberEx &temp);
 	void setColor(float r,float g,float b,float a);	//设置颜色
 	void setAlpha(float a);
-	float getAlpha() const
-	{
-		return m_sprite.getAlpha();
-	}
+	float getAlpha() const {return m_sprite.getAlpha();}
 	_XBool release();
 
-	void setDistance(float distance)
-	{
-		m_distance = distance;
-	}
-	float getDistance() const
-	{
-		return m_distance;
-	}
+	void setDistance(float distance){m_distance = distance;}
+	float getDistance() const {return m_distance;}
 	_XNumberEx();
 };
 
@@ -133,8 +124,7 @@ public:
 	_XMoveNumber()
 	:m_nowNumber(0)
 	,m_armNumber(0.0f)
-	{
-	}
+	{}
 };
 //下面是一个数据动态变化的类，可以用于实现一些动态的曲线以及动态的效果
 enum _XMoveDataMode
@@ -217,8 +207,7 @@ public:
 	,m_isEnd(XTrue)
 	,m_mode(MOVE_DATA_MODE_SIN)
 	,m_isLoop(0)
-	{
-	}
+	{}
 	void getParamStr(char * str)
 	{
 		if(str == NULL) return;

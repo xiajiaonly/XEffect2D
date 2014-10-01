@@ -4,6 +4,8 @@
 //Date:		See the header file
 //--------------------------------
 #include "XVector4.h"
+const _XVector4 _XVector4::zero(0.0f,0.0f,0.0f,0.0f);
+
 _XVector4 slerp(const _XVector4& v0,const _XVector4& v1,float r)
 {//尚未经过验证
 	if(r <= 0.0f) return v0;

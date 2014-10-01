@@ -56,18 +56,15 @@ struct _XNetData	//网络数据
 		:isEnable(XFalse)
 		,dataLen(0)
 		,data(NULL)
-	{
-	}
+	{}
 	~_XNetData()
 	{
-		if(isEnable)
-		{
-			XDELETE_ARRAY(data);
-			isEnable = XFalse;
-		}
+		if(!isEnable) return;
+		XDELETE_ARRAY(data);
+		isEnable = XFalse;
 	}
 };
-inline void showNetData(_XNetData * data)
+inline void showNetData(_XNetData *)//data)
 {
 	//if(data == NULL) return;
 	//printf("%d|%d:",data->type,data->dataLen);
@@ -104,13 +101,58 @@ inline string getMyIP()
 {
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2,2),&wsaData);
-	char hname[128];
+	char hname[128] = "";
 	gethostname(hname,sizeof(hname));
 	hostent *hent = gethostbyname(hname);
-	sprintf(hname,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
-		(unsigned char)(hent->h_addr_list[0][1]),
-		(unsigned char)(hent->h_addr_list[0][2]),
-		(unsigned char)(hent->h_addr_list[0][3]));
+	if(hent != NULL && hent->h_addr_list[0])
+	{
+		sprintf(hname,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
+			(unsigned char)(hent->h_addr_list[0][1]),
+			(unsigned char)(hent->h_addr_list[0][2]),
+			(unsigned char)(hent->h_addr_list[0][3]));
+	}
+	WSACleanup();
 	return hname;
 }
+//#include <IPHlpApi.h>
+////参数pMacAddr应该是8个字节的数组
+//BOOL GetMacAddress(unsigned char* pMacAddr)
+//{
+//    DWORD nRet;
+//    //只查询物理地址
+//    DWORD nFlags = GAA_FLAG_SKIP_UNICAST 
+//        | GAA_FLAG_SKIP_ANYCAST
+//        | GAA_FLAG_SKIP_FRIENDLY_NAME
+//        | GAA_FLAG_SKIP_MULTICAST
+//        | GAA_FLAG_SKIP_DNS_SERVER;
+//
+//    ULONG bufLen = 1024;
+//    PIP_ADAPTER_ADDRESSES pAdapterAddr = (PIP_ADAPTER_ADDRESSES)malloc(bufLen);
+//    if(pAdapterAddr == NULL)
+//        return FALSE;
+//
+//    //AF_INET: return only IPv4 addresses.
+//    nRet = GetAdaptersAddresses(AF_INET, nFlags,  NULL, pAdapterAddr, &bufLen);
+//    if(nRet == ERROR_BUFFER_OVERFLOW)
+//    {
+//        pAdapterAddr = (PIP_ADAPTER_ADDRESSES)realloc(pAdapterAddr, bufLen);
+//        if(pAdapterAddr == NULL)
+//            return FALSE;
+//
+//        nRet = GetAdaptersAddresses(AF_INET, nFlags,  NULL, pAdapterAddr, &bufLen);
+//    }
+//
+//    if(nRet == ERROR_SUCCESS)
+//    {
+//        memcpy(pMacAddr, &pAdapterAddr->PhysicalAddress, pAdapterAddr->PhysicalAddressLength);
+//        free(pAdapterAddr);
+//        return TRUE;
+//    }else
+//    {
+//        //ff-ff-ff-ff-ff-ff: 表示获取失败（未知）
+//        memset(pMacAddr, 0xff, 6);
+//        free(pAdapterAddr);
+//        return FALSE;
+//    }
+//}
 #endif

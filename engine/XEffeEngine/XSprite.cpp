@@ -15,18 +15,18 @@
 #if WITH_XSPRITE_EX
 _XBool _XSprite::init(const char * filename,					//文件名
 		_XResourcePosition resoursePosition,					//资源的位置 0外部 1内部
-		_XVector2 changePoint)
+		const _XVector2 &changePoint)
 {
-	if(m_isInited) return XTrue;
-	if(filename == NULL) return XFalse; 
+	if(m_isInited ||
+		filename == NULL) return XFalse; 
 	m_resoursePosition = resoursePosition;
-	if(m_textureData.load(filename,m_resoursePosition) == 0) return XFalse;
+	if(!m_textureData.load(filename,m_resoursePosition)) return XFalse;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//翻转模式
 	m_position.set(0.0f,0.0f);			//位置
 	m_size.set(1.0f,1.0f);				//缩放尺寸
 	m_pixelSize = m_textureData.textureSize;			//像素尺寸
-	m_angle = 0;					//角度
+	m_angle = 0.0f;					//角度
 	m_changeCenter = changePoint;		//旋转或者缩放的中心
 //	if(m_textureData.isEnableInsideClip != 0)
 //	{//如果需要内部裁剪
@@ -40,22 +40,22 @@ _XBool _XSprite::init(const char * filename,					//文件名
 	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
 
 	//下面是为了便于计算的零时数据
-	m_sinAngle = 0.0f;	//sin(m_angle * ANGLE_TO_RADIAN);				//角度的零时变量
-	m_cosAngle = 1.0f;	//cos(m_angle * ANGLE_TO_RADIAN);
+	m_sinAngle = 0.0f;	//sin(m_angle * DEGREE2RADIAN);				//角度的零时变量
+	m_cosAngle = 1.0f;	//cos(m_angle * DEGREE2RADIAN);
 
 	m_needUpdateData = XTrue;			//是否需要更新内部数据
 	updateData();
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XSprite::init(int tempW,int tempH,int needSizeCheck,_XVector2 changePoint)
+_XBool _XSprite::init(int tempW,int tempH,int needSizeCheck,const _XVector2 &changePoint)
 {
 	if(m_isInited) return XTrue;
 
@@ -64,7 +64,7 @@ _XBool _XSprite::init(int tempW,int tempH,int needSizeCheck,_XVector2 changePoin
 	m_size.set(1.0f,1.0f);				//缩放尺寸
 
 	//下面需要虚构贴图数据
-	if(m_textureData.loadEmpty() == 0) return XFalse;
+	if(!m_textureData.loadEmpty()) return XFalse;
 	m_pixelSize.set(tempW,tempH);
 	if(needSizeCheck != 0 && isNPOT(tempW,tempH))
 	{
@@ -90,27 +90,27 @@ _XBool _XSprite::init(int tempW,int tempH,int needSizeCheck,_XVector2 changePoin
 		m_textureData.texture.m_h = tempH;
 	}
 
-	m_angle = 0;					//角度
+	m_angle = 0.0f;					//角度
 	m_changeCenter = changePoint;		//旋转或者缩放的中心
 	m_needClip = XFalse;				//是否需要裁剪
 	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);				//裁剪的数据
 	//下面是为了便于计算的零时数据
-	m_sinAngle = 0.0f;//sin(m_angle * ANGLE_TO_RADIAN);				//角度的零时变量
-	m_cosAngle = 1.0f;//cos(m_angle * ANGLE_TO_RADIAN);
+	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//角度的零时变量
+	m_cosAngle = 1.0f;//cos(m_angle * DEGREE2RADIAN);
 
 	m_needUpdateData = XTrue;			//是否需要更新内部数据
 	updateData();
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XSprite::init(_XTextureData & texData,_XVector2 changePoint)
+_XBool _XSprite::init(_XTextureData & texData,const _XVector2 &changePoint)
 {
 	if(m_isInited) return XTrue;
 	//m_resoursePosition = resoursePosition;
@@ -120,7 +120,7 @@ _XBool _XSprite::init(_XTextureData & texData,_XVector2 changePoint)
 	m_position.set(0.0f,0.0f);			//位置
 	m_size.set(1.0f,1.0f);				//缩放尺寸
 	m_pixelSize = m_textureData.textureSize;			//像素尺寸
-	m_angle = 0;					//角度
+	m_angle = 0.0f;					//角度
 	m_changeCenter = changePoint;		//旋转或者缩放的中心
 //	if(m_textureData.isEnableInsideClip != 0)
 //	{//如果需要内部裁剪
@@ -134,32 +134,32 @@ _XBool _XSprite::init(_XTextureData & texData,_XVector2 changePoint)
 	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
 
 	//下面是为了便于计算的零时数据
-	m_sinAngle = 0.0f;//sin(m_angle * ANGLE_TO_RADIAN);				//角度的零时变量
-	m_cosAngle = 1.0f;//cos(m_angle * ANGLE_TO_RADIAN);
+	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//角度的零时变量
+	m_cosAngle = 1.0f;//cos(m_angle * DEGREE2RADIAN);
 
 	m_needUpdateData = XTrue;			//是否需要更新内部数据
 	updateData();
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVector2 changePoint)
+_XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,const _XVector2 &changePoint)
 {
 	if(m_isInited) return XTrue;
 	//m_resoursePosition = resoursePosition;
-	if(m_textureData.createWithTexture(w,h,colorMode,tex) == 0) return XFalse;
+	if(!m_textureData.createWithTexture(w,h,colorMode,tex)) return XFalse;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//翻转模式
 	m_position.set(0.0f,0.0f);			//位置
 	m_size.set(1.0f,1.0f);				//缩放尺寸
 	m_pixelSize = m_textureData.textureSize;			//像素尺寸
-	m_angle = 0;					//角度
+	m_angle = 0.0f;					//角度
 	m_changeCenter = changePoint;		//旋转或者缩放的中心
 //	if(m_textureData.isEnableInsideClip != 0)
 //	{//如果需要内部裁剪
@@ -173,16 +173,16 @@ _XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVecto
 	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
 
 	//下面是为了便于计算的零时数据
-	m_sinAngle = 0.0f;//sin(m_angle * ANGLE_TO_RADIAN);				//角度的零时变量
-	m_cosAngle = 1.0f;//cos(m_angle * ANGLE_TO_RADIAN);
+	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//角度的零时变量
+	m_cosAngle = 1.0f;//cos(m_angle * DEGREE2RADIAN);
 
 	m_needUpdateData = XTrue;			//是否需要更新内部数据
 	updateData();
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
@@ -226,7 +226,7 @@ _XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVecto
 //			_XVector2 cPoint = vRect.getCenter();
 //		//	_XVector2 uPoint[7];
 //		//	_XVector2 vPoint[7];
-//		//	m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,vPoint,uPoint);
+//		//	m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,vPoint,uPoint);
 //		//	for(int i = 0;i < m_pointSum;++ i)
 //		//	{
 //		//		m_vPointer[i << 1]			= vPoint[i].x;
@@ -234,7 +234,7 @@ _XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVecto
 //		//		m_uPointer[i << 1]			= uPoint[i].x;
 //		//		m_uPointer[(i << 1) + 1]	= uPoint[i].y;
 //		//	}
-//			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,m_vPointer,m_uPointer);
+//			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 //		}else
 //		{
 //			//下面的操作是没有问题的，但是尚未结合裁剪和反转，旋转等
@@ -388,7 +388,7 @@ _XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVecto
 //					m_textureData.textureSize.x - m_textureData.textureMove2.x,m_textureData.textureSize.y - m_textureData.textureMove2.y);
 //				cPoint.set(m_textureData.textureSize.x * 0.5f,m_textureData.textureSize.y * 0.5f);
 //			}
-//		//	m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,vPoint,uPoint);
+//		//	m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,vPoint,uPoint);
 //		//	for(int i = 0;i < m_pointSum;++ i)
 //		//	{
 //		//		m_vPointer[i << 1]			= vPoint[i].x;
@@ -396,7 +396,7 @@ _XBool _XSprite::init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVecto
 //		//		m_uPointer[i << 1]			= uPoint[i].x;
 //		//		m_uPointer[(i << 1) + 1]	= uPoint[i].y;
 //		//	}
-//			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,m_vPointer,m_uPointer);
+//			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 //		}else
 //		{
 //			//下面的操作是没有问题的，但是尚未结合裁剪和反转，旋转等
@@ -525,8 +525,7 @@ void _XSprite::updateData()
 		float vh = 1.0f;
 		float uw = 1.0f;
 		float uh = 1.0f;
-		_XRect tempClipRect;
-		tempClipRect.set(0.0f,0.0f,1.0f,1.0f);
+		_XRect tempClipRect(0.0f,0.0f,1.0f,1.0f);
 		if(m_needClip)
 		{//如果需要外部裁剪
 			tempClipRect.set(m_clipRect.left / m_pixelSize.x,m_clipRect.top / m_pixelSize.y,
@@ -551,7 +550,7 @@ void _XSprite::updateData()
 			_XRect uRect(0.0f,0.0f,uw,uh);
 			_XRect vRect(0.0f,0.0f,vw,vh);
 			_XVector2 cPoint = vRect.getCenter();
-			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,m_vPointer,m_uPointer);
+			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 		}else
 		{
 			//下面的操作是没有问题的，但是尚未结合裁剪和反转，旋转等
@@ -569,17 +568,26 @@ void _XSprite::updateData()
 		float centery = m_position.y + m_changeCenter.y * vh;
 		float dpx;
 		float dpy;
-		for(int i = 0;i < (m_pointSum << 1);i += 2)
+		int pointDataSum = m_pointSum << 1;
+		if(m_needClip)
 		{
-			if(m_needClip)
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				//裁剪
 				m_uPointer[i] += tempClipRect.left;
 				m_uPointer[i + 1] += tempClipRect.top;
+				//位移
+				m_vPointer[i] += m_position.x;
+				m_vPointer[i + 1] += m_position.y;
 			}
-			//位移
-			m_vPointer[i] += m_position.x;
-			m_vPointer[i + 1] += m_position.y;
+		}else
+		{
+			for(int i = 0;i < pointDataSum;i += 2)
+			{
+				//位移
+				m_vPointer[i] += m_position.x;
+				m_vPointer[i + 1] += m_position.y;
+			}
 		}
 		//贴图坐标的计算
 		//翻转
@@ -594,29 +602,29 @@ void _XSprite::updateData()
 			turnCenterx = m_position.x + 0.5f * m_textureData.textureSize.x;
 			turnCentery = m_position.y + 0.5f * m_textureData.textureSize.y; //所有的翻转都是以原图的中心进行的
 		}
-		if(m_turnOverMode == TURN_OVER_MODE_LEFT_TO_RIGHT)
+		switch(m_turnOverMode)
 		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+		case TURN_OVER_MODE_LEFT_TO_RIGHT:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
 			}
-		}else
-		if(m_turnOverMode == TURN_OVER_MODE_UP_TO_DOWN)
-		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+			break;
+		case TURN_OVER_MODE_UP_TO_DOWN:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
 			}
-		}else
-		if(m_turnOverMode == TURN_OVER_MODE_L2R_AND_U2D)
-		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+			break;
+		case TURN_OVER_MODE_L2R_AND_U2D:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
 				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
 			}
+			break;
 		}
-		for(int i = 0;i < (m_pointSum << 1);i += 2)
+		for(int i = 0;i < pointDataSum;i += 2)
 		{
 			dpx = (m_vPointer[i] - centerx) * m_size.x;
 			dpy = (m_vPointer[i + 1] - centery) * m_size.y;
@@ -697,7 +705,7 @@ void _XSprite::updateData()
 					m_textureData.textureSize.x - m_textureData.textureMove2.x,m_textureData.textureSize.y - m_textureData.textureMove2.y);
 				cPoint.set(m_textureData.textureSize.x * 0.5f,m_textureData.textureSize.y * 0.5f);
 			}
-			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * ANGLE_TO_RADIAN,m_vPointer,m_uPointer);
+			m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 		}else
 		{
 			//下面的操作是没有问题的，但是尚未结合裁剪和反转，旋转等
@@ -735,6 +743,7 @@ void _XSprite::updateData()
 		//_XVector2 dp;
 		float dpx;
 		float dpy;
+		int pointDataSum = m_pointSum << 1;
 		if(m_needClip)	//应该是这里有问题
 		{
 			centerx = m_position.x + m_changeCenter.x * m_clipRect.getWidth();
@@ -744,7 +753,7 @@ void _XSprite::updateData()
 			centerx = m_position.x + m_changeCenter.x * m_textureData.textureSize.x;
 			centery = m_position.y + m_changeCenter.y * m_textureData.textureSize.y;
 		}
-		for(int i = 0;i < (m_pointSum << 1);i += 2)
+		for(int i = 0;i < pointDataSum;i += 2)
 		{
 			//裁剪
 			m_uPointer[i] += tempClipRect.left;
@@ -766,29 +775,29 @@ void _XSprite::updateData()
 			turnCenterx = m_position.x + 0.5f * m_textureData.textureSize.x;
 			turnCentery = m_position.y + 0.5f * m_textureData.textureSize.y; //所有的翻转都是以原图的中心进行的
 		}
-		if(m_turnOverMode == TURN_OVER_MODE_LEFT_TO_RIGHT)
+		switch(m_turnOverMode)
 		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+		case TURN_OVER_MODE_LEFT_TO_RIGHT:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
 			}
-		}else
-		if(m_turnOverMode == TURN_OVER_MODE_UP_TO_DOWN)
-		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+			break;
+		case TURN_OVER_MODE_UP_TO_DOWN:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
 			}
-		}else
-		if(m_turnOverMode == TURN_OVER_MODE_L2R_AND_U2D)
-		{
-			for(int i = 0;i < (m_pointSum << 1);i += 2)
+			break;
+		case TURN_OVER_MODE_L2R_AND_U2D:
+			for(int i = 0;i < pointDataSum;i += 2)
 			{
 				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
 				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
 			}
+			break;
 		}
-		for(int i = 0;i < (m_pointSum << 1);i += 2)
+		for(int i = 0;i < pointDataSum;i += 2)
 		{
 			dpx = (m_vPointer[i] - centerx) * m_size.x;
 			dpy = (m_vPointer[i + 1] - centery) * m_size.y;
@@ -814,8 +823,8 @@ void _XSprite::updateData()
 }
 void _XSprite::draw()
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return;
+	if(!m_isInited ||
+		!m_isVisible) return;
 	updateData();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_TEXTURE_2D);
@@ -840,7 +849,7 @@ void _XSprite::draw()
 		m_pShader->useShaderEx(m_textureData.texture.m_texture);
 	}
 
-	glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+	glColor4fv(m_color);
 	drawInside();
 
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glUseProgram(0);	
@@ -850,8 +859,8 @@ void _XSprite::draw()
 }
 void _XSprite::draw(const _XVector2 *u,const _XVector2 *v,int w,int h)
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return;
+	if(!m_isInited ||
+		!m_isVisible) return;
 	updateData();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_TEXTURE_2D);
@@ -876,7 +885,7 @@ void _XSprite::draw(const _XVector2 *u,const _XVector2 *v,int w,int h)
 		m_pShader->useShaderEx(m_textureData.texture.m_texture);
 	};
 
-	glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+	glColor4fv(m_color);
 	//drawInside();
 	int offsetTemp = 0;
 	for(int j = 0;j < h - 1;++ j)
@@ -885,13 +894,11 @@ void _XSprite::draw(const _XVector2 *u,const _XVector2 *v,int w,int h)
 		for(int i = 0;i < w;++ i)
 		{	//左上
 			offsetTemp = i + j * w;
-			glTexCoord2d(u[offsetTemp].x,u[offsetTemp].y);	//u
-			glVertex2d(v[offsetTemp].x,v[offsetTemp].y);	//v
+			glTexCoord2fv(u[offsetTemp]);	//u
+			glVertex2fv(v[offsetTemp]);	//v
 
-			glTexCoord2d(u[offsetTemp + w].x,
-				u[offsetTemp + w].y);	//u
-			glVertex2d(v[offsetTemp + w].x,
-				v[offsetTemp + w].y);	//v
+			glTexCoord2fv(u[offsetTemp + w]);	//u
+			glVertex2fv(v[offsetTemp + w]);	//v
 		}
 		glEnd();
 	}
@@ -903,8 +910,8 @@ void _XSprite::draw(const _XVector2 *u,const _XVector2 *v,int w,int h)
 }
 void _XSprite::draw(GLuint tex)
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return;
+	if(!m_isInited ||
+		!m_isVisible) return;
 	updateData();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_TEXTURE_2D);
@@ -928,7 +935,7 @@ void _XSprite::draw(GLuint tex)
 		//glActiveTexture(GL_TEXTURE0);
 		m_pShader->useShaderEx(tex);
 	}
-	glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+	glColor4fv(m_color);
 	drawInside();
 
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glUseProgram(0);	
@@ -938,8 +945,8 @@ void _XSprite::draw(GLuint tex)
 }
 void _XSprite::draw(const _XTextureData& texData)
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return;
+	if(!m_isInited ||
+		!m_isVisible) return;
 	//备份现场数据，并标记内部数据需要更新
 
 	_XTextureData tempTexture;
@@ -972,7 +979,7 @@ void _XSprite::draw(const _XTextureData& texData)
 		//glActiveTexture(GL_TEXTURE0);
 		m_pShader->useShaderEx(texData.texture.m_texture);
 	};
-	glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+	glColor4fv(m_color);
 	drawInside();
 
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glUseProgram(0);	
@@ -988,7 +995,7 @@ void _XSprite::release()
 	//if(glIsTexture(m_tex))
 	//	glDeleteTextures(1,&m_tex);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	m_isInited = XFalse;
 }
@@ -1024,7 +1031,7 @@ _XSprite& _XSprite::operator = (const _XSprite& temp)	//对目标的资源进行共用，不
 	m_cosAngle = temp.m_cosAngle;
 	m_textureData = temp.m_textureData;	
 	m_color = temp.m_color;			
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 
 	m_needUpdateData = temp.m_needUpdateData;
 	m_blendType = temp.m_blendType;
@@ -1038,7 +1045,7 @@ _XSprite& _XSprite::operator = (const _XSprite& temp)	//对目标的资源进行共用，不
 	//m_pShaderProc = temp.m_pShaderProc;
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 	return * this;
 }
@@ -1074,7 +1081,7 @@ void _XSprite::setACopy(const _XSprite& temp)
 	m_cosAngle = temp.m_cosAngle;
 	m_textureData = temp.m_textureData;	
 	m_color = temp.m_color;			
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 
 	m_needUpdateData = temp.m_needUpdateData;
 	m_blendType = temp.m_blendType;
@@ -1088,7 +1095,7 @@ void _XSprite::setACopy(const _XSprite& temp)
 	//m_pShaderProc = temp.m_pShaderProc;
 
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this);
 #endif
 }
 #else
@@ -1098,7 +1105,7 @@ int _XSprite::init(const char *filename,					//图片的名称
 {
 	if(m_isInited != 0) 
 	{
-		AddLogInfoStr("The action have initted!\n");
+		LogStr("The action have initted!");
 		return 1;
 	}
 
@@ -1169,7 +1176,7 @@ int _XSprite::init(const char *filename,					//图片的名称
 	m_needSolidify = 1;
 #endif
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 
 	m_isInited = 1;
@@ -1179,7 +1186,7 @@ int _XSprite::init(_XTextureData& texData,_XTransformMode isTransformCenter)
 {
 	if(m_isInited != 0) 
 	{
-		AddLogInfoStr("The action have initted!\n");
+		LogStr("The action have initted!");
 		return 1;
 	}
 
@@ -1216,7 +1223,7 @@ int _XSprite::init(_XTextureData& texData,_XTransformMode isTransformCenter)
 	m_needSolidify = 1;
 #endif
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 
 	m_isInited = 1;
@@ -1226,7 +1233,7 @@ int _XSprite::init(int w,int h,int colorMode,unsigned int tex,_XTransformMode is
 {
 	if(m_isInited != 0) 
 	{
-		AddLogInfoStr("The action have initted!\n");
+		LogStr("The action have initted!");
 		return 1;
 	}
 
@@ -1263,7 +1270,7 @@ int _XSprite::init(int w,int h,int colorMode,unsigned int tex,_XTransformMode is
 	m_needSolidify = 1;
 #endif
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 
 	m_isInited = 1;
@@ -1275,7 +1282,7 @@ int _XSprite::init(int tempW,int tempH,int needSizeCheck,_XTransformMode isTrans
 {
 	if(m_isInited != 0) 
 	{
-		AddLogInfoStr("The action have initted!\n");
+		LogStr("The action have initted!");
 		return 1;
 	}
 
@@ -1316,7 +1323,7 @@ int _XSprite::init(int tempW,int tempH,int needSizeCheck,_XTransformMode isTrans
 		m_transformCenter.set(0.0f,0.0f);
 	}
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	_XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 	m_isInited = 1;
 #if IS_USE_SOLIDIFY
@@ -1328,7 +1335,7 @@ int _XSprite::init(int tempW,int tempH,int needSizeCheck,_XTransformMode isTrans
 }
 void _XSprite::drawBasic(const GLuint *pTexnum)
 {
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 
 	if(m_needUpdateInsideData != 0)
@@ -1482,7 +1489,7 @@ void _XSprite::updatePointArray()
 			tempArrayU[i] = m_pointArray[(i << 1) + 1];
 		}
 		vector4Sort(tempArrayV,tempArrayU);
-		m_pointArraySize = getEdgePoint(m_clipAngle * ANGLE_TO_RADIAN,m_pointArray,tempArrayV,tempArrayU);
+		m_pointArraySize = getEdgePoint(m_clipAngle * DEGREE2RADIAN,m_pointArray,tempArrayV,tempArrayU);
 	}
 	//下面将数据更新到贴图数据中
 	for(int i = 0; i < m_pointArraySize;++ i)
@@ -1496,7 +1503,7 @@ void _XSprite::updatePointArray()
 }
 void _XSprite::drawBasic(const _XTextureData *pTexData)
 {
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 	_XTextureData tempText;
 	if(pTexData != NULL) 
@@ -1581,7 +1588,7 @@ void _XSprite::drawBasic(const _XTextureData *pTexData)
 }
 void _XSprite::drawWithoutBlend(const GLuint *pTexnum)
 {
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 	if(m_needUpdateInsideData != 0)
 	{
@@ -1651,7 +1658,7 @@ void _XSprite::drawWithoutBlend(const GLuint *pTexnum)
 }
 void _XSprite::drawWithoutBlend(const _XTextureData *pTexData)
 {
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 	_XTextureData tempText;
 	if(pTexData != NULL) 
@@ -1734,7 +1741,7 @@ void _XSprite::drawWithoutBlend(const _XTextureData *pTexData)
 }
 void _XSprite::draw(const GLuint *pTexnum)
 {//图片精灵	
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 #if IS_USE_SOLIDIFY
 	if(m_needSolidify != 0)
 	{//需要固化
@@ -1752,7 +1759,7 @@ void _XSprite::draw(const GLuint *pTexnum)
 }
 void _XSprite::draw(const _XTextureData *pTexData)
 {//图片精灵	
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 #if IS_USE_SOLIDIFY
 	if(m_isUseSolidify != 0)
 	{//使用固化
@@ -1776,7 +1783,7 @@ void _XSprite::draw(const _XTextureData *pTexData)
 }
 void _XSprite::drawEx(const GLuint *pTexnum)
 {//图片精灵	
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 	if(m_needUpdateInsideData != 0)
 	{
@@ -1838,14 +1845,14 @@ void _XSprite::drawEx(const GLuint *pTexnum)
 #endif
 	//glBegin(GL_QUADS);
 	glBegin(GL_POLYGON);
-		glTexCoord2d(xp, yp);
-		glVertex2d(-halfW, -halfH);
-		glTexCoord2d(xp + m_textureData.texture.m_w, yp);
-		glVertex2d(halfW, -halfH);
-		glTexCoord2d(xp + m_textureData.texture.m_w, yp + m_textureData.texture.m_h);
-		glVertex2d(halfW, halfH);
-		glTexCoord2d(xp, yp + m_textureData.texture.m_h);
-		glVertex2d(-halfW, halfH);
+		glTexCoord2f(xp, yp);
+		glVertex2f(-halfW, -halfH);
+		glTexCoord2f(xp + m_textureData.texture.m_w, yp);
+		glVertex2f(halfW, -halfH);
+		glTexCoord2f(xp + m_textureData.texture.m_w, yp + m_textureData.texture.m_h);
+		glVertex2f(halfW, halfH);
+		glTexCoord2f(xp, yp + m_textureData.texture.m_h);
+		glVertex2f(-halfW, halfH);
 	glEnd();																		
 	if(m_pShaderProc != NULL || m_pShader != NULL) glUseProgram(0);				//停止使用shader
 
@@ -1859,7 +1866,7 @@ void _XSprite::drawEx(const GLuint *pTexnum)
 }
 void _XSprite::drawEx(const _XTextureData *pTexData)
 {//图片精灵
-	if(m_isVisiable == 0) return;	//不显示的时候直接返回
+	if(m_isVisible == 0) return;	//不显示的时候直接返回
 	if(xsize <= 0 || ysize <= 0 || alpha <= 0) return;
 	_XTextureData tempText;
 	if(pTexData != NULL) 
@@ -1929,14 +1936,14 @@ void _XSprite::drawEx(const _XTextureData *pTexData)
 #endif
 	//glBegin(GL_QUADS);
 	glBegin(GL_POLYGON);
-		glTexCoord2d(xp, yp);
-		glVertex2d(-halfW, -halfH);
-		glTexCoord2d(xp + m_textureData.texture.m_w, yp);
-		glVertex2d(halfW, -halfH);
-		glTexCoord2d(xp + m_textureData.texture.m_w, yp + m_textureData.texture.m_h);
-		glVertex2d(halfW, halfH);
-		glTexCoord2d(xp, yp + m_textureData.texture.m_h);
-		glVertex2d(-halfW, halfH);
+		glTexCoord2f(xp, yp);
+		glVertex2f(-halfW, -halfH);
+		glTexCoord2f(xp + m_textureData.texture.m_w, yp);
+		glVertex2f(halfW, -halfH);
+		glTexCoord2f(xp + m_textureData.texture.m_w, yp + m_textureData.texture.m_h);
+		glVertex2f(halfW, halfH);
+		glTexCoord2f(xp, yp + m_textureData.texture.m_h);
+		glVertex2f(-halfW, halfH);
 	glEnd();																		
 	if(m_pShaderProc != NULL || m_pShader != NULL) glUseProgram(0);				//停止使用shader
 
@@ -2022,7 +2029,7 @@ _XSprite::_XSprite()
 ,m_needUpdateInsideData(0)
 ,m_needUpdatePointArray(0)
 ,m_needAngleClip(0)
-,m_isVisiable(1)
+,m_isVisible(1)
 ,m_isTransformCenter(POINT_LEFT_TOP)
 {
 	m_shapeData[0] = 0.0f; m_shapeData[1] = 0.0f;	//具体的形状描述的数据
@@ -2077,7 +2084,7 @@ void _XSprite::setACopy(const _XSprite& temp)
 	angle = temp.angle;					//精灵的角度
 	sinAngle = temp.sinAngle;
 	cosAngle = temp.cosAngle;
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 
 	m_blendType = temp.m_blendType;	//混合方式：0：简单混合2因子混合、1：复杂的4因子混合
 	m_blendRGBScr = temp.m_blendRGBScr;
@@ -2130,7 +2137,7 @@ void _XSprite::setACopy(const _XSprite& temp)
 	m_isInited = temp.m_isInited;
 	m_needUpdateInsideData = temp.m_needUpdateInsideData;
 #if WITH_OBJECT_MANAGER
-	if(m_isACopy == 0) _XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	if(m_isACopy == 0) _XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 	m_isACopy = 1;
 }
@@ -2140,7 +2147,7 @@ _XSprite& _XSprite::operator = (const _XSprite& temp)
 	angle = temp.angle;					//精灵的角度
 	sinAngle = temp.sinAngle;					//精灵的角度
 	cosAngle = temp.cosAngle;					//精灵的角度
-	m_isVisiable = temp.m_isVisiable;					//精灵的角度
+	m_isVisible = temp.m_isVisible;					//精灵的角度
 
 	m_blendType = temp.m_blendType;	//混合方式：0：简单混合2因子混合、1：复杂的4因子混合
 	m_blendRGBScr = temp.m_blendRGBScr;
@@ -2193,7 +2200,7 @@ _XSprite& _XSprite::operator = (const _XSprite& temp)
 	m_isInited = temp.m_isInited;
 	m_needUpdateInsideData = temp.m_needUpdateInsideData;
 #if WITH_OBJECT_MANAGER
-	if(m_isACopy == 0) _XObjectManager::GetInstance().addAObject(this,OBJ_SPRITE);
+	if(m_isACopy == 0) _XObjManger.addAObject(this,OBJ_SPRITE);
 #endif
 	m_isACopy = 1;
 	return *this;
@@ -2726,7 +2733,7 @@ int _XSprite::release()
 	}
 #endif
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	m_isACopy = 0;
 	m_isInited = 0;

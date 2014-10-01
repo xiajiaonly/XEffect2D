@@ -27,9 +27,9 @@ _XBool _X3DWorld::init(void (* drawFun)(_XBool),_XResourcePosition resourcePosit
 	m_worldCam.setAngle(0.0f,0.0f,0.0f);
 	m_worldCam.useCam();
 	//下面是灯光
-	m_worldLight.setPosition(0.0f,500.0f,500.0f,1.0f);
-	m_worldLight.setLength(100.0f);
-	m_worldLight.setAngle(-35.0f,180.0f,0.0f);
+	m_worldLight.setPosition(512.0f,1500.0f,512.0f,1.0f);
+	m_worldLight.setLength(2000.0f);
+	m_worldLight.setAngle(-90.0f,180.0f,0.0f);
 	m_worldLight.setAmblient(0.5f,0.5f,0.5f,1.0f);//灯的颜色
 	m_worldLight.setDiffuse(1.0f,1.0f,1.0f,1.0f);
 	m_worldLight.setSpecular(-0.2f,-0.2f,-0.2f,1.0f);
@@ -47,35 +47,20 @@ _XBool _X3DWorld::init(void (* drawFun)(_XBool),_XResourcePosition resourcePosit
 	m_worldLineFog.setDensity(0.0005f);
 	m_worldLineFog.useFog();
 	//初始化法线贴图
-#if WITH_COMMON_RESOURCE_FOLDER
-	if(m_dumpMapShader.init("../../Common/ResourcePack/Normal&HighLightMapShader.vrt",
-		"../../Common/ResourcePack/Normal&HighLightMapShader.frg",resourcePosition) == 0) return XFalse;
-#else
-	if(m_dumpMapShader.init("ResourcePack/Normal&HighLightMapShader.vrt",
-		"ResourcePack/Normal&HighLightMapShader.frg",resourcePosition) == 0) return XFalse;
-#endif
+	if(!m_dumpMapShader.init((XEE::windowData.commonResourcePos + "ResourcePack/Normal&HighLightMapShader.vrt").c_str(),
+		(XEE::windowData.commonResourcePos + "ResourcePack/Normal&HighLightMapShader.frg").c_str(),resourcePosition)) return XFalse;
 	m_dumpMapShader.connectTexture("Texture_00",NULL);//连接数据
 	m_dumpMapShader.connectTexture("normalTexture",&m_dumpMapTexture);
 	//初始化阴影shader
-#if WITH_COMMON_RESOURCE_FOLDER
-	if(m_shadowMapShader.init("../../Common/ResourcePack/Shadowmap.vrt",
-		"../../Common/ResourcePack/Shadowmap.frg",resourcePosition) == 0) return 0;	
-#else
-	if(m_shadowMapShader.init("ResourcePack/Shadowmap.vrt",
-		"ResourcePack/Shadowmap.frg",resourcePosition) == 0) return 0;	
-#endif
+	if(!m_shadowMapShader.init((XEE::windowData.commonResourcePos + "ResourcePack/Shadowmap.vrt").c_str(),
+		(XEE::windowData.commonResourcePos + "ResourcePack/Shadowmap.frg").c_str(),resourcePosition)) return XFalse;	
 	m_shadowMapShader.connectTexture("Texture",NULL);//连接数据
 	m_shadowMapShader.connectTexture("ShadowMap",&m_shadowMapTexture);
 	m_shadowMapShader.connectData("Texturing",DATA_TYPE_INT,1,&m_drawWithTexture);
 	m_shadowMapShader.connectData("ShadowMatrix",DATA_TYPE_4FLOAT_MATRIX,1,m_shadowMatrix);
 	//++++++++++++++++++++++++++++++++++
-#if WITH_COMMON_RESOURCE_FOLDER
-	if(m_DMapAndSMapGLSL.init("../../Common/ResourcePack/ShadowMap&DumpMap.vrt",
-		"../../Common/ResourcePack/ShadowMap&DumpMap.frg",resourcePosition) == 0) return XFalse;
-#else
-	if(m_DMapAndSMapGLSL.init("ResourcePack/ShadowMap&DumpMap.vrt",
-		"ResourcePack/ShadowMap&DumpMap.frg",resourcePosition) == 0) return XFalse;
-#endif
+	if(!m_DMapAndSMapGLSL.init((XEE::windowData.commonResourcePos + "ResourcePack/ShadowMap&DumpMap.vrt").c_str(),
+		(XEE::windowData.commonResourcePos + "ResourcePack/ShadowMap&DumpMap.frg").c_str(),resourcePosition)) return XFalse;
 	m_DMapAndSMapGLSL.connectTexture("Texture",NULL);//连接数据
 	m_DMapAndSMapGLSL.connectTexture("normalTexture",&m_dumpMapTexture);
 	m_DMapAndSMapGLSL.connectTexture("ShadowMap",&m_shadowMapTexture);
@@ -83,11 +68,7 @@ _XBool _X3DWorld::init(void (* drawFun)(_XBool),_XResourcePosition resourcePosit
 	m_DMapAndSMapGLSL.connectData("ShadowMatrix",DATA_TYPE_4FLOAT_MATRIX,1,m_shadowMatrix);
 	
 	//初始化天空盒子
-#if WITH_COMMON_RESOURCE_FOLDER
-	if(m_skyBox.init("../../Common/ResourcePack/SkyBox/top.png",resourcePosition) == 0) return 0;
-#else
-	if(m_skyBox.init("ResourcePack/SkyBox/top.png",resourcePosition) == 0) return 0;
-#endif
+	if(m_skyBox.init((XEE::windowData.commonResourcePos + "ResourcePack/SkyBox/top.png").c_str(),resourcePosition) == 0) return XFalse;
 	m_skyBox.setBox(4096.0f,-4096.0f,-4096.0f,4096.0f,4096.0f,-4096.0f);
 
 	if(!m_shadowMap.init()) return XFalse;
@@ -191,11 +172,11 @@ void _X3DWorld::draw()
 
 		////描绘光源的位置
 		//drawLine(_XVector3(m_worldLight.getPosition().x - 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),
-		//	_XVector3(m_worldLight.getPosition().x + 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x + 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),_XFColor::red);
 		//drawLine(_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z - 10.0f),
-		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z + 10.0f),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z + 10.0f),_XFColor::green);
 		//drawLine(_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y - 10.0f,m_worldLight.getPosition().z),
-		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y + 10.0f,m_worldLight.getPosition().z),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y + 10.0f,m_worldLight.getPosition().z),_XFColor::blue);
 		////描绘原点的位置
 		//drawOrigin();
 
@@ -229,11 +210,11 @@ void _X3DWorld::draw()
 		m_drawFun(XTrue);
 		////描绘光源的位置
 		//drawLine(_XVector3(m_worldLight.getPosition().x - 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),
-		//	_XVector3(m_worldLight.getPosition().x + 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x + 10.0f,m_worldLight.getPosition().y,m_worldLight.getPosition().z),_XFColor::red);
 		//drawLine(_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z - 10.0f),
-		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z + 10.0f),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y,m_worldLight.getPosition().z + 10.0f),_XFColor::green);
 		//drawLine(_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y - 10.0f,m_worldLight.getPosition().z),
-		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y + 10.0f,m_worldLight.getPosition().z),_XFColor(1.0f,0.0f,0.0f,1.0f));
+		//	_XVector3(m_worldLight.getPosition().x,m_worldLight.getPosition().y + 10.0f,m_worldLight.getPosition().z),_XFColor::blue);
 		////描绘原点的位置
 		//drawOrigin();
 
@@ -243,7 +224,7 @@ void _X3DWorld::draw()
 		glPopMatrix();
 	}
 }
-_XVector3 _X3DWorld::worldToScreen(_XVector3 point,_XRect view)
+_XVector3 _X3DWorld::worldToScreen(const _XVector3 &point,const _XRect &view)
 {//这个映射函数有问题
 	//_XMatrix4x4 temp = m_worldCam.getProjectMatrix() * m_worldCam.getViewMatrix();
 	_XMatrix4x4 temp = m_worldCam.getProjXView();
@@ -321,14 +302,14 @@ void _X3DWorld::keyEvent(const _XInputEvent& inputEvent)
 		case MOUSE_LEFT_BUTTON_DOWN:
 		case MOUSE_RIGHT_BUTTON_DOWN:
 		case MOUSE_MIDDLE_BUTTON_DOWN:
-			m_isMouseBtnDown = true;
+			m_isMouseBtnDown = XTrue;
 			m_mouseRotateMatrixO = m_mouseRotateMatrixN;
 			m_mouseArcBall.click(XEE::mousePosition);
 			break;
 		case MOUSE_LEFT_BUTTON_UP:
 		case MOUSE_RIGHT_BUTTON_UP:
 		case MOUSE_MIDDLE_BUTTON_UP:
-			m_isMouseBtnDown = false;
+			m_isMouseBtnDown = XFalse;
 			break;
 		}
 		break;

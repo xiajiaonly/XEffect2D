@@ -17,7 +17,7 @@ void HSV2RGB(unsigned char *color,float H,float S,float V)
 {
     if(S == 0.0f) 
     {// achromatic (grey)
-        color[0] = color[1] = color[2] = V * 255.0f;
+        color[0] = color[1] = color[2] = (unsigned char)(V * 255.0f);
         return;
     }
 
@@ -37,9 +37,9 @@ void HSV2RGB(unsigned char *color,float H,float S,float V)
     case 4: R = t;G = p;B = V;break;
     default: R = V;G = p;B = q;break;
     }
-	color[0] = R * 255.0f;
-	color[1] = G * 255.0f;
-	color[2] = B * 255.0f;
+	color[0] = (unsigned char)(R * 255.0f);
+	color[1] = (unsigned char)(G * 255.0f);
+	color[2] = (unsigned char)(B * 255.0f);
 /*	unsigned char R,G,B;
     double    var_h  = 0.0;
     int        var_i  = 0;
@@ -135,7 +135,7 @@ void initYUVTable()
 		tableUG[i] = (100 * (i - 128)) >> 8; 
 		tableUB[i] = (516 * (i - 128)) >> 8;
 	}
-	flag = 1;	//标记初始化完�?
+	flag = 1;	//
 }
 
 #define GET_CR(sy,su,sv) ((298*((sy)-16) + 409*((sv)-128) + 128)>>8)// Get R Value
@@ -166,7 +166,7 @@ void YUVToRGB(unsigned char *pYUV, unsigned char *pRGB,int width,int height)
 	unsigned char * pUbuf = pVbuf + (width * height >> 2);  //Pointer to V
 	unsigned char * pUbufT;
 
-	initYUVTable();	//快速查表算�?
+	initYUVTable();
 	int k = 0;
 	int offset = 0;
 	int Y,U,V;
@@ -178,21 +178,18 @@ void YUVToRGB(unsigned char *pYUV, unsigned char *pRGB,int width,int height)
 		pVbufT = pVbuf + offset;
 		for(int j = 0;j < width;++j)
 		{
-			//快�?
 			//Y = 298 * (*(pYbufT + j) - 16);
 			//U = *(pUbufT + (j >> 1)) - 128;
 			//V = *(pVbufT + (j >> 1)) - 128;
 			//pRGB[k + 0] = CLIP(GET_R(Y, U, V));		//R
 			//pRGB[k + 1] = CLIP(GET_G(Y, U, V));		//G
 			//pRGB[k + 2] = CLIP(GET_B(Y, U, V));		//B
-			//准确
 			//Y = *(pYbufT + j);
 			//U = *(pUbufT + (j >> 1));
 			//V = *(pVbufT + (j >> 1));
 			//pRGB[k + 0] = CLIP((Y + 1.4075 * (V-128)));
 			//pRGB[k + 1] = CLIP((Y - 0.3455 * (U - 128) - 0.7169 * (V - 128)));
 			//pRGB[k + 2] = CLIP((Y + 1.779 * (U - 128)));
-			//快速查�?
 			Y = *(pYbufT + j);
 			U = *(pUbufT + (j >> 1));
 			V = *(pVbufT + (j >> 1));
@@ -357,12 +354,12 @@ void YUV420P2RGB(unsigned char *Y,unsigned char *U,unsigned char *V, unsigned ch
             D = u - 128;
             E = v - 128;
             
-            r = ADJUST(( 298 * C          + 409 * E + 128) >> 8);
+            r = ADJUST(( 298 * C           + 409 * E + 128) >> 8);
             g = ADJUST(( 298 * C - 100 * D - 208 * E + 128) >> 8);
-            b = ADJUST(( 298 * C + 516 * D          + 128) >> 8);
-            r  =   ((r   -   128)   *   .6   +   128  )>255?255:(r   -   128)   *   .6   +   128;  
-            g  =   ((g   -   128)   *   .6  +   128  )>255?255:(g   -   128)   *   .6   +   128;  
-            b  =   ((b   -   128)   *   .6   +   128  )>255?255:(b   -   128)   *   .6  +   128;  
+            b = ADJUST(( 298 * C + 516 * D           + 128) >> 8);
+            r = ((r - 128) * 0.6 + 128) > 255 ? 255 : (r - 128) * 0.6 + 128;  
+            g = ((g - 128) * 0.6 + 128) > 255 ? 255 : (g - 128) * 0.6 + 128;  
+            b = ((b - 128) * 0.6 + 128) > 255 ? 255 : (b - 128) * 0.6 + 128;  
             //COLOR_RGB rgb={R,G,B};
             //COLOR_HSL hsl;
             //RGBtoHSL((const COLOR_RGB *)&rgb,&hsl);

@@ -85,19 +85,19 @@ void _XObjectBasic::updateChildColor()
 		m_childList[i]->setColor(getColor().fR,getColor().fG,getColor().fB,getColor().fA);
 	}
 }
-void _XObjectBasic::updateChildVisiable()
+void _XObjectBasic::updateChildVisible()
 {
-	if(getVisiable())
+	if(getVisible())
 	{
 		for(int i = 0;i < m_childList.size();++ i)
 		{
-			m_childList[i]->setVisiable();
+			m_childList[i]->setVisible();
 		}
 	}else
 	{
 		for(int i = 0;i < m_childList.size();++ i)
 		{
-			m_childList[i]->disVisiable();
+			m_childList[i]->disVisible();
 		}
 	}
 }

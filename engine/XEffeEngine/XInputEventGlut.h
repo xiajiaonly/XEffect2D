@@ -8,6 +8,6 @@
 #include "XInputEventCore.h"
 
 //返回是否有未处理的事件
-extern bool getInputEventGlut(_XInputEvent &event);
+inline bool getInputEventGlut(_XInputEvent &) {return true;}
 
 #endif

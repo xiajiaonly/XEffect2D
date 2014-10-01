@@ -33,39 +33,36 @@ private:
 	
 	char m_stageFlag[8];	//描述各个阶段标记的变量
 	//下面这个是内部调用的方法
-	void setPosition(_XVector2 position);	//设置logo显示的位置
+	void setPosition(const _XVector2 &position);	//设置logo显示的位置
 
 public:
-	int init(_XVector2 position,_XResourcePosition resoursePosition,int mode = 0);		//初始化
+	int init(const _XVector2 &position,_XResourcePosition resoursePosition,int mode = 0);		//初始化
 	void move(int timeDelay);			//显示logo的动画
 	void reset();						//重置
 	void draw();						//描绘logo
 	_XEngineLogo();						//构造函数
 	~_XEngineLogo();						//构造函数
-	void setBackSize(_XVector2 size);		//设置背景图的尺寸
+	void setBackSize(const _XVector2 &size);		//设置背景图的尺寸
 	void setBackSize(float x,float y);		//设置背景图的尺寸
 
 	//下面这两个方法尚未实现
-	void setSize(_XVector2 size);			//设置logo显示的尺寸
+	void setSize(const _XVector2 &size);			//设置logo显示的尺寸
 	int release();	//释放logo的资源
 	int getIsEnd();
 };
 
-inline void _XEngineLogo::setPosition(_XVector2 position)	//设置logo显示的位置
+inline void _XEngineLogo::setPosition(const _XVector2 &position)	//设置logo显示的位置
 {
 	m_position = position;
 }
-
-inline void _XEngineLogo::setBackSize(_XVector2 size)		//设置背景图的尺寸
+inline void _XEngineLogo::setBackSize(const _XVector2 &size)		//设置背景图的尺寸
 {
 	m_back.setSize(size);
 }
-
 inline void _XEngineLogo::setBackSize(float x,float y)		//设置背景图的尺寸
 {
 	m_back.setSize(x,y);
 }
-
 inline int _XEngineLogo::getIsEnd()
 {
 	if(m_isInited == 0) return 0;

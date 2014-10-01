@@ -8,8 +8,10 @@
 //这是一个对XButton类的强化，可以支持各种形状的button
 #include "XButton.h"
 
+class _XImageList;
 class _XButtonEx:public _XControlBasic
 {
+	friend _XImageList;
 private:
 	_XBool m_isInited;					//按钮是否被初始化
 	_XButtonState m_nowButtonState;		//当前的按钮状态
@@ -39,20 +41,35 @@ private:
 
 	int m_hotKey;
 	_XResourceInfo *m_resInfo;
+	_XBool m_withoutTex;	//没有贴图的形式
+	float *m_colorRate;
 public:
 	//需要注意的是这里的字体的位置，随着控件的缩放存在一些bug，需要实际使用中微调，不能做动态效果，以后需要改进
 	_XBool init(const _XVector2& position,			//控件的位置
 		const _XVector2 *area,int pointSum,		//用于描述按钮的响应范围的序列点，以及点的数量
 		const _XButtonTexture &tex,				//按钮的个中贴图信息
-		const char *caption,float captionSize,_XVector2 captionPosition,	//按钮上现实的文字的相关信息
+		const char *caption,float captionSize,const _XVector2 &captionPosition,	//按钮上显示的文字的相关信息
 		const _XFontUnicode &font);				//按钮上使用的字体
-	_XBool initEx(const _XVector2& position,			//控件的位置
-		const _XButtonTexture &tex,				//按钮的个中贴图信息
-		const char *caption,float captionSize,	//按钮上现实的文字的相关信息
-		const _XFontUnicode &font);				//按钮上使用的字体
+	_XBool initEx(const _XVector2& position,	//这是对上面接口的简化
+		const _XButtonTexture &tex,				
+		const char *caption,float captionSize,	
+		const _XFontUnicode &font);
 	_XBool initPlus(const char *path,				//按钮的个中贴图信息
 		const char *caption,float captionSize,	//按钮上现实的文字的相关信息
 		const _XFontUnicode &font,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);				//按钮上使用的字体
+	_XBool initWithoutTex(const _XVector2 *area,int pointSum,const char *caption,	//按钮上现实的文字的相关信息
+		const _XFontUnicode &font,const _XVector2 &captionPosition,float captionSize = 1.0f);
+	_XBool initWithoutTex(const _XVector2 *area,int pointSum,const char *caption)	//按钮上现实的文字的相关信息
+	{
+		if(area == NULL || pointSum <= 0) return XFalse;
+		_XVector2 tmp(0.0f,0.0f);
+		for(int i = 0;i < pointSum;++ i)
+		{
+			tmp += area[i];
+		}
+		tmp /= (float)(pointSum);
+		initWithoutTex(area,pointSum,caption,XEE::systemFont,tmp,1.0f);
+	}
 
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
@@ -60,43 +77,22 @@ public:
 	using _XObjectBasic::setSize;	//避免覆盖的问题
 	void setSize(float x,float y);
 
-	void setTextColor(const _XFColor& color) 
-	{
-		m_textColor = color;
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		m_color.setColor(r,g,b,a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		m_color.setA(a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 protected:
 	void draw();								//描绘按钮
-	void drawUp(){};							//do nothing
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);		//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);			//返回是否触发按键动作
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y);
-	void setLostFocus() 
-	{
-		if(m_isInited == 0) return;	//如果没有初始化直接退出
-		if(m_isActive == 0) return;		//没有激活的控件不接收控制
-		if(m_isVisiable == 0) return;	//如果不可见直接退出
-		if(m_isEnable == 0) return;		//如果无效则直接退出
-
-		if(m_nowButtonState != BUTTON_STATE_DISABLE) m_nowButtonState = BUTTON_STATE_NORMAL;
-	}	//设置失去焦点
+	_XBool canLostFocus(float,float){return XTrue;}
+	void setLostFocus();	//设置失去焦点
 public:
 	void setCallbackFun(void (* funInit)(void *,int),
 		void (* funRelease)(void *,int),
@@ -104,18 +100,21 @@ public:
 		void (* funMouseDown)(void *,int),
 		void (* funMouseUp)(void *,int),
 		void *pClass = NULL);
+	void setMouseDownCB(void (* funMouseDown)(void *,int),void *pClass = NULL);
+	void setMouseUpCB(void (* funMouseUp)(void *,int),void *pClass = NULL);
 	void setTexture(const _XButtonTexture& tex);
 
 	_XBool setACopy(const _XButtonEx &temp);
 
 	_XButtonEx();
-	~_XButtonEx();
+	~_XButtonEx(){release();}
 	//下面是为了提升效率而定义的内联函数
 	void setCaptionPosition(const _XVector2& textPosition);			//设置按钮的标题的位置，相对于按键左上角
 	void setCaptionPosition(float x,float y);			//设置按钮的标题的位置，相对于按键左上角
 	void setCaptionSize(const _XVector2& size);						//设置按钮的标题的尺寸
 	void setCaptionSize(float x,float y);						//设置按钮的标题的尺寸
 	void setCaptionText(const char *caption);						//设置按钮的标题的文字
+	const char *getCaptionString() const {return m_caption.getString();}
 	void setHotKey(int hotKey);	//设置按键的热键
 	int getHotKey() const;			//获取当前按键的热键信息
 	void setState(_XButtonState temp);		//设置按钮的状态
@@ -127,78 +126,20 @@ public:
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 private://下面为了防止错误，重载赋值操作符，复制构造函数
 	_XButtonEx(const _XButtonEx &temp);
 	_XButtonEx& operator = (const _XButtonEx& temp);
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是对控件动态支持而定义的相关属性和方法
+private:
+	_XMoveData m_actionMoveData;	//动态效果的变量
+	_XVector2 m_oldPos;				//动作播放时的位置
+	_XVector2 m_oldSize;			//动作播放时的大小
+	_XVector2 m_centerPos;			//多边形的中点
+	_XMoveData m_lightMD;
+	//---------------------------------------------------------
 };
-
-inline void _XButtonEx::setCaptionPosition(const _XVector2& textPosition)			//设置按钮的标题的位置，相对于按键左上角
-{
-	setCaptionPosition(textPosition.x,textPosition.y);
-}
-
-inline void _XButtonEx::setCaptionPosition(float x,float y)			//设置按钮的标题的位置，相对于按键左上角
-{
-	m_textPosition.set(x,y);
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-}
-
-inline void _XButtonEx::setCaptionSize(const _XVector2& size)						//设置按钮的标题的尺寸
-{
-	setCaptionSize(size.x,size.y);
-}
-
-inline void _XButtonEx::setCaptionSize(float x,float y)						//设置按钮的标题的尺寸
-{
-	if(x < 0 || y < 0) return;
-	m_textSize.set(x,y);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-}
-
-inline void _XButtonEx::setHotKey(int hotKey)	//设置按键的热键
-{
-	m_hotKey = hotKey;
-}
-
-inline void _XButtonEx::setCaptionText(const char *caption)						//设置按钮的标题的文字
-{
-	if(caption != NULL)
-	{
-		m_caption.setString(caption);
-	}
-}
-
-inline int _XButtonEx::getHotKey() const			//获取当前按键的热键信息
-{
-	return m_hotKey;
-}
-
-inline void _XButtonEx::setState(_XButtonState temp)		//设置按钮的状态
-{
-	m_nowButtonState = temp;
-}
- 
-inline _XButtonState _XButtonEx::getState() const
-{
-	if(m_isEnable == 0) return BUTTON_STATE_DISABLE;
-	return m_nowButtonState;
-}
-
-inline void _XButtonEx::disable()
-{
-	m_isEnable = 0;
-	m_nowButtonState = BUTTON_STATE_DISABLE;
-}
-
-inline void _XButtonEx::enable()
-{
-	if(m_nowButtonState == BUTTON_STATE_DISABLE)
-	{
-		m_isEnable = 1;
-		m_nowButtonState = BUTTON_STATE_NORMAL;
-		mouseProc(m_upMousePoint.x,m_upMousePoint.y,MOUSE_MOVE);
-	}
-}
+#include "XButtonEx.inl"
 
 #endif

@@ -7,6 +7,8 @@
 //--------------------------------
 #include "XSoundCore.h"
 #include "SDL_mixer.h"
+#include "XStringFun.h"
+#include "XBasicFun.h"
 
 class _XSoundSDLMixer:public _XSoundCore
 {
@@ -14,7 +16,7 @@ protected:
 	_XSoundSDLMixer() {}
 	_XSoundSDLMixer(const _XSoundSDLMixer&);
 	_XSoundSDLMixer &operator= (const _XSoundSDLMixer&);
-	virtual ~_XSoundSDLMixer() {}
+	virtual ~_XSoundSDLMixer() {close();}
 public:
 	static _XSoundSDLMixer& GetInstance()
 	{
@@ -33,11 +35,13 @@ public:
 	//music部分
 	bool loadMusic(const std::string &filename,void *&p)
 	{
-		p = (void *)Mix_LoadMUS(filename.c_str());
+		char * tmp = ANSIToUTF8(filename.c_str());
+		p = (void *)Mix_LoadMUS(tmp);
+		XDELETE_ARRAY(tmp);
 		return p != NULL;
 	}
 	void clearMusic(void *p){Mix_FreeMusic((Mix_Music *)p);}
-	int setMusicVolume(int v) {return Mix_VolumeMusic(v);} 
+	int setMusicVolume(int v) {return Mix_VolumeMusic(v);}	//必须在音乐载入之前调用
 	int getMusicVolume() {return Mix_VolumeMusic(-1);} 
 	int playMusic(void *p,int loop){return Mix_PlayMusic((Mix_Music*)p,loop);};
 	int musicFadeIn(void * p,int loop,int ms) {return Mix_FadeInMusic((Mix_Music*)p,loop,ms);}
@@ -52,7 +56,9 @@ public:
 	//sound部分
 	bool loadSound(const std::string &filename,void *&p)	//从文件中读取声音资源
 	{
-		p = (void *)Mix_LoadWAV(filename.c_str());
+		char * tmp = ANSIToUTF8(filename.c_str());
+		p = (void *)Mix_LoadWAV(tmp);
+		XDELETE_ARRAY(tmp);
 		return p != NULL;
 	}
 	bool loadSound(void *data,int len,void *&p)
@@ -62,7 +68,7 @@ public:
 		return p != NULL;
 	}
 	void clearSound(void * p) {Mix_FreeChunk((Mix_Chunk * )p);}
-	int setVolume(int c,int v) {return Mix_Volume(c,v);}
+	int setVolume(int c,int v) {return Mix_Volume(c,v);}	//必须在音乐载入之前调用
 	int getVolume(int c) {return Mix_Volume(c,-1);}
 	int playSound(void *p,int loop) {return Mix_PlayChannel(-1,(Mix_Chunk *)p,loop);}
 
@@ -76,9 +82,9 @@ public:
 	int haltSound(int c) {return Mix_HaltChannel(c);} 
 
 	//下面是关于回调函数部分
-	void setCallBack(SND_CALLBACK_FUN fun, void *arg) {Mix_HookMusic((void (__cdecl *)(void *,Uint8 *,int))fun,arg);}
+	void setCallBack(SND_CALLBACK_FUN fun, void *arg) {Mix_HookMusic(fun,arg);}
 	//为了替换fadein和fadeout 接口下面定义
-	void update(int stepTime) {;}
+	void update(int) {;}
 
 	unsigned char * getData(void *p) {return ((Mix_Chunk*)p)->abuf;}
 	int getDataLen(void *p) {return ((Mix_Chunk*)p)->alen;}

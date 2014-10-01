@@ -7,8 +7,6 @@
 //--------------------------------
 //这是一个用于串口通讯的协议的实现
 
-extern unsigned short CRC16(unsigned char *p,unsigned short len);
-
 //协议的工作模式
 enum _XModBusWorkMode
 {
@@ -29,12 +27,12 @@ struct _XModBusData
 {
 	int delayTime;		//接收到数据的延迟时间
 	unsigned char * data;
+	unsigned short addr;	//上读次操作的地址
 	int dataLen;
 	_XModBusData()
 		:data(NULL)
 		,dataLen(0)
-	{
-	}
+	{}
 };
 enum _XModeBusCMD
 {
@@ -81,6 +79,8 @@ struct _XModbusState
 	int inputOffset;
 	int outTime;					//超时时间单位：ms
 	int maxResendTimes;				//最大重发次数
+	int maxR2STime;					//接收到数据之后再次发送命令的时间间隔（ms）
+	int maxWaitingDataTime;			//等待数据的时间(ms)
 	_XModbusState()
 		:nPort(0)
 		,nBaud(19200)
@@ -102,8 +102,9 @@ struct _XModbusState
 		,hRegisterOffset(0)
 		,iRegisterOffset(0)
 		,inputOffset(0)
-	{
-	}
+		,maxR2STime(5)
+		,maxWaitingDataTime(0)
+	{}
 };
 class _XModBusProtocol
 {
@@ -125,6 +126,7 @@ private:
 	//void recvDataProc(unsigned char * data,int len);		//解析数据
 	_XBool m_needRecv;	//是否等待回复
 	int m_delayTime;	//等待回复的时间
+	int m_delaySendTime;	//等待发送的时间差
 
 	_XCritical m_sendMutex;
 	_XCritical m_recvMutex;
@@ -136,16 +138,21 @@ private:
 	void sendNowData();			//发送当前需要发送的数据
 	int m_sendTime;				//发送次数
 	_XBool m_connectState;		//连接状态，如果连接状态为XFalse的话，会退出收发线程
-	_XBool pushAData(_XModBusData &data);			//向发送队列中推入一个数据
+	_XBool pushAData(_XModBusData &data);			//向发送队列中推入一个数据,这里会复制数据（注意）
 	void answerProc(_XModBusData &data);			//根据指定的问题回答主机
 	void (*m_callBackFun)(const _XModBusData & data,void *p);	//增加一个回调函数，当接收到数据时调用该回调函数
 	void * m_pClass;
+	_XBool m_withLog;
 public:
+	_XModBusType getWorkType() const {return m_modbusState.workType;}
+	void setWithLog(_XBool flag) {m_withLog = flag;}
+	_XBool getWithLog() const {return m_withLog;}
 	void setCallBackFun(void (*p)(const _XModBusData &,void *),void *pC)
 	{
 		m_callBackFun = p;
 		m_pClass = pC;
 	}
+	_XBool getIsOpen() const {return m_isInited;}
 
 	_XBool openDevice(_XModbusState &modbusState);	//说明：mode和type的功能尚未实现
 	int getSendBuffSize();							//获取发送队列的长度
@@ -162,10 +169,63 @@ public:
 	_XModBusProtocol()
 		:m_isInited(XFalse)
 	//	,m_tempDataBuff(NULL)
-	{
-	}
+		,m_withLog(XTrue)
+		,m_withStatistics(false)
+	{}
 	~_XModBusProtocol(){release();}
 	friend void recvCallback(void *pClass,unsigned char * data,int len);
+	//下面需要增加的接口
+	//做主时
+	//下面四中操作尚未封装
+	//下面这些接口都未经过测试
+	void readCoilState(int startAddr,int sum,int arm);
+	void readInputState(int startAddr,int sum,int arm);
+	void writeOneCoilState(int Addr,int value,int arm);
+	void writeCoilsState(int startAddr,int sum,unsigned char *value,int arm);
+	//读取某个寄存器的值
+	void readHoldRegisters(int startAddr,int sum,int arm);	//读取多个保持寄存器
+	void readInputRegisters(int startAddr,int sum,int arm);	//读取多个输入寄存器
+	//写入某个寄存器的值
+	void writeRegisters(int startAddr,int sum,const unsigned short *data,int arm);		//写入多个寄存器
+	void writeOneRegister(int addr,int value,int arm);	//写入一个寄存器
+	int getHoldRegisterOffset(){return m_modbusState.hRegisterOffset;}	//获取做从时的地址的偏移量
+private:
+	//下面是统计信息
+	bool m_withStatistics;	//是否启用统计
+	int m_statisticsTimer;	//统计计时
+	int m_comunicateTimesNow;	//交互次数
+	int m_delayTimeNow;			//总延迟
+	float m_delayTimeAvg;	//平均延迟
+public:
+	int getSendTimesAll()const{return m_serialPort.getSendTimesAll();}
+	int getSendBytesAll()const{return m_serialPort.getSendBytesAll();}
+	int getRecvTimesAll()const{return m_serialPort.getRecvTimesAll();}
+	int getRecvBytesAll()const{return m_serialPort.getRecvBytesAll();}
+	float getSendTimesAvg()const{return m_serialPort.getSendTimesAvg();}
+	float getSendBytesAvg()const{return m_serialPort.getSendBytesAvg();}
+	float getRecvTimesAvg()const{return m_serialPort.getRecvTimesAvg();}
+	float getRecvBytesAvg()const{return m_serialPort.getRecvBytesAvg();}
+
+	float getDelayTimeAvg()const{return m_delayTimeAvg;}
+	void setStatistics(bool flag)
+	{
+		if(flag == m_withStatistics) return;
+		if(flag)
+		{//开启统计
+			m_withStatistics = true;
+			//数据归零
+			m_statisticsTimer = 0;	//统计计时
+			m_comunicateTimesNow = 0;	//交互次数
+			m_delayTimeNow = 0;			//总延迟
+			m_delayTimeAvg = 0.0f;	//平均延迟
+			m_serialPort.setStatistics(true);
+		}else
+		{//关闭统计
+			m_withStatistics = false;
+			m_serialPort.setStatistics(false);
+		}
+	}
+	void update();
 };
 inline int _XModBusProtocol::getRecvBuffSize()
 {
@@ -181,9 +241,16 @@ inline int _XModBusProtocol::getSendBuffSize()
 	m_sendMutex.Unlock();
 	return ret;
 }
-//下面的接口尚未完成
+//做主时从接受的数据中提取数据
+//注意下面的接口是做主时从接收到的数据中提取相关的数据
 extern int getModbusCMDDataSum(const _XModBusData &CMD);	//从命令中解析数据数量
-extern bool getModbusCMDAddress(const _XModBusData &CMD,unsigned int &addr);
-extern bool getModbusCMDData(const _XModBusData &CMD,unsigned int &data);
+inline bool getModbusCMDAddress(const _XModBusData &CMD,unsigned int &addr)
+{//根据协议获取命令的操作地址
+	if(CMD.dataLen <= 0) return false;
+	addr = CMD.addr;
+	return true;
+}
+extern bool getModbusCMDData(const _XModBusData &CMD,int index,unsigned int &data);
+inline int getModbusCMDID(const _XModBusData &CMD){return CMD.data[0];}	//从modbus命令中获取从设备的设备号
 
 #endif

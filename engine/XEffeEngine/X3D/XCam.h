@@ -8,6 +8,7 @@
 #include "XBasicFun.h"
 #include "XBasicClass.h"
 #include "glu.h"
+//fov为摄像机垂直方向的视角开角或者是水平和垂直开角中较小的一个，尚须确认。
 
 class _XBasicCam
 {
@@ -46,8 +47,7 @@ public:
 		:m_position(0.0f,0.0f,-100.0f)
 		,m_lookAtPosition(0.0f,0.0f,0.0f)
 		,m_direction(0.0f,1.0f,0.0f)
-	{
-	}
+	{}
 };
 //用于漫游的摄像机
 class _XCamRoam:public _XBasicCam
@@ -116,17 +116,17 @@ public:
 	}
 	void forward(float len)
 	{//向前移动摄像机
-		m_position.z += len * cos(m_angle.x * ANGLE_TO_RADIAN) * cos(m_angle.y * ANGLE_TO_RADIAN);
-		m_position.y += len * sin(m_angle.x * ANGLE_TO_RADIAN);
-		m_position.x += len * cos(m_angle.x * ANGLE_TO_RADIAN) * sin(m_angle.y * ANGLE_TO_RADIAN);
+		m_position.z += len * cos(m_angle.x * DEGREE2RADIAN) * cos(m_angle.y * DEGREE2RADIAN);
+		m_position.y += len * sin(m_angle.x * DEGREE2RADIAN);
+		m_position.x += len * cos(m_angle.x * DEGREE2RADIAN) * sin(m_angle.y * DEGREE2RADIAN);
 		m_needCalculate = XTrue;
 		m_neadCalFrustum = XTrue;
 	}
 	void backward(float len)
 	{//向后移动摄像机
-		m_position.z -= len * cos(m_angle.x * ANGLE_TO_RADIAN) * cos(m_angle.y * ANGLE_TO_RADIAN);
-		m_position.y -= len * sin(m_angle.x * ANGLE_TO_RADIAN);
-		m_position.x -= len * cos(m_angle.x * ANGLE_TO_RADIAN) * sin(m_angle.y * ANGLE_TO_RADIAN);
+		m_position.z -= len * cos(m_angle.x * DEGREE2RADIAN) * cos(m_angle.y * DEGREE2RADIAN);
+		m_position.y -= len * sin(m_angle.x * DEGREE2RADIAN);
+		m_position.x -= len * cos(m_angle.x * DEGREE2RADIAN) * sin(m_angle.y * DEGREE2RADIAN);
 		m_needCalculate = XTrue;
 		m_neadCalFrustum = XTrue;
 	}
@@ -198,8 +198,7 @@ public:
 		,m_near(10.0f)		
 		,m_far(10000.0f)				
 		,m_fov(45.0f)	
-	{
-	}
+	{}
 //下面是尚未实现的接口
 private:
 	_XVector4 m_face[6];	//视锥体的6个截面

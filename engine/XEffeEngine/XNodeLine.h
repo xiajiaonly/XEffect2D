@@ -31,14 +31,13 @@ struct _XNode
 #pragma pack(pop)
 
 //引导线的引导模式
-enum _XleadMode
+enum _XLeadMode
 {
 //	LEAD_MODE_NO_ROTATE = 0x01,		//没有角度变化
 //	LEAD_MODE_ROTATE = 0x02,			//随着曲线的角度变化而变化
 	LEAD_MODE_FOREWORD = 0x04,		//顺向移动曲线
 	LEAD_MODE_BACKWORD = 0x08			//逆向移动曲线
 };
-
 //引导曲线中的特殊点
 struct _XNodeSpecialPoint
 {
@@ -54,8 +53,7 @@ struct _XNodeSpecialPoint
 	_XNodeSpecialPoint()
 		:isEnable(XFalse)
 		,isEnd(XTrue)
-	{
-	}
+	{}
 };
 //节点曲线中节点数量的最大限制
 #define MAX_NODE_SUM 64
@@ -64,7 +62,7 @@ struct _XNodeSpecialPoint
 
 //注意：下面一些合理性要求，1、线中最少需要两个点，2、线中不能出现连续重合的点。（这两点还没有解决）
 //功能方面增加贝塞尔差值，使得曲线更加圆润
-
+//如果需要使用贝塞尔插值的话分段不能太长
 class _XSCounter;
 //节点引导曲线的类
 class _XNodeLine:public _XObjectBasic
@@ -79,20 +77,20 @@ private:
 
 	int m_myOrder;					//本身引导线的编号
 	_XNode *m_node;					//引导线中的节点
-	_XleadMode m_leadMode;					//曲线的引导模式
+	_XLeadMode m_leadMode;					//曲线的引导模式
 	_XBool m_isLoop;					//曲线是否闭合0不闭合 1闭合，注意闭合的点，首点和尾点不能重合，否则将会失去尾点的方向
 
 	_XVector2 m_offsetPosition;		//整体曲线的偏移位置
 	_XVector2 m_size;				//这个曲线的所放笔需要按照比例进行，不能够使用水平和垂直的不同比例，否则将会造成曲线中角度的失真严重
 	_XBool m_isACopy;					//是否是一个副本
-	_XBool m_isVisiable;
+	_XBool m_isVisible;
 
 	float m_lineLength;				//曲线的总长度
 	int m_nodeSum;					//引导曲线中的引导节点的数量
 public:
-	void setVisiable() {m_isVisiable = XTrue;}					//设置物件可见
-	void disVisiable() {m_isVisiable = XFalse;}					//设置物件不可见
-	_XBool getVisiable() const {return m_isVisiable;}			//获取物件是否可见的状态 
+	void setVisible() {m_isVisible = XTrue;}					//设置物件可见
+	void disVisible() {m_isVisible = XFalse;}					//设置物件不可见
+	_XBool getVisible() const {return m_isVisible;}			//获取物件是否可见的状态 
 	//用于产生引导曲线
 	void setOneNode(const _XVector2& node,int nodeOrder);	//改变其中某个点的位置
 	void setOneNode(float x,float y,int nodeOrder);	//改变其中某个点的位置
@@ -121,7 +119,7 @@ public:
 	int getNodeSum() const { return m_nodeSum;}//返回节点曲线中的节点数量
 	_XVector2 getNode(int order) const	//获取节点曲线中某个节点的位置
 	{
-		if(order < 0 || order >= m_nodeSum) return _XVector2(0.0f,0.0f);
+		if(order < 0 || order >= m_nodeSum) return _XVector2::zero;
 		return m_node[order].myPoint;
 	}
 	//int setSize(float size);			//设置曲线的尺寸
@@ -134,7 +132,7 @@ public:
 
 	float getAngle() const {return 0.0f;}	//这两个接口对于这个类没有实际的意义
 	float getNodeLineLength() const {return m_lineLength;}//获取节点曲线的总长度
-	void setAngle(float angle) {}	//这两个接口对于这个类没有实际的意义
+	void setAngle(float) {}	//这两个接口对于这个类没有实际的意义
 	//为了物件管理而实现下面的接口
 	_XBool isInRect(float x,float y);
 	_XVector2 getBox(int order);
@@ -148,7 +146,7 @@ public:
 	void moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier = XFalse);	//移动曲线中的特种点，增加功能是否使用贝塞尔差值
 	void resetSpecialPoint(_XBool needBezier = XFalse);				//重置特征点
 
-	void setLeadMode(_XleadMode mode);				//设置曲线的类型，顺向运行的曲线，或者逆向运行的曲线
+	void setLeadMode(_XLeadMode mode);				//设置曲线的类型，顺向运行的曲线，或者逆向运行的曲线
 	void setSpecialPointSpeed(float speed);	//设置曲线中的点的速度
 	_XBool getSpecialPointIsEnd() const;				//获取曲线中的点是否已经抵达终点
 	_XVector2 getSpecialPointPosition() const;		//获取曲线中的点的位置
@@ -159,16 +157,16 @@ public:
 	_XNodeLine(const _XNodeLine &temp);				//重载的拷贝构造函数，完全独立的两个东西，只是属性值相同而已
 	_XNodeLine& operator = (const _XNodeLine& temp);//重载的赋值操作符，完全独立的两个东西，只是属性值相同而已
 
-	virtual void setColor(float r,float g,float b,float a){}
-	virtual _XFColor getColor() const {return _XFColor();}
-	virtual void setAlpha(float a){}
+	virtual void setColor(float,float,float,float){}
+	virtual _XFColor getColor() const {return _XFColor::white;}
+	virtual void setAlpha(float){}
 
 	void draw();
 
 	_XNodeLine();
 	~_XNodeLine();	//这里用析构函数释放资源
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 };
 
 #include "XNodeLine.inl"

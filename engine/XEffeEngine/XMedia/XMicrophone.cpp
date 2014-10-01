@@ -6,17 +6,18 @@
 #include "XMicrophone.h"
 #include "stdio.h"
 #include "string.h"
+#include "../XLogBook.h"
 
 void _XMicrophone::printAllCaptureDevice()
 {
 	const ALCchar * devices; 
 	const ALCchar * ptr; 
-	printf("可以使用的录音设备有:\n"); 
+	LogStr("可以使用的录音设备有:"); 
 	devices = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER); 
 	ptr = devices; 
 	while (*ptr)
 	{ 
-		printf("   %s\n", ptr); 
+		LogNull("   %s\n", ptr); 
 		ptr += strlen(ptr) + 1; 
 	}
 }
@@ -27,15 +28,15 @@ _XBool _XMicrophone::openDevice(const ALCchar *devicename,ALCuint frequency,ALCe
 	m_frequency = frequency;		//音频的频率
 	m_format = format;				//音频的格式
 	m_buffersize = buffersize;		//音频的缓存空间大小
-	printf("打开默认的录音设备:\n"); 
+	LogStr("打开默认的录音设备:"); 
 	m_pCaptureDev = alcCaptureOpenDevice(devicename,frequency,format,buffersize); 
 	if(m_pCaptureDev == NULL) 
 	{  
-		printf("   打开录音设备失败!\n"); 
+		LogStr("   打开录音设备失败!"); 
 		return XFalse; 
 	} 
 	devices = alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER); 
-	printf("   已经打开录音设备 %s\n", devices);
+	LogNull("   已经打开录音设备 %s\n", devices);
 
 	m_dataBuffMaxSize = 10000;	//默认的最大数据大小
 	m_captureData = createArrayMem<unsigned char>(m_dataBuffMaxSize);

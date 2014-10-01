@@ -2,9 +2,9 @@
 #include "XLogBook.h"
 #include "XMouseAndKeyBoardDefine.h"
 
-bool _XWindowGlut::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
+bool _XWindowGlut::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int/*withFrame*/)
 {
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);	//GLUT_MULTISAMPLE启用多重采样
     glutInitWindowPosition(100,100);
     glutInitWindowSize(width, height);
     glutCreateWindow(windowTitle);

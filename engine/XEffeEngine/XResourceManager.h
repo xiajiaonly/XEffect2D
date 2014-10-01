@@ -26,6 +26,7 @@ enum _XResourceType
 	RESOURCE_TYPE_XMULTILIST_TEX,	//按复选框的资源
 	RESOURCE_TYPE_XCOMBO_TEX,	//按复选框的资源
 	RESOURCE_TYPE_XDIRLIST_TEX,	//按复选框的资源
+	RESOURCE_TYPE_XPASSWORDPAD_TEX,	//密码输入框的资源
 };
 class _XResourceTex
 {

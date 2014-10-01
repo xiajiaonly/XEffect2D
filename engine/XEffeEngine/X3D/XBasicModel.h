@@ -23,6 +23,7 @@ private:
 
 	_XVBO m_vbo;
 public:
+	//iSum为索引数量，索引数量为绘图元素数量 * 每个元素需要的顶点数
 	bool init(int vSum,float *v,float *c,int iSum,int *i)
 	{
 		if(m_isInited) return false;
@@ -35,7 +36,7 @@ public:
 		m_c = createArrayMem<float>(m_vSum * 4);
 		memcpy(m_c,c,m_vSum * 4 * sizeof(float));	//每个顶点有三个数据
 		m_i = createArrayMem<unsigned int>(m_iSum * 3);
-		memcpy(m_i,i,m_iSum * 3 * sizeof(float));	//每个三角面有三个顶点
+		memcpy(m_i,i,m_iSum * sizeof(int));
 
 		m_vbo.init(m_vSum,m_v,NULL,NULL,m_c,m_iSum,m_i);
 
@@ -65,7 +66,7 @@ public:
 	void updateI(int *i)	//更新引用数据
 	{
 		if(!m_isInited) return;
-		memcpy(m_i,i,m_iSum * 3 * sizeof(float));
+		memcpy(m_i,i,m_iSum * sizeof(int));
 		m_vbo.updateDataI(m_iSum,m_i);
 	}
 	void release()

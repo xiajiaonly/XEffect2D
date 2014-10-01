@@ -137,7 +137,7 @@ public:
 		p = sound;
 		return true;
 	}
-	bool loadSound(void *data,int len,void *&p)
+	bool loadSound(void *data,int,void *&p)
 	{
 		int fmodFlags = FMOD_HARDWARE | FMOD_OPENMEMORY;
 		FMOD_SOUND *sound = NULL;
@@ -195,10 +195,10 @@ public:
 	void update(int stepTime);
 
 	//下面的接口无法实现,获取某个sound的数据和数据长度，并设置
-	unsigned char * getData(void *p) {return NULL;}
-	int getDataLen(void *p) {return 0;}
-	void setData(void *p,unsigned char * d) {;}
-	void setDataLen(void *p,int len) {;}
+	unsigned char * getData(void *) {return NULL;}
+	int getDataLen(void *) {return 0;}
+	void setData(void *,unsigned char * ) {;}
+	void setDataLen(void *,int) {;}
 
 	//个性化的接口
 	//改变播放的位置vol [-1 +1]

@@ -23,7 +23,7 @@ extern void removeRedundantSpace(char *p);	//É¾³ıÁ¬ĞøµÄ»òÕßĞĞÎ²µÄ¿Õ¸ñ·û£¨Ö÷ÒªÊÇÎ
 //ObjÎÄ¼şÖĞ¶ÔÃæµÄÃèÊö
 struct _XFaceInfo
 {
-    _XVectorIndex3 vIndex;	//¶¨µãµÄË÷Òı
+    _XVectorIndex3 vIndex;	//¶¥µãµÄË÷Òı
 	_XVectorIndex3 tIndex;	//ÌùÍ¼µÄË÷Òı
 	_XVectorIndex3 nIndex;	//·¨ÏßµÄË÷Òı	
 };
@@ -67,8 +67,7 @@ struct _XMaterialInfo
 		,ke(0.0f,0.0f,0.0f,0.0f)
 		,shininess(0.0f)
 		,alpha(1.0f)
-	{
-	}
+	{}
 	~_XMaterialInfo()
 	{
 		//XDELETE(normalShader);
@@ -88,8 +87,7 @@ struct _XGroupInfo
 		:withTexInfo(-1)
 		,withNormalInfo(-1)
 		,materialIndex(0)
-	{
-	}
+	{}
 	~_XGroupInfo(){release();}
 	void release()
 	{
@@ -102,6 +100,7 @@ class _XModelObj:public _XBasic3DObject
 {
 private:
 	_XBool m_isInited;	//ÊÇ·ñ³õÊ¼»¯
+	_XVector3 m_bandBox[8];	//Ä£ĞÍµÄ°üÎ§ºĞ×Ó£¬ÊµÀıÖĞ¿ÉÄÜ¾­¹ıÎ»ÒÆ¡¢Ğı×ªºÍËõ·ÅËùÒÔÊı¾İ»á±ä»¯¡£
 
 	std::vector<_XVector3> m_point;				//¶¥µã	//Ä¿Ç°Ö»½âÎöÕâĞ©Êı¾İ
 	std::vector<_XVector2> m_texturePoint;		//ÌùÍ¼Êı¾İ
@@ -123,19 +122,34 @@ public:
 
 	_XBool save(const char *filename);	//½«Êı¾İ±£´æµ½ÎÄ¼ş£¬¸ñÊ½ÎªOBJ
 	_XBool load(const char *filename);	//´ÓÎÄ¼şÖĞÔØÈëÊı¾İ
-	void draw(_XBool withTex = XTrue);			//withTexÃè»æµÄÊ±ºòÊÇ·ñÊ¹ÓÃÌùÍ¼ĞÅÏ¢
+	void draw(_XBool withTex = XTrue,const _XBasic3DObject *base = NULL);			//withTexÃè»æµÄÊ±ºòÊÇ·ñÊ¹ÓÃÌùÍ¼ĞÅÏ¢
+	void drawBandbox()
+	{//ÔİÊ±ÏÈ²»¿¼ÂÇÎ»ÒÆ¡¢Ğı×ªºÍËõ·Å(ÉĞÎ´Íê³É)
+		drawLine(m_bandBox[0],m_bandBox[1]);
+		drawLine(m_bandBox[1],m_bandBox[2]);
+		drawLine(m_bandBox[2],m_bandBox[3]);
+		drawLine(m_bandBox[3],m_bandBox[0]);
+		drawLine(m_bandBox[4],m_bandBox[5]);
+		drawLine(m_bandBox[5],m_bandBox[6]);
+		drawLine(m_bandBox[6],m_bandBox[7]);
+		drawLine(m_bandBox[7],m_bandBox[4]);
+		drawLine(m_bandBox[0],m_bandBox[4]);
+		drawLine(m_bandBox[1],m_bandBox[5]);
+		drawLine(m_bandBox[2],m_bandBox[6]);
+		drawLine(m_bandBox[3],m_bandBox[7]);
+	}
 private:
 	_XBool checkData();	//¼ì²éÊı¾İµÄºÏ·¨ĞÔ
 public:
 	int getVectorSum() const {return m_point.size();}
 	_XVector3 getVector(int index) const 
 	{
-		if(index < 0 || index >= m_point.size()) return _XVector3(0.0f,0.0f,0.0f);
+		if(index < 0 || index >= m_point.size()) return _XVector3::zero;
 		return m_point[index];
 	}
 	_XVector3 getNormal(int index)
 	{
-		if(index < 0 || index >= m_normal.size()) return _XVector3(0.0f,0.0f,0.0f);
+		if(index < 0 || index >= m_normal.size()) return _XVector3::zero;
 		return m_normal[index];
 	}
 	_XVectorIndex3 getFaceNormalIndex(int index) const
@@ -157,12 +171,10 @@ public:
 	void release();
 	_XModelObj()
 		:m_isInited(XFalse)
-	{
-	}
-	~_XModelObj()
-	{
-		release();
-	}
+	{}
+	~_XModelObj(){release();}
 };
+
+//extern std::string getObjInfo0FromStr(const char * p);	//´ÓOBJÎÄ¼ş¶ÁÈ¡µÄ×Ö·û´®ÖĞ»ñÈ¡ĞèÒªµÄ×Ö·û´®£¬Èç£º×éÃû£¬ÎÄ¼şÃûµÈ
 
 #endif

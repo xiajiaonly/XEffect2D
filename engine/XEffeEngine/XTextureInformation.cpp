@@ -52,9 +52,9 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 		{
 			//Ω‚Œˆ“ªœ¬ƒ⁄»›
 			int offset = 0;
-			sscanf((char *)(p + offset),"%d,",&m_textureSum);
+			if(sscanf((char *)(p + offset),"%d,",&m_textureSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
 			offset += getCharPosition((char *)(p + offset),',') + 1;
-			sscanf((char *)(p + offset),"%d;",&m_targetTextureSum);
+			if(sscanf((char *)(p + offset),"%d;",&m_targetTextureSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
 			offset += getCharPosition((char *)(p + offset),';') + 1;
 			if(m_textureSum <= 0 || m_targetTextureSum <= 0)
 			{
@@ -98,15 +98,15 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 			}
 			for(int i = 0;i < m_textureSum;++ i)
 			{//’‚¿Ô”–“ª∏ˆªÿ≥µŒª
-				sscanf((char *)(p + offset),"%c",&tempChar);
+				if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset ++;//∂¡»°Œƒ±æµƒªÿ≥µŒª
-				sscanf((char *)(p + offset),"%c",&tempChar);
+				if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset ++;//∂¡»°Œƒ±æµƒªÿ≥µŒª
 
 				tempFlag = 0;
 				for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 				{
-					sscanf((char *)(p + offset),"%c",&tempChar);
+					if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
 					offset ++;
 					if(tempChar == ':')
 					{
@@ -133,7 +133,7 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 				tempFlag = 0;
 				for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 				{
-					sscanf((char *)(p + offset),"%c",&tempChar);
+					if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
 					offset ++;
 					if(tempChar == ':')
 					{
@@ -154,7 +154,7 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 					XDELETE_ARRAY(targetTextureFlag);
 					return XFalse;
 				}
-				sscanf((char *)(p + offset),"%d:",&tempFlag);
+				if(sscanf((char *)(p + offset),"%d:",&tempFlag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),':') + 1;
 				if(tempFlag < 0 || tempFlag >= m_targetTextureSum)
 				{//Œƒº˛ ˝æ›∑¢…˙¥ÌŒÛ£¨’‚¿Ô÷±Ω”∑µªÿ
@@ -168,7 +168,7 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 				if(targetTextureFlag[tempFlag] == 0)
 				{//»Áπ˚∑¢œ÷µ±«∞◊ ‘¥…–Œ¥‘ÿ»Î£¨‘Úœ¬√Ê‘ÿ»Î◊ ‘¥
 					sprintf(tempFilename,"%s%s",BASE_RESOURCE_PATH,targetFileName);
-					if(m_pTexture[tempFlag].load(tempFilename,m_resoursePosition) == 0)
+					if(!m_pTexture[tempFlag].load(tempFilename,m_resoursePosition))
 					{
 						m_isEnable = XFalse;
 						XDELETE_ARRAY(p);
@@ -181,22 +181,22 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 				}
 				m_texInfo[i].texture = m_pTexture[tempFlag];
 				//∂¡»° £œ¬µƒ–≈œ¢
-				sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureOffset.x);
+				if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureOffset.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),',') + 1;
-				sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureOffset.y);
+				if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureOffset.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),':') + 1;
 
-				sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.x);
+				if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),',') + 1;
-				sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.y);
+				if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),',') + 1;
-				sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove2.x);
+				if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove2.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),',') + 1;
-				sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureMove2.y);
+				if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureMove2.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),':') + 1;
-				sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureSize.x);
+				if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureSize.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),',') + 1;
-				sscanf((char *)(p + offset),"%f;",&m_texInfo[i].textureSize.y);
+				if(sscanf((char *)(p + offset),"%f;",&m_texInfo[i].textureSize.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
 				offset += getCharPosition((char *)(p + offset),';') + 1;
 			}
 			XDELETE_ARRAY(targetTextureFlag);
@@ -214,8 +214,8 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 			return XFalse;
 		}
 		//∂¡»°Œƒº˛ƒ⁄»›
-		fscanf(fp,"%d,",&m_textureSum);
-		fscanf(fp,"%d;",&m_targetTextureSum);
+		if(fscanf(fp,"%d,",&m_textureSum) != 1) {fclose(fp);return XFalse;}
+		if(fscanf(fp,"%d;",&m_targetTextureSum) != 1) {fclose(fp);return XFalse;}
 		if(m_textureSum <= 0 || m_targetTextureSum <= 0)
 		{
 			fclose(fp);
@@ -259,12 +259,12 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 		for(int i = 0;i < m_textureSum;++ i)
 		{
 			//’‚¿Ô”–“ª∏ˆªÿ≥µŒª
-			fscanf(fp,"%c",&tempChar);
+			if(fscanf(fp,"%c",&tempChar) != 1) {fclose(fp);return XFalse;}
 
 			tempFlag = 0;
 			for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 			{
-				fscanf(fp,"%c",&tempChar);
+				if(fscanf(fp,"%c",&tempChar) != 1) {fclose(fp);return XFalse;}
 				if(tempChar == ':')
 				{
 					m_texInfo[i].textureName[j] = '\0';
@@ -287,7 +287,7 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 			tempFlag = 0;
 			for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 			{
-				fscanf(fp,"%c",&tempChar);
+				if(fscanf(fp,"%c",&tempChar) != 1) {fclose(fp);return XFalse;}
 				if(tempChar == ':')
 				{
 					targetFileName[j] = '\0';
@@ -307,7 +307,7 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 				XDELETE_ARRAY(m_texInfo);
 				return XFalse;
 			}
-			fscanf(fp,"%d:",&tempFlag);
+			if(fscanf(fp,"%d:",&tempFlag) != 1) {fclose(fp);return XFalse;}
 			if(tempFlag < 0 || tempFlag >= m_targetTextureSum)
 			{//Œƒº˛ ˝æ›∑¢…˙¥ÌŒÛ£¨’‚¿Ô÷±Ω”∑µªÿ
 				fclose(fp);
@@ -320,10 +320,10 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 			if(tempFlag >= m_targetTextureSum) return XFalse;
 			if(targetTextureFlag[tempFlag] == 0)
 			{
-				if(m_pTexture[tempFlag].load(targetFileName,m_resoursePosition) == 0)
+				if(!m_pTexture[tempFlag].load(targetFileName,m_resoursePosition))
 				{
 					fclose(fp);
-					m_isEnable = 0;
+					m_isEnable = XFalse;
 					XDELETE_ARRAY(targetTextureFlag);
 					XDELETE_ARRAY(m_pTexture);
 					XDELETE_ARRAY(m_texInfo);
@@ -333,14 +333,14 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 			}
 			m_texInfo[i].texture = m_pTexture[tempFlag];
 			//∂¡»° £œ¬µƒ–≈œ¢
-			fscanf(fp,"%f,",&m_texInfo[i].textureOffset.x);
-			fscanf(fp,"%f:",&m_texInfo[i].textureOffset.y);
-			fscanf(fp,"%f,",&m_texInfo[i].textureMove.x);
-			fscanf(fp,"%f,",&m_texInfo[i].textureMove.y);
-			fscanf(fp,"%f,",&m_texInfo[i].textureMove2.x);
-			fscanf(fp,"%f:",&m_texInfo[i].textureMove2.y);
-			fscanf(fp,"%f,",&m_texInfo[i].textureSize.x);
-			fscanf(fp,"%f;",&m_texInfo[i].textureSize.y);
+			if(fscanf(fp,"%f,",&m_texInfo[i].textureOffset.x) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f:",&m_texInfo[i].textureOffset.y) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f,",&m_texInfo[i].textureMove.x) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f,",&m_texInfo[i].textureMove.y) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f,",&m_texInfo[i].textureMove2.x) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f:",&m_texInfo[i].textureMove2.y) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f,",&m_texInfo[i].textureSize.x) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%f;",&m_texInfo[i].textureSize.y) != 1) {fclose(fp);return XFalse;}
 		}
 		XDELETE_ARRAY(targetTextureFlag);
 		//À˘”– ˝æ›∂¡»°ÕÍ≥…
@@ -353,9 +353,9 @@ _XBool _XAllTexture::init(_XResourcePosition resoursePosition)	//’‚¿Ô∂¡»°æ≠π˝—πÀ
 }
 _XBool _XAllTexture::getTexture(const char *temp,_XTextureInfo &texInfo)
 {
-	if(!m_isInited) return XFalse;
-	if(!m_isEnable) return XFalse;
-	if(temp == NULL) return XFalse;
+	if(!m_isInited ||
+		!m_isEnable ||
+		temp == NULL) return XFalse;
 	for(int i = 0;i < m_textureSum;++ i)
 	{
 		if(fileNameCompare(temp, m_texInfo[i].textureName))
@@ -389,7 +389,7 @@ _XBool _XTextureData::load(const char * filename,_XResourcePosition resoursePosi
 
 	_XTextureInfo texInfo;
 	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
-	if(resoursePosition  == RESOURCE_LOCAL_PACK && _XAllTexture::GetInstance().getTexture(filename,texInfo) != 0)
+	if(resoursePosition  == RESOURCE_LOCAL_PACK && _XAllTexture::GetInstance().getTexture(filename,texInfo))
 	{//±æµÿ—πÀıŒƒº˛
 		texture = texInfo.texture;
 		textureMove = texInfo.textureMove;
@@ -403,7 +403,7 @@ _XBool _XTextureData::load(const char * filename,_XResourcePosition resoursePosi
 		return XTrue;
 	}else
 	{//œ¬√Ê’‚“ª≤ø∑÷◊ ‘¥√ª”–Ω¯––π‹¿Ì£¨Ω´ª·µº÷¬◊ ‘¥÷ÿ∏¥‘ÿ»Î£¨“≤æÕ «Õ¨“ª∏ˆ◊ ‘¥∂‡¥Œ‘ÿ»Î°££®’‚¿Ô–Ë“™–ﬁ’˝£©
-		if(texture.load(filename,resoursePosition) == 0) return XFalse;
+		if(!texture.load(filename,resoursePosition)) return XFalse;
 		//”…”⁄≥Ã–Úƒ⁄≤øª·∂‘ ˝æ›Ω¯––2µƒn¥Œ∑Ω¿©’πÀ˘“‘’‚¿Ô–Ë“™œŒΩ” ˝æ›°£
 		if(!isNPOT(texture.m_w,texture.m_h))
 		{//∑˚∫œ2µƒn¥Œ∑Ω√ª”–Ω¯––¿©’π
@@ -429,7 +429,7 @@ _XBool _XTextureData::load(const char * filename,_XResourcePosition resoursePosi
 		m_isInited = XTrue;
 		return XTrue;
 	}
-//	return 0;
+//	return XFalse;
 }
 _XBool _XTextureData::loadEmpty()
 {

@@ -50,8 +50,8 @@ inline _XVector3 _XVector3::operator * (const float& temp) const
 }
 inline _XVector3 _XVector3::operator / (const float& temp) const
 {
-	if(temp == 0.0f) return _XVector3(x,y,z);
-	return _XVector3(x / temp,y / temp,z / temp);
+	if(temp == 0.0f) return *this;
+	return operator *(1.0f / temp);
 }
 inline void _XVector3::operator += (const _XVector3& temp)
 {
@@ -100,17 +100,15 @@ inline void _XVector3::operator *= (const float& temp)
 inline void _XVector3::operator /= (const float& temp)
 {
 	if(temp == 0.0f) return;
-	x /= temp;
-	y /= temp;
-	z /= temp;
+	operator *=(1.0f/temp);
 }
 inline float _XVector3::getLength(const _XVector3& P0) const
 {
-	return sqrtf((x - P0.x) * (x - P0.x) + (y - P0.y) * (y - P0.y) + (z - P0.z) * (z - P0.z));
+	return sqrtf(squareFloat(x - P0.x) + squareFloat(y - P0.y) + squareFloat(z - P0.z));
 }
 inline float _XVector3::getLength(float a,float b,float c) const
 {
-	return sqrtf((x - a) * (x - a) + (y - b) * (y - b) + (z - c) * (z - c));
+	return sqrtf(squareFloat(x - a) + squareFloat(y - b) + squareFloat(z - c));
 }
 inline float _XVector3::getLength() const
 {
@@ -118,11 +116,11 @@ inline float _XVector3::getLength() const
 }
 inline float _XVector3::getLengthSqure(const _XVector3& P0) const
 {
-	return (x - P0.x) * (x - P0.x) + (y - P0.y) * (y - P0.y) + (z - P0.z) * (z - P0.z);
+	return squareFloat(x - P0.x) + squareFloat(y - P0.y) + squareFloat(z - P0.z);
 }
 inline float _XVector3::getLengthSqure(float a,float b,float c) const
 {
-	return (x - a) * (x - a) + (y - b) * (y - b) + (z - c) * (z - c);
+	return squareFloat(x - a) + squareFloat(y - b) + squareFloat(z - c);
 }
 inline float _XVector3::getLengthSqure() const
 {
@@ -160,10 +158,7 @@ inline void _XVector3::normalize()
 	float t = getLengthSqure();
 	if(t != 0.0f)
 	{
-		t = 1.0f / sqrt(t);
-		x *= t;
-		y *= t;
-		z *= t;
+		operator *= (1.0f / sqrt(t));
 	}
 }
 inline float _XVector3::dot(const _XVector3& temp) const

@@ -60,10 +60,7 @@ public:
 		m_ID = id ++;
 	}
 	//下面会造成重复释放的问题
-	~_XTextureData()
-	{
-		release();
-	}
+	~_XTextureData(){release();}
 	int getID() const {return m_ID;}	//用于判断是否同一目标
 	_XBool load(const char * filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool loadEmpty();
@@ -73,22 +70,22 @@ public:
 	void release();
 	_XBool setACopy(const _XTextureData& temp);
 	_XTextureData& operator = (const _XTextureData& temp);
+	void bind() {texture.bind();}
+	_XBool reset() {return texture.reset();}//初始化贴图
 private:
 	_XTextureData(const _XTextureData& temp);	//防止因为调用拷贝构造函数而造成错误
 };
-
 inline _XTextureData * createATextureData(const char * filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE)
 {
 	_XTextureData *ret = createMem<_XTextureData>();
 	if(ret == NULL) return NULL;
-	if(ret->load(filename,resoursePosition) == 0)
+	if(!ret->load(filename,resoursePosition))
 	{
 		XDELETE(ret);
 		return NULL;
 	}
 	return ret;
 }
-
 #if TEX_INFO_DEBUG
 extern int texInfoSum;
 #endif

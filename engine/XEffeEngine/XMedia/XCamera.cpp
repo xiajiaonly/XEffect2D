@@ -13,25 +13,35 @@ _XBool _XCamera::init(_XCameraData &data)
 	if(m_deviceSum <= 0) return XFalse;					//没有找到设备
 	m_VI.setIdealFramerate(data.deviceOrder,data.fps);	//设置视频捕捉率，默认为30	
 //	m_VI.setUseCallback(XTrue);
-	//if(m_VI.setupDevice(data.deviceOrder,data.w,data.h,VI_S_VIDEO) == XFalse) return XFalse; 
+	//if(!m_VI.setupDevice(data.deviceOrder,data.w,data.h,VI_S_VIDEO)) return XFalse; 
 //	m_VI.setAutoReconnectOnFreeze(data.deviceOrder,true,10);
 //	m_VI.setFormat(data.deviceOrder,VI_NTSC_M);
-	if(m_VI.setupDevice(data.deviceOrder,data.w,data.h) == XFalse) return XFalse; 
+	if(!m_VI.setupDevice(data.deviceOrder,data.w,data.h)) return XFalse; 
 
 	m_cameraWidth = m_VI.getWidth(data.deviceOrder);
 	m_cameraHeight = m_VI.getHeight(data.deviceOrder);
+	if(m_cameraWidth != data.w || m_cameraHeight != data.h)
+	{
+		m_VI.stopDevice(data.deviceOrder);
+		return XFalse; 
+	}
 	m_buffSize = m_VI.getSize(data.deviceOrder);
 	m_deviceOrder = data.deviceOrder;
 
 	m_frameDataBuff = createArrayMem<unsigned char>(m_buffSize);
-	if(m_frameDataBuff == NULL) return 0;
+	if(m_frameDataBuff == NULL) return XFalse;
 	m_frameDataBuff1 = createArrayMem<unsigned char>(m_buffSize);
 	if(m_frameDataBuff1 == NULL)
 	{
 		XDELETE_ARRAY(m_frameDataBuff);
 		return XFalse;
 	}
-	if(m_cameraSprite.init(m_cameraWidth,m_cameraHeight) == 0) return XFalse;
+	if(!m_cameraSprite.init(m_cameraWidth,m_cameraHeight))
+	{
+		XDELETE_ARRAY(m_frameDataBuff);
+		XDELETE_ARRAY(m_frameDataBuff1);
+		return XFalse;
+	}
 	//判断贴图尺寸
 	if(isNPOT(m_cameraWidth,m_cameraHeight))
 	{

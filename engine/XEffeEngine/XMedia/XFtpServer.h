@@ -77,12 +77,8 @@ public:
 		:m_isCreated(XFalse)
 		,m_clientSum(0)
 		,m_allClientSum(0)
-	{
-	}
-	~_XFtpServer()
-	{
-		close();
-	}
+	{}
+	~_XFtpServer(){close();}
 };
 
 #endif 

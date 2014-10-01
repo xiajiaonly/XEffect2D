@@ -9,7 +9,7 @@
 #include "XPixelCommon.h"
 #include "XBasicFun.h"
 
-_XBool _XBMP::init(const char *filename,int needAlpha)
+_XBool _XBMP::init(const char *filename,int)
 {
     if(m_isInited) return XFalse;        //∑¿÷π÷ÿ∏¥≥ı ºªØ
 	_XPixels<_XCurPixel> tmp;

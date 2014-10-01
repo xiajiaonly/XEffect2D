@@ -24,7 +24,7 @@ inline void _XNodeLine::setMyOrder(int temp)
 	if(temp >= 100000) return;
 	m_myOrder = temp;
 }
-inline void _XNodeLine::setLeadMode(_XleadMode mode)
+inline void _XNodeLine::setLeadMode(_XLeadMode mode)
 {
 	if(mode == LEAD_MODE_FOREWORD)
 	{

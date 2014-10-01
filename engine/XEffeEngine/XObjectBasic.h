@@ -6,6 +6,7 @@
 //Date:		2013.1.1
 //--------------------------------
 #include "XBasicClass.h"
+#include "XOprateDes.h"
 #include <vector>
 enum _XObjectType
 {
@@ -21,9 +22,11 @@ enum _XObjectType
 };
 extern string objectTypeStr[];
 //这个是能被物件管理器管理的物件的基类，能被管理的所有物件都是这个类的派生类
+class _XObjectManager;
 class _XObjectBasic
 {
 //private:
+	friend _XObjectManager;
 protected:
 	_XObjectType m_objType;
 public:
@@ -43,9 +46,9 @@ public:
 	virtual void setAngle(float angle) = 0;					//设置物件的角度	+Child处理
 	virtual float getAngle() const = 0;						//获取物件的角度
 	//virtual ~_XObjectBasic();
-	virtual void setVisiable() = 0;					//设置物件可见		+Child处理
-	virtual void disVisiable() = 0;					//设置物件不可见	+Child处理
-	virtual _XBool getVisiable() const = 0;					//获取物件是否可见的状态 
+	virtual void setVisible() = 0;					//设置物件可见		+Child处理
+	virtual void disVisible() = 0;					//设置物件不可见	+Child处理
+	virtual _XBool getVisible() const = 0;					//获取物件是否可见的状态 
 	//新加入的接口
 	virtual void draw() = 0;
 
@@ -56,8 +59,8 @@ public:
 
 	_XObjectBasic()
 		:m_parent(NULL)
-	{
-	}
+		,m_objType(OBJ_NULL)
+	{}
 	virtual ~_XObjectBasic()
 	{
 		if(m_parent != NULL)
@@ -81,13 +84,14 @@ protected:
 	virtual void updateChildAngle();
 	virtual void updateChildAlpha();
 	virtual void updateChildColor();
-	virtual void updateChildVisiable();
+	virtual void updateChildVisible();
 public:
 	virtual void clearAllChild();	//删除所有的子物体
 	virtual void pushChild(_XObjectBasic * child);	//推入
 	virtual void popChild(_XObjectBasic * child);	//推出
 	virtual _XBool getIsChild(_XObjectBasic * child);	//检查目标是否为自己的子成员
 	//这个测试尚未完成，所以这一行还保留着
-	virtual void justForTest() = 0;	//这一行的目的是为了通过开启这一行以便于通过编译器查找需要修改的地方
+	//virtual void justForTest() = 0;	//这一行的目的是为了通过开启这一行以便于通过编译器查找需要修改的地方
 };
+
 #endif

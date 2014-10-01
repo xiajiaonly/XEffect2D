@@ -8,72 +8,65 @@
 
 void _XActionSimpleEx::setStart()			//设置动作开始进行
 {
-	if(m_actionState == ACTION_STATE_END)
+	if(m_actionState != ACTION_STATE_END) return;
+	m_actionState = ACTION_STATE_ACTION;
+	switch(m_type)
 	{
-		m_actionState = ACTION_STATE_ACTION;
-		if(m_type == ACTION_TYPE_ATOMIC)
-		{
-			if(m_funResetData != NULL) (*m_funResetData)(m_pClass);	
-		}else
-		if(m_type == ACTION_TYPE_COMPLEX)
-		{//开始播放第一个动作
-			m_pAction[0]->setStart();
-			m_nowActionIndex = 0;
-		}
+	case ACTION_TYPE_ATOMIC:
+		if(m_funResetData != NULL) m_funResetData(m_pClass);	
+		return;
+	case ACTION_TYPE_COMPLEX://开始播放第一个动作
+		if(m_pAction[0] != NULL) m_pAction[0]->setStart();
+		m_nowActionIndex = 0;
+		return;
 	}
 }
 void _XActionSimpleEx::move(int stepTime)
 {
-	if(m_isInited == 0) return;
-	if(m_actionState != ACTION_STATE_ACTION) return;
-	if(m_type == ACTION_TYPE_ATOMIC)
+	if(!m_isInited || 
+		m_actionState != ACTION_STATE_ACTION) return;
+	switch(m_type)
 	{
+	case ACTION_TYPE_ATOMIC:
 		if(m_funMove != NULL) m_funMove(stepTime,m_pClass);	
 		if(m_funIsEnd(m_pClass)) 
 		{
 			m_actionState = ACTION_STATE_END;	//标记动作结束
 			if(m_funAtEnd != NULL) m_funAtEnd(m_pClass);
 		}
-		if(m_actionIsLoop && m_actionState == ACTION_STATE_END)
-		{
-			setStart();
+		if(m_actionIsLoop && 
+			m_actionState == ACTION_STATE_END) setStart();
+		return;
+	case ACTION_TYPE_COMPLEX:
+		if(!m_pAction[m_nowActionIndex]->getIsEnd()) return;
+		++ m_nowActionIndex;
+		if(m_nowActionIndex >= m_actionSum)
+		{//结束
+			m_actionState = ACTION_STATE_END;
+			if(m_actionIsLoop && 
+				m_actionState == ACTION_STATE_END) setStart();
+		}else
+		{//播放下一个动作
+			m_pAction[m_nowActionIndex]->setStart();
 		}
-	}else
-	if(m_type == ACTION_TYPE_COMPLEX)
-	{
-		if(m_pAction[m_nowActionIndex]->getIsEnd())
-		{
-			++ m_nowActionIndex;
-			if(m_nowActionIndex >= m_actionSum)
-			{//结束
-				m_actionState = ACTION_STATE_END;
-				if(m_actionIsLoop && m_actionState == ACTION_STATE_END)
-				{
-					setStart();
-				}
-			}else
-			{//播放下一个动作
-				m_pAction[m_nowActionIndex]->setStart();
-			}
-		}
+		return;
 	}
 }
-
 void _XActionSimpleEx::draw()
 {
-	if(m_isInited == 0) return;
+	if(!m_isInited) return;
 	if(m_actionState != ACTION_STATE_ACTION) return;	//这个条件有待磋商
-	if(m_type == ACTION_TYPE_ATOMIC)
+	switch(m_type)
 	{
+	case ACTION_TYPE_ATOMIC:
 		if(m_funDraw != NULL) m_funDraw(m_pClass);
-	}else
-	if(m_type == ACTION_TYPE_COMPLEX)
-	{//可以遍历所有组件进行显示
+		return;
+	case ACTION_TYPE_COMPLEX://可以遍历所有组件进行显示
 		m_pAction[m_nowActionIndex]->draw();
+		return;
 	}
 }
-
-int _XActionSimpleEx::init(_XResourcePosition resoursePosition,
+_XBool _XActionSimpleEx::init(_XResourcePosition resoursePosition,
 	const char *actionName,
 	_XBool (*funIsEnd)(void *),
 	void (*funMove)(int,void *),		
@@ -84,8 +77,8 @@ int _XActionSimpleEx::init(_XResourcePosition resoursePosition,
 	void (*funRelease)(void *),
 	void * pClass)
 {
-	if(m_isInited != 0) return 1;
-	if(funIsEnd == NULL) return 0;
+	if(m_isInited) return XTrue;
+	if(funIsEnd == NULL) return XFalse;
 	m_funIsEnd = funIsEnd;
 	m_funMove = funMove;
 	m_funDraw = funDraw;
@@ -97,27 +90,22 @@ int _XActionSimpleEx::init(_XResourcePosition resoursePosition,
 
 	m_resoursePosition = resoursePosition;
 
-	if(m_funInit != NULL) if((*m_funInit)(resoursePosition,m_pClass) == 0) return 0;
+	if(m_funInit != NULL) if(m_funInit(resoursePosition,m_pClass) == 0) return XFalse;
 
 	m_actionState = ACTION_STATE_END;
-	if(actionName == NULL)
-	{
-		m_actionName[0] = '\0';
-	}else
-	{
-		strcpy(m_actionName,actionName);
-	}
+	if(actionName == NULL) m_actionName[0] = '\0';
+	else strcpy(m_actionName,actionName);
 
 	m_type = ACTION_TYPE_ATOMIC;
-	m_isInited = 1;
-	return 1;
+	m_isInited = XTrue;
+	return XTrue;
 }
 
 #include <stdarg.h>
 
-int _XActionSimpleEx::init(_XResourcePosition resoursePosition,const char *actionName,int actionSum,...)	//复合动作的初始化
+_XBool _XActionSimpleEx::init(_XResourcePosition resoursePosition,const char *actionName,int actionSum,...)	//复合动作的初始化
 {
-	if(m_isInited != 0) return 1;
+	if(m_isInited) return XTrue;
 	m_funIsEnd = NULL;
 	m_funMove = NULL;
 	m_funDraw = NULL;
@@ -126,13 +114,13 @@ int _XActionSimpleEx::init(_XResourcePosition resoursePosition,const char *actio
 	m_pClass = NULL;
 	m_resoursePosition = resoursePosition;
 
-	if(m_funInit != NULL) if((*m_funInit)(resoursePosition,m_pClass) == 0) return 0;
+	if(m_funInit != NULL) if(m_funInit(resoursePosition,m_pClass) == 0) return XFalse;
 
 	XDELETE(m_pAction);
 	m_actionSum = actionSum;
-	if(m_actionSum <= 0) return 0;
+	if(m_actionSum <= 0) return XFalse;
 	m_pAction = createArrayMem<_XActionSimpleEx *>(m_actionSum);
-	if(m_pAction == NULL) return 0;
+	if(m_pAction == NULL) return XFalse;
 	//下面解析所有的动作
 	va_list arg_ptr;
 	va_start(arg_ptr,actionSum);
@@ -143,18 +131,13 @@ int _XActionSimpleEx::init(_XResourcePosition resoursePosition,const char *actio
 	va_end(arg_ptr);
 
 	m_actionState = ACTION_STATE_END;
-	if(actionName == NULL)
-	{
-		m_actionName[0] = '\0';
-	}else
-	{
-		strcpy(m_actionName,actionName);
-	}
-	m_type = ACTION_TYPE_COMPLEX;
-	m_isInited = 1;
-	return 1;
-}
+	if(actionName == NULL) m_actionName[0] = '\0';
+	else strcpy(m_actionName,actionName);
 
+	m_type = ACTION_TYPE_COMPLEX;
+	m_isInited = XTrue;
+	return XTrue;
+}
 //下面是关于新的动作管理的类的接口
 _XActionSimpleHandle _XActionSimpleManager::pushAction(_XActionSimpleEx *action)	//向表中推入一个动作，返回动作的句柄，-1表示动作已经存在
 {
@@ -163,10 +146,10 @@ _XActionSimpleHandle _XActionSimpleManager::pushAction(_XActionSimpleEx *action)
 	if(ret != -1) return ret;	//防止重复注册
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable == 0)
+		if(!m_pActions[i].actionIsEnable)
 		{
 			m_pActions[i].actionHandle = i;
-			m_pActions[i].actionIsEnable = 1;
+			m_pActions[i].actionIsEnable = XTrue;
 			m_pActions[i].pAction = action;
 			++ m_actionSum;
 			return m_pActions[i].actionHandle;
@@ -179,7 +162,7 @@ _XActionSimpleHandle _XActionSimpleManager::getActionHandle(const char *actionNa
 	if(actionName == NULL) return -1;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction != NULL) 
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL) 
 		{
 			if(m_pActions[i].pAction->isName(actionName)) return m_pActions[i].actionHandle;
 		}
@@ -191,145 +174,98 @@ _XActionSimpleHandle _XActionSimpleManager::getActionHandle(const _XActionSimple
 	if(action == NULL) return -1;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction == action) return m_pActions[i].actionHandle;
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) return m_pActions[i].actionHandle;
 	}
 	return -1;	//没有找到这个动作
 }
-int _XActionSimpleManager::popAction(const char *actionName)
+_XBool _XActionSimpleManager::popAction(const char *actionName)
 {
-	if(actionName == NULL) return 0;
+	if(actionName == NULL) return XFalse;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction != NULL
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL
 			&& m_pActions[i].pAction->isName(actionName)) 
 		{
 			m_pActions[i].actionHandle = 0;
-			m_pActions[i].actionIsEnable = 0;
+			m_pActions[i].actionIsEnable = XFalse;
 			m_pActions[i].pAction = NULL;
 			-- m_actionSum;
-			return 1;
+			return XTrue;
 		}
 	}
-	return 0;	//没有找到这个动作
+	return XFalse;	//没有找到这个动作
 }
-int _XActionSimpleManager::popAction(_XActionSimpleEx *action)		//从表中删除一个动作
+_XBool _XActionSimpleManager::popAction(_XActionSimpleEx *action)		//从表中删除一个动作
 {
-	if(action == NULL) return 0;
-	if(m_actionSum <= 0) return 0;
+	if(action == NULL ||
+		m_actionSum <= 0) return XFalse;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction == action) 
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) 
 		{
 			m_pActions[i].actionHandle = 0;
-			m_pActions[i].actionIsEnable = 0;
+			m_pActions[i].actionIsEnable = XFalse;
 			m_pActions[i].pAction = NULL;
 			-- m_actionSum;
-			return 1;
+			return XTrue;
 		}
 	}
-	return 0;	//没有找到这个动作
+	return XFalse;	//没有找到这个动作
 }
-int _XActionSimpleManager::popAction(_XActionSimpleHandle actionHandle)
+_XBool _XActionSimpleManager::popAction(_XActionSimpleHandle actionHandle)
 {
-	if(actionHandle < 0 || actionHandle >= MAX_ACTION_SUM) return 0;
-	if(m_pActions[actionHandle].actionIsEnable != 0)
-	{
-		m_pActions[actionHandle].actionHandle = 0;
-		m_pActions[actionHandle].actionIsEnable = 0;
-		m_pActions[actionHandle].pAction = NULL;
-		-- m_actionSum;
-		return 1;
-	}
-	return 0;
+	if(actionHandle < 0 || actionHandle >= MAX_ACTION_SUM ||
+		!m_pActions[actionHandle].actionIsEnable) return XFalse;
+	m_pActions[actionHandle].actionHandle = 0;
+	m_pActions[actionHandle].actionIsEnable = XFalse;
+	m_pActions[actionHandle].pAction = NULL;
+	-- m_actionSum;
+	return XTrue;
 }
-int _XActionSimpleManager::releaseAction(const char *actionName)	//从表中删除一个动作并释放掉相应的资源
+_XBool _XActionSimpleManager::releaseAction(const char *actionName)	//从表中删除一个动作并释放掉相应的资源
 {
-	if(actionName == NULL) return 0;
+	if(actionName == NULL) return XFalse;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction != NULL
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL
 			&& m_pActions[i].pAction->isName(actionName)) 
 		{
 			m_pActions[i].actionHandle = 0;
-			m_pActions[i].actionIsEnable = 0;
+			m_pActions[i].actionIsEnable = XFalse;
 			m_pActions[i].pAction->release();
 			m_pActions[i].pAction = NULL;
 			-- m_actionSum;
-			return 1;
+			return XTrue;
 		}
 	}
-	return 0;	//没有找到这个动作
+	return XFalse;	//没有找到这个动作
 }
-int _XActionSimpleManager::releaseAction(_XActionSimpleEx *action)
+_XBool _XActionSimpleManager::releaseAction(_XActionSimpleEx *action)
 {
-	if(action == NULL) return 0;
-	if(m_actionSum <= 0) return 0;
+	if(action == NULL ||
+		m_actionSum <= 0) return XFalse;
 	for(int i = 0;i < MAX_ACTION_SUM;++ i)
 	{
-		if(m_pActions[i].actionIsEnable != 0 && m_pActions[i].pAction == action) 
+		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) 
 		{
 			m_pActions[i].actionHandle = 0;
-			m_pActions[i].actionIsEnable = 0;
+			m_pActions[i].actionIsEnable = XFalse;
 			m_pActions[i].pAction->release();
 			m_pActions[i].pAction = NULL;
 			-- m_actionSum;
-			return 1;
+			return XTrue;
 		}
 	}
-	return 0;	//没有找到这个动作
+	return XFalse;	//没有找到这个动作
 }
-int _XActionSimpleManager::releaseAction(_XActionSimpleHandle actionHandle)
+_XBool _XActionSimpleManager::releaseAction(_XActionSimpleHandle actionHandle)
 {
-	if(actionHandle < 0 || actionHandle >= MAX_ACTION_SUM) return 0;
-	if(m_pActions[actionHandle].actionIsEnable != 0)
-	{
-		m_pActions[actionHandle].actionHandle = 0;
-		m_pActions[actionHandle].actionIsEnable = 0;
-		m_pActions[actionHandle].pAction->release();
-		m_pActions[actionHandle].pAction = NULL;
-		-- m_actionSum;
-		return 1;
-	}
-	return 0;
-}
-int _XActionSimpleManager::setStartAction(const char *actionName)
-{
-	int ret = getActionHandle(actionName);
-	if(ret < 0) return 0;
-	m_pActions[ret].pAction->setStart();
-	return 1;
-}
-int _XActionSimpleManager::setStartAction(_XActionSimpleHandle actionHandle)
-{
-	if(actionHandle >= 0 && actionHandle < MAX_ACTION_SUM
-		&& m_pActions[actionHandle].actionIsEnable != 0)
-	{
-		m_pActions[actionHandle].pAction->setStart();
-		return 1;
-	}
-	return 0;
-}
-_XActionSimpleEx *_XActionSimpleManager::getPAction(const char *actionName)
-{
-	int ret = getActionHandle(actionName);
-	if(ret < 0) return NULL;
-	return m_pActions[ret].pAction;
-}
-_XActionSimpleEx *_XActionSimpleManager::getPAction(_XActionSimpleHandle actionHandle)
-{
-	if(actionHandle >= 0 && actionHandle < MAX_ACTION_SUM
-		&& m_pActions[actionHandle].actionIsEnable != 0) return m_pActions[actionHandle].pAction;
-	return NULL;
-}
-_XBool _XActionSimpleManager::getIsActionEnd(const char *actionName)
-{
-	_XActionSimpleEx * temp = getPAction(actionName);
-	if(temp == NULL) return XTrue;
-	return temp->getIsEnd();
-}
-_XBool _XActionSimpleManager::getIsActionEnd(_XActionSimpleHandle actionHandle)
-{
-	if(actionHandle >= 0 && actionHandle < MAX_ACTION_SUM
-		&& m_pActions[actionHandle].actionIsEnable != 0) return m_pActions[actionHandle].pAction->getIsEnd();
+	if(actionHandle < 0 || actionHandle >= MAX_ACTION_SUM ||
+		!m_pActions[actionHandle].actionIsEnable) return XFalse;
+	m_pActions[actionHandle].actionHandle = 0;
+	m_pActions[actionHandle].actionIsEnable = XFalse;
+	m_pActions[actionHandle].pAction->release();
+	m_pActions[actionHandle].pAction = NULL;
+	-- m_actionSum;
 	return XTrue;
 }

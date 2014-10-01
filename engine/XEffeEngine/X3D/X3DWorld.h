@@ -146,7 +146,7 @@ public: //3D世界中的一些属性
 	void useShadow(_XBool withTexture,_XWorldShaderType type = SHADER_SHADOW,unsigned int dumpTex = 0);
 	void removeShadow();
 	//下面用于做映射
-	_XVector3 worldToScreen(_XVector3 point,_XRect view);	//目前这个函数存在问题
+	_XVector3 worldToScreen(const _XVector3 &point,const _XRect &view);	//目前这个函数存在问题
 	void setTargetObj(_XBasic3DObject * obj){m_targetObj = obj;}
 
 	_XBool init(void (* drawFun)(_XBool),_XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);

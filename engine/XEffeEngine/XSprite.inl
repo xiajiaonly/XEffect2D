@@ -3,10 +3,10 @@
 inline void _XSprite::setAngle(float angle)		//[0-360]
 {
 	m_angle = angle;	//反一下方向
-	//m_sinAngle = sinf((360.0f - m_angle) * ANGLE_TO_RADIAN);				//角度的零时变量
-	//m_cosAngle = cosf((360.0f - m_angle) * ANGLE_TO_RADIAN);
-	m_sinAngle = cos((270.0f - m_angle) * ANGLE_TO_RADIAN);				//角度的零时变量
-	m_cosAngle = cos((360.0f - m_angle) * ANGLE_TO_RADIAN);
+	//m_sinAngle = sinf((360.0f - m_angle) * DEGREE2RADIAN);				//角度的零时变量
+	//m_cosAngle = cosf((360.0f - m_angle) * DEGREE2RADIAN);
+	m_sinAngle = cos((270.0f - m_angle) * DEGREE2RADIAN);				//角度的零时变量
+	m_cosAngle = cos((360.0f - m_angle) * DEGREE2RADIAN);
 	updateChildAngle();
 	m_needUpdateData = XTrue;
 }
@@ -94,16 +94,16 @@ inline void _XSprite::setChangeCenter(const _XVector2& center)
 }
 inline _XBool _XSprite::isInRect(float x,float y)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
-	if(m_isInited == 0) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
+	if(!m_isInited) return XFalse;
+	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
 inline _XVector2 _XSprite::getBox(int order)
 {
-	if(m_isInited == 0) return _XVector2(0.0f,0.0f);
+	if(!m_isInited) return _XVector2::zero;
 	updateData();
 	//if(order >= 0 && order < 4) return m_vPoint[order];
 	if(order >= 0 && order < 4) return m_rectPoint[order];
-	else return _XVector2(0.0f,0.0f);
+	else return _XVector2::zero;
 }
 inline void _XSprite::setAlpha(float temp)
 {
@@ -124,19 +124,19 @@ inline void _XSprite::setColor(float r,float g,float b,float a)		//小于0不会改变
 	if(a >= 0) m_color.fA = a;
 	updateChildColor();
 }
-inline void _XSprite::setVisiable() 
+inline void _XSprite::setVisible() 
 {
-	m_isVisiable = XTrue;
-	updateChildVisiable();
+	m_isVisible = XTrue;
+	updateChildVisible();
 }					//设置物件可见
-inline void _XSprite::disVisiable() 
+inline void _XSprite::disVisible() 
 {
-	m_isVisiable = XFalse;
-	updateChildVisiable();
+	m_isVisible = XFalse;
+	updateChildVisible();
 }						//设置物件不可见
-inline _XBool _XSprite::getVisiable() const 
+inline _XBool _XSprite::getVisible() const 
 {
-	return m_isVisiable;
+	return m_isVisible;
 }	
 inline void _XSprite::setBlendType(int typeScr,int typeDst)
 {
@@ -182,13 +182,13 @@ inline _XTextureData * _XSprite::getTextureData()
 }
 inline void _XSprite::setAngleClip(float angle)
 {
-	m_needAngleClip = 1;
+	m_needAngleClip = XTrue;
 	m_clipAngle = angle;	//这个角度需要化简
 	m_needUpdateData = XTrue;
 }
 inline void _XSprite::disAngleClip()
 {
-	m_needAngleClip = 0;
+	m_needAngleClip = XFalse;
 	m_needUpdateData = XTrue;
 }
 inline void _XSprite::drawInside()
@@ -205,6 +205,7 @@ inline _XSprite::_XSprite(const _XSprite& temp)
 {
 	if(& temp == this) return;
 }
+
 #else
 inline void _XSprite::setAlpha(float temp)
 {
@@ -220,8 +221,8 @@ inline float _XSprite::getAlpha() const
 inline void _XSprite::setAngle(float temp)
 {
 	angle = temp;
-	sinAngle = sin(angle * ANGLE_TO_RADIAN);
-	cosAngle = cos(angle * ANGLE_TO_RADIAN);
+	sinAngle = sin(angle * DEGREE2RADIAN);
+	cosAngle = cos(angle * DEGREE2RADIAN);
 	m_needUpdateInsideData = 1;
 #if IS_USE_SOLIDIFY
 	m_needSolidify = 1;
@@ -351,14 +352,14 @@ inline void _XSprite::disClip()
 	setClipRect(0.0f,0.0f,m_textureData.textureSize.x,m_textureData.textureSize.y);
 	m_isEnableOutsideChip = 0;
 }
-inline void _XSprite::setClipRect(_XRect temp)
+inline void _XSprite::setClipRect(const _XRect &temp)
 {//设置在精灵内部进行裁减
 	setClipRect(temp.left,temp.top,temp.right,temp.bottom);
 }
 inline int _XSprite::isInRect(float x,float y)
 {
 	if(m_isInited == 0) return 0;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
+	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
 inline void _XSprite::drawInside()
 {
@@ -366,8 +367,8 @@ inline void _XSprite::drawInside()
 	//glBegin(GL_POLYGON);
 	//for(int i = 0; i < m_pointArraySize;++ i)
 	//{
-	//	glTexCoord2d(m_pointArray[i << 1].x,m_pointArray[i << 1].y);
-	//	glVertex2d	(m_pointArray[(i << 1) + 1].x,m_pointArray[(i << 1) + 1].y);
+	//	glTexCoord2f(m_pointArray[i << 1].x,m_pointArray[i << 1].y);
+	//	glVertex2f	(m_pointArray[(i << 1) + 1].x,m_pointArray[(i << 1) + 1].y);
 	//}
 	//glEnd();	
 	//可以优化的参考代码

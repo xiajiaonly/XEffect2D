@@ -50,8 +50,9 @@ inline _XVector2 _XVector2::operator * (const float& temp) const
 }
 inline _XVector2 _XVector2::operator / (const float& temp) const
 {
-    if(temp == 0.0f) return _XVector2(x,y);
-    return _XVector2(x / temp,y / temp);
+    if(temp == 0.0f) return *this;
+    //return _XVector2(x / temp,y / temp);
+	return operator * (1.0f/temp);
 }
 inline void _XVector2::operator += (const _XVector2& temp)
 {
@@ -92,8 +93,9 @@ inline void _XVector2::operator *= (const float & temp)
 inline void _XVector2::operator /= (const float & temp)
 {
     if(temp == 0.0f) return;
-    x /= temp;
-    y /= temp;
+	//x /= temp;
+	//y /= temp;
+	operator *=(1.0f/temp);
 }
 inline float _XVector2::getLength(const _XVector2& P0) const
 {
@@ -109,11 +111,11 @@ inline float _XVector2::getLength(float a,float b) const
 }
 inline float _XVector2::getLengthSqure(const _XVector2& P0) const
 {
-	return (P0.x - x) * (P0.x - x) + (P0.y - y) * (P0.y - y);
+	return squareFloat(P0.x - x) + squareFloat(P0.y - y);
 }
 inline float _XVector2::getLengthSqure(float a,float b) const
 {
-	return (a - x) * (a - x) + (b - y) * (b - y);
+	return squareFloat(a - x) + squareFloat(b - y);
 }
 inline float _XVector2::getLengthSqure() const
 {
@@ -154,13 +156,13 @@ inline _XVector2 _XVector2::operator - () const
 {
 	return _XVector2(-x,-y);
 }
-inline _XVector2 &_XVector2::operator = (const _XVector2 &temp)
-{
-	if(this == &temp) return *this;
-	x = temp.x;
-	y = temp.y;
-	return *this;
-}
+//inline _XVector2 &_XVector2::operator = (const _XVector2 &temp)
+//{
+//	if(this == &temp) return *this;
+//	x = temp.x;
+//	y = temp.y;
+//	return *this;
+//}
 inline void _XVector2::normalize()
 {
 	float t = getLengthSqure();
@@ -171,10 +173,9 @@ inline void _XVector2::normalize()
 		y *= t;
 	}
 }
-inline _XVector2 _XVector2::normalize() const
+inline _XVector2 normalize(const _XVector2 &v)
 {
-	_XVector2 ret(0.0f,0.0f);
-	float r = getLength();
-	if(r != 0) ret.set(x/r,y/r);
-	return ret;
+	float r = v.getLengthSqure();
+	if(r != 0) return v * (1.0f / sqrt(r));
+	return _XVector2::zero;
 }

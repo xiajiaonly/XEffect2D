@@ -78,8 +78,8 @@ public:
 
 inline void _XAloneParticles::move(int timeDelay)
 {
-	if(m_isInited == 0) return;
-	if(m_stage == STAGE_SLEEP) return;
+	if(m_isInited == 0 ||
+		m_stage == STAGE_SLEEP) return;
 	//颜色的变化
 	//尺寸的变化
 	//位置的变化

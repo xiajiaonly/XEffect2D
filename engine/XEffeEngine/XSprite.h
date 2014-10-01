@@ -24,8 +24,8 @@
 #include "windows.h"
 #endif
 
-#include "SDL.h"
-#include "SDL_image.h"
+//#include "SDL.h"
+//#include "SDL_image.h"
 #include "gl.h"
 #include "XBasicClass.h"
 
@@ -71,7 +71,7 @@ private:
 	float m_cosAngle;
 	_XTextureData m_textureData;	//贴图Texture的信息
 	_XFColor m_color;				//物件的颜色
-	_XBool m_isVisiable;				//物件是否可见
+	_XBool m_isVisible;				//物件是否可见
 
 	_XBool m_needUpdateData;			//是否需要更新内部数据
 	void updateData();
@@ -117,10 +117,10 @@ public:
 	void setChangeCenter(const _XVector2& center);
 	_XBool init(const char * filename,										//文件名
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,	//资源的位置 0外部 1内部
-		_XVector2 changePoint = _XVector2(0.5f,0.5f));					//变形的据准点
-	_XBool init(int tempW = 0,int tempH = 0,int needSizeCheck = 1,_XVector2 changePoint = _XVector2(0.5f,0.5f));
-	_XBool init(_XTextureData& texData,_XVector2 changePoint = _XVector2(0.5f,0.5f));	
-	_XBool init(int w,int h,_XColorMode colorMode,unsigned int tex,_XVector2 changePoint = _XVector2(0.5f,0.5f));	//从一张贴图建立一个精灵
+		const _XVector2 &changePoint = _XVector2(0.5f,0.5f));					//变形的据准点
+	_XBool init(int tempW = 0,int tempH = 0,int needSizeCheck = 1,const _XVector2 &changePoint = _XVector2(0.5f,0.5f));
+	_XBool init(_XTextureData& texData,const _XVector2 &changePoint = _XVector2(0.5f,0.5f));	
+	_XBool init(int w,int h,_XColorMode colorMode,unsigned int tex,const _XVector2 &changePoint = _XVector2(0.5f,0.5f));	//从一张贴图建立一个精灵
 	void draw();
 	void draw(GLuint tex);	//对于内部资源由于内部裁剪所以会存在问题
 	void draw(const _XTextureData& texData);	//这里尚未考虑内部裁剪，所以目前会存在问题
@@ -131,7 +131,7 @@ public:
 		,m_turnOverMode(TURN_OVER_MODE_NULL)
 		,m_needClip(XFalse)
 		,m_color(1.0f,1.0f,1.0f,1.0f)
-		,m_isVisiable(XTrue)
+		,m_isVisible(XTrue)
 		,m_pShader(NULL)
 		//,m_pShaderProc(NULL)	//为了向下兼容而定义的
 		,m_blendType(BLEND_TWO_DATA)
@@ -161,9 +161,9 @@ public:
 	void setColor(float r,float g,float b,float a);		//小于0不会改变这一元素
 	_XFColor getColor() const {return m_color;}
 
-	void setVisiable();			//设置物件可见
-	void disVisiable();			//设置物件不可见
-	_XBool getVisiable() const;
+	void setVisible();			//设置物件可见
+	void disVisible();			//设置物件不可见
+	_XBool getVisible() const;
 	//alpha混合的接口
 	void setBlendType(int typeScr,int typeDst);
 	void setBlendType(int rgbScr,int rgbDst,int aScr,int aDst);
@@ -182,33 +182,33 @@ public:
 	//下面实现一些向下兼容的接口
 	void setIsTransformCenter(_XTransformMode temp)
 	{
-		if(temp == POINT_LEFT_TOP) setChangeCenter(_XVector2(0.0f,0.0f));
+		if(temp == POINT_LEFT_TOP) setChangeCenter(_XVector2::zero);
 		else setChangeCenter(_XVector2(0.5f,0.5f));
 	}
 	void draw(GLuint *tex) {draw(*tex);}	//对于内部资源由于内部裁剪所以会存在问题
-	void draw(const _XTextureData* texData) {draw(*texData);;}	//这里尚未考虑内部裁剪，所以目前会存在问题
+	void draw(const _XTextureData* texData) {draw(*texData);}	//这里尚未考虑内部裁剪，所以目前会存在问题
 	void drawWithoutBlend() {draw();}
 	_XBool init(const char * filename,					//文件名
 		_XResourcePosition resoursePosition,					//资源的位置 0外部 1内部
 		_XTransformMode isTransformCenter)	//变形的据准点
 	{
 		if(isTransformCenter == POINT_CENTER) return init(filename,resoursePosition,_XVector2(0.5f,0.5f));
-		else return init(filename,resoursePosition,_XVector2(0.0f,0.0f));
+		else return init(filename,resoursePosition,_XVector2::zero);
 	}
 	_XBool init(int tempW,int tempH,int needSizeCheck,_XTransformMode isTransformCenter)
 	{
 		if(isTransformCenter == POINT_CENTER) return init(tempW,tempH,needSizeCheck,_XVector2(0.5f,0.5f));
-		else return init(tempW,tempH,needSizeCheck,_XVector2(0.0f,0.0f));
+		else return init(tempW,tempH,needSizeCheck,_XVector2::zero);
 	}
 	_XBool init(_XTextureData& texData,_XTransformMode isTransformCenter)
 	{
 		if(isTransformCenter == POINT_CENTER) return init(texData,_XVector2(0.5f,0.5f));
-		else return init(texData,_XVector2(0.0f,0.0f));
+		else return init(texData,_XVector2::zero);
 	}
 	_XBool init(int w,int h,_XColorMode colorMode,unsigned int tex,_XTransformMode isTransformCenter)
 	{
 		if(isTransformCenter == POINT_CENTER) return init(w,h,colorMode,tex,_XVector2(0.5f,0.5f));
-		else return init(w,h,colorMode,tex,_XVector2(0.0f,0.0f));
+		else return init(w,h,colorMode,tex,_XVector2::zero);
 	}
 //	void (*m_pShaderProc)(void);
 	void setOverturn(char temp)	//设置左右翻转(为了保持向旧版本的兼容保留这个接口)
@@ -231,7 +231,7 @@ public:
 	int _XSprite::getW() const {return m_textureData.texture.m_w;}
 	int _XSprite::getH() const {return m_textureData.texture.m_h;}
 
-	void justForTest() {;}
+//	void justForTest() {;}
 };
 #else
 //新功能的实现建议：实现多边形裁剪
@@ -251,14 +251,14 @@ private:
 	_XRect m_clipOutsideRect;			//用户设置的外部裁剪尺寸
 	_XRect m_clipRect;					//最终的裁剪尺寸，这个尺寸由内部裁剪尺寸与外部裁剪尺寸组成
 	char m_isEnableOutsideChip;			//是否允许剪切
-	char m_isVisiable;
+	char m_isVisible;
 
 	void updateClipAndRotatoData();		//由于贴图的变更，更新裁剪和旋转的数据
 	char m_needUpdateInsideData;		//是否需要更新内部数据
 	void updateInsideData();			//由于精灵物件的属性变化而需要更新精灵的一些内部数据
 public:
 	void disClip();						//取消2D精灵裁减，默认为不裁减
-	void setClipRect(_XRect temp);		//设置2D精灵裁减范围
+	void setClipRect(const _XRect &temp);		//设置2D精灵裁减范围
 	//注意这里存在问题，如果图片小坐标方向有空余，裁剪之后拼合，然后调用这个函数，需要保证left和top为0，否则会出现问题。
 	void setClipRect(float left,float top,float right,float bottom);	//设置2D精灵裁减范围
 
@@ -314,9 +314,9 @@ public:
 	void setAngle(float temp);
 	int getW() const;
 	int getH() const;
-	void setVisiable() {m_isVisiable = 1;}					//设置物件可见
-	void disVisiable() {m_isVisiable = 0;}						//设置物件不可见
-	char getVisiable() const {return m_isVisiable;}					//获取物件是否可见的状态 
+	void setVisible() {m_isVisible = 1;}					//设置物件可见
+	void disVisible() {m_isVisible = 0;}						//设置物件不可见
+	char getVisible() const {return m_isVisible;}					//获取物件是否可见的状态 
 
 private:
 	GLfloat angle;			//精灵的角度

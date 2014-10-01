@@ -14,15 +14,15 @@
 
 _XNodeLine::_XNodeLine()
 :m_node(NULL)
-,m_isACopy(0)
+,m_isACopy(XFalse)
 ,m_myOrder(0)
 ,m_leadMode(LEAD_MODE_FOREWORD)	//曲线的引导模式
 ,m_lineLength(0)					//曲线的总长度
 //,m_nodeSum(0)						//引导曲线中的引导节点的数量
 ,m_offsetPosition(0,0)
 ,m_size(1.0f,1.0f)
-,m_isLoop(0)
-,m_isVisiable(1)
+,m_isLoop(XFalse)
+,m_isVisible(XTrue)
 {
 	m_node = createArrayMem<_XNode>(MAX_NODE_SUM);
 	if(m_node == NULL) printf("Memory error!\n");
@@ -35,10 +35,11 @@ _XNodeLine::_XNodeLine()
 	{
 		printf("Memory error!\n");
 	}
-	m_specialPoint.isEnable = 0;
+	m_specialPoint.isEnable = XFalse;
 	clearUp();
+	m_objType = OBJ_NODELINE;
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_NODELINE);
+	_XObjManger.addAObject(this);
 #endif
 }
 
@@ -52,13 +53,13 @@ _XNodeLine::~_XNodeLine()
 	}
 	release();
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 }
 
 void _XNodeLine::addOneNode(float x,float y)		//向曲线头部添加一个点
 {
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	int prevNodeNumber;
 	if(m_nodeSum >= MAX_NODE_SUM || m_node == NULL) return;	//如果记录的电已经满了则直接返回
 	m_node[m_nodeSum].myPoint.set(x,y);		//记录当前的点的信息
@@ -82,7 +83,7 @@ void _XNodeLine::addOneNode(float x,float y)		//向曲线头部添加一个点
 		m_node[m_nodeSum].toPreviousLength = m_node[prevNodeNumber].toNextLength;
 		m_lineLength += m_node[m_nodeSum].toPreviousLength;
 		
-		if(m_isLoop == 0)
+		if(!m_isLoop)
 		{
 			//最后一个点的方向与前一个点的方向保持一致
 			m_node[m_nodeSum].toNextAngle = m_node[prevNodeNumber].toNextAngle;
@@ -97,13 +98,13 @@ void _XNodeLine::addOneNode(float x,float y)		//向曲线头部添加一个点
 		}
 	}
 	++ m_nodeSum;
-	if(m_isLoop != 0) setLoop();	//设置曲线闭合
+	if(m_isLoop) setLoop();	//设置曲线闭合
 	m_needUpdateData = XTrue;
 }
 
 void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 {
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	if(m_node == NULL) return;
 	if(nodeOrder == 0)
 	{//头
@@ -120,7 +121,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 		m_node[1].toPreviousCos = cos(m_node[1].toPreviousAngle);
 		m_node[1].toPreviousSin = sin(m_node[1].toPreviousAngle);
 		m_node[1].toPreviousLength = m_node[0].toNextLength;
-		if(m_isLoop == 0)
+		if(!m_isLoop)
 		{
 			if(m_nodeSum > 1)
 			{//头的点保持后一个点的方向
@@ -135,7 +136,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 				m_node[1].toNextSin = m_node[0].toNextSin;
 			}
 		}
-		if(m_isLoop != 0) setLoop();
+		if(m_isLoop) setLoop();
 	}else
 	if(nodeOrder == m_nodeSum - 1)
 	{//尾
@@ -160,7 +161,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 			m_node[nodeOrder].toPreviousLength = m_node[nodeOrder - 1].toNextLength;
 			m_lineLength += m_node[nodeOrder].toPreviousLength;
 			//最后一个点的方向与前一个点的方向保持一致
-			if(m_isLoop == 0)
+			if(!m_isLoop)
 			{
 				m_node[nodeOrder].toNextAngle = m_node[nodeOrder - 1].toNextAngle;
 				m_node[nodeOrder].toNextCos = m_node[nodeOrder - 1].toNextCos;
@@ -173,7 +174,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 				}
 			}
 		}
-		if(m_isLoop != 0) setLoop();	//设置曲线闭合
+		if(m_isLoop) setLoop();	//设置曲线闭合
 	}else
 	{//中间
 		m_lineLength -= m_node[nodeOrder].toPreviousLength;
@@ -204,7 +205,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 		m_node[nodeOrder - 1].toNextCos = cos(m_node[nodeOrder - 1].toNextAngle);
 		m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
 		m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
-		if(m_isLoop == 0)
+		if(!m_isLoop)
 		{
 			if(nodeOrder == 1)
 			{//头的点保持后一个点的方向
@@ -212,7 +213,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
 				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 			}
-			if(nodeOrder == m_nodeSum - 2 && m_isLoop == 0)
+			if(nodeOrder == m_nodeSum - 2 && !m_isLoop)
 			{//最后一个点要保持前一个点的方向
 				m_node[nodeOrder + 1].toNextAngle = m_node[nodeOrder].toNextAngle;
 				m_node[nodeOrder + 1].toNextCos = m_node[nodeOrder].toNextCos;
@@ -225,7 +226,7 @@ void _XNodeLine::setOneNode(float x,float y,int nodeOrder)
 
 void _XNodeLine::decreaseOneNode()
 {
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	if(m_nodeSum <= 0 || m_node == NULL) return;
 	m_lineLength -= m_node[m_nodeSum - 1].toPreviousLength;
 	m_node[m_nodeSum - 1].myPoint.set(0,0);
@@ -238,13 +239,13 @@ void _XNodeLine::decreaseOneNode()
 	m_node[m_nodeSum - 1].toPreviousSin = 0;
 	m_node[m_nodeSum - 1].toPreviousLength = 0;
 	-- m_nodeSum;
-	if(m_isLoop != 0) setLoop();	//设置曲线闭合
+	if(m_isLoop) setLoop();	//设置曲线闭合
 	m_needUpdateData = XTrue;
 }
 
 void _XNodeLine::addOneNode(float x,float y,int nodeOrder)		//向曲线中间添加一个点
 {
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	if(m_nodeSum >= MAX_NODE_SUM || m_node == NULL) return;	//如果记录的电已经满了则直接返回
 	if(nodeOrder == 0)
 	{//头
@@ -265,7 +266,7 @@ void _XNodeLine::addOneNode(float x,float y,int nodeOrder)		//向曲线中间添加一个
 		m_node[1].toPreviousCos = cos(m_node[1].toPreviousAngle);
 		m_node[1].toPreviousSin = sin(m_node[1].toPreviousAngle);
 		m_node[1].toPreviousLength = m_node[0].toNextLength;
-		if(m_isLoop == 0)
+		if(!m_isLoop)
 		{
 			if(m_nodeSum > 1)
 			{//头这个点保持前一个点的方向
@@ -319,7 +320,7 @@ void _XNodeLine::addOneNode(float x,float y,int nodeOrder)		//向曲线中间添加一个
 		m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
 		m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
 		++ m_nodeSum;
-		if(m_isLoop == 0)
+		if(!m_isLoop)
 		{
 			if(nodeOrder == 1)
 			{//头这个点保持前一个点的方向
@@ -344,7 +345,7 @@ void _XNodeLine::addOneNode(float x,float y,int nodeOrder)		//向曲线中间添加一个
 void _XNodeLine::decreaseOneNode(int nodeOrder)
 {
 	//检查数据的合理性
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	if(nodeOrder <= 0 || nodeOrder >= m_nodeSum) return;
 	if(nodeOrder == 0)
 	{//头
@@ -391,7 +392,7 @@ void _XNodeLine::decreaseOneNode(int nodeOrder)
 
 void _XNodeLine::clearUp()
 {//只需要清除第一个点的信息即可
-	if(m_isACopy != 0) return;//副本不能进行这个操作
+	if(m_isACopy) return;//副本不能进行这个操作
 	m_node[0].myPoint.set(0,0);
 	m_node[0].toNextAngle = 0;
 	m_node[0].toNextCos = 0;
@@ -403,7 +404,7 @@ void _XNodeLine::clearUp()
 	m_node[0].toPreviousLength = 0;
 	m_nodeSum = 0;
 	m_lineLength = 0;
-	m_isLoop = 0;
+	m_isLoop = XFalse;
 }
 
 _XBool _XNodeLine::saveNodeLine()
@@ -421,7 +422,7 @@ _XBool _XNodeLine::saveNodeLine()
 	if((fp = fopen(fileName,"wb")) == NULL)
 	{
 		printf("Line file open error!\n");
-		return 0;
+		return XFalse;
 	}
 	//写入数据
 	fwrite(&m_nodeSum,sizeof(int),1,fp);			//节点数量
@@ -527,16 +528,13 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 {
 	if(m_nodeSum <= 1) return;
 	updateData();	//如果有必要更新差值数据
-	if(isLoop != 0 && !m_isLoop)
-	{
-		setLoop();
-	}
+	if(isLoop != 0 && !m_isLoop) setLoop();
 	if(m_specialPoint.isEnable && !m_specialPoint.isEnd)
 	{
 		m_specialPoint.nowLength += timeDelay * m_specialPoint.speed;
 		if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
 		{//顺序
-			while(1)
+			while(true)
 			{
 				if(m_specialPoint.nowLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toNextLength)
 				{//已经越过下面一个点
@@ -544,7 +542,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 					{//不循环
 						if(m_specialPoint.upNodeOrder + 1 == m_nodeSum - 1)
 						{//已经到达终点
-							m_specialPoint.isEnd = 1;
+							m_specialPoint.isEnd = XTrue;
 							m_specialPoint.angle = m_node[m_nodeSum - 2].toNextAngle;
 							m_specialPoint.nowLength = m_lineLength;
 							m_specialPoint.position = m_node[m_nodeSum - 1].myPoint;
@@ -567,7 +565,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 					{//循环
 						if(m_specialPoint.upNodeOrder == m_nodeSum - 1)
 						{//重新到达起点
-							m_specialPoint.isEnd = 1;
+							m_specialPoint.isEnd = XTrue;
 							m_specialPoint.angle = m_node[0].toNextAngle;
 							m_specialPoint.nowLength = m_lineLength + m_node[m_nodeSum - 1].toNextLength;
 							m_specialPoint.position = m_node[0].myPoint;
@@ -603,6 +601,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 						if(needBezier)
 						{//这里是需要增加的部分
 							float tempPos = (m_specialPoint.nowLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
+							tempPos = m_bezierSpline.getT(tempPos);
 							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
 							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
 						}else
@@ -636,6 +635,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 						if(needBezier)
 						{//这里是需要增加的部分
 							float tempPos = (m_specialPoint.nowLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
+							tempPos = m_bezierSpline.getT(tempPos);
 							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
 							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
 						}else
@@ -670,7 +670,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 			}
 		}else
 		{//逆行
-			while(1)
+			while(true)
 			{
 				if(m_specialPoint.nowLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toPreviousLength)
 				{//以及越过下面一个点
@@ -678,7 +678,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 					{//不循环
 						if(m_specialPoint.upNodeOrder == 1)
 						{//已经到达终点
-							m_specialPoint.isEnd = 1;
+							m_specialPoint.isEnd = XTrue;
 							m_specialPoint.angle = m_node[1].toPreviousAngle;
 							m_specialPoint.nowLength = m_lineLength;
 							m_specialPoint.position = m_node[0].myPoint;
@@ -701,7 +701,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 					{
 						if(m_specialPoint.upNodeOrder == 0)
 						{//已经到达终点
-							m_specialPoint.isEnd = 1;
+							m_specialPoint.isEnd = XTrue;
 							m_specialPoint.angle = m_node[m_nodeSum - 1].toPreviousAngle;
 							m_specialPoint.nowLength = m_lineLength + m_node[0].toPreviousLength;
 							m_specialPoint.position = m_node[m_nodeSum - 1].myPoint;
@@ -737,6 +737,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 						if(needBezier)
 						{//这里是需要增加的部分
 							float tempPos = (m_specialPoint.nowLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+							tempPos = m_bezierSpline.getT(tempPos);
 							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
 							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
 						}else
@@ -770,6 +771,7 @@ void _XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,_XBool needBezier)
 						if(needBezier)
 						{//这里是需要增加的部分
 							float tempPos = (m_specialPoint.nowLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+							tempPos = m_bezierSpline.getT(tempPos);
 							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
 							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
 						}else
@@ -879,7 +881,7 @@ _XBool _XNodeLine::setACopy(const _XNodeLine &temp)
 //		m_isACopy = 1;
 //	}
 	//拷贝属性
-	m_isVisiable = temp.m_isVisiable;					//本身引导线的编号
+	m_isVisible = temp.m_isVisible;					//本身引导线的编号
 	m_myOrder = temp.m_myOrder;					//本身引导线的编号
 	m_node = temp.m_node;						//引导线中的节点
 	m_bezierPoint = temp.m_bezierPoint;	
@@ -902,7 +904,7 @@ _XNodeLine::_XNodeLine(const _XNodeLine &temp)
 	m_cp = temp.m_cp;
 
 	//拷贝属性
-	m_isVisiable = temp.m_isVisiable;					//本身引导线的编号
+	m_isVisible = temp.m_isVisible;					//本身引导线的编号
 	m_myOrder = temp.m_myOrder;					//本身引导线的编号
 	m_leadMode = temp.m_leadMode;				//曲线的引导模式
 	m_isLoop = temp.m_isLoop;					//曲线是否闭合0不闭合 1闭合，注意闭合的点，首点和尾点不能重合，否则将会失去尾点的方向
@@ -922,7 +924,7 @@ _XNodeLine::_XNodeLine(const _XNodeLine &temp)
 //		m_node[i] = temp.m_node[i];
 //	}
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_NODELINE);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isACopy = XFalse;
@@ -944,7 +946,7 @@ _XNodeLine& _XNodeLine::operator = (const _XNodeLine& temp)
 //	{//资源已经被释放，或者资源不属于自己，则这里重新分配内存空间
 //		m_node = createArrayMem<_XNode>(MAX_NODE_SUM);
 //	}
-	m_isVisiable = temp.m_isVisiable;					//本身引导线的编号
+	m_isVisible = temp.m_isVisible;					//本身引导线的编号
 	m_myOrder = temp.m_myOrder;					//本身引导线的编号
 	m_leadMode = temp.m_leadMode;				//曲线的引导模式
 	m_isLoop = temp.m_isLoop;					//曲线是否闭合0不闭合 1闭合，注意闭合的点，首点和尾点不能重合，否则将会失去尾点的方向
@@ -969,7 +971,7 @@ _XNodeLine& _XNodeLine::operator = (const _XNodeLine& temp)
 }
 _XBool _XNodeLine::isInRect(float x,float y)
 {
-//	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
+//	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 	_XVector2 point(x,y);
 	_XVector2 pointS,pointE;
 	if(m_nodeSum == 1)
@@ -993,8 +995,6 @@ _XBool _XNodeLine::isInRect(float x,float y)
 }
 _XVector2 _XNodeLine::getBox(int order)
 {//这里需要返回包围盒
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
 	float left = 0.0f;
 	float right = 0.0f;
 	float top = 0.0f;
@@ -1019,11 +1019,14 @@ _XVector2 _XNodeLine::getBox(int order)
 	right += 5;
 	top -= 5;
 	bottom += 5;
-	if(order == 0) ret.set(left * m_size.x + m_offsetPosition.x,	top * m_size.y + m_offsetPosition.y);else
-	if(order == 1) ret.set(right * m_size.x + m_offsetPosition.x,	top * m_size.y + m_offsetPosition.y);else
-	if(order == 2) ret.set(right * m_size.x + m_offsetPosition.x,	bottom * m_size.y + m_offsetPosition.y);else
-	if(order == 3) ret.set(left * m_size.x + m_offsetPosition.x,	bottom * m_size.y + m_offsetPosition.y);
-	return ret;
+	switch(order)
+	{
+	case 0:return _XVector2(left * m_size.x + m_offsetPosition.x,	top * m_size.y + m_offsetPosition.y);
+	case 1:return _XVector2(right * m_size.x + m_offsetPosition.x,	top * m_size.y + m_offsetPosition.y);
+	case 2:return _XVector2(right * m_size.x + m_offsetPosition.x,	bottom * m_size.y + m_offsetPosition.y);
+	case 3:return _XVector2(left * m_size.x + m_offsetPosition.x,	bottom * m_size.y + m_offsetPosition.y);
+	}
+	return _XVector2::zero;
 }
 void _XNodeLine::draw()
 {
@@ -1033,17 +1036,22 @@ void _XNodeLine::draw()
 		if(j == 0)
 		{//第一个点用绿色
 			drawPoint(m_node[j].myPoint.x * m_size.x + m_offsetPosition.x,
-				m_node[j].myPoint.y * m_size.y + m_offsetPosition.y,4,0.0f,1.0f,0.0f);
+				m_node[j].myPoint.y * m_size.y + m_offsetPosition.y,4,0.0f,1.0f,0.0f,1.0f);
 		}else
 		{//其他点用红色
 			drawPoint(m_node[j].myPoint.x * m_size.x + m_offsetPosition.x,
-				m_node[j].myPoint.y * m_size.y + m_offsetPosition.y,4,1.0f,0.0f,0.0f);
+				m_node[j].myPoint.y * m_size.y + m_offsetPosition.y,4,1.0f,0.0f,0.0f,1.0f);
 		}
 		drawLine(m_node[j].myPoint * m_size + m_offsetPosition,m_node[j + 1].myPoint * m_size + m_offsetPosition);
 	}
+	drawPoint(m_node[m_nodeSum - 1].myPoint.x * m_size.x + m_offsetPosition.x,
+		m_node[m_nodeSum - 1].myPoint.y * m_size.y + m_offsetPosition.y,4,1.0f,0.0f,0.0f,1.0f);
 	if(m_isLoop)
 	{
 		drawLine(m_node[m_nodeSum - 1].myPoint * m_size + m_offsetPosition,m_node[0].myPoint * m_size + m_offsetPosition);
 	}
-	drawLine(m_specialPoint.position,m_specialPoint.angle * RADIAN_TO_ANGLE,20.0f);
+	_XVector2 tmpVec(m_specialPoint.position.x * m_size.x,m_specialPoint.position.y * m_size.y);
+	drawLine(tmpVec,m_specialPoint.angle * RADIAN2DEGREE,20.0f);
+	//在当前所在点位置画一个十字
+	drawCross(tmpVec,10.0f * m_size.x);
 }

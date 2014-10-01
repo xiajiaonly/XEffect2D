@@ -7,6 +7,8 @@
 //--------------------------------
 
 #include "XOSDefine.h"
+#include "XMemoryPool.h"
+
 #include "stdio.h"
 //#include <math.h>
 #include "string.h"
@@ -18,6 +20,14 @@
 
 //#define XDELETE_ARRAY(p) { if (p != NULL) { delete [] p; p = NULL; } }
 //#define XDELETE(p) { if (p != NULL) { delete p; p = NULL; } }
+//#define FILE_ERROR(p) {fclose(p);return XFalse;}
+//自己定义new和delete
+//A* a = (A*)malloc(sizeof(A));
+//new (a) A();	//这样可以吗？
+//
+//a->~A();
+//free(a);
+
 template<typename T>
 void XDELETE(T *&p)
 {
@@ -65,6 +75,7 @@ T * createArrayMem(int size)
 	}
 	return ret;
 }
+inline float squareFloat(float x) {return x * x;}	//求x的平方
 //#define SIN_BOOK	//sin函数是否使用查字典方式
 #ifdef SIN_BOOK
 extern void initSinData();
@@ -76,19 +87,18 @@ extern float xSin(float x);
 extern void initSqrtData();
 extern float xSqrt(float x);
 #endif
-
+//获取文件的大小
 inline int getFileLen(FILE * fp)
 {
 	if(fp == NULL) return 0;
-	int tempOffset = ftell(fp);
+	int tempOffset = ftell(fp);	//记录当前的文件位置
 	fseek(fp,0,SEEK_END);
 	int len = ftell(fp);	//获取文件的长度
-	fseek(fp,tempOffset,SEEK_SET);
+	fseek(fp,tempOffset,SEEK_SET);	//恢复之前的文件位置
 	return len;
 }
-//模板分离编译将会造成编译错误，所以只能如此
 template<class type> void xChangeTwoSum(type &sum0,type &sum1)
-{
+{//交换两个变量的值
 	type temp = sum0;
 	sum0 = sum1;
 	sum1 = temp;
@@ -113,7 +123,7 @@ extern void pixelDataConvertRGB(unsigned char * src,unsigned char * dst,
 								const _XVector2 &dstClipSize,int mode = 0);
 
 inline float rectResize(float w,float h,float Rx,float Ry)	//根据Rx与Ry构成的框，将w和h的框放入其中，如果能放进去，则返回1.0f,否则返回自适应大小
-{
+{//该函数用于窗口缩放适应，返回缩放的比例
 	if(w <= 0.0f || h <= 0.0f || Rx <= 0.0f || Ry <= 0.0f) return 1.0f;
 	if(w <= Rx && h <= Ry) return 1.0f;
 	float size = Rx / w;
@@ -128,7 +138,27 @@ enum _XShutDownSystemMode
 	SYS_SD_MODE_Z,		//注销
 	SYS_SD_MODE_C,		//重启
 };
+//用于系统关机或者重启或者注销的函数
 extern void shutDownSystem(_XShutDownSystemMode mode = SYS_SD_MODE_G);
+//后台停顿等待键盘输入
+inline void waitingForKey() {system("pause");}
+//设置控制台输出文字的颜色
+inline void setConsoleColor(int index)
+{
+	HANDLE consolehwnd = GetStdHandle(STD_OUTPUT_HANDLE); 
+	switch(index)
+	{
+	case 1:
+		SetConsoleTextAttribute(consolehwnd,FOREGROUND_BLUE);
+		break;
+	case 2:
+		SetConsoleTextAttribute(consolehwnd,FOREGROUND_GREEN);
+		break;
+	default:
+		SetConsoleTextAttribute(consolehwnd,FOREGROUND_RED);
+		break;
+	}
+}
 #endif
 /*
 //CC 00 00 00 00 00 00 00 00 00 00 00 DD
@@ -189,4 +219,17 @@ void recvDataProc(unsigned char * data,int len)	//根据简单的协议从数据中提取数据
 		}
 	}
 }*/
+struct _XShaderHandle
+{
+	unsigned int shaderHandle;
+	unsigned int shaderF;	//frag
+	unsigned int shaderV;	//vert
+	unsigned int shaderG;	//geomrtry
+	_XShaderHandle()
+		:shaderHandle(0)
+		,shaderF(0)
+		,shaderV(0)
+		,shaderG(0)
+	{}
+};
 #endif 

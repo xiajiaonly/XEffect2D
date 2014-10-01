@@ -14,6 +14,8 @@ public:
 	float y;
 	float z;
 	float w;
+
+	static const _XVector4 zero;
 	void reset();//重置这个点
     void add(float a,float b,float c,float d);//设置这个点的值
     void set(float a,float b,float c,float d);//这个点的值加上一个点的值
@@ -101,41 +103,77 @@ inline _XVector4 toVector4(const _XVector3& e)	//从欧拉角到四元数之间的转换
 	float ys = sin(e.y * 0.5f);
 	float zc = cos(e.z * 0.5f);
 	float zs = sin(e.z * 0.5f);
-
-	return _XVector4(-xs * yc * zc - xc * ys * zs,
-		xs * yc * zs - xc * ys * zc,
-		xs * ys * zc - xc * yc * zs,
+	//惯性 - 物体
+	//return _XVector4(-xs * yc * zc - xc * ys * zs,
+	//	xs * yc * zs - xc * ys * zc,
+	//	xs * ys * zc - xc * yc * zs,
+	//	xc * yc * zc + xs * ys * zs);
+	//物体 - 惯性
+	return _XVector4(xs * yc * zc + xc * ys * zs,
+		xc * ys * zc - xs * yc * zs,
+		xc * yc * zs - xs * ys * zc,
 		xc * yc * zc + xs * ys * zs);
+}
+inline _XVector4 getVector4(const _XVector3& v,float angle)	//由轴角对生成四元素 angle [0 - 360]
+{
+	float c = cos(angle * 0.5f * DEGREE2RADIAN);
+	float s = sin(angle * 0.5f * DEGREE2RADIAN);
+	return _XVector4(v.x * s,v.y * s,v.z * s,c);
 }
 inline _XVector3 toVector3(const _XVector4& e)	//从四元数到欧拉角之间的转换
 {
+/*	//网站http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/index.htm
+	//提及的方法
+	_XVector3 ret;
+	double test = e.x*e.y + e.z*e.w;
+	if(test > 0.4999999)  // singularity at north pole
+	{
+		ret.y = 2.0 * atan2(e.x,e.w);
+		ret.x = PI_HALF;
+		ret.z = 0.0;
+		return ret;
+	}
+	if(test < -0.4999999) // singularity at south pole 
+	{
+		ret.y = -2.0 * atan2(e.x,e.w);
+		ret.x = -PI_HALF;
+		ret.z = 0.0;
+		return ret;
+	}
+    double sqx = e.x*e.x;
+    double sqy = e.y*e.y;
+    double sqz = e.z*e.z;
+    ret.y = atan2(2.0*e.y*e.w-2.0*e.x*e.z , 1.0 - 2.0*sqy - 2.0*sqz);
+	ret.x = asin(2.0*test);
+	ret.z = atan2(2.0*e.x*e.w-2.0*e.y*e.z , 1.0 - 2.0*sqx - 2.0*sqz);
+*/	//《3D数学基础-图形与游戏开发》书中提及的方法
 	//惯性 - 物体
 	_XVector3 ret;
-	float sp = -2.f * (e.y * e.z + e.w * e.x);
-	if(fabs(sp) > 0.9999f)
+	//float sp = -2.f * (e.y * e.z + e.w * e.x);
+	//if(fabs(sp) > 0.9999999f)
+	//{
+	//	ret.z = 0.0f;
+	//	ret.x = PI_HALF * sp;
+	//	ret.y = atan2(-e.x * e.z - e.w * e.y,0.5f - e.y * e.y - e.z * e.z);
+	//}else
+	//{
+	//	ret.x = asin(sp);
+	//	ret.y = atan2(e.x * e.z - e.w * e.y,0.5f - e.x * e.x - e.y * e.y);
+	//	ret.z = atan2(e.x * e.y - e.w * e.z,0.5f - e.x * e.x - e.z * e.z);
+	//}
+	//物体 - 惯性
+	float sp = -2.f * (e.y * e.z - e.w * e.x);
+	if(fabs(sp) > 0.9999999f)
 	{
 		ret.z = 0.0f;
 		ret.x = PI_HALF * sp;
-		ret.y = atan2(-e.x * e.z - e.w * e.y,0.5f - e.y * e.y - e.z * e.z);
+		ret.y = atan2(-e.x * e.z + e.w * e.y,0.5f - e.y * e.y - e.z * e.z);
 	}else
 	{
-		ret.x = asin(sp);
-		ret.y = atan2(e.x * e.z - e.w * e.y,0.5f - e.x * e.x - e.y * e.y);
-		ret.z = atan2(e.x * e.y - e.w * e.z,0.5f - e.x * e.x - e.z * e.z);
+		ret.x = atan2(-e.x * e.z + e.w * e.y,0.5f - e.x * e.x - e.z * e.z);
+		ret.y = asin(sp);
+		ret.z = atan2(-e.x * e.z + e.w * e.y,0.5f - e.x * e.x - e.y * e.y);
 	}
-	//物体 - 惯性
-	//float sp = -2.f * (e.y * e.z - e.w * e.x);
-	//if(fabs(sp) > 0.9999f)
-	//{
-	//	ret.x = 0.0f;
-	//	ret.y = PI_HALF * sp;
-	//	ret.z = atan2(-e.x * e.z + e.w * e.y,0.5f - e.y * e.y - e.z * e.z);
-	//}else
-	//{
-	//	ret.x = atan2(-e.x * e.z + e.w * e.y,0.5f - e.x * e.x - e.z * e.z);
-	//	ret.y = asin(sp);
-	//	ret.z = atan2(-e.x * e.z + e.w * e.y,0.5f - e.x * e.x - e.y * e.y);
-	//}
 	return ret;
 }
 #endif

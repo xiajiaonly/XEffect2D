@@ -21,20 +21,15 @@ void drawLine(const _XVector3 &ps,const _XVector3 &pe,const _XFColor & color)
 //	glLoadIdentity();
 
 	//glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	glColor4fv(color);
-	glLineWidth(1);
+	glLineWidth(0.5f);
 	glBegin(GL_LINES);
-		glVertex3f(ps.x,ps.y,ps.z);
-		glVertex3f(pe.x,pe.y,pe.z);
+		glVertex3fv(ps);
+		glVertex3fv(pe);
 	glEnd();
 
 	glDisable(GL_BLEND);
@@ -52,20 +47,15 @@ void drawLine(const _XVector3 &ps,const _XVector3 &n,float len,const _XFColor &c
 //	glLoadIdentity();
 
 	//glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	glColor4fv(color);
-	glLineWidth(1);
+	glLineWidth(0.5f);
 	glBegin(GL_LINES);
-		glVertex3f(ps.x,ps.y,ps.z);
-		glVertex3f(pe.x,pe.y,pe.z);
+		glVertex3fv(ps);
+		glVertex3fv(pe);
 	glEnd();
 
 	glDisable(GL_BLEND);
@@ -89,12 +79,12 @@ void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,co
 	
 	glColor4fv(color);
 	//glLineWidth(1);
-	_XVector3 normal = getNormal(p0,p1,p2);
+	//_XVector3 normal = getNormal(p0,p1,p2);
 	glBegin(GL_TRIANGLES);
-		glNormal3f(normal.x,normal.y,normal.z);
-		glVertex3f(p0.x,p0.y,p0.z);
-		glVertex3f(p1.x,p1.y,p1.z);
-		glVertex3f(p2.x,p2.y,p2.z);
+		glNormal3fv(getNormal(p0,p1,p2));
+		glVertex3fv(p0);
+		glVertex3fv(p1);
+		glVertex3fv(p2);
 	glEnd();
 
 	glDisable(GL_BLEND);
@@ -119,10 +109,10 @@ void drawTriangle(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,
 	glColor4fv(color);
 	//glLineWidth(1);
 	glBegin(GL_TRIANGLES);
-		glNormal3f(n.x,n.y,n.z);
-		glVertex3f(p0.x,p0.y,p0.z);
-		glVertex3f(p1.x,p1.y,p1.z);
-		glVertex3f(p2.x,p2.y,p2.z);
+		glNormal3fv(n);
+		glVertex3fv(p0);
+		glVertex3fv(p1);
+		glVertex3fv(p2);
 	glEnd();
 
 	glDisable(GL_BLEND);
@@ -147,11 +137,11 @@ void drawPlane(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const
 	glColor4fv(color);
 	//glLineWidth(1);
 	glBegin(GL_QUADS);
-		glNormal3f(n.x,n.y,n.z);
-		glVertex3f(p0.x,p0.y,p0.z);
-		glVertex3f(p1.x,p1.y,p1.z);
-		glVertex3f(p2.x,p2.y,p2.z);
-		glVertex3f(p3.x,p3.y,p3.z);
+		glNormal3fv(n);
+		glVertex3fv(p0);
+		glVertex3fv(p1);
+		glVertex3fv(p2);
+		glVertex3fv(p3);
 	glEnd();
 
 	glDisable(GL_BLEND);
@@ -162,44 +152,44 @@ void drawPlane(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2,const
 }
 void drawBox(GLfloat size)
 {
-  static GLfloat n[6][3] =
-  {
-    {-1.0, 0.0, 0.0},
-    {0.0, 1.0, 0.0},
-    {1.0, 0.0, 0.0},
-    {0.0, -1.0, 0.0},
-    {0.0, 0.0, 1.0},
-    {0.0, 0.0, -1.0}
-  };
-  static GLint faces[6][4] =
-  {
-    {0, 1, 2, 3},
-    {3, 2, 6, 7},
-    {7, 6, 5, 4},
-    {4, 5, 1, 0},
-    {5, 6, 2, 1},
-    {7, 4, 0, 3}
-  };
-  GLfloat v[8][3];
-  GLint i;
+	static GLfloat n[6][3] =
+	{
+		{-1.0, 0.0, 0.0},
+		{0.0, 1.0, 0.0},
+		{1.0, 0.0, 0.0},
+		{0.0, -1.0, 0.0},
+		{0.0, 0.0, 1.0},
+		{0.0, 0.0, -1.0}
+	};
+	static GLint faces[6][4] =
+	{
+		{0, 1, 2, 3},
+		{3, 2, 6, 7},
+		{7, 6, 5, 4},
+		{4, 5, 1, 0},
+		{5, 6, 2, 1},
+		{7, 4, 0, 3}
+	};
+	GLfloat v[8][3];
+	GLint i;
 
-  v[0][0] = v[1][0] = v[2][0] = v[3][0] = -size / 2;
-  v[4][0] = v[5][0] = v[6][0] = v[7][0] = size / 2;
-  v[0][1] = v[1][1] = v[4][1] = v[5][1] = -size / 2;
-  v[2][1] = v[3][1] = v[6][1] = v[7][1] = size / 2;
-  v[0][2] = v[3][2] = v[4][2] = v[7][2] = -size / 2;
-  v[1][2] = v[2][2] = v[5][2] = v[6][2] = size / 2;
+	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -size / 2;
+	v[4][0] = v[5][0] = v[6][0] = v[7][0] = size / 2;
+	v[0][1] = v[1][1] = v[4][1] = v[5][1] = -size / 2;
+	v[2][1] = v[3][1] = v[6][1] = v[7][1] = size / 2;
+	v[0][2] = v[3][2] = v[4][2] = v[7][2] = -size / 2;
+	v[1][2] = v[2][2] = v[5][2] = v[6][2] = size / 2;
 
-  for(i = 5;i >= 0;--i) 
-  {
-    glBegin(GL_QUADS);
-    glNormal3fv(&n[i][0]);
-    glVertex3fv(&v[faces[i][0]][0]);
-    glVertex3fv(&v[faces[i][1]][0]);
-    glVertex3fv(&v[faces[i][2]][0]);
-    glVertex3fv(&v[faces[i][3]][0]);
-    glEnd();
-  }
+	glBegin(GL_QUADS);
+	for(i = 5;i >= 0;--i) 
+	{
+		glNormal3fv(&n[i][0]);
+		glVertex3fv(&v[faces[i][0]][0]);
+		glVertex3fv(&v[faces[i][1]][0]);
+		glVertex3fv(&v[faces[i][2]][0]);
+		glVertex3fv(&v[faces[i][3]][0]);
+	}
+	glEnd();
 }
 void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angle,const _XFColor & color)
 {
@@ -220,8 +210,8 @@ void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angl
 	_X3DWorld::GetInstance().useShadow(XFalse);
 	//glEnable(GL_DEPTH_TEST)
 	//glDepthFunc(GL_NICEST)
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//	glEnable(GL_BLEND);
+//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4fv(color);
     glBegin(GL_QUADS);
 		glNormal3f(-1.0f,0.0f,0.0f);
@@ -262,6 +252,152 @@ void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angl
 	glPopMatrix();
 	//glPopAttrib();
 }
+void drawBox(const _XVector3 &center,const _XVector3 &size,const _XVector3 &angle,unsigned int tex)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	glTranslatef(center.x,center.y,center.z);
+    glRotatef(angle.x,1,0,0);
+    glRotatef(angle.y,0,1,0);
+    glRotatef(angle.z,0,0,1);
+
+	_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();
+	_X3DWorld::GetInstance().useShadow(XFalse);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glColor4fv(_XFColor::white);
+    glBegin(GL_QUADS);
+		glNormal3f(-1.0f,0.0f,0.0f);
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f(-size.x,-size.y,-size.z); //0
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f(-size.x,-size.y, size.z); //1
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f(-size.x, size.y, size.z); //2
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f(-size.x, size.y,-size.z); //3
+		glNormal3f(0.0f,1.0f,0.0f);
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f(-size.x, size.y,-size.z); //3
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f(-size.x, size.y, size.z); //2
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f( size.x, size.y, size.z); //6
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f( size.x, size.y,-size.z); //7
+		glNormal3f(1.0f,0.0f,0.0f);
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f( size.x, size.y,-size.z); //7
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f( size.x, size.y, size.z); //6
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f( size.x,-size.y, size.z); //5
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f( size.x,-size.y,-size.z); //4
+		glNormal3f(0.0f,-1.0f,0.0f);
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f( size.x,-size.y,-size.z); //4
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f( size.x,-size.y, size.z); //5
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f(-size.x,-size.y, size.z); //1
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f(-size.x,-size.y,-size.z); //0
+		glNormal3f(0.0f,0.0f,1.0f);
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f( size.x,-size.y, size.z); //5
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f( size.x, size.y, size.z); //6
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f(-size.x, size.y, size.z); //2
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f(-size.x,-size.y, size.z); //1
+		glNormal3f(0.0f,0.0f,-1.0f);
+		glTexCoord2f(1.0f,1.0f);	//u
+		glVertex3f( size.x, size.y,-size.z); //7
+		glTexCoord2f(1.0f,0.0f);	//u
+		glVertex3f( size.x,-size.y,-size.z); //4
+		glTexCoord2f(0.0f,0.0f);	//u
+		glVertex3f(-size.x,-size.y,-size.z); //0
+		glTexCoord2f(0.0f,1.0f);	//u
+		glVertex3f(-size.x, size.y,-size.z); //3
+	glEnd();
+	_X3DWorld::GetInstance().removeShadow();
+
+	glDisable(GL_BLEND);
+
+	glPopMatrix();
+}
+void drawCuboid(const _XVector3 &pos,
+	const _XVector3 &size,	//长方体的尺寸，长宽高
+	const _XVector3 &angle,//长方体的角度
+	const _XFColor &color)
+{
+	//glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+//	glLoadIdentity();
+
+	glTranslatef(pos.x,pos.y,pos.z);
+    glRotatef(angle.x,1,0,0);
+    glRotatef(angle.y,0,1,0);
+    glRotatef(angle.z,0,0,1);
+
+	//_X3DWorld::GetInstance().m_worldMaterial.setAmblient(0.0f,0.0f,1.0f,0.5f);
+	//_X3DWorld::GetInstance().m_worldMaterial.setDiffuse(0.0f,0.0f,1.0f,0.5f);
+	//_X3DWorld::GetInstance().m_worldMaterial.setSpecular(0.0f,0.0f,1.0f,0.5f);
+	_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();
+	_X3DWorld::GetInstance().useShadow(XFalse);
+	//glEnable(GL_DEPTH_TEST)
+	//glDepthFunc(GL_NICEST)
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4fv(color);
+	float x = size.x;// * 0.5f;
+	float y = size.y * 0.5f;
+	float z = size.z * 0.5f;
+    glBegin(GL_QUADS);
+		glNormal3f(-1.0f,0.0f,0.0f);
+		glVertex3f(0.0f,-y,-z); //0
+		glVertex3f(0.0f,-y, z); //1
+		glVertex3f(0.0f,y, z); //2
+		glVertex3f(0.0f,y,-z); //3
+		glNormal3f(0.0f,1.0f,0.0f);
+		glVertex3f(0.0f,y,-z); //3
+		glVertex3f(0.0f,y, z); //2
+		glVertex3f(x,y, z); //6
+		glVertex3f(x,y,-z); //7
+		glNormal3f(1.0f,0.0f,0.0f);
+		glVertex3f(x,y,-z); //7
+		glVertex3f(x,y, z); //6
+		glVertex3f(x,-y, z); //5
+		glVertex3f(x,-y,-z); //4
+		glNormal3f(0.0f,-1.0f,0.0f);
+		glVertex3f(x,-y,-z); //4
+		glVertex3f(x,-y, z); //5
+		glVertex3f(0.0f,-y, z); //1
+		glVertex3f(0.0f,-y,-z); //0
+		glNormal3f(0.0f,0.0f,1.0f);
+		glVertex3f(x,-y, z); //5
+		glVertex3f(x,y, z); //6
+		glVertex3f(0.0f,y, z); //2
+		glVertex3f(0.0f,-y, z); //1
+		glNormal3f(0.0f,0.0f,-1.0f);
+		glVertex3f(x,y,-z); //7
+		glVertex3f(x,-y,-z); //4
+		glVertex3f(0.0f,-y,-z); //0
+		glVertex3f(0.0f,y,-z); //3
+	glEnd();
+	_X3DWorld::GetInstance().removeShadow();
+
+	glDisable(GL_BLEND);
+
+	glPopMatrix();
+	//glPopAttrib();
+}
 void drawBall(const _XVector3 &center,float r,const _XVector3 &angle,const _XFColor & color)
 {
 	//glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -279,7 +415,9 @@ void drawBall(const _XVector3 &center,float r,const _XVector3 &angle,const _XFCo
 
 	_X3DWorld::GetInstance().useShadow(XFalse);
 	glColor4fv(color);
-	glutSolidSphere(r,30,30); 
+	glutSolidSphere(r,30,30);
+//	glutSolidCube(r);
+//	glutSolidTeapot(r);
 	//GLUquadricObj *quad;
 	//quad = gluNewQuadric();
 	//gluQuadricTexture( quad, true );	//enable TexCoord generation
@@ -315,7 +453,7 @@ void drawArray(const float *p,int w,int h)
 	_X3DWorld::GetInstance().useShadow(XFalse);
 	int x,z;
 	_XVector3 p0,p1,p2,p3; //顺时针
-	_XVector3 normal;
+	//_XVector3 normal;
 	glBegin(GL_TRIANGLES);
 	for(x = 0;x < w;++ x)
 	{
@@ -334,17 +472,19 @@ void drawArray(const float *p,int w,int h)
 			if(p2.x == 0.0f && p2.y == 0.0f && p2.z == 0.0f) continue;
 			if(p3.x == 0.0f && p3.y == 0.0f && p3.z == 0.0f) continue;
 
-			normal = getNormal(p0,p1,p2);
-			glNormal3f(normal.x,normal.y,normal.z);
-			glVertex3f(p0.x,p0.y,p0.z);
-			glVertex3f(p1.x,p1.y,p1.z);
-			glVertex3f(p2.x,p2.y,p2.z);
+			//normal = getNormal(p0,p1,p2);
+			//glNormal3fv(normal);
+			glNormal3fv(getNormal(p0,p1,p2));
+			glVertex3fv(p0);
+			glVertex3fv(p1);
+			glVertex3fv(p2);
 
-			normal = getNormal(p0,p2,p3);
-			glNormal3f(normal.x,normal.y,normal.z);
-			glVertex3f(p0.x,p0.y,p0.z);
-			glVertex3f(p2.x,p2.y,p2.z);
-			glVertex3f(p3.x,p3.y,p3.z);
+			//normal = getNormal(p0,p2,p3);
+			//glNormal3fv(normal);
+			glNormal3fv(getNormal(p0,p2,p3));
+			glVertex3fv(p0);
+			glVertex3fv(p2);
+			glVertex3fv(p3);
 		}
 	}
 	glEnd();
@@ -369,7 +509,7 @@ void drawArray(const float *p,int w,int h,unsigned int tex)
 	int x,z;
 	_XVector2 u0,u1,u2,u3;
 	_XVector3 p0,p1,p2,p3; //顺时针
-	_XVector3 normal;
+	//_XVector3 normal;
 	glBegin(GL_TRIANGLES);
 	for(x = 0;x < w;++ x)
 	{
@@ -392,23 +532,25 @@ void drawArray(const float *p,int w,int h,unsigned int tex)
 			if(p2.x == 0.0f && p2.y == 0.0f && p2.z == 0.0f) continue;
 			if(p3.x == 0.0f && p3.y == 0.0f && p3.z == 0.0f) continue;
 
-			normal = getNormal(p0,p1,p2);
-			glNormal3f(normal.x,normal.y,normal.z);
-			glTexCoord2f(u0.x,u0.y);
-			glVertex3f(p0.x,p0.y,p0.z);
-			glTexCoord2f(u1.x,u1.y);
-			glVertex3f(p1.x,p1.y,p1.z);
-			glTexCoord2f(u2.x,u2.y);
-			glVertex3f(p2.x,p2.y,p2.z);
+			//normal = getNormal(p0,p1,p2);
+			//glNormal3fv(normal);
+			glNormal3fv(getNormal(p0,p1,p2));
+			glTexCoord2fv(u0);
+			glVertex3fv(p0);
+			glTexCoord2fv(u1);
+			glVertex3fv(p1);
+			glTexCoord2fv(u2);
+			glVertex3fv(p2);
 
-			normal = getNormal(p0,p2,p3);
-			glNormal3f(normal.x,normal.y,normal.z);
-			glTexCoord2f(u0.x,u0.y);
-			glVertex3f(p0.x,p0.y,p0.z);
-			glTexCoord2f(u2.x,u2.y);
-			glVertex3f(p2.x,p2.y,p2.z);
-			glTexCoord2f(u3.x,u3.y);
-			glVertex3f(p3.x,p3.y,p3.z);
+			//normal = getNormal(p0,p2,p3);
+			//glNormal3fv(normal);
+			glNormal3fv(getNormal(p0,p2,p3));
+			glTexCoord2fv(u0);
+			glVertex3fv(p0);
+			glTexCoord2fv(u2);
+			glVertex3fv(p2);
+			glTexCoord2fv(u3);
+			glVertex3fv(p3);
 		}
 	}
 	glEnd();
@@ -432,7 +574,7 @@ _XMatrix4x4 calLookAtMatrix(const _XVector3 &eyePos,const _XVector3 &LookAtPos,c
 }
 _XMatrix4x4 calPerspectiveMatrix(float fovy,float rat,float zNear,float zFar)
 {
-	float tan_fovy = tan(fovy * 0.5f * ANGLE_TO_RADIAN);
+	float tan_fovy = tan(fovy * 0.5f * DEGREE2RADIAN);
 	float right = tan_fovy * rat * zNear;
 	float left = -right;
 	float top = tan_fovy * zNear;
@@ -504,7 +646,7 @@ bool getPerspective(const _XMatrix4x4& mtrx,float& fovy,float& aspectRatio,float
     float bottom =  0.0f;
     if (getFrustum(mtrx,left,right,bottom,top,zNear,zFar))
     {
-        fovy = (atan(top/zNear)-atan(bottom/zNear))*RADIAN_TO_ANGLE;
+        fovy = (atan(top/zNear)-atan(bottom/zNear))*RADIAN2DEGREE;
         aspectRatio = (right-left)/(top-bottom);
         return true;
     }
@@ -514,7 +656,7 @@ void getLookAt(const _XMatrix4x4& mtrx,_XVector3& eye,_XVector3& center,_XVector
 {
 	_XMatrix4x4 inv = mtrx;
 	inv = inv.inverse();
-    eye = inv * _XVector3(0.0f,0.0f,0.0f);
+	eye = inv * _XVector3::zero;
     up = transform4x4(mtrx,_XVector3(0.0,1.0,0.0));
     center = transform4x4(mtrx,_XVector3(0.0,0.0,-1));
     normalize(center);
@@ -522,8 +664,8 @@ void getLookAt(const _XMatrix4x4& mtrx,_XVector3& eye,_XVector3& center,_XVector
 }
 _XMatrix4x4 getRotate(float angle,_XVector3 v)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	float tCosA = 1 - cosA;
 	v = normalize(v);
 	return _XMatrix4x4( tCosA * v.x * v.x + cosA,		tCosA * v.x * v.y + v.z * sinA, tCosA * v.x * v.z - sinA * v.y, 0,
@@ -540,8 +682,8 @@ _XMatrix4x4 getRotate(const _XVector3 &a)
 }
 _XMatrix4x4 getRotateZ(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix4x4(	cosA,sinA,0,0,
 						-sinA,cosA,0,0,
 						0,0,1,0,
@@ -549,8 +691,8 @@ _XMatrix4x4 getRotateZ(float angle)
 }
 _XMatrix4x4 getRotateX(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix4x4(	1,0,0,0,
 						0,cosA,sinA,0,
 						0,-sinA,cosA,0,
@@ -558,8 +700,8 @@ _XMatrix4x4 getRotateX(float angle)
 }
 _XMatrix4x4 getRotateY(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix4x4(	cosA,0,-sinA,0,
 						0,1,0,0,
 						sinA,0,cosA,0,
@@ -581,12 +723,12 @@ _XMatrix4x4 getScale(const _XVector3 &s)
 }
 void drawOrigin()
 {
-	drawLine(_XVector3(0.0f,0.0f,0.0f),
-		_XVector3(100.0f,0.0f,0.0f),_XFColor(1.0f,0.0f,0.0f,1.0f));
-	drawLine(_XVector3(0.0f,0.0f,0.0f),
-		_XVector3(0.0f,100.0f,0.0f),_XFColor(0.0f,1.0f,0.0f,1.0f));
-	drawLine(_XVector3(0.0f,0.0f,0.0f),
-		_XVector3(0.0f,0.0f,100.0f),_XFColor(0.0f,0.0f,1.0f,1.0f));
+	drawLine(_XVector3::zero,
+		_XVector3(100.0f,0.0f,0.0f),_XFColor::red);
+	drawLine(_XVector3::zero,
+		_XVector3(0.0f,100.0f,0.0f),_XFColor::green);
+	drawLine(_XVector3::zero,
+		_XVector3(0.0f,0.0f,100.0f),_XFColor::blue);
 }
 float canPickingByRay(const _XVector3 &nearP,const _XVector3 &farP,_XVector3 *v,const _XVector3 &n,_XVector3 &out)
 {

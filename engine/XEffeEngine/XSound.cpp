@@ -14,7 +14,8 @@ void channelFinished(int channel)
 {//当某个通道的音效播放完成的时候会调用这个函数
 	printf("%d finished!\n",channel);
 }
-void effectFunc(int chan,void *stream,int len,void *udata)
+//void effectFunc(int chan,void *stream,int len,void *udata)
+void effectFunc(int,void *stream,int len,void *)
 {//下面在这里进行转码(现在这里假设实现一个慢播放的功能):会crash，还不知道怎么弄呢。
 	SDL_AudioCVT  wav_cvt;
 	int ret = SDL_BuildAudioCVT(&wav_cvt,

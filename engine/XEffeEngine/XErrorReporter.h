@@ -15,7 +15,6 @@
 
 #define ERROR_REPORTER_TXT_FILENAME ("ErrorReport.txt")	//错误报告的文件名
 #define ERROR_REPORTER_PIC_FILENAME ("ErrorReport.png")	//错误报告的文件名
-
 class _XErrorReporter
 {
 protected:
@@ -27,8 +26,7 @@ protected:
 	{}
     _XErrorReporter(const _XErrorReporter&);
 	_XErrorReporter &operator= (const _XErrorReporter&);
-    virtual ~_XErrorReporter()
-	{}
+    virtual ~_XErrorReporter(){}
 public:
     static _XErrorReporter& GetInstance()
 	{
@@ -68,9 +66,9 @@ public:
 	//__DATE__ __TIME__ __FUNCDNAME__ __TIMESTAMP__
 	void reportError(const std::string & errorDescription,const std::string &filename,int line,const std::string &funName);
 	void errorProc();
-	bool isErrored(){return m_needShow;}
+	bool isErrored()const{return m_needShow;}
 	void setMainProc(){m_isMainThreadProc = true;}
-	bool getIsMainProc(){return m_isMainThreadProc;}
+	bool getIsMainProc()const{return m_isMainThreadProc;}
 };
 inline void reportError(const std::string & errorDescription,const std::string &filename,int line,const std::string &funName)
 {

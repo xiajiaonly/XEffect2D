@@ -8,9 +8,7 @@
 
 _XParentParticle::_XParentParticle()
 :m_stage(STAGE_SLEEP)
-{
-}
-
+{}
 int _XAloneParticles::init(const _XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
@@ -44,30 +42,29 @@ int _XAloneParticles::init(const _XTexture *texture)
 	}
 	glNewList(m_glListOrder,GL_COMPILE);  
 	glBegin(GL_QUADS);
-	glTexCoord2d(0, 0);
-	glVertex2d(-halfW, -halfH);
-	glTexCoord2d(m_texture->m_w, 0);
-	glVertex2d(halfW, -halfH);
-	glTexCoord2d(m_texture->m_w, m_texture->m_h);
-	glVertex2d(halfW, halfH);
-	glTexCoord2d(0, m_texture->m_h);
-	glVertex2d(-halfW, halfH);
+	glTexCoord2f(0, 0);
+	glVertex2f(-halfW, -halfH);
+	glTexCoord2f(1, 0);
+	glVertex2f(halfW, -halfH);
+	glTexCoord2f(1, 1);
+	glVertex2f(halfW, halfH);
+	glTexCoord2f(0, 1);
+	glVertex2f(-halfW, halfH);
 	glEnd();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-	glMatrixMode(GL_TEXTURE);
-	glPopMatrix();
-#if WITH_XSPRITE_EX
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#endif
+//	glMatrixMode(GL_TEXTURE);
+//	glPopMatrix();
+//#if WITH_XSPRITE_EX
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//#endif
 	glDisable(GL_BLEND);	
 	glEndList();
 
 	m_isInited = 1;
 	return 1;
 }
-
 void _XAloneParticles::draw() const
 {
 	if(m_isInited == 0) return;
@@ -76,14 +73,14 @@ void _XAloneParticles::draw() const
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D,m_texture->m_texture);
-#if WITH_XSPRITE_EX
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
-#endif
-	glMatrixMode(GL_TEXTURE);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0,m_texture->m_w << 1, 0,m_texture->m_h << 1, -1, 1);
+//#if WITH_XSPRITE_EX
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
+//#endif
+//	glMatrixMode(GL_TEXTURE);
+//	glPushMatrix();
+//	glLoadIdentity();
+//	glOrtho(0,m_texture->m_w << 1, 0,m_texture->m_h << 1, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
@@ -91,14 +88,12 @@ void _XAloneParticles::draw() const
 	glTranslatef(m_nowPosition.x + halfW,m_nowPosition.y + halfH, 0);
 
 	glScalef(m_nowSize.x,m_nowSize.x, 0);
-	glColor4f(m_nowColor.fR,m_nowColor.fG,m_nowColor.fB,m_nowColor.fA);
+	glColor4fv(m_nowColor);
 
 	glCallList(m_glListOrder);																
 }
-
 _XAloneParticles::_XAloneParticles()
 :m_isInited(0)
 ,m_glListOrder(0)
 ,m_texture(NULL)
-{
-}
+{}

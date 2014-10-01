@@ -7,7 +7,7 @@
 #include "XResourcePack.h"
 
 _XNumberTexture::_XNumberTexture()
-:m_isInited(0)
+:m_isInited(XFalse)
 ,m_texture00(NULL)
 ,m_texture01(NULL)
 ,m_texture02(NULL)
@@ -66,37 +66,37 @@ _XBool _XNumberTexture::init(const char *fileName,_XResourcePosition resoursePos
 	char tempFileName[MAX_NUMBER_LENGTH];
 	strcpy(tempFileName,fileName);
 /*	fileName[len - 5] = '0';
-	if(m_texture00->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture00->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '1';
-	if(m_texture01->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture01->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '2';
-	if(m_texture02->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture02->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '3';
-	if(m_texture03->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture03->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '4';
-	if(m_texture04->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture04->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '5';
-	if(m_texture05->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture05->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '6';
-	if(m_texture06->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture06->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '7';
-	if(m_texture07->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture07->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '8';
-	if(m_texture08->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture08->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '9';
-	if(m_texture09->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture09->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'a';
-	if(m_texture0a->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0a->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'b';
-	if(m_texture0b->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0b->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'c';
-	if(m_texture0c->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0c->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'd';
-	if(m_texture0d->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0d->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'e';
-	if(m_texture0e->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0e->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = 'f';
-	if(m_texture0f->load(fileName,1,m_resoursePosition) == 0) return 0;
+	if(!m_texture0f->load(fileName,1,m_resoursePosition)) return XFalse;
 */
 	tempFileName[len - 5] = '0';
 	m_texture00->load(tempFileName,m_resoursePosition);
@@ -189,10 +189,10 @@ _XNumberEx::_XNumberEx()
 	m_number = createArrayMem<char>(MAX_NUMBER_LENGTH);
 	m_number[0] = '\0';
 }
-_XBool _XNumberEx::init(const _XNumberTexture *numberTexture,_XVector2 size)
+_XBool _XNumberEx::init(const _XNumberTexture *numberTexture,const _XVector2 &size)
 {
-	if(m_isInited) return XFalse;
-	if(numberTexture == NULL) return XFalse;
+	if(m_isInited ||
+		numberTexture == NULL) return XFalse;
 	m_numberTexture = numberTexture;
 
 	m_number[0] = '\0';
@@ -202,9 +202,9 @@ _XBool _XNumberEx::init(const _XNumberTexture *numberTexture,_XVector2 size)
 	m_distance = 0;
 	m_size = size;
 	m_showSize.set(1.0,1.0);
-//	if(m_sprite.init(1,m_size.x,m_size.y,0,POINT_LEFT_TOP) == 0) return 0;
-	if(m_sprite.init(m_numberTexture->m_texture00->texture.m_w,m_numberTexture->m_texture00->texture.m_h,
-		0,POINT_LEFT_TOP) == 0) return XFalse;
+//	if(!m_sprite.init(1,m_size.x,m_size.y,0,POINT_LEFT_TOP)) return XFalse;
+	if(!m_sprite.init(m_numberTexture->m_texture00->texture.m_w,m_numberTexture->m_texture00->texture.m_h,
+		0,POINT_LEFT_TOP)) return XFalse;
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
 
 	m_isInited = XTrue;
@@ -289,7 +289,7 @@ _XBool _XNumberEx::setNumber(int temp)
 		++ nowCharPoint;
 		temp = -temp;
 	}
-	while(1)
+	while(true)
 	{
 		tempNumber[nowCharPoint] = temp%10 + '0';
 		temp = temp / 10.0f;
@@ -342,7 +342,7 @@ _XBool _XNumberEx::setNumber(float temp,int decimalPartLength)
 	}
 
 	int sumLength = 0;
-	while(1)
+	while(true)
 	{
 		tempNumber[nowCharPoint] = tempZ%10 + '0';
 		tempZ = tempZ / 10.0f;
@@ -606,174 +606,172 @@ float _XMoveData::getValue(float time)
 }
 void _XMoveData::move(int delay)
 {
-	if(!m_isEnd)
-	{
-		m_timer += delay * m_speed;
-		if(m_isLoop == 0)
-		{//如果不循环
-			if(m_timer >= 1.0f)
+	if(m_isEnd) return;
+	m_timer += delay * m_speed;
+	if(m_isLoop == 0)
+	{//如果不循环
+		if(m_timer >= 1.0f)
+		{
+			m_isEnd = XTrue;
+			m_timer = 1.0f;
+			m_nowData = m_endData;
+		}else
+		{
+			switch(m_mode)
 			{
-				m_isEnd = XTrue;
-				m_timer = 1.0f;
-				m_nowData = m_endData;
-			}else
+			case MOVE_DATA_MODE_LINE:
+				m_nowData = m_startData + (m_endData - m_startData) * m_timer;
+				break;
+			case MOVE_DATA_MODE_SIN:
+				m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI_HALF);
+				break;
+			case MOVE_DATA_MODE_SIN_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_SQRT2:
+				m_nowData = m_startData + (m_endData - m_startData) * pow(m_timer,0.25f);
+				break;
+			case MOVE_DATA_MODE_SQRT2_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_COS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI_HALF));
+				break;
+			case MOVE_DATA_MODE_COS_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer;
+				break;
+			case MOVE_DATA_MODE_DSIN:
+				if(m_timer < 0.5f)m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI) * 0.5f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin(m_timer * PI)) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_DCOS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI)) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_DSIN_MULT:
+				if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 0.5f) * (m_timer - 0.5f)) * 2.0f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 0.5f) * (m_timer - 0.5f) * 2.0f);
+				break;
+			case MOVE_DATA_MODE_DCOS_MULT:
+				if(m_timer < 0.5f)m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer * 2.0f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
+				break;
+			case MOVE_DATA_MODE_SHAKE:
+				//m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;	//这里需要重新设计
+				m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * (1.0f - m_timer) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;	//这里需要重新设计
+				break;
+			}
+		}
+	}else
+	{//如果循环
+		if(m_timer >= 2.0f)
+		{
+			//m_timer = 0.0f;
+			//m_nowData = m_startData;
+			//if(m_loopTimer > 0)
+			//{
+			//	-- m_loopTimer;
+			//	if(m_loopTimer == 0) m_isEnd = XTrue;
+			//}
+			int loopTimes = m_timer * 0.5f;
+			m_timer -= loopTimes * 2.0f;
+			if(m_loopTimer > 0)
 			{
-				switch(m_mode)
+				m_loopTimer -= loopTimes;
+				if(m_loopTimer <= 0) 
 				{
-				case MOVE_DATA_MODE_LINE:
-					m_nowData = m_startData + (m_endData - m_startData) * m_timer;
-					break;
-				case MOVE_DATA_MODE_SIN:
-					m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI_HALF);
-					break;
-				case MOVE_DATA_MODE_SIN_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_SQRT2:
-					m_nowData = m_startData + (m_endData - m_startData) * pow(m_timer,0.25f);
-					break;
-				case MOVE_DATA_MODE_SQRT2_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_COS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI_HALF));
-					break;
-				case MOVE_DATA_MODE_COS_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer;
-					break;
-				case MOVE_DATA_MODE_DSIN:
-					if(m_timer < 0.5f)m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI) * 0.5f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin(m_timer * PI)) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_DCOS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI)) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_DSIN_MULT:
-					if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 0.5f) * (m_timer - 0.5f)) * 2.0f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 0.5f) * (m_timer - 0.5f) * 2.0f);
-					break;
-				case MOVE_DATA_MODE_DCOS_MULT:
-					if(m_timer < 0.5f)m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer * 2.0f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
-					break;
-				case MOVE_DATA_MODE_SHAKE:
-					//m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;	//这里需要重新设计
-					m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * (1.0f - m_timer) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;	//这里需要重新设计
-					break;
+					m_isEnd = XTrue;
+					m_nowData = m_startData;
+					return;
 				}
+			}
+		}
+		if(m_timer >= 1.0f)
+		{
+			switch(m_mode)
+			{
+			case MOVE_DATA_MODE_LINE:
+				m_nowData = m_startData + (m_endData - m_startData) * (2.0f - m_timer);
+				break;
+			case MOVE_DATA_MODE_SIN:
+				m_nowData = m_startData + (m_endData - m_startData) * sin((2.0f - m_timer) * PI_HALF);
+				break;
+			case MOVE_DATA_MODE_SIN_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_SQRT2:
+				m_nowData = m_startData + (m_endData - m_startData) * pow(2.0f - m_timer,0.25f);
+				break;
+			case MOVE_DATA_MODE_SQRT2_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_DSIN:
+				if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin((2.0f - m_timer) * PI)) * 0.5f;
+				else m_nowData = m_startData + (m_endData - m_startData) * sin((2.0f - m_timer) * PI) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_COS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos((2.0f - m_timer) * PI_HALF));
+				break;
+			case MOVE_DATA_MODE_COS_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (2.0f - m_timer) * (2.0f - m_timer);
+				break;
+			case MOVE_DATA_MODE_DCOS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos((2.0f - m_timer) * PI)) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_DSIN_MULT:
+				if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 1.5f) * (m_timer - 1.5f) * 2.0f);
+				else m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 1.5f) * (m_timer - 1.5f)) * 2.0f;
+				break;
+			case MOVE_DATA_MODE_DCOS_MULT:
+				if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
+				else m_nowData = m_startData + (m_endData - m_startData) * (m_timer - 2.0f) * (m_timer - 2.0f) * 2.0f;
+				break;
+			case MOVE_DATA_MODE_SHAKE:
+				m_nowData = (m_startData - m_endData) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * cos((2.0f - m_timer) * PI * 2.5f) + m_endData;
+				break;
 			}
 		}else
-		{//如果循环
-			if(m_timer >= 2.0f)
+		{
+			switch(m_mode)
 			{
-				//m_timer = 0.0f;
-				//m_nowData = m_startData;
-				//if(m_loopTimer > 0)
-				//{
-				//	-- m_loopTimer;
-				//	if(m_loopTimer == 0) m_isEnd = XTrue;
-				//}
-				int loopTimes = m_timer * 0.5f;
-				m_timer -= loopTimes * 2.0f;
-				if(m_loopTimer > 0)
-				{
-					m_loopTimer -= loopTimes;
-					if(m_loopTimer <= 0) 
-					{
-						m_isEnd = XTrue;
-						m_nowData = m_startData;
-						return;
-					}
-				}
-			}
-			if(m_timer >= 1.0f)
-			{
-				switch(m_mode)
-				{
-				case MOVE_DATA_MODE_LINE:
-					m_nowData = m_startData + (m_endData - m_startData) * (2.0f - m_timer);
-					break;
-				case MOVE_DATA_MODE_SIN:
-					m_nowData = m_startData + (m_endData - m_startData) * sin((2.0f - m_timer) * PI_HALF);
-					break;
-				case MOVE_DATA_MODE_SIN_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_SQRT2:
-					m_nowData = m_startData + (m_endData - m_startData) * pow(2.0f - m_timer,0.25f);
-					break;
-				case MOVE_DATA_MODE_SQRT2_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_DSIN:
-					if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin((2.0f - m_timer) * PI)) * 0.5f;
-					else m_nowData = m_startData + (m_endData - m_startData) * sin((2.0f - m_timer) * PI) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_COS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos((2.0f - m_timer) * PI_HALF));
-					break;
-				case MOVE_DATA_MODE_COS_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (2.0f - m_timer) * (2.0f - m_timer);
-					break;
-				case MOVE_DATA_MODE_DCOS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos((2.0f - m_timer) * PI)) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_DSIN_MULT:
-					if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 1.5f) * (m_timer - 1.5f) * 2.0f);
-					else m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 1.5f) * (m_timer - 1.5f)) * 2.0f;
-					break;
-				case MOVE_DATA_MODE_DCOS_MULT:
-					if(m_timer < 1.5f) m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
-					else m_nowData = m_startData + (m_endData - m_startData) * (m_timer - 2.0f) * (m_timer - 2.0f) * 2.0f;
-					break;
-				case MOVE_DATA_MODE_SHAKE:
-					m_nowData = (m_startData - m_endData) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * cos((2.0f - m_timer) * PI * 2.5f) + m_endData;
-					break;
-				}
-			}else
-			{
-				switch(m_mode)
-				{
-				case MOVE_DATA_MODE_LINE:
-					m_nowData = m_startData + (m_endData - m_startData) * m_timer;
-					break;
-				case MOVE_DATA_MODE_SIN:
-					m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI_HALF);
-					break;
-				case MOVE_DATA_MODE_SIN_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_SQRT2:
-					m_nowData = m_startData + (m_endData - m_startData) * pow(m_timer,0.25f);
-					break;
-				case MOVE_DATA_MODE_SQRT2_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
-					break;
-				case MOVE_DATA_MODE_DSIN:
-					if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI) * 0.5f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin(m_timer * PI)) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_COS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI_HALF));
-					break;
-				case MOVE_DATA_MODE_COS_MULT:
-					m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer;
-					break;
-				case MOVE_DATA_MODE_DCOS:
-					m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI)) * 0.5f;
-					break;
-				case MOVE_DATA_MODE_DSIN_MULT:
-					if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 0.5f) * (m_timer - 0.5f)) * 2.0f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 0.5f) * (m_timer - 0.5f) * 2.0f);
-					break;
-				case MOVE_DATA_MODE_DCOS_MULT:
-					if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer * 2.0f;
-					else m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
-					break;
-				case MOVE_DATA_MODE_SHAKE:
-					m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * (1.0f - m_timer) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;
-					break;
-				}
+			case MOVE_DATA_MODE_LINE:
+				m_nowData = m_startData + (m_endData - m_startData) * m_timer;
+				break;
+			case MOVE_DATA_MODE_SIN:
+				m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI_HALF);
+				break;
+			case MOVE_DATA_MODE_SIN_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_SQRT2:
+				m_nowData = m_startData + (m_endData - m_startData) * pow(m_timer,0.25f);
+				break;
+			case MOVE_DATA_MODE_SQRT2_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f) * (m_timer - 1.0f));
+				break;
+			case MOVE_DATA_MODE_DSIN:
+				if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * sin(m_timer * PI) * 0.5f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (2.0f - sin(m_timer * PI)) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_COS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI_HALF));
+				break;
+			case MOVE_DATA_MODE_COS_MULT:
+				m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer;
+				break;
+			case MOVE_DATA_MODE_DCOS:
+				m_nowData = m_startData + (m_endData - m_startData) * (1.0f - cos(m_timer * PI)) * 0.5f;
+				break;
+			case MOVE_DATA_MODE_DSIN_MULT:
+				if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * (0.25f - (m_timer - 0.5f) * (m_timer - 0.5f)) * 2.0f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (0.5f + (m_timer - 0.5f) * (m_timer - 0.5f) * 2.0f);
+				break;
+			case MOVE_DATA_MODE_DCOS_MULT:
+				if(m_timer < 0.5f) m_nowData = m_startData + (m_endData - m_startData) * m_timer * m_timer * 2.0f;
+				else m_nowData = m_startData + (m_endData - m_startData) * (1.0f - (m_timer - 1.0f) * (m_timer - 1.0f) * 2.0f);
+				break;
+			case MOVE_DATA_MODE_SHAKE:
+				m_nowData = (m_startData - m_endData) * (1.0f - m_timer) * (1.0f - m_timer) * (1.0f - m_timer) * cos(m_timer * PI * 2.5f) + m_endData;
+				break;
 			}
 		}
 	}

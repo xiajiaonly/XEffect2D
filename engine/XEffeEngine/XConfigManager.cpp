@@ -4,202 +4,141 @@
 //Date:		See the header file
 //--------------------------------
 #include "XConfigManager.h"
-void callbackProcMD(void *pClass,int ID)
-{
-	_XConfigManager *pPar = (_XConfigManager *)pClass;
-	for(int i = 0;i < pPar->m_pItems.size();++ i)
-	{
-		if(pPar->m_pItems[i]->m_pCtrl != NULL)
-		{
-			if(pPar->m_pItems[i]->m_pCtrl->getControlID() == ID)
-			{//处理事件
-				if(i == pPar->m_minuteIndex && pPar->m_minuteSld.getVisiable()) pPar->m_minuteSld.disVisiable();
-				break;
-			}
-		}
-	}
-}
 void callbackProc(void *pClass,int ID)
 {
-	_XConfigManager *pPar = (_XConfigManager *)pClass;
+	_XConfigManager &pPar = *(_XConfigManager *)pClass;
 	//功能按键
-	if(pPar->m_minuteBtn.getControlID() == ID)
-	{//微调按钮
-		if(pPar->m_minuteSld.getVisiable()) pPar->m_minuteSld.disVisiable();
-		else 
-		{
-			pPar->updateMinuteSld();
-			pPar->m_minuteSld.setVisiable();
-		}
-	}
-	if(pPar->m_saveBtn.getControlID() == ID)
+	if(pPar.m_saveBtn.getControlID() == ID)
 	{//保存
-		pPar->save();
-		pPar->setOperateToServer(CFG_NET_OP_SAVE);
+		pPar.save();
+		pPar.setOperateToServer(CFG_NET_OP_SAVE);
 		return;
-	}
-	if(pPar->m_loadBtn.getControlID() == ID)
+	}else
+	if(pPar.m_loadBtn.getControlID() == ID)
 	{//读取
-		if(pPar->m_configMode == CFG_MODE_CLIENT)
+		if(pPar.m_configMode == CFG_MODE_CLIENT)
 		{
-			pPar->setOperateToServer(CFG_NET_OP_LOAD);
+			pPar.setOperateToServer(CFG_NET_OP_LOAD);
 		}else
-		if(pPar->m_configMode == CFG_MODE_SERVER)
+		if(pPar.m_configMode == CFG_MODE_SERVER)
 		{
-			pPar->load();
-			pPar->sendCFGInfo();
+			pPar.load();
+			pPar.sendCFGInfo();
 		}else
 		{
-			pPar->load();
+			pPar.load();
 		}
 		return;
-	}
-	if(pPar->m_defaultBtn.getControlID() == ID)
+	}else
+	if(pPar.m_defaultBtn.getControlID() == ID)
 	{//默认
-		if(pPar->m_configMode == CFG_MODE_CLIENT)
+		if(pPar.m_configMode == CFG_MODE_CLIENT)
 		{
-			pPar->setOperateToServer(CFG_NET_OP_DEFAULT);
+			pPar.setOperateToServer(CFG_NET_OP_DEFAULT);
 		}else
-		if(pPar->m_configMode == CFG_MODE_SERVER)
+		if(pPar.m_configMode == CFG_MODE_SERVER)
 		{
-			pPar->setDefault();
-			pPar->sendCFGInfo();
+			pPar.setDefault();
+			pPar.sendCFGInfo();
 		}else
 		{
-			pPar->setDefault();
+			pPar.setDefault();
 		}
 		return;
-	}
-	if(pPar->m_netUpdateBtn.getControlID() == ID)
+	}else
+	if(pPar.m_netUpdateBtn.getControlID() == ID)
 	{//同步
-		pPar->sendSynchToServer();
+		pPar.sendSynchToServer();
 		return;
-	}	
-	if(pPar->m_netInjectBtn.getControlID() == ID)
+	}else	
+	if(pPar.m_netInjectBtn.getControlID() == ID)
 	{//注入
-		pPar->sendInject();
+		pPar.sendInject();
+		return;
+	}else	
+	if(pPar.m_undoBtn.getControlID() == ID)
+	{//撤销
+		_XOpManager.undo();
+		return;
+	}else	
+	if(pPar.m_redoBtn.getControlID() == ID)
+	{//重做
+		_XOpManager.redo();
 		return;
 	}
-	//配置项
-	if(pPar->m_minuteSld.getControlID() == ID && pPar->m_minuteSld.getVisiable())
-	{//微调按钮
-		int i = pPar->m_minuteIndex;
-		if(i < 0 || i >= pPar->m_pItems.size()) return;
-		switch(pPar->m_pItems[i]->m_type)
-		{
-		case CFG_DATA_TYPE_INT:
-			if(pPar->m_pItems[i]->m_nowValue.valueI != pPar->m_minuteSld.getNowValue())
-			{
-				pPar->m_pItems[i]->m_nowValue.valueI = pPar->m_minuteSld.getNowValue();
-				* (int *)pPar->m_pItems[i]->m_pVariable = pPar->m_minuteSld.getNowValue();
-				((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->setNowValue(pPar->m_minuteSld.getNowValue());
-				if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-				pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-			}
-			break;
-		case CFG_DATA_TYPE_CHAR:
-			if(pPar->m_pItems[i]->m_nowValue.valueI != pPar->m_minuteSld.getNowValue())
-			{
-				pPar->m_pItems[i]->m_nowValue.valueI = pPar->m_minuteSld.getNowValue();
-				* (char *)pPar->m_pItems[i]->m_pVariable = pPar->m_minuteSld.getNowValue();
-				if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-				pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-			}
-		case CFG_DATA_TYPE_UCHAR:
-			if(pPar->m_pItems[i]->m_nowValue.valueI != pPar->m_minuteSld.getNowValue())
-			{
-				pPar->m_pItems[i]->m_nowValue.valueI = pPar->m_minuteSld.getNowValue();
-				* (unsigned char *)pPar->m_pItems[i]->m_pVariable = pPar->m_minuteSld.getNowValue();
-				((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->setNowValue(pPar->m_minuteSld.getNowValue());
-				if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-				pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-			}
-			break;
-		case CFG_DATA_TYPE_FLOAT:
-			if(pPar->m_pItems[i]->m_nowValue.valueF != pPar->m_minuteSld.getNowValue())
-			{
-				pPar->m_pItems[i]->m_nowValue.valueF = pPar->m_minuteSld.getNowValue();
-				* (float *)pPar->m_pItems[i]->m_pVariable = pPar->m_minuteSld.getNowValue();
-				((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->setNowValue(pPar->m_minuteSld.getNowValue());
-				if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-				pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-			}
-			break;
-		}
-		return;
-	}
-	for(int i = 0;i < pPar->m_pItems.size();++ i)
+	for(int i = 0;i < pPar.m_pItems.size();++ i)
 	{
-		if(pPar->m_pItems[i]->m_pCtrl != NULL)
+		if(pPar.m_pItems[i]->m_pCtrl != NULL)
 		{
-			if(pPar->m_pItems[i]->m_pCtrl->getControlID() == ID)
+			if(pPar.m_pItems[i]->m_pCtrl->getControlID() == ID)
 			{//处理事件
-				switch(pPar->m_pItems[i]->m_type)
+				switch(pPar.m_pItems[i]->m_type)
 				{
 				case CFG_DATA_TYPE_INT:
-					if(pPar->m_pItems[i]->m_nowValue.valueI != ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue())
+					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueI = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						* (int *)pPar->m_pItems[i]->m_pVariable = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						* (int *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 					break;
 				case CFG_DATA_TYPE_CHAR:
-					if(pPar->m_pItems[i]->m_nowValue.valueI != ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue())
+					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueI = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						* (char *)pPar->m_pItems[i]->m_pVariable = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						* (char *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 				case CFG_DATA_TYPE_UCHAR:
-					if(pPar->m_pItems[i]->m_nowValue.valueI != ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue())
+					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueI = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						* (unsigned char *)pPar->m_pItems[i]->m_pVariable = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						* (unsigned char *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 					break;
 				case CFG_DATA_TYPE_FLOAT:
-					if(pPar->m_pItems[i]->m_nowValue.valueF != ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue())
+					if(pPar.m_pItems[i]->m_nowValue.valueF != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueF = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						* (float *)pPar->m_pItems[i]->m_pVariable = ((_XSlider *)(pPar->m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueF = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						* (float *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 					break;
 				case CFG_DATA_TYPE_XBOOL:
-					if(pPar->m_pItems[i]->m_nowValue.valueB != ((_XCheck *)(pPar->m_pItems[i]->m_pCtrl))->getState())
+					if(pPar.m_pItems[i]->m_nowValue.valueB != ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueB = ((_XCheck *)(pPar->m_pItems[i]->m_pCtrl))->getState();
-						* (_XBool *)pPar->m_pItems[i]->m_pVariable = ((_XCheck *)(pPar->m_pItems[i]->m_pCtrl))->getState();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueB = ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState();
+						* (_XBool *)pPar.m_pItems[i]->m_pVariable = ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 					break;
 				case CFG_DATA_TYPE_RADIOS:
-					if(pPar->m_pItems[i]->m_nowValue.valueI != ((_XRadios *)(pPar->m_pItems[i]->m_pCtrl))->getNowChoose())
+					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose())
 					{
-						pPar->m_pItems[i]->m_nowValue.valueI = ((_XRadios *)(pPar->m_pItems[i]->m_pCtrl))->getNowChoose();
-						* (int *)pPar->m_pItems[i]->m_pVariable = ((_XRadios *)(pPar->m_pItems[i]->m_pCtrl))->getNowChoose();
-						if(pPar->m_pItems[i]->m_changeProc != NULL) pPar->m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar->sendItemValue(pPar->m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+						pPar.m_pItems[i]->m_nowValue.valueI = ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose();
+						* (int *)pPar.m_pItems[i]->m_pVariable = ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose();
+						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
+						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
 					}
 					break;
 				}
-				break;
+				//break;
+				return;
 			}
 		}
 	}
 	//判断是否是群组控件的状态发生了变化
-	for(int i = 0;i < pPar->m_pGroups.size();++ i)
+	for(int i = 0;i < pPar.m_pGroups.size();++ i)
 	{
-		if(pPar->m_pGroups[i]->m_group.getControlID() == ID)
+		if(pPar.m_pGroups[i]->m_group.getControlID() == ID)
 		{//群组控件的状态发生变化的时候改变整体布局
-			pPar->relayout();
+			pPar.relayout();
 			return;
 		}
 	}
@@ -244,55 +183,6 @@ bool _XConfigManager::save(const char *filename)
 	fclose(fp);
 	return true;
 }
-//bool _XConfigManager::load(const char *filename)	//优化:建议这里判断读取项的名字是否正确，如果不对的话直接返回读取失败
-//{
-//	FILE *fp = NULL;
-//	if(filename == NULL)
-//	{
-//		if((fp = fopen(CFG_DEFAULT_FILENAME,"r")) == NULL) return false;
-//	}else
-//	{
-//		if((fp = fopen(filename,"r")) == NULL) return false;
-//	}
-//	char lineData[1024];
-//	int len = 0;
-//	for(int i = 0;i < m_pItems.size();++ i)
-//	{
-//		if(!m_pItems[i]->m_isActive) continue;	//被动的值不会读取
-//		//读取一行数据
-//		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM)
-//		{
-//			if(!m_pItems[i]->m_customIt->load(fp))
-//			{
-//				fclose(fp);
-//				return false;
-//			}
-//			continue;
-//		}
-//		if(fgets(lineData,1024,fp) == NULL) break;
-//		//计算名字
-//		len = getCharPosition(lineData,':') + 1;
-//		if(len < 0) 
-//		{
-//			fclose(fp);
-//			return false;
-//		}
-//		lineData[len - 1] = '\0';
-//		if(strcmp(lineData,m_pItems[i]->m_name.c_str()) != 0)
-//		{
-//			fclose(fp);
-//			return false;
-//		}
-//		if(!getItemValueFromStr(m_pItems[i],lineData + len))
-//		{
-//			fclose(fp);
-//			return false;
-//		}
-//		if(m_pItems[i]->m_changeProc != NULL) m_pItems[i]->m_changeProc();	//fix bug:读取配置参数时，没有调用其附带的函数
-//	}
-//	fclose(fp);
-//	return true;
-//}
 bool _XConfigManager::getItemValueFromStr(_XConfigItem *it,const char *str)
 {//这里不进行输入参数合理性检查
 	int temp;
@@ -301,22 +191,26 @@ bool _XConfigManager::getItemValueFromStr(_XConfigItem *it,const char *str)
 	case CFG_DATA_TYPE_INT:
 		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;
 		* (int *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_CHAR:
 		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0)  return false;
 		* (char *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_UCHAR:
 		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;
 		* (unsigned char *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+		((_XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_FLOAT:
 		if(sscanf(str,"%f,\n",&it->m_nowValue.valueF) == 0) return false;
 		* (float *)it->m_pVariable = it->m_nowValue.valueF;
-		((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+		((_XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_XBOOL:
 		if(sscanf(str,"%d,\n",&temp) == 0) return false;			
@@ -324,11 +218,13 @@ bool _XConfigManager::getItemValueFromStr(_XConfigItem *it,const char *str)
 		else it->m_nowValue.valueB = XTrue;
 		* (_XBool *)it->m_pVariable = it->m_nowValue.valueB;
 		((_XCheck *)it->m_pCtrl)->setState(it->m_nowValue.valueB);
+		((_XCheck *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_RADIOS:
 		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;			
 		* (int *)it->m_pVariable = it->m_nowValue.valueI;
 		((_XRadios *)it->m_pCtrl)->setChoosed(it->m_nowValue.valueI);
+		((_XRadios *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_CUSTOM:
 		break;
@@ -365,7 +261,7 @@ bool _XConfigManager::loadEx(const char *filename)
 				fseek(fp,fpos,SEEK_SET);	//恢复原有的位置
 			}
 		}
-		while(1)
+		while(true)
 		{
 			if(feof(fp) || fgets(lineData,1024,fp) == NULL)
 			{//数据读取失败或者文件结束
@@ -419,32 +315,38 @@ void _XConfigManager::setDefault()	//恢复默认值
 			case CFG_DATA_TYPE_INT:
 				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
 				* (int *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSlider *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_CHAR:
 				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
 				* (char *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSlider *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_UCHAR:
 				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
 				* (unsigned char *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSlider *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_FLOAT:
 				m_pItems[i]->m_nowValue.valueF = m_pItems[i]->m_defaultValue.valueF;
 				* (float *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueF;
-				((_XSlider *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueF);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueF);
+				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_XBOOL:
 				m_pItems[i]->m_nowValue.valueB = m_pItems[i]->m_defaultValue.valueB;
 				* (_XBool *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueB;
 				((_XCheck *)m_pItems[i]->m_pCtrl)->setState(m_pItems[i]->m_nowValue.valueB);
+				((_XCheck *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_RADIOS:
 				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
 				* (int *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
 				((_XRadios *)m_pItems[i]->m_pCtrl)->setChoosed(m_pItems[i]->m_nowValue.valueI);
+				((_XRadios *)m_pItems[i]->m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_CUSTOM:
 				m_pItems[i]->m_customIt->defValue();
@@ -458,38 +360,63 @@ bool _XConfigManager::init(_XConfigMode mode)
 	if(m_isInited) return false;	//防止重复初始化
 	m_configMode = mode;
 
-	m_minuteBtn.initWithoutTex("+",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,CFG_MNG_H_SLD,CFG_MNG_H_SLD),
-		_XVector2(CFG_MNG_H_SLD * 0.5f,CFG_MNG_H_SLD * 0.5f));
-	m_minuteBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_minuteBtn.disVisiable();	//隐藏
-	m_minuteTimer = 0;
-	m_minuteIndex = -1;
-	m_minuteNeedRemove = true;
-	m_minuteSld.initWithoutTex(_XRect(0.0f,0.0f,m_width,CFG_MNG_H_SLD),
-		100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,_XVector2(0.0,0.0f));
-	m_minuteSld.setSize(m_size);
-	m_minuteSld.setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,callbackProc,this);
-	m_minuteSld.disVisiable();	//隐藏
-
-	m_saveBtn.initWithoutTex("保存",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,64.0f,32.0f),_XVector2(32.0f,16.0f));
-	m_saveBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_saveBtn.setPosition(m_position);
-	m_loadBtn.initWithoutTex("读取",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,64.0f,32.0f),_XVector2(32.0f,16.0f));
-	m_loadBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_loadBtn.setPosition(m_position + _XVector2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
-	m_defaultBtn.initWithoutTex("默认",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,64.0f,32.0f),_XVector2(32.0f,16.0f));
-	m_defaultBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_defaultBtn.setPosition(m_position + _XVector2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
-	m_netUpdateBtn.initWithoutTex("同步",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,64.0f,32.0f),_XVector2(32.0f,16.0f));
-	m_netUpdateBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_netUpdateBtn.setPosition(m_position + _XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
-	m_netInjectBtn.initWithoutTex("注入",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,64.0f,32.0f),_XVector2(32.0f,16.0f));
-	m_netInjectBtn.setCallbackFun(NULL,NULL,NULL,callbackProc,NULL,this);
-	m_netInjectBtn.setPosition(m_position + _XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_saveBtn.initWithoutTex("保存",_XVector2(64.0f,32.0f));
+	m_saveBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_saveBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/save.png").c_str());
+	m_saveBtn.setMouseDownCB(callbackProc,this);
+	m_saveBtn.setPosition(m_position.x + 32.0f * m_size.x,m_position.y);
+	m_saveBtn.setComment("将配置数据保存到文件");
+//	m_loadBtn.initWithoutTex("读取",_XVector2(64.0f,32.0f));
+	m_loadBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_loadBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/load.png").c_str());
+	m_loadBtn.setMouseDownCB(callbackProc,this);
+	m_loadBtn.setPosition(m_position.x + 64.0f * m_size.x,m_position.y);
+	m_loadBtn.setComment("从文件中读取配置数据");
+//	m_loadBtn.setPosition(m_position + _XVector2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
+//	m_defaultBtn.initWithoutTex("默认",_XVector2(64.0f,32.0f));
+	m_defaultBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_defaultBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/default.png").c_str());
+	m_defaultBtn.setMouseDownCB(callbackProc,this);
+	m_defaultBtn.setPosition(m_position.x + 96.0f * m_size.x,m_position.y);
+	m_defaultBtn.setComment("所有配置恢复默认值");
+//	m_defaultBtn.setPosition(m_position + _XVector2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_undoBtn.initWithoutTex("撤销",_XVector2(64.0f,32.0f));
+	m_undoBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_undoBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/undo.png").c_str());
+	m_undoBtn.setMouseDownCB(callbackProc,this);
+	m_undoBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
+	m_undoBtn.setComment("返回上一次操作");
+//	m_undoBtn.setPosition(m_position + _XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_redoBtn.initWithoutTex("重做",_XVector2(64.0f,32.0f));
+	m_redoBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_redoBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/redo.png").c_str());
+	m_redoBtn.setMouseDownCB(callbackProc,this);
+	m_redoBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
+	m_redoBtn.setComment("重做上一次操作");
+//	m_redoBtn.setPosition(m_position + _XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_netUpdateBtn.initWithoutTex("同步",_XVector2(64.0f,32.0f));
+	m_netUpdateBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_netUpdateBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/download.png").c_str());
+	m_netUpdateBtn.setMouseDownCB(callbackProc,this);
+	m_netUpdateBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
+	m_netUpdateBtn.setComment("将网络数据同步下来");
+//	m_netUpdateBtn.setPosition(m_position + _XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_netInjectBtn.initWithoutTex("注入",_XVector2(64.0f,32.0f));
+	m_netInjectBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
+	m_netInjectBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/upload.png").c_str());
+	m_netInjectBtn.setMouseDownCB(callbackProc,this);
+	m_netInjectBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
+	m_netInjectBtn.setComment("将本地数据同步上去");
+//	m_netInjectBtn.setPosition(m_position + _XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
 	if(m_configMode != CFG_MODE_CLIENT)
 	{
-		m_netUpdateBtn.disVisiable();
-		m_netInjectBtn.disVisiable();
+		m_netUpdateBtn.disVisible();
+		m_netInjectBtn.disVisible();
+	}
+	if(m_configMode == CFG_MODE_CLIENT)
+	{//撤销和重做操作智能在服务器端或者是非网络的情况下使用，因为客户端会重新建立控件
+		m_undoBtn.disVisible();
+		m_redoBtn.disVisible();
 	}
 	m_nowInsertPos = m_position + _XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
 	m_maxHeight = XEE::windowData.h;	//默认使用全屏高度
@@ -521,6 +448,7 @@ bool _XConfigManager::init(_XConfigMode mode)
 }
 void _XConfigManager::draw()
 {
+	drawFillBoxEx(m_position,_XVector2(32.0f,32.0f) * m_size,0.75f,0.75f,0.75f,true,false,true);
 	for(int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM) m_pItems[i]->m_customIt->draw(); else
@@ -538,12 +466,20 @@ void _XConfigManager::relayoutGroup(int index,bool flag)
 }
 void _XConfigManager::relayout()	//重新自动布局
 {
-	m_saveBtn.setPosition(m_position);
+	m_saveBtn.setPosition(m_position.x + 32.0f * m_size.x,m_position.y);
 	m_saveBtn.setSize(m_size);
-	m_loadBtn.setPosition(m_position + _XVector2((64.0f + CFG_MANAGER_W_SPACE) * m_size.x,0.0f));
+	m_loadBtn.setPosition(m_position.x + 64.0f * m_size.x,m_position.y);
 	m_loadBtn.setSize(m_size);
-	m_defaultBtn.setPosition(m_position + _XVector2((128.0f + 2.0f * CFG_MANAGER_W_SPACE) * m_size.x,0.0f));
+	m_defaultBtn.setPosition(m_position.x + 96.0f * m_size.x,m_position.y);
 	m_defaultBtn.setSize(m_size);
+	m_undoBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
+	m_undoBtn.setSize(m_size);
+	m_redoBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
+	m_redoBtn.setSize(m_size);
+	m_netUpdateBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
+	m_netUpdateBtn.setSize(m_size);
+	m_netInjectBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
+	m_netInjectBtn.setSize(m_size);
 	//更新组件的位置
 	m_nowInsertPos = m_position + _XVector2(0.0f,(32.0f + CFG_MANAGER_H_SPACE) * m_size.x);
 	m_isNewRow = true;
@@ -582,33 +518,43 @@ void _XConfigManager::relayout()	//重新自动布局
 void _XConfigManager::setVisible()
 {//设置显示
 	m_isVisble = true;
-	m_saveBtn.setVisiable();
-	m_loadBtn.setVisiable();
-	m_defaultBtn.setVisiable();
+	m_saveBtn.setVisible();
+	m_loadBtn.setVisible();
+	m_defaultBtn.setVisible();
+	if(m_configMode != CFG_MODE_CLIENT)
+	{
+		m_undoBtn.setVisible();
+		m_redoBtn.setVisible();
+	}
 	if(m_configMode == CFG_MODE_CLIENT)
 	{
-		m_netUpdateBtn.setVisiable();
-		m_netInjectBtn.setVisiable();
+		m_netUpdateBtn.setVisible();
+		m_netInjectBtn.setVisible();
 	}
 	for(int i = 0;i < m_pGroups.size();++ i)
 	{
-		m_pGroups[i]->m_group.setVisiable();
+		m_pGroups[i]->m_group.setVisible();
 	}
 }
 void _XConfigManager::disVisible()
 {//设置不显示
 	m_isVisble = false;
-	m_saveBtn.disVisiable();
-	m_loadBtn.disVisiable();
-	m_defaultBtn.disVisiable();
+	m_saveBtn.disVisible();
+	m_loadBtn.disVisible();
+	m_defaultBtn.disVisible();
+	if(m_configMode != CFG_MODE_CLIENT)
+	{
+		m_undoBtn.disVisible();
+		m_redoBtn.disVisible();
+	}
 	if(m_configMode == CFG_MODE_CLIENT)
 	{
-		m_netUpdateBtn.disVisiable();
-		m_netInjectBtn.disVisiable();
+		m_netUpdateBtn.disVisible();
+		m_netInjectBtn.disVisible();
 	}
 	for(int i = 0;i < m_pGroups.size();++ i)
 	{
-		m_pGroups[i]->m_group.disVisiable();
+		m_pGroups[i]->m_group.disVisible();
 	}
 }
 void _XConfigManager::sendSynchToServer()
@@ -618,7 +564,7 @@ void _XConfigManager::sendSynchToServer()
 		_XNetData *tempSendData = createMem<_XNetData>();
 		tempSendData->dataLen = 2;
 		tempSendData->data = createArrayMem<unsigned char>(tempSendData->dataLen);
-		tempSendData->isEnable = true;
+		tempSendData->isEnable = XTrue;
 		tempSendData->type = DATA_TYPE_CONFIG_INFO;
 		m_netClient.sendData(tempSendData);
 	}
@@ -790,7 +736,7 @@ void _XConfigManager::sendItemValue(const _XConfigItem * it)
 			temp = spliceData(temp,size,offset,(unsigned char *)&it->m_nowValue,sizeof(it->m_nowValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
-			tempSendData->isEnable = true;
+			tempSendData->isEnable = XTrue;
 			tempSendData->type = DATA_TYPE_CONFIG_ITEM;
 			m_netServer.sendData(tempSendData);
 			//printf("配置项数据发送!\n");
@@ -809,7 +755,7 @@ void _XConfigManager::sendItemValue(const _XConfigItem * it)
 			temp = spliceData(temp,size,offset,(unsigned char *)&it->m_nowValue,sizeof(it->m_nowValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
-			tempSendData->isEnable = true;
+			tempSendData->isEnable = XTrue;
 			tempSendData->type = DATA_TYPE_CONFIG_ITEM;
 			m_netClient.sendData(tempSendData);
 			//printf("配置项数据发送!\n");
@@ -825,28 +771,28 @@ void _XConfigManager::updateItemFromCFG(_XConfigItem * it)
 		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			* (int *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CHAR:
 		if(* (char *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			* (char *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_UCHAR:
 		if(* (unsigned char *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			* (unsigned char *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_FLOAT:
 		if(* (float *)it->m_pVariable != it->m_nowValue.valueF)
 		{//下面更新数据
 			* (float *)it->m_pVariable = it->m_nowValue.valueF;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
 		}
 		break;
 	case CFG_DATA_TYPE_XBOOL:
@@ -870,6 +816,29 @@ void _XConfigManager::updateItemFromCFG(_XConfigItem * it)
 	}
 	if(it->m_changeProc != NULL) it->m_changeProc();	
 }
+void _XConfigManager::setTextColor(const _XFColor& color)
+{
+	m_textColor = color;
+	//遍历所有的元素，并设置其颜色
+	for(int i = 0;i < m_pItems.size();++ i)
+	{
+		switch(m_pItems[i]->m_type)
+		{
+		case CFG_DATA_TYPE_INT:
+		case CFG_DATA_TYPE_CHAR:
+		case CFG_DATA_TYPE_UCHAR:
+		case CFG_DATA_TYPE_FLOAT:
+			((_XSliderEx *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			break;
+		case CFG_DATA_TYPE_XBOOL:
+			((_XCheck *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			break;
+		case CFG_DATA_TYPE_RADIOS:
+			((_XRadios *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			break;
+		}
+	}
+}
 void _XConfigManager::updateItemToCFG(_XConfigItem * it)
 {
 	if(it == NULL) return;
@@ -879,28 +848,28 @@ void _XConfigManager::updateItemToCFG(_XConfigItem * it)
 		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			it->m_nowValue.valueI = * (int *)it->m_pVariable;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CHAR:
 		if(* (char *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			it->m_nowValue.valueI = * (char *)it->m_pVariable;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_UCHAR:
 		if(* (unsigned char *)it->m_pVariable != it->m_nowValue.valueI)
 		{//下面更新数据
 			it->m_nowValue.valueI = * (unsigned char *)it->m_pVariable;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_FLOAT:
 		if(* (float *)it->m_pVariable != it->m_nowValue.valueF)
 		{//下面更新数据
 			it->m_nowValue.valueF = * (float *)it->m_pVariable;
-			((_XSlider *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
 		}
 		break;
 	case CFG_DATA_TYPE_XBOOL:
@@ -938,7 +907,7 @@ void _XConfigManager::sendCFGInfo()
 		//ItemID|ItemType|ItemRangeMin|ItemRangeMax|ItemDefault|ItemNowValue|ItemNameLen|ItemName|
 	_XNetData *tempSendData = createMem<_XNetData>();
 	tempSendData->data = getConfigInfo(tempSendData->dataLen);
-	tempSendData->isEnable = true;
+	tempSendData->isEnable = XTrue;
 	tempSendData->type = DATA_TYPE_CONFIG_INFO;
 	m_netServer.sendData(tempSendData);
 	//printf("服务器发送同步信息!\n");
@@ -954,7 +923,7 @@ void _XConfigManager::sendInject()	//向服务器发送注入信息
 		tempSendData->data = createArrayMem<unsigned char>(tempSendData->dataLen);
 		fread(tempSendData->data,1,tempSendData->dataLen,fp);
 		fclose(fp);
-		tempSendData->isEnable = true;
+		tempSendData->isEnable = XTrue;
 		tempSendData->type = DATA_TYPE_CONFIG_INJECT;
 		m_netClient.sendData(tempSendData);
 		//printf("发送数据注入命令!\n");
@@ -1034,7 +1003,7 @@ void _XConfigManager::updateNet()
 			{//如果自定义配置类需要发送数据，这里发送数据
 				_XNetData *tempSendData = createMem<_XNetData>();
 				tempSendData->data = m_pItems[i]->m_customIt->sendStr(tempSendData->dataLen,m_pItems[i]->getID());
-				tempSendData->isEnable = true;
+				tempSendData->isEnable = XTrue;
 				tempSendData->type = DATA_TYPE_CONFIG_ITEMS;
 				m_netServer.sendData(tempSendData);
 				//printf("向客户端发送数据变更!\n");
@@ -1090,114 +1059,25 @@ void _XConfigManager::updateNet()
 		}
 	}
 }
-void _XConfigManager::updateMinuteSld()
-{
-	int i = m_minuteIndex;
-	float nowValue;
-	float range;
-	switch(m_pItems[i]->m_type)
-	{
-	case CFG_DATA_TYPE_INT: 
-	case CFG_DATA_TYPE_CHAR: 
-	case CFG_DATA_TYPE_UCHAR: 
-		nowValue = m_pItems[i]->m_nowValue.valueI;
-		range = (m_pItems[i]->m_rangeMax.valueI - m_pItems[i]->m_rangeMin.valueI) * 0.05f;
-		if(nowValue + range <= m_pItems[i]->m_rangeMax.valueI 
-			&& nowValue - range >= m_pItems[i]->m_rangeMin.valueI)
-		{//范围内
-			m_minuteSld.setRange(nowValue + range,nowValue - range);
-		}else
-		if(nowValue + range > m_pItems[i]->m_rangeMax.valueI)
-		{//上边界越界
-			m_minuteSld.setRange(m_pItems[i]->m_rangeMax.valueI,m_pItems[i]->m_rangeMax.valueI - range * 2.0f);
-		}else
-		if(nowValue + range < m_pItems[i]->m_rangeMin.valueI)
-		{//下边界越界
-			m_minuteSld.setRange(m_pItems[i]->m_rangeMin.valueI + range * 2.0f,m_pItems[i]->m_rangeMin.valueI);
-		}
-		m_minuteSld.setNowValue(nowValue);
-		break;
-	case CFG_DATA_TYPE_FLOAT: 
-		nowValue = m_pItems[i]->m_nowValue.valueF;
-		range = (m_pItems[i]->m_rangeMax.valueF - m_pItems[i]->m_rangeMin.valueF) * 0.05f;
-		if(nowValue + range <= m_pItems[i]->m_rangeMax.valueF 
-			&& nowValue - range >= m_pItems[i]->m_rangeMin.valueF)
-		{//范围内
-			m_minuteSld.setRange(nowValue + range,nowValue - range);
-		}else
-		if(nowValue + range > m_pItems[i]->m_rangeMax.valueF)
-		{//上边界越界
-			m_minuteSld.setRange(m_pItems[i]->m_rangeMax.valueF,m_pItems[i]->m_rangeMax.valueF - range * 2.0f);
-		}else
-		if(nowValue - range < m_pItems[i]->m_rangeMin.valueF)
-		{//下边界越界
-			m_minuteSld.setRange(m_pItems[i]->m_rangeMin.valueF + range * 2.0f,m_pItems[i]->m_rangeMin.valueF);
-	//		printf("%f,%f\n",m_pItems[i]->m_rangeMin.valueF + range * 2.0f,m_pItems[i]->m_rangeMin.valueF);
-		}
-	//	printf("%f\n",nowValue);
-		m_minuteSld.setNowValue(nowValue);
-		break;
-	}
-}
 void _XConfigManager::update()	//更新状态
 {
 	updateNet();
-	if(m_minuteTimer > 1000)
-	{//按钮自动消失
-		m_minuteTimer = 0;
-		m_minuteBtn.disVisiable();
-		m_minuteSld.disVisiable();
+	if(m_configMode != CFG_MODE_CLIENT)
+	{//撤销和重做操作智能在服务器端或者是非网络的情况下使用，因为客户端会重新建立控件
+		if(_XOpManager.canUndo()) m_undoBtn.enable();
+		else m_undoBtn.disable();
+		if(_XOpManager.canRedo()) m_redoBtn.enable();
+		else m_redoBtn.disable();
+		_XOpManager.setOperateOver();
 	}
-	if(m_minuteBtn.getVisiable() && m_minuteNeedRemove) m_minuteTimer += XEE::frameTime;
-	bool tempFlag = true;
 	for(int i = 0;i < m_pItems.size();++ i)
 	{
 	//	if(!m_pItems[i]->m_isActive)
 		{//这里更新被动控件的状态
 			updateItemToCFG(m_pItems[i]);
 		}
-		//这里检查是否需要显示微调按钮
-		if(tempFlag && (m_pItems[i]->m_type == CFG_DATA_TYPE_INT || m_pItems[i]->m_type == CFG_DATA_TYPE_CHAR
-			|| m_pItems[i]->m_type == CFG_DATA_TYPE_UCHAR || m_pItems[i]->m_type == CFG_DATA_TYPE_FLOAT))
-		{
-			if(((_XSlider *)(m_pItems[i]->m_pCtrl))->getVisiable() && 
-				((_XSlider *)(m_pItems[i]->m_pCtrl))->isInRect(XEE::mousePosition.x,XEE::mousePosition.y))
-			{//如果鼠标在范围内，则显示
-				if(m_minuteIndex != i || !m_minuteBtn.getVisiable())// || !m_minuteSld.getVisiable())
-				{//需要更新数据
-				//	printf("Yes\n");
-					tempFlag = false;
-					m_minuteIndex = i;
-					m_minuteTimer = 0;
-					m_minuteNeedRemove = false;
-					_XVector2 tempPos = ((_XSlider *)(m_pItems[i]->m_pCtrl))->getBox(1);
-					m_minuteBtn.setPosition(tempPos.x + 5.0f * m_size.x,tempPos.y);
-					m_minuteBtn.setVisiable();
-					tempPos = ((_XSlider *)(m_pItems[i]->m_pCtrl))->getBox(3);
-					m_minuteSld.setPosition(tempPos.x,tempPos.y + 5.0f * m_size.y);
-					updateMinuteSld();	//更新微调的范围
-				}else
-				{//不需要更新数据
-				//	printf("No\n");
-					tempFlag = false;
-					m_minuteTimer = 0;
-					m_minuteNeedRemove = false;
-				}
-			}
-		}
 	}
-	if(tempFlag)
-	{
-		if((m_minuteBtn.getVisiable() && m_minuteBtn.isInRect(XEE::mousePosition.x,XEE::mousePosition.y))
-			|| (m_minuteBtn.getVisiable() && m_minuteSld.isInRect(XEE::mousePosition.x,XEE::mousePosition.y)))
-		{
-			m_minuteNeedRemove = false;	//不需要移除微调
-			m_minuteTimer = 0;
-		}else
-		{
-			m_minuteNeedRemove = true;	//需要移除微调
-		}
-	}
+	//方案1，没t时间遍查一次数据，如果数据发生变化则记录一次（被动式，建议使用主动式）
 }
 void _XConfigManager::setItemActive(bool isActive,void * p)	//设置某个配置项是否为主动形式(默认全部为主动形式)
 {
@@ -1214,7 +1094,7 @@ void _XConfigManager::setItemActive(bool isActive,void * p)	//设置某个配置项是否
 			case CFG_DATA_TYPE_CHAR:
 			case CFG_DATA_TYPE_UCHAR:
 			case CFG_DATA_TYPE_FLOAT:
-				((_XSlider *)it->m_pCtrl)->enable();
+				((_XSliderEx *)it->m_pCtrl)->enable();
 				break;
 			case CFG_DATA_TYPE_XBOOL:
 				((_XCheck *)it->m_pCtrl)->enable();
@@ -1234,7 +1114,7 @@ void _XConfigManager::setItemActive(bool isActive,void * p)	//设置某个配置项是否
 			case CFG_DATA_TYPE_CHAR:
 			case CFG_DATA_TYPE_UCHAR:
 			case CFG_DATA_TYPE_FLOAT:
-				((_XSlider *)it->m_pCtrl)->disable();
+				((_XSliderEx *)it->m_pCtrl)->disable();
 				break;
 			case CFG_DATA_TYPE_XBOOL:
 				((_XCheck *)it->m_pCtrl)->disable();
@@ -1313,7 +1193,7 @@ bool _XConfigManager::decreaseAItem(void *p)	//减少一个配置项
 	}
 	return false;
 }
-void _XConfigGroup::moveDownPretreatment(int pixelW,int pixelH)
+void _XConfigGroup::moveDownPretreatment(int/*pixelW*/,int pixelH)
 {
 	float h = m_nowInsertPos.y + (pixelH + CFG_MANAGER_H_SPACE) * m_size.y;
 	if(h > m_position.y + m_maxHeight && !m_isNewRow)
@@ -1364,22 +1244,22 @@ void _XConfigGroup::relayout()
 		{
 		case CFG_DATA_TYPE_INT:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSlider *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_CHAR:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSlider *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_UCHAR:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSlider *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_FLOAT:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSlider *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_XBOOL:
@@ -1531,7 +1411,7 @@ int _XConfigManager::addSpecialItem(void * it,_XConfigDataType type,const char *
 		_XConfigGroup *gp = m_pGroups[0];
 		gp->m_items.push_back(pItem);
 		gp->m_group.pushChild((_XObjectBasic *)pItem->m_pVariable);
-		if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisiable();
+		if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisible();
 
 		relayout();
 	}else
@@ -1541,7 +1421,7 @@ int _XConfigManager::addSpecialItem(void * it,_XConfigDataType type,const char *
 		{
 			gp->m_items.push_back(pItem);
 			gp->m_group.pushChild((_XObjectBasic *)pItem->m_pVariable);
-			if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisiable();
+			if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisible();
 			relayout();
 		}
 	}
@@ -1564,7 +1444,7 @@ int _XConfigManager::addCustomItem(_XCFGItemBasic *it,const char * groupName)
 		_XConfigGroup *gp = m_pGroups[0];
 		gp->m_items.push_back(pItem);
 		gp->m_group.pushChild(pItem->m_customIt);
-		if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisiable();
+		if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisible();
 
 		relayout();
 	}else
@@ -1574,7 +1454,7 @@ int _XConfigManager::addCustomItem(_XCFGItemBasic *it,const char * groupName)
 		{
 			gp->m_items.push_back(pItem);
 			gp->m_group.pushChild(pItem->m_customIt);
-			if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisiable();
+			if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisible();
 			relayout();
 		}
 	}
@@ -1674,7 +1554,7 @@ void _XConfigManager::setOperateToServer(_XConfigNetOperate op)
 	if(!m_isInited) return;
 	if(m_configMode != CFG_MODE_CLIENT) return;
 	_XNetData *tempData = createMem<_XNetData>();
-	tempData->isEnable = true;
+	tempData->isEnable = XTrue;
 	tempData->type = DATA_TYPE_CONFIG_OPERATE;
 	tempData->dataLen = sizeof(op);
 	tempData->data = createArrayMem<unsigned char>(tempData->dataLen);
@@ -1687,7 +1567,7 @@ unsigned char *spliceData(unsigned char * baseBuff,int &baseLen,int &offset,cons
 	if(offset + len > baseLen || baseBuff == NULL)
 	{//数据超过长度
 		if(baseLen == 0) baseLen = 1;
-		while(1)
+		while(true)
 		{
 			baseLen = baseLen << 1;
 			if(offset + len <= baseLen) break;

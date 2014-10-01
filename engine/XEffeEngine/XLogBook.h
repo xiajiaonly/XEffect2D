@@ -33,11 +33,12 @@ using namespace std;
 //日志内容的格式为：
 //年月日时分秒毫秒|LOGID|Message
 
-#define MAX_RECORD_SUM 16
+#define MAX_RECORD_SUM 256		//这个日志文件的最大信息数量会造成有些数据丢失
 #define MAX_RECORD_LENGTH 512    //初始log信息的长度，目前长度会根据实际的需要来变化
 //YYYYMMDD-hhmmss-xxx:
 //01234567890123456789
 #define RECORD_HEAD_LENGTH 20    //信息时间戳的长度为20
+#define OUTTO_CONSOLE (1)	//是否同时输出到控制台
 
 //日志信息的结构体
 struct _XLogbookInfo
@@ -47,8 +48,7 @@ struct _XLogbookInfo
 	_XLogbookInfo()
 		:isEnable(XFalse)
 		,logMessage(NULL)
-	{
-	}
+	{}
 };
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -77,9 +77,13 @@ protected:
     _XLogbook();
     _XLogbook(const _XLogbook&);
 	_XLogbook &operator= (const _XLogbook&);
-    virtual ~_XLogbook(); 
+	virtual ~_XLogbook(){releaseLog();}
 public:
-    static _XLogbook& GetInstance();
+    static _XLogbook& GetInstance()
+	{
+		static _XLogbook m_instance;
+		return m_instance;
+	}
     //-------------------------------------------
 private:
     _XLogbookInfo *m_LogInfo;    //日志的内容
@@ -90,6 +94,8 @@ private:
     //下面是使用log服务器的一些定义
     _XLogBookMode m_workMode;    //日志的工作模式
     _XSocket m_socket;            //网络部分的一些定义
+	char *m_tmpBuff;			//用于临时存储数据
+	_XCritical m_locker;
 
     //+++++++++++++++++++++++++++++++++++++++
     //下面是A方法中建议实现
@@ -125,20 +131,18 @@ public:
     }
 };
 
-#ifdef DEBUG_MODE
-#define AddLogInfoStr(p) _XLogbook::GetInstance().addLogInfoStr(p)
-#define AddLogInfoNull _XLogbook::GetInstance().addLogInfoNull
-#define AddLogInfoExp _XLogbook::GetInstance().addLogInfoExp
+#if WITH_LOG
+#define LogStr _XLogbook::GetInstance().addLogInfoStr
+#define LogNull _XLogbook::GetInstance().addLogInfoNull
+#define LogExp _XLogbook::GetInstance().addLogInfoExp
 #else
-#define AddLogInfoStr(p) (void)(p)
-#define AddLogInfoNull (void)
-#define AddLogInfoExp (void)
+#define LogStr(p) (void)(p)
+#define LogNull (void)
+#define LogExp (void)
 #endif
 
 inline void _XLogbook::addLogInfoStr(const char *p)
 {
-    if(!m_isInited) initLog("logBook.txt");
-	printf(p);
     pushAMessage(p);
 }
 #endif

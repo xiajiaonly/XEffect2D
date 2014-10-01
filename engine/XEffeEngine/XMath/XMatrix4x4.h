@@ -16,6 +16,7 @@ class _XMatrix4x4
 {
 public:
 	float data[16];
+	static const _XMatrix4x4 identity;	//µ¥Î»¾ØÕó
 	operator float* () const {return (float*) this;}
 	operator const float* () const {return (const float*) this;}
 

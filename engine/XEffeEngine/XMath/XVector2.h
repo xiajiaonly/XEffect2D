@@ -16,6 +16,8 @@ public:
     float x;
     float y;
 public:
+	static const _XVector2 zero;
+
     void reset();    //归零这个点
 	void set(const _XVector2 &temp);
     void set(float a,float b);    //设置当前点的值
@@ -60,7 +62,6 @@ public:
 	//点积可以来计算两矢量的夹角,公式如下: 
 	//cos (V dot W) =V.W / | V | | W | 
 	//点乘的几何意义是：是一条边向另一条边的投影乘以另一条边的长度
-	_XVector2 normalize() const;
 	void normalize();	//单位化 或者 归一化
 	_XVector2 perp(){return _XVector2(y,-x);}	//反射
     
@@ -73,7 +74,7 @@ public:
 	_XVector2(const _XVector2 &temp)
 		:x(temp.x),y(temp.y)
 	{}
-	_XVector2 &operator = (const _XVector2 &temp);
+//	_XVector2 &operator = (const _XVector2 &temp);
 	_XVector2 &operator = (const float* temp);	//这种逻辑不严密
 	_XVector2(const float *temp) //这种逻辑不严密
 	{
@@ -92,6 +93,7 @@ public:
 	operator float* () const {return (float*) this;}
 	operator const float* () const {return (const float*) this;}
 };
+
 typedef _XVector2 _XPoint;
 #include "XVector2.inl"
 
@@ -99,7 +101,7 @@ inline _XVector2 operator *(float a,const _XVector2 &temp)
 {//左乘
 	return temp * a;
 }
-//inline float operator^(_XVector2 v1,_XVector2 v2)  // DOT product
+//inline float operator^(const _XVector2 &v1,const _XVector2 &v2)  // DOT product
 //{
 //	return v1.x*v2.x + v1.y*v2.y;
 //}

@@ -44,18 +44,15 @@ public:
 		if(temp < 0.0f) temp = 0.0f;
 		if(temp > 1.0f) temp = 1.0f;
 
-		int armTime = temp * m_allFrameSum;
-		av_seek_frame(m_pFormatCtx,0,armTime,AVSEEK_FLAG_BACKWARD);
+		av_seek_frame(m_pFormatCtx,0,temp * m_allFrameSum,AVSEEK_FLAG_BACKWARD);
 	}
-
 	_XAudioStream()
 		:m_isLoaded(XFalse)
 		,m_pFormatCtx(NULL)
 		,m_pAudioCodecCtx(NULL)
 		,m_pFrame(NULL)
 		,m_pSwrContext(NULL)
-	{
-	}
+	{}
 	~_XAudioStream() {close();}
 };
 

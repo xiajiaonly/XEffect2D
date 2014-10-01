@@ -3,6 +3,7 @@
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
+#include "XEffeEngine.h"
 #include "XBasicWindow.h"
 #include "XSoundCommon.h"
 #include "XLogBook.h"
@@ -30,6 +31,8 @@ namespace XEE
 	int audioChannel = 2;
 	int audioFormat = MIX_DEFAULT_FORMAT;
 	_XResourcePosition defaultResourcePosition = RESOURCE_LOCAL_FOLDER;
+	bool isWindowExit = false;
+	bool isAlwaysTop = false;
 	LRESULT (*customWinProc)(HWND hwnd,UINT Msg,WPARAM wParam,LPARAM lParam,bool &end) = NULL;
 	HWND wHandle = 0;
 	HDC wHDC = 0;	//窗口容器的指针
@@ -39,7 +42,24 @@ namespace XEE
 
 	char isOpenGL2Support = 0;
 	int maxTetureSize = 1024;
-	char isLineSmooth = 0;
+	char isLineSmooth = 1;
+	char isMultiSampleSupport = 0;
+
+	_XBool stopFlag = XFalse;	//是否暂停
+	int manualFPS = -1;	//-1是不设置帧率
+	float manualFrameTime;	//设置的每帧的时间
+	_XBool needReset3DParam = XFalse;
+
+	_XBool haveSystemFont = XFalse;
+	_XFontUnicode systemFont;
+	_XBool isSuspend = XFalse;
+
+	int showVersionTimer = 0;			//显示版本号的计时器
+	_XFontUnicode showVersionStr;	//显示版本号的字符串
+	int autoShutDownTimer = 0;
+	char autoShutDownState = -1;
+
+	_XWindowTitle customWinTitle;	//自定义的窗口标题
 
 	#include <wincon.h>
 	extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow ();
@@ -81,9 +101,11 @@ bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,
 	XEE::wHandle = WindowFromDC(XEE::wHDC);
 	XEE::mainThreadHandle = GetCurrentThreadId();
 
-	XEE::registerMyMsgProc();
-
 	if(windowTitle != NULL) _XWindow.setWindowTitle(windowTitle);	//设置窗口标题
+	if(XEE::windowData.isInitWindowPos
+		|| XEE::windowData.isAlwaysTop) setWindowPos(XEE::windowData.windowPosX,XEE::windowData.windowPosY,XEE::windowData.isAlwaysTop);
+
+	XEE::registerMyMsgProc();
 
 	_XSoundHandle.init();
 	return true;
@@ -196,63 +218,94 @@ namespace XEE
 	}
 	void keyProc(int key,_XKeyState keyState)
 	{
-		_XControlManager::GetInstance().keyProc(key,keyState);
+		_XCtrlManger.keyProc(key,keyState);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().keyProc(key,keyState);
+		_XObjManger.keyProc(key,keyState);
 #endif
 	}
 	void mouseProc(int x,int y,_XMouseState mouseState)
 	{
+	/*	_XVector2 tempPos(x,y);
 		switch(mouseState)
 		{
 		case MOUSE_MOVE:
-			XEE::mousePosition = getMousePosFromWindow(x,y);
-			_XControlManager::GetInstance().mouseProc(mousePosition.x,mousePosition.y,MOUSE_MOVE);
-#if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().mouseProc(mousePosition.x,mousePosition.y,MOUSE_MOVE);
-#endif
+			XEE::mousePosition = tempPos = getMousePosFromWindow(x,y);
 			break;
 		case MOUSE_LEFT_BUTTON_DOWN:
-			{
-				_XVector2 tempPos;
-				if(XEE::windowData.isFullScreen != 0)
-					tempPos = getMousePosFromWindow(XEE_SDL_getMouseX(),XEE_SDL_getMouseY());
-				else
-					tempPos = getMousePosFromWindow(x,y);
-				_XControlManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_LEFT_BUTTON_DOWN);
-#if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_LEFT_BUTTON_DOWN);
-#endif
-			}
+		case MOUSE_RIGHT_BUTTON_DOWN:
+			if(XEE::windowData.isFullScreen != 0 && XEE::windowData.isTouch != 0)
+				tempPos = getMousePosFromWindow(XEE_SDL_getMouseX(),XEE_SDL_getMouseY());
+			else
+				tempPos = getMousePosFromWindow(x,y);
 			break;
 		case MOUSE_LEFT_BUTTON_UP:
-			{
-				_XVector2 tempPos = getMousePosFromWindow(x,y);
-				_XControlManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_LEFT_BUTTON_UP);
-#if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_LEFT_BUTTON_UP);
-#endif
-			}
-			break;
-		case MOUSE_RIGHT_BUTTON_DOWN:
-			{
-				_XVector2 tempPos;
-				if(XEE::windowData.isFullScreen != 0)
-					tempPos = getMousePosFromWindow(XEE_SDL_getMouseX(),XEE_SDL_getMouseY());
-				else
-					tempPos = getMousePosFromWindow(x,y);
-				_XControlManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_RIGHT_BUTTON_DOWN);
-			}
-			break;
 		case MOUSE_RIGHT_BUTTON_UP:
-			{
-				_XVector2 tempPos = getMousePosFromWindow(x,y);
-				_XControlManager::GetInstance().mouseProc(tempPos.x,tempPos.y,MOUSE_RIGHT_BUTTON_UP);
-			}
+			tempPos = getMousePosFromWindow(x,y);
 			break;
 		case MOUSE_MIDDLE_BUTTON_DOWN:
-			break;
 		case MOUSE_MIDDLE_BUTTON_UP:
+			break;
+		}
+		_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#if WITH_OBJECT_MANAGER
+		_XObjManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#endif
+		*/
+		//方案2,会影响整体设计，但是速度快
+		_XVector2 tempPos(x,y);
+		switch(mouseState)
+		{
+		case MOUSE_MOVE:
+			XEE::mousePosition = tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#if WITH_OBJECT_MANAGER
+			_XObjManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#endif
+			if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
+			break;
+		case MOUSE_LEFT_BUTTON_DOWN:
+		case MOUSE_LEFT_BUTTON_DCLICK:
+			if(XEE::windowData.isFullScreen != 0 && XEE::windowData.isTouch != 0)
+				tempPos = getMousePosFromWindow(XEE_SDL_getMouseX(),XEE_SDL_getMouseY());
+			else
+				tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#if WITH_OBJECT_MANAGER
+			_XObjManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#endif
+			if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
+			break;
+		case MOUSE_RIGHT_BUTTON_DOWN:
+			if(XEE::windowData.isFullScreen != 0 && XEE::windowData.isTouch != 0)
+				tempPos = getMousePosFromWindow(XEE_SDL_getMouseX(),XEE_SDL_getMouseY());
+			else
+				tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+			//if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
+			break;
+		case MOUSE_LEFT_BUTTON_UP:
+			tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#if WITH_OBJECT_MANAGER
+			_XObjManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+#endif
+			if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
+			break;
+		case MOUSE_RIGHT_BUTTON_UP:
+			tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+			//if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
+			break;
+		case MOUSE_MIDDLE_BUTTON_DOWN:
+		case MOUSE_MIDDLE_BUTTON_UP:
+			break;
+		case MOUSE_WHEEL_UP_DOWN:
+		case MOUSE_WHEEL_UP_UP:
+		case MOUSE_WHEEL_DOWN_DOWN:
+		case MOUSE_WHEEL_DOWN_UP:
+			tempPos = getMousePosFromWindow(x,y);
+			_XCtrlManger.mouseProc(tempPos.x,tempPos.y,mouseState);
+			//if(XEE::windowData.withCustomTitle) XEE::customWinTitle.mouseProc(tempPos.x,tempPos.y,mouseState);
 			break;
 		}
 	}
@@ -271,12 +324,12 @@ namespace XEE
 					{//字符输入
 						char temp[2];
 						memcpy(temp,&inputEvent.unicode,2);
-						if(temp[0] == 0) _XControlManager::GetInstance().insertChar(&temp[1],1); else
+						if(temp[0] == 0) _XCtrlManger.insertChar(&temp[1],1); else
 						if(temp[0] < 128 && temp[1] == 0) 
 						{
-							if(temp[0] >= ' ' && temp[0] <= '~') _XControlManager::GetInstance().insertChar(temp,1);
+							if(temp[0] >= ' ' && temp[0] <= '~') _XCtrlManger.insertChar(temp,1);
 						}
-						else _XControlManager::GetInstance().insertChar(temp,2);
+						else _XCtrlManger.insertChar(temp,2);
 					}
 #endif
 					keyProc(inputEvent.keyValue,KEY_STATE_DOWN);

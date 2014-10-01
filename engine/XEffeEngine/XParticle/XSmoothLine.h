@@ -40,7 +40,14 @@ public:
 	virtual void addAPoint(const _XVector2 & p);	//插入一个点
 	//void update(int stepTime);
 	virtual int getPointSum() const {return m_points.size();}
-	virtual void clear() {m_points.clear();}
+	virtual void clear() 
+	{
+		for(int i = 0;i < m_points.size();++ i)
+		{
+			XDELETE(m_points[i]);
+		}
+		m_points.clear();
+	}
 };
 
 #endif

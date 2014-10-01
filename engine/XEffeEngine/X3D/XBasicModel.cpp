@@ -23,9 +23,7 @@ void _XBasicModel::draw()
 //	_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();
 //	_X3DWorld::GetInstance().useShadow(false,SHADER_SHADOW);
 
-	m_vbo.use(false);
-	glDrawElements(GL_TRIANGLES,m_vbo.getIndexSize() * 3,GL_UNSIGNED_INT,0);
-	m_vbo.disuse();
+	m_vbo.drawByIndex(GL_TRIANGLES,XFalse);
 
 	glPopMatrix();
 	glPopAttrib();

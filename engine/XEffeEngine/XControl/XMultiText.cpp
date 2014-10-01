@@ -6,117 +6,116 @@
 #include "XMultiText.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-#include "XResourceManager.h"
 
-void funMutiTextValueChangeV(void *pClass,int objectID)
+void funMutiTextValueChangeV(void *pClass,int)
 {
-	_XMultiText *pPar = (_XMultiText *)pClass;
-//	printf("V ID:%d\n",pPar->m_objectID);
-//	printf("V Now value:%f\n",pPar->m_verticalSlider.getNowValue());
+	_XMultiText &pPar = *(_XMultiText *)pClass;
+//	printf("V ID:%d\n",pPar.m_objectID);
+//	printf("V Now value:%f\n",pPar.m_verticalSlider.getNowValue());
 	//ÏàÓ¦ÊýÖµµÄ¸Ä±ä
-	int temp = pPar->m_verticalSlider.getNowValue();
-	if(temp != pPar->m_nowStartLine)
+	int temp = pPar.m_verticalSlider.getNowValue();
+	if(temp != pPar.m_showStartLine)
 	{
-		pPar->setStartLine(temp);
-		pPar->updateLineStr();
-		pPar->m_verticalSlider.setNowValue(temp);
+		pPar.setStartLine(temp);
+		pPar.updateLineStr();
+		pPar.m_verticalSlider.setNowValue(temp);
 	}else
 	{//Î¢Á¿ÒÆ¶¯Ê±ºòµÄ´¦Àí
-		if(pPar->m_verticalSlider.getNowValue() > pPar->m_nowStartLine)
+		if(pPar.m_verticalSlider.getNowValue() > pPar.m_showStartLine)
 		{
-			temp += 1;
-			pPar->setStartLine(temp);
-			pPar->updateLineStr();
-			pPar->m_verticalSlider.setNowValue(temp);
+			++ temp;
+			pPar.setStartLine(temp);
+			pPar.updateLineStr();
+			pPar.m_verticalSlider.setNowValue(temp);
 		}else
-		if(pPar->m_verticalSlider.getNowValue() < pPar->m_nowStartLine)
+		if(pPar.m_verticalSlider.getNowValue() < pPar.m_showStartLine)
 		{
-			temp -= 1;
-			pPar->setStartLine(temp);
-			pPar->updateLineStr();
-			pPar->m_verticalSlider.setNowValue(temp);
+			-- temp;
+			pPar.setStartLine(temp);
+			pPar.updateLineStr();
+			pPar.m_verticalSlider.setNowValue(temp);
 		}
 	}
 }
-void funMutiTextValueChangeMoveV(void *pClass,int objectID)
+void funMutiTextValueChangeMoveV(void *pClass,int)
 {
-	_XMultiText *pPar = (_XMultiText *)pClass;
-//	printf("V ID:%d\n",pPar->m_objectID);
-//	printf("V Now value:%f\n",pPar->m_verticalSlider.getNowValue());
+	_XMultiText &pPar = *(_XMultiText *)pClass;
+//	printf("V ID:%d\n",pPar.m_objectID);
+//	printf("V Now value:%f\n",pPar.m_verticalSlider.getNowValue());
 	//ÏàÓ¦ÊýÖµµÄ¸Ä±ä
-	int temp = pPar->m_verticalSlider.getNowValue();
-	if(temp != pPar->m_nowStartLine)
+	int temp = pPar.m_verticalSlider.getNowValue();
+	if(temp != pPar.m_showStartLine)
 	{
 		//ÐèÒª¸üÐÂ´¹Ö±Æ¬Ñ¡µÄÇé¿ö
-		pPar->setStartLine(temp);
-		pPar->updateLineStr();
+		pPar.setStartLine(temp);
+		pPar.updateLineStr();
 	}
 }
-void funMutiTextValueChangeH(void *pClass,int objectID)
+void funMutiTextValueChangeH(void *pClass,int)
 {
-	_XMultiText *pPar = (_XMultiText *)pClass;
-//	printf("H ID:%d\n",pPar->m_objectID);
-//	printf("H Now value:%f\n",pPar->m_horizontalSlider.getNowValue());
+	_XMultiText &pPar = *(_XMultiText *)pClass;
+//	printf("H ID:%d\n",pPar.m_objectID);
+//	printf("H Now value:%f\n",pPar.m_horizontalSlider.getNowValue());
 	//ÏàÓ¦ÊýÖµµÄ¸Ä±ä
-	int temp = pPar->m_horizontalSlider.getNowValue();
-	if(temp != pPar->m_nowStartPixels)
+	int temp = pPar.m_horizontalSlider.getNowValue();
+	if(temp != pPar.m_nowStartPixels)
 	{
 		printf("%d\n",temp);
-		pPar->m_nowStartPixels = temp;
-		pPar->updateLineStr();
-		pPar->m_horizontalSlider.setNowValue(temp);
+		pPar.m_nowStartPixels = temp;
+		pPar.updateLineStr();
+		pPar.m_horizontalSlider.setNowValue(temp);
 	}
-/*	if(temp != pPar->m_lineStr[0].showStart)
+/*	if(temp != pPar.m_lineStr[0].showStart)
 	{
-		for(int i = 0;i < pPar->m_nowShowLineSum;++ i)
+		for(int i = 0;i < pPar.m_canShowLineSum;++ i)
 		{
-			pPar->m_lineStr[i].showStart = temp;
+			pPar.m_lineStr[i].showStart = temp;
 		}
-		pPar->updateLineStr();
-		pPar->m_horizontalSlider.setNowValue(temp);
+		pPar.updateLineStr();
+		pPar.m_horizontalSlider.setNowValue(temp);
 	}else
 	{
-		if(pPar->m_horizontalSlider.getNowValue() > pPar->m_lineStr[0].showStart)
+		if(pPar.m_horizontalSlider.getNowValue() > pPar.m_lineStr[0].showStart)
 		{
-			temp += 1;
-			for(int i = 0;i < pPar->m_nowShowLineSum;++ i)
+			++ temp;
+			for(int i = 0;i < pPar.m_canShowLineSum;++ i)
 			{
-				pPar->m_lineStr[i].showStart = temp;
+				pPar.m_lineStr[i].showStart = temp;
 			}
-			pPar->updateLineStr();
-			pPar->m_horizontalSlider.setNowValue(temp);
+			pPar.updateLineStr();
+			pPar.m_horizontalSlider.setNowValue(temp);
 		}else
-		if(pPar->m_horizontalSlider.getNowValue() < pPar->m_lineStr[0].showStart)
+		if(pPar.m_horizontalSlider.getNowValue() < pPar.m_lineStr[0].showStart)
 		{
-			temp -= 1;
-			for(int i = 0;i < pPar->m_nowShowLineSum;++ i)
+			-- temp;
+			for(int i = 0;i < pPar.m_canShowLineSum;++ i)
 			{
-				pPar->m_lineStr[i].showStart = temp;
+				pPar.m_lineStr[i].showStart = temp;
 			}
-			pPar->updateLineStr();
-			pPar->m_horizontalSlider.setNowValue(temp);
+			pPar.updateLineStr();
+			pPar.m_horizontalSlider.setNowValue(temp);
 		}
 	}*/
 }
-void funMutiTextValueChangeMoveH(void *pClass,int objectID)
+void funMutiTextValueChangeMoveH(void *pClass,int)
 {
-	_XMultiText *pPar = (_XMultiText *)pClass;
-//	printf("H ID:%d\n",pPar->m_objectID);
-//	printf("H Now value:%f\n",pPar->m_horizontalSlider.getNowValue());
+	_XMultiText &pPar = *(_XMultiText *)pClass;
+//	printf("H ID:%d\n",pPar.m_objectID);
+//	printf("H Now value:%f\n",pPar.m_horizontalSlider.getNowValue());
 	//ÏàÓ¦ÊýÖµµÄ¸Ä±ä
-	int temp = pPar->m_horizontalSlider.getNowValue();
-	if(temp != pPar->m_nowStartPixels)
+	int temp = pPar.m_horizontalSlider.getNowValue();
+	if(temp != pPar.m_nowStartPixels)
 	{
-		pPar->m_nowStartPixels = temp;
-		pPar->updateLineStr();
+		pPar.m_nowStartPixels = temp;
+		pPar.updateLineStr();
 	}
-/*	if(temp != pPar->m_lineStr[0].showStart)
+/*	if(temp != pPar.m_lineStr[0].showStart)
 	{
-		for(int i = 0;i < pPar->m_nowShowLineSum;++ i)
+		for(int i = 0;i < pPar.m_canShowLineSum;++ i)
 		{
-			pPar->m_lineStr[i].showStart = temp;
+			pPar.m_lineStr[i].showStart = temp;
 		}
-		pPar->updateLineStr();
+		pPar.updateLineStr();
 	}*/
 }
 _XMultiText::_XMultiText()
@@ -132,27 +131,25 @@ _XMultiText::_XMultiText()
 ,m_withoutTex(XFalse)
 ,m_funSelect(NULL)
 ,m_pClass(NULL)
+,m_nowMaxLineSum(0)
 {
-}
-_XMultiText::~_XMultiText()
-{
-	release();
+	m_ctrlType = CTRL_OBJ_MUTITEXT;
 }
 void _XMultiText::release()
 {
 	if(!m_isInited) return ;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 	if(m_lineStr != NULL)
 	{
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			XDELETE_ARRAY(m_lineStr[i].showString);
 		}
 	}
 	XDELETE_ARRAY(m_lineStr);
 	XDELETE_ARRAY(m_nowString);
-	_XControlManager::GetInstance().decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼þ
+	_XCtrlManger.decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼þ
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	if(m_resInfo != NULL)
 	{
@@ -163,21 +160,22 @@ void _XMultiText::release()
 }
 void _XMultiText::setStartLine(int temp)
 {
-	if(m_haveSelect)
-	{
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XFalse;
+	if(m_haveSelect && m_selectLineOrder >= m_showStartLine
+		&& m_selectLineOrder < m_showStartLine + m_canShowLineSum)
+	{//»Ø¸´Ô­ÓÐµÄÉèÖÃ
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XFalse;
 	}
-	m_nowStartLine = temp;
+	m_showStartLine = temp;
 	if(m_haveSelect && 
-		(m_nowSelectLineOrder >= m_nowStartLine && m_nowSelectLineOrder < m_nowShowLineSum - m_nowStartLine))
-	{
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XTrue;
+		(m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_canShowLineSum + m_showStartLine))
+	{//ÐÞ¸ÄÐÂµÄÉèÖÃ
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XTrue;
 		if(!m_withoutTex)
 		{
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
-				m_nowMouseRect.top + m_textHeight * (m_nowSelectLineOrder - m_nowStartLine));
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
-							m_textHeight / m_mutiEditSelect->textureSize.y);
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
+				m_nowMouseRect.top + m_nowTextHeight * (m_selectLineOrder - m_showStartLine));
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
+							m_nowTextHeight / m_mutiEditSelect->textureSize.y);
 		}
 	}
 }
@@ -213,54 +211,56 @@ _XBool _XMultiText::init(const _XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 
 	m_spriteBackGround.init(m_mutiEditNormal->texture.m_w,m_mutiEditNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
+	_XObjManger.decreaseAObject(&m_spriteBackGround);
 #endif
 	m_spriteBackGround.setPosition(m_position);
 	m_spriteBackGround.setSize(m_size);
 	m_spriteBackGround.setIsTransformCenter(POINT_LEFT_TOP);
 
 	m_verticalSlider.setACopy(vSlider);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 
 	m_horizontalSlider.setACopy(hSlider);
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 	m_needShowHSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 
 	m_textWidth = font.getTextSize().x * font.getSize().x * 0.5f;
-	m_textHeight = font.getTextSize().y * font.getSize().y;
+	m_nowTextHeight = font.getTextSize().y * font.getSize().y;
 	//¼ÆËãµ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
-	m_nowShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_textHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
+	m_canShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_nowTextHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
 	//¼ÆËãµ±Ç°Ò»ÐÐ¿ÉÒÔÏÔÊ¾¶àÉÙ¸ö×Ö·û(Õâ¸ö0.5ÊÇÒòÎªÏÔÊ¾Ó¢ÎÄ×ÖÄ¸È´Ê¹ÓÃÖÐÎÄ×Ö¿â)
 	//m_nowShowLineWidth = (m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth())/m_textWidth;	//²»Ó¦¸Ã¼õÈ¥¿í¶È£¬¶øÓ¦¸Ã¼õÈ¥right£¬ÒÔºóÔÚÐÞÕý
 
 	m_nowStartPixels = 0;
 	m_nowMaxLineWidthPixels = 0;
-	m_MaxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
+	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
 	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
 		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
-	m_lineStr = createArrayMem<_XMultiTextLineString>(m_nowShowLineSum);
+	m_lineStr = createArrayMem<_XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
 	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		//m_lineStr[i].showString = createArrayMem<char>(m_nowShowLineWidth + 1);
 		m_lineStr[i].showString = createArrayMem<char>(MAX_LINE_STRING_LENGTH + 1);
@@ -277,20 +277,20 @@ _XBool _XMultiText::init(const _XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 		m_lineStr[i].nowText.setACopy(font);
 		m_lineStr[i].nowText.setMaxStrLen(MAX_LINE_STRING_LENGTH);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].nowText));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].nowText));
 #endif
 		m_lineStr[i].nowText.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 		m_lineStr[i].nowText.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
 		m_lineStr[i].nowText.setColor(m_textColor);
 		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
+			m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * i);
 		m_lineStr[i].nowText.setSize(m_size);
 	//	m_lineStr[i].showLength = m_nowShowLineWidth;
 	//	m_lineStr[i].showStart = 0;
 		m_lineStr[i].haveAllSelect = XFalse;
 		m_lineStr[i].spriteSelect.init(m_mutiEditSelect->texture.m_w,m_mutiEditSelect->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].spriteSelect));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].spriteSelect));
 #endif
 		m_lineStr[i].spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
 		m_lineStr[i].showString[0] = '\0';
@@ -299,7 +299,7 @@ _XBool _XMultiText::init(const _XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 	m_nowString = createArrayMem<char>(MAX_STRING_LENGTH);
 	if(m_nowString == NULL) 
 	{
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			XDELETE_ARRAY(m_lineStr[i].showString);
 		}
@@ -310,162 +310,19 @@ _XBool _XMultiText::init(const _XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 	//¿½±´×Ö·û´®
 	if(str != NULL) strcpy(m_nowString,str);
 	//´¦Àí×Ö·û´®
-	m_nowStartLine = 0;
+	m_showStartLine = 0;
 	updateLineStr();
 
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = -1;
+	m_selectLineOrder = -1;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTITEXT);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-	m_isInited = XTrue;
-	return XTrue;
-}
-_XBool _XMultiText::initEx(const _XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
-	const _XMultiTextTexture& tex,	//¿Ø¼þµÄÌùÍ¼
-	const char *str,const _XFontUnicode& font, float strSize,		//¿Ø¼þµÄ×ÖÌå¼°Ïà¹ØÐÅÏ¢
-	const _XSlider &vSlider,const _XSlider &hSlider)	//¿Ø¼þµÄÆäËû¸½ÊôÒÀÀµ¿Ø¼þ
-{
-	if(m_isInited) return XFalse;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
-	if(tex.editNormal == NULL || tex.editInsert == NULL || tex.editDisable == NULL || tex.editSelect == NULL) return XFalse;
-
-	//ÐèÒª×¢ÒâµÄÊÇÊäÈë·¶Î§±ØÐëÒªÄÜÏÔÊ¾×îÉÙÒ»¸ö×Ö·û£¬·ñÔò½«»áÔì³ÉÎÊÌâ£¬Ä¿Ç°ÕâÀï²¢Ã»ÓÐ´úÂëÈ¥ÅÐ¶Ï£¬µ«ÊÇÊµ¼ÊÊ¹ÓÃÖÐÐèÒª×¢ÒâÕâ¸öÎÊÌâ
-	if(tex.m_mouseRect.getWidth() <= 0 || tex.m_mouseRect.getHeight() <= 0) return XFalse;	//ÊäÈë·¶Î§²»ÄÜÎª¿Õ
-	if(strSize <= 0) return XFalse;		//×Ö·û´®µÄ´óÐ¡²»ÄÜÎª·Ç·¨Öµ
-	if(str != NULL && strlen(str) >= MAX_STRING_LENGTH) return XFalse;
-
-	//ÏÂÃæ¿ªÊ¼¸³Öµ
-	m_position = position;
-	m_mouseRect = tex.m_mouseRect;
-	m_withoutTex = XFalse;
-
-	m_mutiEditNormal = tex.editNormal;			//ÊäÈë¿òÆÕÍ¨×´Ì¬
-	m_mutiEditDisable = tex.editDisable;		//ÊäÈë¿òÎÞÐ§×´Ì¬
-	m_mutiEditSelect = tex.editSelect;			//ÊäÈë¿òÆ¬Ñ¡ÑÕÉ«
-	m_mutiEditUpon = tex.editUpon;
-	m_size.set(1.0f,1.0f);
-
-	//m_textPosition = strPosition;			//ÎÄ×ÖÏÔÊ¾µÄÎ»ÖÃ£¬ÊÇÏà¶ÔÓÚ¿Ø¼þµÄÎ»ÖÃÀ´¶¨µÄ
-	m_textSize.set(strSize,strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
-
-	m_spriteBackGround.init(m_mutiEditNormal->texture.m_w,m_mutiEditNormal->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
-#endif
-	m_spriteBackGround.setPosition(m_position);
-	m_spriteBackGround.setSize(m_size);
-	m_spriteBackGround.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_verticalSlider.setACopy(vSlider);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
-#endif
-	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-		m_position.y + m_mouseRect.top * m_size.y);
-	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
-	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
-
-	m_horizontalSlider.setACopy(hSlider);
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
-#endif
-	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
-	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
-	m_needShowHSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
-
-	m_textWidth = font.getTextSize().x * font.getSize().x * 0.5f;
-	m_textHeight = font.getTextSize().y * font.getSize().y;
-	//¼ÆËãµ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
-	m_nowShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_textHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
-	//¼ÆËãµ±Ç°Ò»ÐÐ¿ÉÒÔÏÔÊ¾¶àÉÙ¸ö×Ö·û(Õâ¸ö0.5ÊÇÒòÎªÏÔÊ¾Ó¢ÎÄ×ÖÄ¸È´Ê¹ÓÃÖÐÎÄ×Ö¿â)
-	//m_nowShowLineWidth = (m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth())/m_textWidth;	//²»Ó¦¸Ã¼õÈ¥¿í¶È£¬¶øÓ¦¸Ã¼õÈ¥right£¬ÒÔºóÔÚÐÞÕý
-
-	m_nowStartPixels = 0;
-	m_nowMaxLineWidthPixels = 0;
-	m_MaxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
-
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
-	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
-	m_lineStr = createArrayMem<_XMultiTextLineString>(m_nowShowLineSum);
-	if(m_lineStr == NULL) return XFalse;
-
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	for(int i = 0;i < m_nowShowLineSum;++ i)
-	{
-		m_lineStr[i].showString = createArrayMem<char>(MAX_LINE_STRING_LENGTH + 1);
-		//m_lineStr[i].showString = createArrayMem<char>(m_nowShowLineWidth + 1);
-		if(m_lineStr[i].showString == NULL)
-		{
-			for(int j = 0;j < i;++ j)
-			{
-				XDELETE_ARRAY(m_lineStr[j].showString);
-			}
-			XDELETE_ARRAY(m_lineStr);
-			return XFalse;
-		}
-		m_lineStr[i].isEnable = XFalse;
-		m_lineStr[i].nowText.setACopy(font);
-		m_lineStr[i].nowText.setMaxStrLen(MAX_LINE_STRING_LENGTH);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].nowText));
-#endif
-		m_lineStr[i].nowText.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
-		m_lineStr[i].nowText.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
-		m_lineStr[i].nowText.setColor(m_textColor);
-		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
-		m_lineStr[i].nowText.setSize(m_size);
-	//	m_lineStr[i].showLength = m_nowShowLineWidth;
-	//	m_lineStr[i].showStart = 0;
-		m_lineStr[i].haveAllSelect = XFalse;
-		m_lineStr[i].spriteSelect.init(m_mutiEditSelect->texture.m_w,m_mutiEditSelect->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].spriteSelect));
-#endif
-		m_lineStr[i].spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
-		m_lineStr[i].showString[0] = '\0';
-	}
-	//ÎªÕû¸ö×Ö·û´®·ÖÅäÄÚ´æ¿Õ¼ä
-	m_nowString = createArrayMem<char>(MAX_STRING_LENGTH);
-	if(m_nowString == NULL) 
-	{
-		for(int i = 0;i < m_nowShowLineSum;++ i)
-		{
-			XDELETE_ARRAY(m_lineStr[i].showString);
-		}
-		XDELETE_ARRAY(m_lineStr);
-		return XFalse;
-	}
-	m_nowString[0] = '\0';
-	//¿½±´×Ö·û´®
-	if(str != NULL) strcpy(m_nowString,str);
-	//´¦Àí×Ö·û´®
-	m_nowStartLine = 0;
-	updateLineStr();
-
-	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = -1;
-
-	m_isVisiable = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTITEXT);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
@@ -501,7 +358,7 @@ _XBool _XMultiText::initPlus(const char *path,
 
 	m_spriteBackGround.init(m_mutiEditNormal->texture.m_w,m_mutiEditNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
+	_XObjManger.decreaseAObject(&m_spriteBackGround);
 #endif
 	m_spriteBackGround.setPosition(m_position);
 	m_spriteBackGround.setSize(m_size);
@@ -511,49 +368,51 @@ _XBool _XMultiText::initPlus(const char *path,
 	char tempPath[MAX_FILE_NAME_LENGTH];
 	sprintf(tempPath,"%s/SliderV",path);
 	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resoursePosition);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 
 	//m_horizontalSlider.setACopy(hSlider);
 	sprintf(tempPath,"%s/SliderH",path);
 	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resoursePosition);
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 	m_needShowHSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 
 	m_textWidth = font.getTextSize().x * font.getSize().x * 0.5f;
-	m_textHeight = font.getTextSize().y * font.getSize().y;
+	m_nowTextHeight = font.getTextSize().y * font.getSize().y;
 	//¼ÆËãµ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
-	m_nowShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_textHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
+	m_canShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_nowTextHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
 	//¼ÆËãµ±Ç°Ò»ÐÐ¿ÉÒÔÏÔÊ¾¶àÉÙ¸ö×Ö·û(Õâ¸ö0.5ÊÇÒòÎªÏÔÊ¾Ó¢ÎÄ×ÖÄ¸È´Ê¹ÓÃÖÐÎÄ×Ö¿â)
 	//m_nowShowLineWidth = (m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth())/m_textWidth;	//²»Ó¦¸Ã¼õÈ¥¿í¶È£¬¶øÓ¦¸Ã¼õÈ¥right£¬ÒÔºóÔÚÐÞÕý
 
 	m_nowStartPixels = 0;
 	m_nowMaxLineWidthPixels = 0;
-	m_MaxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
+	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
 	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
 		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
-	m_lineStr = createArrayMem<_XMultiTextLineString>(m_nowShowLineSum);
+	m_lineStr = createArrayMem<_XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
 	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].showString = createArrayMem<char>(MAX_LINE_STRING_LENGTH + 1);
 		//m_lineStr[i].showString = createArrayMem<char>(m_nowShowLineWidth + 1);
@@ -570,20 +429,20 @@ _XBool _XMultiText::initPlus(const char *path,
 		m_lineStr[i].nowText.setACopy(font);
 		m_lineStr[i].nowText.setMaxStrLen(MAX_LINE_STRING_LENGTH);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].nowText));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].nowText));
 #endif
 		m_lineStr[i].nowText.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 		m_lineStr[i].nowText.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
 		m_lineStr[i].nowText.setColor(m_textColor);
 		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
+			m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * i);
 		m_lineStr[i].nowText.setSize(m_size);
 	//	m_lineStr[i].showLength = m_nowShowLineWidth;
 	//	m_lineStr[i].showStart = 0;
 		m_lineStr[i].haveAllSelect = XFalse;
 		m_lineStr[i].spriteSelect.init(m_mutiEditSelect->texture.m_w,m_mutiEditSelect->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].spriteSelect));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].spriteSelect));
 #endif
 		m_lineStr[i].spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
 		m_lineStr[i].showString[0] = '\0';
@@ -592,7 +451,7 @@ _XBool _XMultiText::initPlus(const char *path,
 	m_nowString = createArrayMem<char>(MAX_STRING_LENGTH);
 	if(m_nowString == NULL) 
 	{
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			XDELETE_ARRAY(m_lineStr[i].showString);
 		}
@@ -603,19 +462,19 @@ _XBool _XMultiText::initPlus(const char *path,
 	//¿½±´×Ö·û´®
 	if(str != NULL) strcpy(m_nowString,str);
 	//´¦Àí×Ö·û´®
-	m_nowStartLine = 0;
+	m_showStartLine = 0;
 	updateLineStr();
 
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = -1;
+	m_selectLineOrder = -1;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTITEXT);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
@@ -635,57 +494,58 @@ _XBool _XMultiText::initWithoutTex(const _XRect& area,
 	m_withoutTex = XTrue;
 
 	m_size.set(1.0f,1.0f);
-
 	m_textSize.set(strSize,strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
 
 //	m_verticalSlider.initWithoutTex(_XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),
-//		_XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,_XVector2(0.0f,0.0f));
+//		_XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,_XVector2::zero);
 	m_verticalSlider.initWithoutTex(_XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),
 		100.0f,0.0f,SLIDER_TYPE_VERTICAL);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 
 //	m_horizontalSlider.initWithoutTex(_XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),
-//		_XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,_XVector2(0.0f,0.0f));
+//		_XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,_XVector2::zero);
 	m_horizontalSlider.initWithoutTex(_XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),
 		100.0f,0.0f,SLIDER_TYPE_HORIZONTAL);
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 	m_needShowHSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 
 	m_textWidth = font.getTextSize().x * font.getSize().x * 0.5f;
-	m_textHeight = font.getTextSize().y * font.getSize().y;
+	m_nowTextHeight = font.getTextSize().y * font.getSize().y;
 	//¼ÆËãµ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
-	m_nowShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_textHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
+	m_canShowLineSum = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight())/m_nowTextHeight;	//²»Ó¦¸Ã½øÈ¥¸ß¶È£¬¶øÓ¦¸Ã¼õÈ¥buttom £¬ÒÔºóÔÚÐÞÕý
 	//¼ÆËãµ±Ç°Ò»ÐÐ¿ÉÒÔÏÔÊ¾¶àÉÙ¸ö×Ö·û(Õâ¸ö0.5ÊÇÒòÎªÏÔÊ¾Ó¢ÎÄ×ÖÄ¸È´Ê¹ÓÃÖÐÎÄ×Ö¿â)
 	//m_nowShowLineWidth = (m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth())/m_textWidth;	//²»Ó¦¸Ã¼õÈ¥¿í¶È£¬¶øÓ¦¸Ã¼õÈ¥right£¬ÒÔºóÔÚÐÞÕý
 
 	m_nowStartPixels = 0;
 	m_nowMaxLineWidthPixels = 0;
-	m_MaxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
+	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
 	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
 		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
-	m_lineStr = createArrayMem<_XMultiTextLineString>(m_nowShowLineSum);
+	m_lineStr = createArrayMem<_XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
 	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].showString = createArrayMem<char>(MAX_LINE_STRING_LENGTH + 1);
 		//m_lineStr[i].showString = createArrayMem<char>(m_nowShowLineWidth + 1);
@@ -702,13 +562,13 @@ _XBool _XMultiText::initWithoutTex(const _XRect& area,
 		m_lineStr[i].nowText.setACopy(font);
 		m_lineStr[i].nowText.setMaxStrLen(MAX_LINE_STRING_LENGTH);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].nowText));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].nowText));
 #endif
 		m_lineStr[i].nowText.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 		m_lineStr[i].nowText.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
 		m_lineStr[i].nowText.setColor(m_textColor);
 		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
+			m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * i);
 		m_lineStr[i].nowText.setSize(m_size);
 	//	m_lineStr[i].showLength = m_nowShowLineWidth;
 	//	m_lineStr[i].showStart = 0;
@@ -719,7 +579,7 @@ _XBool _XMultiText::initWithoutTex(const _XRect& area,
 	m_nowString = createArrayMem<char>(MAX_STRING_LENGTH);
 	if(m_nowString == NULL) 
 	{
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			XDELETE_ARRAY(m_lineStr[i].showString);
 		}
@@ -730,36 +590,36 @@ _XBool _XMultiText::initWithoutTex(const _XRect& area,
 	//¿½±´×Ö·û´®
 	if(str != NULL) strcpy(m_nowString,str);
 	//´¦Àí×Ö·û´®
-	m_nowStartLine = 0;
+	m_showStartLine = 0;
 	updateLineStr();
 
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = -1;
+	m_selectLineOrder = -1;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTITEXT);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
 }
 void _XMultiText::updateLineStr()
 {//½«Êµ¼ÊµÄ×Ö·û´®·ÖÅäµ½¸÷ÐÐÈ¥
-	//if(m_isInited == 0) return;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+	//if(!m_isInited) return;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 	if(m_nowString == NULL) return;
 	/*int lineLength = 0;
 	int maxLineLength = 0;
 	int lineSum = 0;
 	char tempChar[MAX_LINE_STRING_LENGTH];
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].isEnable = 0;
 	}
-	if(m_nowStartLine == 0)
+	if(m_showStartLine == 0)
 	{//Èç¹ûÊÇ´Ó×Ö·û´®¿ªÍ·ÏÔÊ¾£¬ÔòÐèÒª³õÊ¼»¯µÚÒ»ÐÐµÄÍ·Î»×Ö·û´®¿ªÊ¼
 		m_lineStr[0].lineHeadorder = 0;
 	}
@@ -777,36 +637,36 @@ void _XMultiText::updateLineStr()
 					break;
 				}else
 				{
-					if(lineSum >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum)
+					if(lineSum >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum)
 					{//¿½±´×Ö·û´®µ½ÐÐÏÔÊ¾ÄÚ´æ
-						if(lineLength >= m_lineStr[lineSum - m_nowStartLine].showStart)
+						if(lineLength >= m_lineStr[lineSum - m_showStartLine].showStart)
 						{
-							m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-							if(lineLength - m_lineStr[lineSum - m_nowStartLine].showStart > m_lineStr[lineSum - m_nowStartLine].showLength)
+							m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+							if(lineLength - m_lineStr[lineSum - m_showStartLine].showStart > m_lineStr[lineSum - m_showStartLine].showLength)
 							{//Êµ¼Ê×Ö·û´®µÄ³¤¶È³¬¹ýÏÔÊ¾³¤¶È
-								memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-									m_lineStr[lineSum - m_nowStartLine].showLength);
-								m_lineStr[lineSum - m_nowStartLine].showString[m_lineStr[lineSum - m_nowStartLine].showLength] = '\0';
+								memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+									m_lineStr[lineSum - m_showStartLine].showLength);
+								m_lineStr[lineSum - m_showStartLine].showString[m_lineStr[lineSum - m_showStartLine].showLength] = '\0';
 							}else
 							{//Êµ¼Ê×Ö·û´®µÄ³¤¶ÈÐ¡ÓÚÏÔÊ¾³¤¶È
-								memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-									lineLength - m_lineStr[lineSum - m_nowStartLine].showStart);
-								m_lineStr[lineSum - m_nowStartLine].showString[lineLength - m_lineStr[lineSum - m_nowStartLine].showStart] = '\0';
+								memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+									lineLength - m_lineStr[lineSum - m_showStartLine].showStart);
+								m_lineStr[lineSum - m_showStartLine].showString[lineLength - m_lineStr[lineSum - m_showStartLine].showStart] = '\0';
 							}
-							m_lineStr[lineSum - m_nowStartLine].nowText.setString(m_lineStr[lineSum - m_nowStartLine].showString);
+							m_lineStr[lineSum - m_showStartLine].nowText.setString(m_lineStr[lineSum - m_showStartLine].showString);
 						}else
 						{
-							//m_lineStr[lineSum - m_nowStartLine].isEnable = 0;
-							m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-							m_lineStr[lineSum - m_nowStartLine].nowText.setString(" ");
+							//m_lineStr[lineSum - m_showStartLine].isEnable = 0;
+							m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+							m_lineStr[lineSum - m_showStartLine].nowText.setString(" ");
 						}
-						m_lineStr[lineSum - m_nowStartLine].lineEndOrder = i;
-						m_lineStr[lineSum - m_nowStartLine].lineLength = m_lineStr[lineSum - m_nowStartLine].lineEndOrder - 
-							m_lineStr[lineSum - m_nowStartLine].lineHeadorder + 1;
+						m_lineStr[lineSum - m_showStartLine].lineEndOrder = i;
+						m_lineStr[lineSum - m_showStartLine].lineLength = m_lineStr[lineSum - m_showStartLine].lineEndOrder - 
+							m_lineStr[lineSum - m_showStartLine].lineHeadorder + 1;
 					}
-					if(lineSum + 1 >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum - 1)
+					if(lineSum + 1 >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum - 1)
 					{
-						m_lineStr[lineSum - m_nowStartLine].lineHeadorder = i + 1;
+						m_lineStr[lineSum - m_showStartLine].lineHeadorder = i + 1;
 					}
 					lineSum ++;
 					if(lineLength > maxLineLength)
@@ -820,37 +680,37 @@ void _XMultiText::updateLineStr()
 		if(m_nowString[i] == '\n')
 		{//»»ÐÐ
 			tempChar[lineLength] = m_nowString[i];	//¼ÇÂ¼»»ÐÐ·û
-			if(lineSum >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum)
+			if(lineSum >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum)
 			{//¿½±´×Ö·û´®µ½ÐÐÏÔÊ¾ÄÚ´æ
-				if(lineLength >= m_lineStr[lineSum - m_nowStartLine].showStart)
+				if(lineLength >= m_lineStr[lineSum - m_showStartLine].showStart)
 				{
-					m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-					if(lineLength - m_lineStr[lineSum - m_nowStartLine].showStart > m_lineStr[lineSum - m_nowStartLine].showLength)
+					m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+					if(lineLength - m_lineStr[lineSum - m_showStartLine].showStart > m_lineStr[lineSum - m_showStartLine].showLength)
 					{//Êµ¼Ê×Ö·û´®µÄ³¤¶È³¬¹ýÏÔÊ¾³¤¶È
-						memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-							m_lineStr[lineSum - m_nowStartLine].showLength);
-						m_lineStr[lineSum - m_nowStartLine].showString[m_lineStr[lineSum - m_nowStartLine].showLength] = '\0';
+						memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+							m_lineStr[lineSum - m_showStartLine].showLength);
+						m_lineStr[lineSum - m_showStartLine].showString[m_lineStr[lineSum - m_showStartLine].showLength] = '\0';
 					}else
 					{//Êµ¼Ê×Ö·û´®µÄ³¤¶ÈÐ¡ÓÚÏÔÊ¾³¤¶È
-						memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-							lineLength - m_lineStr[lineSum - m_nowStartLine].showStart);
-						m_lineStr[lineSum - m_nowStartLine].showString[lineLength - m_lineStr[lineSum - m_nowStartLine].showStart] = '\0';
+						memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+							lineLength - m_lineStr[lineSum - m_showStartLine].showStart);
+						m_lineStr[lineSum - m_showStartLine].showString[lineLength - m_lineStr[lineSum - m_showStartLine].showStart] = '\0';
 					}
-					m_lineStr[lineSum - m_nowStartLine].nowText.setString(m_lineStr[lineSum - m_nowStartLine].showString);
+					m_lineStr[lineSum - m_showStartLine].nowText.setString(m_lineStr[lineSum - m_showStartLine].showString);
 				}else
 				{//Èç¹ûÃ»ÓÐÐèÒªÏÔÊ¾µÄ×Ö·û£¬Ôò±ê¼ÇÃ»ÓÐ×Ö·ûÐèÒªÑ¡Ôñ
-					//m_lineStr[lineSum - m_nowStartLine].isEnable = 0;
-					m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-					m_lineStr[lineSum - m_nowStartLine].nowText.setString(" ");
+					//m_lineStr[lineSum - m_showStartLine].isEnable = 0;
+					m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+					m_lineStr[lineSum - m_showStartLine].nowText.setString(" ");
 				}
-				m_lineStr[lineSum - m_nowStartLine].lineEndOrder = i;
-				m_lineStr[lineSum - m_nowStartLine].lineLength = m_lineStr[lineSum - m_nowStartLine].lineEndOrder - 
-					m_lineStr[lineSum - m_nowStartLine].lineHeadorder + 1;
-				m_lineStr[lineSum - m_nowStartLine].isEnterEnd = 1;
+				m_lineStr[lineSum - m_showStartLine].lineEndOrder = i;
+				m_lineStr[lineSum - m_showStartLine].lineLength = m_lineStr[lineSum - m_showStartLine].lineEndOrder - 
+					m_lineStr[lineSum - m_showStartLine].lineHeadorder + 1;
+				m_lineStr[lineSum - m_showStartLine].isEnterEnd = 1;
 			}
-			if(lineSum + 1 >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum - 1)
+			if(lineSum + 1 >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum - 1)
 			{
-				m_lineStr[lineSum - m_nowStartLine + 1].lineHeadorder = i + 1;
+				m_lineStr[lineSum - m_showStartLine + 1].lineHeadorder = i + 1;
 			}
 			lineSum ++;
 			lineLength ++;
@@ -865,35 +725,35 @@ void _XMultiText::updateLineStr()
 			lineLength ++;
 			//if(lineLength >= MAX_LINE_STRING_LENGTH - 1)
 			//{//Èç¹û³¬¹ý×î´óÏÔÊ¾×Ö·û£¬Ò²Òª»»ÐÐ
-			//	if(lineSum >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum)
+			//	if(lineSum >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum)
 			//	{//¿½±´×Ö·û´®µ½ÐÐÏÔÊ¾ÄÚ´æ
-			//		if(lineLength >= m_lineStr[lineSum - m_nowStartLine].showStart)
+			//		if(lineLength >= m_lineStr[lineSum - m_showStartLine].showStart)
 			//		{
-			//			m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-			//			if(lineLength - m_lineStr[lineSum - m_nowStartLine].showStart > m_lineStr[lineSum - m_nowStartLine].showLength)
+			//			m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+			//			if(lineLength - m_lineStr[lineSum - m_showStartLine].showStart > m_lineStr[lineSum - m_showStartLine].showLength)
 			//			{//Êµ¼Ê×Ö·û´®µÄ³¤¶È³¬¹ýÏÔÊ¾³¤¶È
-			//				memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-			//					m_lineStr[lineSum - m_nowStartLine].showLength);
-			//				m_lineStr[lineSum - m_nowStartLine].showString[m_lineStr[lineSum - m_nowStartLine].showLength] = '\0';
+			//				memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+			//					m_lineStr[lineSum - m_showStartLine].showLength);
+			//				m_lineStr[lineSum - m_showStartLine].showString[m_lineStr[lineSum - m_showStartLine].showLength] = '\0';
 			//			}else
 			//			{//Êµ¼Ê×Ö·û´®µÄ³¤¶ÈÐ¡ÓÚÏÔÊ¾³¤¶È
-			//				memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-			//					lineLength - m_lineStr[lineSum - m_nowStartLine].showStart);
-			//				m_lineStr[lineSum - m_nowStartLine].showString[lineLength - m_lineStr[lineSum - m_nowStartLine].showStart] = '\0';
+			//				memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+			//					lineLength - m_lineStr[lineSum - m_showStartLine].showStart);
+			//				m_lineStr[lineSum - m_showStartLine].showString[lineLength - m_lineStr[lineSum - m_showStartLine].showStart] = '\0';
 			//			}
-			//			m_lineStr[lineSum - m_nowStartLine].nowText.setString(m_lineStr[lineSum - m_nowStartLine].showString);
+			//			m_lineStr[lineSum - m_showStartLine].nowText.setString(m_lineStr[lineSum - m_showStartLine].showString);
 			//		}else
 			//		{
-			//			m_lineStr[lineSum - m_nowStartLine].isEnable = 0;
+			//			m_lineStr[lineSum - m_showStartLine].isEnable = 0;
 			//		}
-			//		m_lineStr[lineSum - m_nowStartLine].lineEndOrder = i;
-			//		m_lineStr[lineSum - m_nowStartLine].lineLength = m_lineStr[lineSum - m_nowStartLine].lineEndOrder - 
-			//			m_lineStr[lineSum - m_nowStartLine].lineHeadorder + 1;
-			//		m_lineStr[lineSum - m_nowStartLine].isEnterEnd = 0;
+			//		m_lineStr[lineSum - m_showStartLine].lineEndOrder = i;
+			//		m_lineStr[lineSum - m_showStartLine].lineLength = m_lineStr[lineSum - m_showStartLine].lineEndOrder - 
+			//			m_lineStr[lineSum - m_showStartLine].lineHeadorder + 1;
+			//		m_lineStr[lineSum - m_showStartLine].isEnterEnd = 0;
 			//	}
-			//	if(lineSum + 1 >= m_nowStartLine && lineSum < m_nowStartLine + m_nowShowLineSum - 1)
+			//	if(lineSum + 1 >= m_showStartLine && lineSum < m_showStartLine + m_canShowLineSum - 1)
 			//	{
-			//		m_lineStr[lineSum - m_nowStartLine + 1].lineHeadorder = i + 1;
+			//		m_lineStr[lineSum - m_showStartLine + 1].lineHeadorder = i + 1;
 			//	}
 			//	lineSum ++;
 			//	lineLength ++;
@@ -907,11 +767,11 @@ void _XMultiText::updateLineStr()
 	}
 	m_nowMaxLineSum = lineSum;
 	m_nowMaxLineLength = maxLineLength;
-	if(m_nowMaxLineSum > m_nowShowLineSum)
+	if(m_nowMaxLineSum > m_canShowLineSum)
 	{//Èç¹ûÊµ¼ÊµÄÐÐÊý´óÓÚÏÔÊ¾µÄ×î´óÐÐÊý£¬ÔòÐèÒªÏÔÊ¾×ÝÏòÍÏ¶¯Ìõ
 		m_needShowVSlider = 1;
-		m_verticalSlider.setNowValue(m_nowStartLine);
-		m_verticalSlider.setRange(m_nowMaxLineSum - m_nowShowLineSum,0.0f);
+		m_verticalSlider.setNowValue(m_showStartLine);
+		m_verticalSlider.setRange(m_nowMaxLineSum - m_canShowLineSum,0.0f);
 	}else
 	{
 		m_needShowVSlider = 0;
@@ -926,12 +786,12 @@ void _XMultiText::updateLineStr()
 		m_needShowHSlider = 0;
 	}*/
 	//ÏÂÃæ¶ÔÕâ¸ö·½·¨½øÐÐÐÞ¸Ä
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].isEnable = XFalse;
 		m_lineStr[i].nowText.disClip();
 	}
-	if(m_nowStartLine == 0) m_lineStr[0].lineHeadorder = 0;//Èç¹ûÊÇ´Ó×Ö·û´®¿ªÍ·ÏÔÊ¾£¬ÔòÐèÒª³õÊ¼»¯µÚÒ»ÐÐµÄÍ·Î»×Ö·û´®¿ªÊ¼
+	if(m_showStartLine == 0) m_lineStr[0].lineHeadorder = 0;//Èç¹ûÊÇ´Ó×Ö·û´®¿ªÍ·ÏÔÊ¾£¬ÔòÐèÒª³õÊ¼»¯µÚÒ»ÐÐµÄÍ·Î»×Ö·û´®¿ªÊ¼
 
 	int maxlineWidth = 0;
 	int lineOrder = 0;	//µ±Ç°µÄÐÐºÅ
@@ -948,59 +808,63 @@ void _XMultiText::updateLineStr()
 			}else
 			if(m_nowString[i] == '\n' || m_nowString[i] == '\0')
 			{//×Ö·û´®»»ÐÐ
-			/*	if(lineLength >= m_lineStr[lineSum - m_nowStartLine].showStart)
+			/*	if(lineLength >= m_lineStr[lineSum - m_showStartLine].showStart)
 				{
-					m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-					if(lineLength - m_lineStr[lineSum - m_nowStartLine].showStart > m_lineStr[lineSum - m_nowStartLine].showLength)
+					m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+					if(lineLength - m_lineStr[lineSum - m_showStartLine].showStart > m_lineStr[lineSum - m_showStartLine].showLength)
 					{//Êµ¼Ê×Ö·û´®µÄ³¤¶È³¬¹ýÏÔÊ¾³¤¶È
-						memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-							m_lineStr[lineSum - m_nowStartLine].showLength);
-						m_lineStr[lineSum - m_nowStartLine].showString[m_lineStr[lineSum - m_nowStartLine].showLength] = '\0';
+						memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+							m_lineStr[lineSum - m_showStartLine].showLength);
+						m_lineStr[lineSum - m_showStartLine].showString[m_lineStr[lineSum - m_showStartLine].showLength] = '\0';
 					}else
 					{//Êµ¼Ê×Ö·û´®µÄ³¤¶ÈÐ¡ÓÚÏÔÊ¾³¤¶È
-						memcpy(m_lineStr[lineSum - m_nowStartLine].showString,tempChar + m_lineStr[lineSum - m_nowStartLine].showStart,
-							lineLength - m_lineStr[lineSum - m_nowStartLine].showStart);
-						m_lineStr[lineSum - m_nowStartLine].showString[lineLength - m_lineStr[lineSum - m_nowStartLine].showStart] = '\0';
+						memcpy(m_lineStr[lineSum - m_showStartLine].showString,tempChar + m_lineStr[lineSum - m_showStartLine].showStart,
+							lineLength - m_lineStr[lineSum - m_showStartLine].showStart);
+						m_lineStr[lineSum - m_showStartLine].showString[lineLength - m_lineStr[lineSum - m_showStartLine].showStart] = '\0';
 					}
-					m_lineStr[lineSum - m_nowStartLine].nowText.setString(m_lineStr[lineSum - m_nowStartLine].showString);
+					m_lineStr[lineSum - m_showStartLine].nowText.setString(m_lineStr[lineSum - m_showStartLine].showString);
 				}else
 				{//Èç¹ûÃ»ÓÐÐèÒªÏÔÊ¾µÄ×Ö·û£¬Ôò±ê¼ÇÃ»ÓÐ×Ö·ûÐèÒªÑ¡Ôñ
-					//m_lineStr[lineSum - m_nowStartLine].isEnable = 0;
-					m_lineStr[lineSum - m_nowStartLine].isEnable = 1;
-					m_lineStr[lineSum - m_nowStartLine].nowText.setString(" ");
+					//m_lineStr[lineSum - m_showStartLine].isEnable = 0;
+					m_lineStr[lineSum - m_showStartLine].isEnable = 1;
+					m_lineStr[lineSum - m_showStartLine].nowText.setString(" ");
 				}*/
-				if(lineOrder >= m_nowStartLine && lineOrder < m_nowStartLine + m_nowShowLineSum)
+				if(lineOrder >= m_showStartLine && lineOrder < m_showStartLine + m_canShowLineSum)
 				{
 					memcpy(tempChar,m_nowString + index,i - index);
 					tempChar[i - index] = '\0';
-					m_lineStr[lineOrder - m_nowStartLine].isEnable = XTrue;
-					m_lineStr[lineOrder - m_nowStartLine].nowText.setString(tempChar);
-					m_lineStr[lineOrder - m_nowStartLine].lineWidthPixel = (i - index + 1) * m_lineStr[lineOrder - m_nowStartLine].nowText.getTextSize().x * 0.5f;
-					//m_lineStr[lineOrder - m_nowStartLine].lineWidthPixel = m_lineStr[lineOrder - m_nowStartLine].nowText.getMaxPixelWidth();
-					if(m_lineStr[lineOrder - m_nowStartLine].lineWidthPixel > maxlineWidth)
+					m_lineStr[lineOrder - m_showStartLine].isEnable = XTrue;
+					m_lineStr[lineOrder - m_showStartLine].nowText.setString(tempChar);
+					m_lineStr[lineOrder - m_showStartLine].lineWidthPixel = (i - index + 1) * m_lineStr[lineOrder - m_showStartLine].nowText.getTextSize().x * 0.5f;
+					//m_lineStr[lineOrder - m_showStartLine].lineWidthPixel = m_lineStr[lineOrder - m_showStartLine].nowText.getMaxPixelWidth();
+					if(m_lineStr[lineOrder - m_showStartLine].lineWidthPixel > maxlineWidth)
 					{
-						maxlineWidth = m_lineStr[lineOrder - m_nowStartLine].lineWidthPixel;
+						maxlineWidth = m_lineStr[lineOrder - m_showStartLine].lineWidthPixel;
 					}
-					m_lineStr[lineOrder - m_nowStartLine].nowText.setClipRect(m_nowStartPixels,0.0f,m_MaxLineWidthPixels + m_nowStartPixels,
-						m_lineStr[lineOrder - m_nowStartLine].nowText.getTextSize().y);//ÉèÖÃ×Ö·û´®²Ã¼ô
+					m_lineStr[lineOrder - m_showStartLine].nowText.setClipRect(m_nowStartPixels,0.0f,m_maxLineWidthPixels + m_nowStartPixels,
+						m_lineStr[lineOrder - m_showStartLine].nowText.getTextSize().y);//ÉèÖÃ×Ö·û´®²Ã¼ô
 					//ÕâÀïÎ»ÖÃÒ²ÐèÒª×öÏàÓ¦µÄ¸Ä±ä
 					//£¨ÉÐÎ´Íê³É£©
-					m_lineStr[lineOrder - m_nowStartLine].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-						m_position.y + m_mouseRect.top * m_size.y + m_textHeight * (lineOrder - m_nowStartLine));
+					m_lineStr[lineOrder - m_showStartLine].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
+						m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * (lineOrder - m_showStartLine));
 
-					m_lineStr[lineOrder - m_nowStartLine].lineHeadorder = index;
-					m_lineStr[lineOrder - m_nowStartLine].lineEndOrder = i;
-					//m_lineStr[lineOrder - m_nowStartLine].lineLength = m_lineStr[lineOrder - m_nowStartLine].lineEndOrder - 
-					//	m_lineStr[lineOrder - m_nowStartLine].lineHeadorder + 1;
-				//	if(m_nowString[i] == '\n') m_lineStr[lineOrder - m_nowStartLine].isEnterEnd = 1;
-				//	else m_lineStr[lineOrder - m_nowStartLine].isEnterEnd = 0;
+					m_lineStr[lineOrder - m_showStartLine].lineHeadorder = index;
+					m_lineStr[lineOrder - m_showStartLine].lineEndOrder = i;
+					//m_lineStr[lineOrder - m_showStartLine].lineLength = m_lineStr[lineOrder - m_showStartLine].lineEndOrder - 
+					//	m_lineStr[lineOrder - m_showStartLine].lineHeadorder + 1;
+				//	if(m_nowString[i] == '\n') m_lineStr[lineOrder - m_showStartLine].isEnterEnd = 1;
+				//	else m_lineStr[lineOrder - m_showStartLine].isEnterEnd = 0;
 				}
-			//	if(lineOrder + 1 >= m_nowStartLine && lineOrder < m_nowStartLine + m_nowShowLineSum - 1)
+			//	if(lineOrder + 1 >= m_showStartLine && lineOrder < m_showStartLine + m_canShowLineSum - 1)
 			//	{
-			//		m_lineStr[lineOrder - m_nowStartLine + 1].lineHeadorder = i + 1;
+			//		m_lineStr[lineOrder - m_showStartLine + 1].lineHeadorder = i + 1;
 			//	}
 
-				if(m_nowString[i] == '\0') break;
+				if(m_nowString[i] == '\0') 
+				{
+					if(m_nowString[i - 1] != '\n') ++lineOrder;	//×îºóÒ»ÐÐÒÔ\0½áÊøÊ±
+					break;
+				}
 				++lineOrder;
 				index = i + 1;
 			}else
@@ -1010,22 +874,22 @@ void _XMultiText::updateLineStr()
 	}
 	//ÅÐ¶ÏÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±ÍÏ¶¯Ìõ
 	m_nowMaxLineSum = lineOrder;
-	if(m_nowMaxLineSum > m_nowShowLineSum)
+	if(m_nowMaxLineSum > m_canShowLineSum)
 	{//Èç¹ûÊµ¼ÊµÄÐÐÊý´óÓÚÏÔÊ¾µÄ×î´óÐÐÊý£¬ÔòÐèÒªÏÔÊ¾×ÝÏòÍÏ¶¯Ìõ
 		m_needShowVSlider = XTrue;
-		m_verticalSlider.setNowValue(m_nowStartLine);
-		m_verticalSlider.setRange(m_nowMaxLineSum - m_nowShowLineSum,0.0f);
+		m_verticalSlider.setNowValue(m_showStartLine);
+		m_verticalSlider.setRange(m_nowMaxLineSum - m_canShowLineSum,0.0f);
 	}else
 	{
 		m_needShowVSlider = XFalse;
 	}
 	//ÅÐ¶ÏÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½ÍÏ¶¯Ìõ
 	m_nowMaxLineWidthPixels = maxlineWidth;
-	if(m_nowMaxLineWidthPixels > m_MaxLineWidthPixels)
+	if(m_nowMaxLineWidthPixels > m_maxLineWidthPixels)
 	{//Èç¹ûÊµ¼ÊµÄÐÐÊý´óÓÚÏÔÊ¾µÄ×î´óÐÐÊý£¬ÔòÐèÒªÏÔÊ¾×ÝÏòÍÏ¶¯Ìõ
 		m_needShowHSlider = XTrue;
 		m_horizontalSlider.setNowValue(m_nowStartPixels);
-		m_horizontalSlider.setRange(m_nowMaxLineWidthPixels - m_MaxLineWidthPixels,0.0f);
+		m_horizontalSlider.setRange(m_nowMaxLineWidthPixels - m_maxLineWidthPixels,0.0f);
 	}else
 	{
 		m_needShowHSlider = XFalse;
@@ -1033,74 +897,165 @@ void _XMultiText::updateLineStr()
 }
 void _XMultiText::draw()
 {
-	if(!m_isInited) return ;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isVisiable) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 	if(m_withoutTex)
 	{
 		if(!m_isEnable) 
 		{
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			drawFillBoxA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
 				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.6f,0.6f,0.6f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_mouseRect.top * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.5f,0.5f,0.5f);
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.5f,0.5f,0.5f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.25f,0.25f,0.25f);
-			//m_spriteBackGround.draw(m_mutiEditDisable);	//Èç¹ûÎÞÐ§ÔòÏÔÊ¾ÎÞÐ§,²»ÏÔÊ¾²åÈë·ûºÅ
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.6f * m_color.fR,0.6f * m_color.fG,0.6f * m_color.fB,m_color.fA,true);
 		}else 
 		{
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			drawFillBoxA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
 				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.75f,0.75f,0.75f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_mouseRect.top * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.65f,0.65f,0.65f);
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.65f,0.65f,0.65f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.45f,0.45f,0.45f);
-			//m_spriteBackGround.draw(m_mutiEditNormal); //Èç¹ûÓÐÐ§ÔòÏÔÊ¾ÓÐÐ§,ÏÔÊ¾²åÈë·ûºÅ
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.75f * m_color.fR,0.75f * m_color.fG,0.75f * m_color.fB,m_color.fA,true);
 		}
-		//if(m_haveSelect != 0) m_spriteSelect.draw(&(m_mutiEditSelect->m_texture));	//ÏÔÊ¾Ñ¡ÔñµÄ·¶Î§
+		//if(m_haveSelect) m_spriteSelect.draw(&(m_mutiEditSelect->m_texture));	//ÏÔÊ¾Ñ¡ÔñµÄ·¶Î§
+		if(m_actionMD.getIsEnd())
+		{
+			if(m_haveSelect && m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
+			{//ÏÂÃæÏÔÊ¾Ñ¡ÔñµÄ±êÇ©
+				int index = m_selectLineOrder - m_showStartLine;
+				drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y + index * m_nowTextHeight),
+					_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+					m_nowTextHeight),0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+			}
+		}else
+		{
+			switch(m_actionType)
+			{
+			case MLTTXT_ACTION_TYPE_IN:		//Ñ¡Ïî³öÏÖ
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + m_mouseRect.top * m_size.y + 
+						(m_actionPosition - m_showStartLine) * m_nowTextHeight + m_nowTextHeight * (1.0f - m_actionMD.getNowData()) * 0.5f),
+						_XVector2(m_maxLineWidthPixels * m_size.x,m_nowTextHeight * m_actionMD.getNowData()),
+						0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+				}
+				break;
+			case MLTTXT_ACTION_TYPE_MOVE:	//Ñ¡ÏîÒÆ¶¯
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{//Õý³£Çé¿ö
+					float pos = lineSlerp<float>((m_actionPosition - m_showStartLine) * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + m_mouseRect.top  * m_size.y + pos),
+						_XVector2(m_maxLineWidthPixels * m_size.x,m_nowTextHeight),
+						0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+				}else
+				if(m_actionPosition < m_showStartLine)
+				{//ÉÏ±ßÔ½½ç
+					float pos = lineSlerp<float>(-1.0f * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					float h = m_nowTextHeight;
+					if(pos < 0.0f)
+					{
+						h += pos;
+						pos = 0.0f;
+					}
+					if(h > 0.0f)
+					{
+						drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+							m_position.y + m_mouseRect.top * m_size.y + pos),
+							_XVector2(m_maxLineWidthPixels * m_size.x,h),
+							0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+					}
+				}else
+				if(m_actionPosition >= m_showStartLine + m_canShowLineSum)
+				{//ÏÂ±ßÔ½½ç
+					float pos = lineSlerp<float>(m_canShowLineSum * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					float h = m_nowTextHeight;
+					if(pos + h > m_canShowLineSum * m_nowTextHeight)
+					{
+						h += (m_canShowLineSum * m_nowTextHeight - pos - h);
+					}
+					if(h > 0.0f)
+					{
+						drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+							m_position.y + m_mouseRect.top * m_size.y + pos),
+							_XVector2(m_maxLineWidthPixels * m_size.x,h),
+							0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+					}
+				}
+				break;
+			case MLTTXT_ACTION_TYPE_DCLICK:	//Ë«»÷
+			case MLTTXT_ACTION_TYPE_OUT:	//È¡ÏûÑ¡Ôñ
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + m_mouseRect.top * m_size.y + 
+						(m_actionPosition - m_showStartLine) * m_nowTextHeight + m_nowTextHeight * (1.0f - m_actionMD.getNowData()) * 0.5f),
+						_XVector2(m_maxLineWidthPixels * m_size.x,m_nowTextHeight * m_actionMD.getNowData()),
+						0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+				}
+				break;
+			}
+		}
 		//ÏÔÊ¾µ±Ç°ÊäÈëµÄ×Ö·û´®
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			if(m_lineStr[i].isEnable)
 			{
-				if(m_lineStr[i].haveAllSelect)
-				{
-					//m_lineStr[i].spriteSelect.draw(m_mutiEditSelect);
-					drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y + i * m_textHeight),
-					_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-					m_textHeight),0.85f,0.85f,0.85f);
-				}
+				//if(m_lineStr[i].haveAllSelect)
+				//{//ÏÔÊ¾ÕâÒ»ÐÐ±»Ñ¡ÖÐ
+				//	drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y + i * m_nowTextHeight),
+				//		_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				//		m_nowTextHeight),0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+				//}
 				m_lineStr[i].nowText.draw();
 			}
+		}
+		if(!m_isEnable) 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_mouseRect.top * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);
+			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);
+		}else 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_mouseRect.top * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.65f * m_color.fR,0.65f * m_color.fG,0.65f * m_color.fB,m_color.fA,true);
+			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.65f * m_color.fR,0.65f * m_color.fG,0.65f * m_color.fB,m_color.fA,true);
 		}
 		//ÏÔÊ¾»¬¶¯Ìõ
 		if(m_needShowVSlider) m_verticalSlider.draw();
 		if(m_needShowHSlider) m_horizontalSlider.draw();
 		//if(m_mutiEditUpon != NULL) m_spriteBackGround.draw(m_mutiEditUpon);
+		if(!m_isEnable) 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.25f * m_color.fR,0.25f * m_color.fG,0.25f * m_color.fB,m_color.fA,true);
+			//m_spriteBackGround.draw(m_mutiEditDisable);	//Èç¹ûÎÞÐ§ÔòÏÔÊ¾ÎÞÐ§,²»ÏÔÊ¾²åÈë·ûºÅ
+		}else 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.45f * m_color.fR,0.45f * m_color.fG,0.45f * m_color.fB,m_color.fA,true);
+			//m_spriteBackGround.draw(m_mutiEditNormal); //Èç¹ûÓÐÐ§ÔòÏÔÊ¾ÓÐÐ§,ÏÔÊ¾²åÈë·ûºÅ
+		}
 	}else
 	{
 		if(!m_isEnable) m_spriteBackGround.draw(m_mutiEditDisable);	//Èç¹ûÎÞÐ§ÔòÏÔÊ¾ÎÞÐ§,²»ÏÔÊ¾²åÈë·ûºÅ
 		else m_spriteBackGround.draw(m_mutiEditNormal); //Èç¹ûÓÐÐ§ÔòÏÔÊ¾ÓÐÐ§,ÏÔÊ¾²åÈë·ûºÅ
-		//if(m_haveSelect != 0) m_spriteSelect.draw(&(m_mutiEditSelect->m_texture));	//ÏÔÊ¾Ñ¡ÔñµÄ·¶Î§
+		//if(m_haveSelect) m_spriteSelect.draw(&(m_mutiEditSelect->m_texture));	//ÏÔÊ¾Ñ¡ÔñµÄ·¶Î§
 		//ÏÔÊ¾µ±Ç°ÊäÈëµÄ×Ö·û´®
-		for(int i = 0;i < m_nowShowLineSum;++ i)
+		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
 			if(m_lineStr[i].isEnable)
 			{
@@ -1117,53 +1072,63 @@ void _XMultiText::draw()
 		if(m_mutiEditUpon != NULL) m_spriteBackGround.draw(m_mutiEditUpon);
 	}
 }
-_XBool _XMultiText::canGetFocus(float x,float y)
-{
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isActive) return XFalse;		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
-	if(!m_isVisiable) return XFalse;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
-	return isInRect(x,y);
-}
 _XBool _XMultiText::mouseProc(float x,float y,_XMouseState mouseState)
 {
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isActive) return XFalse;		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
-	if(!m_isVisiable) return XFalse;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
+	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
+		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
 	
-	if(m_needShowVSlider) m_verticalSlider.mouseProc(x,y,mouseState);
+	if(m_needShowVSlider) 
+	{
+		m_verticalSlider.mouseProc(x,y,mouseState);
+		if(m_nowMouseRect.isInRect(x,y))
+		{//ÕâÀïÏìÓ¦¹öÂÖÊÂ¼þ
+			switch(mouseState)
+			{
+			case MOUSE_WHEEL_UP_DOWN:
+				m_verticalSlider.setNowValue(m_verticalSlider.getNowValue() - 1.0f);
+				break;
+			case MOUSE_WHEEL_DOWN_DOWN:
+				m_verticalSlider.setNowValue(m_verticalSlider.getNowValue() + 1.0f);
+				break;
+			}
+		}
+	}
 	if(m_needShowHSlider) m_horizontalSlider.mouseProc(x,y,mouseState);
 	//ÅÐ¶ÏÊó±êµã»÷ÊÇ·ñÔÚ·¶Î§ÄÚ
 	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_nowMouseRect.isInRect(x,y))
 	{//µãÑ¡ÓÐÐ§£¬¼ÆËãµãÑ¡µÄÐÐÖµ
-		int temp = (y - m_nowMouseRect.top) / m_textHeight;	//¼ÆËãµ±Ç°Ñ¡ÔñµÄÐÐÊý
+		int temp = (y - m_nowMouseRect.top) / m_nowTextHeight;	//¼ÆËãµ±Ç°Ñ¡ÔñµÄÐÐÊý
 		if(temp < 0) temp = 0;
-		if(temp >= m_nowShowLineSum) temp = m_nowShowLineSum - 1;
-		if(temp + m_nowStartLine < m_nowMaxLineSum)
+		if(temp >= m_canShowLineSum) temp = m_canShowLineSum - 1;
+		if(temp + m_showStartLine < m_nowMaxLineSum)
 		{
-			if(m_haveSelect && m_nowSelectLineOrder != temp + m_nowStartLine)
+			if(m_haveSelect && m_selectLineOrder != temp + m_showStartLine)
 			{//ÕâÑùÔòÐèÒªÌÞ³ýÔ­ÓÐµÄÑ¡Ôñ£¬Õû¸öÖ»ÄÜÓÐÒ»¸ö´¦ÓÚÑ¡Ôñ×´Ì¬
-				m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = 0;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
+				m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XFalse;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
+				setAction(MLTTXT_ACTION_TYPE_MOVE,m_selectLineOrder);	//±êÇ©ÒÆ¶¯
 			}
-			if(m_haveSelect && m_nowSelectLineOrder == temp + m_nowStartLine)
+			if(m_haveSelect && m_selectLineOrder == temp + m_showStartLine)
 			{//Èç¹ûÖØ¸´Ñ¡ÔñÔò²»×÷±ê¼Ç
 			}else
 			{
+				if(!m_haveSelect) setAction(MLTTXT_ACTION_TYPE_IN,temp + m_showStartLine);	//ÓÐÑ¡Ôñ
 				m_haveSelect = XTrue;
-				m_nowSelectLineOrder = temp + m_nowStartLine;
+				m_selectLineOrder = temp + m_showStartLine;
 				if(m_funSelect != NULL) m_funSelect(m_pClass,getControlID());
 				//±ê¼ÇËùÑ¡µÄÐÐ
 				m_lineStr[temp].haveAllSelect = XTrue;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
 				//¼ÆËãÑ¡È¡µÄÎ»ÖÃ
 				if(!m_withoutTex)
 				{
-					m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left, m_nowMouseRect.top + m_textHeight * temp);
+					m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left, m_nowMouseRect.top + m_nowTextHeight * temp);
 					m_lineStr[temp].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
-						m_textHeight / m_mutiEditSelect->textureSize.y);
+						m_nowTextHeight / m_mutiEditSelect->textureSize.y);
 				}
 			}
 		}
+		m_isBeChoose = XTrue;
 	}
 	return XTrue;
 }
@@ -1179,20 +1144,20 @@ void _XMultiText::setPosition(float x,float y)
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
+			m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * i);
 	}
 	if(m_haveSelect && !m_withoutTex)
 	{//´æÔÚÑ¡È¡
-		int temp = m_nowSelectLineOrder - m_nowStartLine;
-		m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left,m_nowMouseRect.top + m_textHeight * temp);
+		int temp = m_selectLineOrder - m_showStartLine;
+		m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left,m_nowMouseRect.top + m_nowTextHeight * temp);
 	}
 }
 void _XMultiText::setSize(float x,float y)
 {
-	if(x <= 0 && y <= 0) return;
+	if(x <= 0 || y <= 0) return;
 	m_size.set(x,y);
 	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
 		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
@@ -1211,19 +1176,19 @@ void _XMultiText::setSize(float x,float y)
 
 	m_lineStr[0].nowText.setSize(m_size);
 	m_textWidth = m_lineStr[0].nowText.getTextSize().x * m_lineStr[0].nowText.getSize().x * 0.5f;
-	m_textHeight = m_lineStr[0].nowText.getTextSize().y * m_lineStr[0].nowText.getSize().y;
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	m_nowTextHeight = m_lineStr[0].nowText.getTextSize().y * m_lineStr[0].nowText.getSize().y;
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].nowText.setPosition(m_position.x + (m_mouseRect.left - m_nowStartPixels) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y + m_textHeight * i);
+			m_position.y + m_mouseRect.top * m_size.y + m_nowTextHeight * i);
 		m_lineStr[i].nowText.setSize(m_size);
 	}
 	if(m_haveSelect && !m_withoutTex)
 	{//´æÔÚÑ¡È¡
-		int temp = m_nowSelectLineOrder - m_nowStartLine;
-		m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left,m_nowMouseRect.top + m_textHeight * temp);
+		int temp = m_selectLineOrder - m_showStartLine;
+		m_lineStr[temp].spriteSelect.setPosition(m_nowMouseRect.left,m_nowMouseRect.top + m_nowTextHeight * temp);
 		m_lineStr[temp].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
-			m_textHeight / m_mutiEditSelect->textureSize.y);
+			m_nowTextHeight / m_mutiEditSelect->textureSize.y);
 	}
 }
 void _XMultiText::checkStr()			//¼ì²é×Ö·û´®µÄµ¥ÐÐ¿í¶ÈÊÇ·ñ´óÓÚÏÞÖÆ
@@ -1281,25 +1246,16 @@ void _XMultiText::setString(const char *str)
 	checkStr();
 
 	//´¦Àí×Ö·û´®
-	m_nowStartLine = 0;
+	m_showStartLine = 0;
 	updateLineStr();
 
+	if(m_haveSelect) setAction(MLTTXT_ACTION_TYPE_OUT,m_selectLineOrder);	//È¡ÏûÑ¡Ôñ
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = -1;
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	m_selectLineOrder = -1;
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].haveAllSelect = XFalse;
 	}
-}
-void _XMultiText::addString(const char *str)
-{
-	if(!m_isInited) return;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(str == NULL) return;
-	if(strlen(str) == 0) return;
-	if(strlen(str) + strlen(m_nowString) >= MAX_STRING_LENGTH) return;
-	strcat(m_nowString,str);
-	checkStr();
-	updateLineStr();
 }
 void _XMultiText::addALine(const char *str)		//Ïò×Ö·û´®ÖÐÌí¼Ó×Ö·û´®
 {
@@ -1334,9 +1290,9 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 	if(!_XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTITEXT);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
+		_XCtrlManger.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+		_XObjManger.addAObject(this);
 #endif
 	}
 
@@ -1350,18 +1306,18 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 
 	m_needShowVSlider = temp.m_needShowVSlider;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 	m_verticalSlider.setACopy(temp.m_verticalSlider);		//´¹Ö±»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiTextValueChangeV,funMutiTextValueChangeMoveV,this);
 	m_needShowHSlider = temp.m_needShowHSlider;			//ÊÇ·ñÐèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 	m_horizontalSlider.setACopy(temp.m_horizontalSlider);	//Ë®Æ½»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiTextValueChangeH,funMutiTextValueChangeMoveH,this);
 
 	m_nowString = createArrayMem<char>(MAX_STRING_LENGTH);
 	if(m_nowString == NULL) return XFalse;
@@ -1375,28 +1331,28 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 
 	m_spriteBackGround.setACopy(temp.m_spriteBackGround);	//ÓÃÓÚÏÔÊ¾ÊäÈë¿òµÄ±³¾°ÌùÍ¼
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
+	_XObjManger.decreaseAObject(&m_spriteBackGround);
 #endif
 	//m_textPosition = temp.m_textPosition;			//ÎÄ×ÖÏÔÊ¾µÄÎ»ÖÃ£¬ÊÇÏà¶ÔÓÚ¿Ø¼þµÄÎ»ÖÃÀ´¶¨µÄ
 	m_textSize = temp.m_textSize;				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
 
 	m_haveSelect = temp.m_haveSelect;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
-	m_nowSelectLineOrder = temp.m_nowSelectLineOrder;	//µ±Ç°ÎÄµµÖÐ±»Ñ¡ÔñµÄÊÇÄÄÒ»ÐÐ
+	m_selectLineOrder = temp.m_selectLineOrder;	//µ±Ç°ÎÄµµÖÐ±»Ñ¡ÔñµÄÊÇÄÄÒ»ÐÐ
 
-	m_nowStartLine = temp.m_nowStartLine;		//µ±Ç°ÏÔÊ¾µÄµÚÒ»ÐÐÊÇ×ÜµÄµÚ¼¸ÐÐ
-	m_nowShowLineSum = temp.m_nowShowLineSum;		//µ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
+	m_showStartLine = temp.m_showStartLine;		//µ±Ç°ÏÔÊ¾µÄµÚÒ»ÐÐÊÇ×ÜµÄµÚ¼¸ÐÐ
+	m_canShowLineSum = temp.m_canShowLineSum;		//µ±Ç°¿ÉÒÔÏÔÊ¾¶àÉÙÐÐ
 	//m_nowShowLineWidth = temp.m_nowShowLineWidth;		//µ±Ç°Ò»ÐÐ¿ÉÒÔÏÔÊ¾µÄ¿í¶È
 	m_nowMaxLineSum = temp.m_nowMaxLineSum;	//µ±Ç°×Ö·û´®ÖÐÊµ¼ÊµÄÐÐÊý
 	//m_nowMaxLineLength = temp.m_nowMaxLineLength;	//µ±Ç°×Ö·û´®ÖÐÊµ¼ÊµÄÐÐ¿í
 
 	m_nowStartPixels = temp.m_nowStartPixels;
 	m_nowMaxLineWidthPixels = temp.m_nowMaxLineWidthPixels;
-	m_MaxLineWidthPixels = temp.m_MaxLineWidthPixels;
+	m_maxLineWidthPixels = temp.m_maxLineWidthPixels;
 
-	m_lineStr = createArrayMem<_XMultiTextLineString>(m_nowShowLineSum);
+	m_lineStr = createArrayMem<_XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
-	for(int i = 0;i < m_nowShowLineSum;++ i)
+	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].showString = createArrayMem<char>(MAX_LINE_STRING_LENGTH + 1);
 		//m_lineStr[i].showString = createArrayMem<char>(m_nowShowLineWidth + 1);
@@ -1409,7 +1365,7 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 		m_lineStr[i].nowText.setACopy(temp.m_lineStr[i].nowText);		//ÓÃÓÚÏÔÊ¾ÕâÒ»ÐÐ×Ö·û´®µÄ×ÖÌå
 		//m_lineStr[i].nowText.setMaxStrLen(MAX_LINE_STRING_LENGTH);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].nowText));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].nowText));
 #endif
 		m_lineStr[i].lineHeadorder = temp.m_lineStr[i].lineHeadorder;			//ÕâÒ»ÐÐ×Ö·ûÔÚÈ«ÎÄÖÐµÄÍ·Î»ÖÃ
 		m_lineStr[i].lineEndOrder = temp.m_lineStr[i].lineEndOrder;			//ÕâÒ»ÐÐ×Ö·ûÔÚÈ«ÎÄÖÐµÄÎ²Î»ÖÃ
@@ -1417,7 +1373,7 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 		//m_lineStr[i].isEnterEnd = temp.m_lineStr[i].isEnterEnd;			//ÊÇ·ñÒòÎª»»ÐÐ¶ø»»ÐÐÏÔÊ¾1£¬»òÕßÊÇÒòÎªÏÔÊ¾×Ö·û´®µÄ³¤¶ÈÏÞÖÆ¶ø»»ÐÐ0
 		m_lineStr[i].spriteSelect.setACopy(temp.m_lineStr[i].spriteSelect);		//×Ö·û´®ÏÔÊ¾Ñ¡Ôñ±³¾°ÑÕÉ«µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_lineStr[i].spriteSelect));
+		_XObjManger.decreaseAObject(&(m_lineStr[i].spriteSelect));
 #endif
 		m_lineStr[i].haveAllSelect = temp.m_lineStr[i].haveAllSelect;			//¸ÃÐÐÖÐÊÇ·ñ´æ±»ÕûÌåÑ¡Ôñ
 	}
@@ -1429,7 +1385,7 @@ _XBool _XMultiText::setACopy(const _XMultiText &temp)
 	m_timer = temp.m_timer;	//ÕâÊÇ²åÈë·ûºÅÉÁË¸Ê±Ê¹ÓÃµÄÊ±¼ä±ê¼Ç£¬Õâ¸öÊ±¼äÊ¹ÓÃ²»×¼È·µÄ¼ÆÊ±·½Ê½
 	m_textColor = temp.m_textColor;
 	m_textWidth = temp.m_textWidth;	//ÕâÊÇ²åÈë·ûºÅÉÁË¸Ê±Ê¹ÓÃµÄÊ±¼ä±ê¼Ç£¬Õâ¸öÊ±¼äÊ¹ÓÃ²»×¼È·µÄ¼ÆÊ±·½Ê½
-	m_textHeight = temp.m_textHeight;	//ÕâÊÇ²åÈë·ûºÅÉÁË¸Ê±Ê¹ÓÃµÄÊ±¼ä±ê¼Ç£¬Õâ¸öÊ±¼äÊ¹ÓÃ²»×¼È·µÄ¼ÆÊ±·½Ê½
+	m_nowTextHeight = temp.m_nowTextHeight;	//ÕâÊÇ²åÈë·ûºÅÉÁË¸Ê±Ê¹ÓÃµÄÊ±¼ä±ê¼Ç£¬Õâ¸öÊ±¼äÊ¹ÓÃ²»×¼È·µÄ¼ÆÊ±·½Ê½
 	return XTrue;
 }
 _XBool _XMultiText::exportData(const char *fileName)		//Êý¾Ýµ¼³ö
@@ -1505,8 +1461,8 @@ _XBool _XMultiText::importData(const char *fileName)		//Êý¾Ýµ¼Èë
 }
 _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
 	//ÕÒµ½Ö¸¶¨µÄÒ»ÐÐ
 	int lineSum = 0;
 	int lineStart = 0;
@@ -1514,7 +1470,7 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 	char *tempStr = createArrayMem<char>(MAX_STRING_LENGTH);
 	if(tempStr == NULL) return XFalse;
 	memset(tempStr,0,MAX_STRING_LENGTH);
-	if(m_nowSelectLineOrder == 0)
+	if(m_selectLineOrder == 0)
 	{//µÚÒ»ÐÐ
 		for(int i = 0;;++ i)
 		{	
@@ -1544,7 +1500,7 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 			}*/
 		}
 	}else
-	if(m_nowSelectLineOrder == m_nowMaxLineSum - 1)
+	if(m_selectLineOrder == m_nowMaxLineSum - 1)
 	{//×îºóÒ»ÐÐ
 	//	int lineLength = 0;
 		for(int i = 0;;++ i)
@@ -1562,18 +1518,18 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 			{
 				lineSum++;
 	//			lineLength = 0;
-				if(lineSum == m_nowSelectLineOrder)
+				if(lineSum == m_selectLineOrder)
 				{
 					m_nowString[i] = '\0';
 					strcpy(tempStr,m_nowString);
 					setString(tempStr);
-					if(m_nowMaxLineSum - m_nowShowLineSum < 0)
+					if(m_nowMaxLineSum - m_canShowLineSum < 0)
 					{
 						setStartLine(0);
 						updateLineStr();
 					}else
 					{
-						setStartLine(m_nowMaxLineSum - m_nowShowLineSum);
+						setStartLine(m_nowMaxLineSum - m_canShowLineSum);
 						updateLineStr();
 					}
 					break;
@@ -1586,18 +1542,18 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 				{//³¬¹ýÒ»ÐÐÏÔÊ¾µÄ×î´óÖµÒ²ÐèÒª»»ÐÐ
 					lineSum++;
 					lineLength = 0;
-					if(lineSum == m_nowSelectLineOrder)
+					if(lineSum == m_selectLineOrder)
 					{
 						m_nowString[i + 1] = '\0';
 						strcpy(tempStr,m_nowString);
 						setString(tempStr);
-						if(m_nowMaxLineSum - m_nowShowLineSum < 0)
+						if(m_nowMaxLineSum - m_canShowLineSum < 0)
 						{
 							setStartLine(0);
 							updateLineStr();
 						}else
 						{
-							setStartLine(m_nowMaxLineSum - m_nowShowLineSum);
+							setStartLine(m_nowMaxLineSum - m_canShowLineSum);
 							updateLineStr();
 						}
 						break;
@@ -1618,18 +1574,18 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 			if(m_nowString[i] == '\0')
 			{
 				//½áÊø·û
-				if(lineSum == m_nowSelectLineOrder)
+				if(lineSum == m_selectLineOrder)
 				{
 					m_nowString[lineStart] = '\0';
 					strcpy(tempStr,m_nowString);
 					setString(tempStr);
-					if(m_nowMaxLineSum - m_nowShowLineSum < 0)
+					if(m_nowMaxLineSum - m_canShowLineSum < 0)
 					{
 						setStartLine(0);
 						updateLineStr();
 					}else
 					{
-						setStartLine(m_nowMaxLineSum - m_nowShowLineSum);
+						setStartLine(m_nowMaxLineSum - m_canShowLineSum);
 						updateLineStr();
 					}
 					break;
@@ -1639,29 +1595,29 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 			{
 				lineSum ++;
 	//			lineLength = 0;
-				if(lineSum == m_nowSelectLineOrder)
+				if(lineSum == m_selectLineOrder)
 				{//ÐÐÍ·
 					lineStart = i + 1;
 				}
-				if(lineSum == m_nowSelectLineOrder + 1)
+				if(lineSum == m_selectLineOrder + 1)
 				{
 					m_nowString[lineStart] = '\0';
-					int tempStartLine = m_nowStartLine;
+					int tempStartLine = m_showStartLine;
 					strcpy(tempStr,m_nowString);
 					strcpy(tempStr + strlen(m_nowString),&m_nowString[i] + 1);
 					setString(tempStr);
-					if(m_nowMaxLineSum - m_nowShowLineSum < 0)
+					if(m_nowMaxLineSum - m_canShowLineSum < 0)
 					{
 						setStartLine(0);
 						updateLineStr();
 					}else
-					if(tempStartLine + m_nowShowLineSum <= m_nowMaxLineSum)
+					if(tempStartLine + m_canShowLineSum <= m_nowMaxLineSum)
 					{
 						setStartLine(tempStartLine);
 						updateLineStr();
 					}else
 					{
-						setStartLine(m_nowMaxLineSum - m_nowShowLineSum);
+						setStartLine(m_nowMaxLineSum - m_canShowLineSum);
 						updateLineStr();
 					}
 					break;
@@ -1674,31 +1630,31 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 				{//³¬¹ýÒ»ÐÐÏÔÊ¾µÄ×î´óÖµÒ²ÐèÒª»»ÐÐ
 					lineSum ++;
 					lineLength = 0;
-					if(lineSum == m_nowSelectLineOrder)
+					if(lineSum == m_selectLineOrder)
 					{//ÐÐÍ·
 						lineStart = i + 1;
 					}
-					if(lineSum == m_nowSelectLineOrder + 1)
+					if(lineSum == m_selectLineOrder + 1)
 					{
 						m_nowString[lineStart] = '\0';
-						int tempStartLine = m_nowStartLine;
+						int tempStartLine = m_showStartLine;
 						strcpy(tempStr,m_nowString);
 						//ÒòÎªÊÇ³¬³¤×Ö·û´®½áÊø£¬ËùÒÔÕâÀï²»ÐèÒª½«¡®\n¡¯¼ÆËãÔÚÄÚ
 						//strcpy(tempStr + strlen(m_nowString),&m_nowString[i] + 1);
 						strcpy(tempStr + strlen(m_nowString),m_nowString + lineStart + MAX_LINE_STRING_LENGTH - 1);
 						setString(tempStr);
-						if(m_nowMaxLineSum - m_nowShowLineSum < 0)
+						if(m_nowMaxLineSum - m_canShowLineSum < 0)
 						{
 							setStartLine(0);
 							updateLineStr();
 						}else
-						if(tempStartLine + m_nowShowLineSum <= m_nowMaxLineSum)
+						if(tempStartLine + m_canShowLineSum <= m_nowMaxLineSum)
 						{
 							setStartLine(tempStartLine);
 							updateLineStr();
 						}else
 						{
-							setStartLine(m_nowMaxLineSum - m_nowShowLineSum);
+							setStartLine(m_nowMaxLineSum - m_canShowLineSum);
 							updateLineStr();
 						}
 						break;
@@ -1712,35 +1668,35 @@ _XBool _XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 }
 _XBool _XMultiText::moveUpSelectLine()	//½«Ñ¡ÔñµÄÒ»ÐÐÉÏÒÆ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
-	if(!moveUpLine(m_nowSelectLineOrder))
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
+	if(!moveUpLine(m_selectLineOrder))
 	{//ÒÆ¶¯Ê§°Ü
 		return XFalse;
 	}else
 	{
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XFalse;
-		m_nowSelectLineOrder --;
-		if(m_nowSelectLineOrder < m_nowStartLine)
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XFalse;
+		m_selectLineOrder --;
+		if(m_selectLineOrder < m_showStartLine)
 		{
-			m_nowStartLine = m_nowSelectLineOrder;
+			m_showStartLine = m_selectLineOrder;
 			updateLineStr();
 		}
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XTrue;
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XTrue;
 		if(!m_withoutTex)
 		{
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
-				m_nowMouseRect.top + m_textHeight * (m_nowSelectLineOrder - m_nowStartLine));
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
-							m_textHeight / m_mutiEditSelect->textureSize.y);
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
+				m_nowMouseRect.top + m_nowTextHeight * (m_selectLineOrder - m_showStartLine));
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
+							m_nowTextHeight / m_mutiEditSelect->textureSize.y);
 		}
 		return XTrue;
 	}
 }
 _XBool _XMultiText::moveUpLine(int order)	//½«Ä³Ò»ÐÐÉÏÒÆ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
 	if(order <= 0 || order >= m_nowMaxLineSum) return XFalse;	//·Ç·¨µÄÖµÔòÍË³ö
 	int upLineStart = 0;	//ÉÏÒ»ÐÐ¿ªÊ¼µÄÎ»ÖÃ
 	int thisLineStart = 0;	//ÕâÒ»ÐÐ¿ªÊ¼µÄÎ»ÖÃ
@@ -1844,35 +1800,35 @@ _XBool _XMultiText::moveUpLine(int order)	//½«Ä³Ò»ÐÐÉÏÒÆ
 }
 _XBool _XMultiText::moveDownSelectLine()	//½«Ñ¡ÔñµÄÒ»ÐÐÏÂÒÆ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
-	if(!moveDownLine(m_nowSelectLineOrder))
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
+	if(!moveDownLine(m_selectLineOrder))
 	{//ÒÆ¶¯Ê§°Ü
 		return XFalse;
 	}else
 	{
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XFalse;
-		m_nowSelectLineOrder ++;
-		if(m_nowSelectLineOrder >= m_nowStartLine + m_nowShowLineSum)
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XFalse;
+		m_selectLineOrder ++;
+		if(m_selectLineOrder >= m_showStartLine + m_canShowLineSum)
 		{
-			m_nowStartLine ++;
+			m_showStartLine ++;
 			updateLineStr();
 		}
-		m_lineStr[m_nowSelectLineOrder - m_nowStartLine].haveAllSelect = XTrue;
+		m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XTrue;
 		if(!m_withoutTex)
 		{
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
-				m_nowMouseRect.top + m_textHeight * (m_nowSelectLineOrder - m_nowStartLine));
-			m_lineStr[m_nowSelectLineOrder - m_nowStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
-							m_textHeight / m_mutiEditSelect->textureSize.y);
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setPosition(m_nowMouseRect.left,
+				m_nowMouseRect.top + m_nowTextHeight * (m_selectLineOrder - m_showStartLine));
+			m_lineStr[m_selectLineOrder - m_showStartLine].spriteSelect.setSize(m_nowMouseRect.getWidth() / m_mutiEditSelect->textureSize.x,
+							m_nowTextHeight / m_mutiEditSelect->textureSize.y);
 		}
 		return XTrue;
 	}
 }
 _XBool _XMultiText::moveDownLine(int order)	//½«Ä³Ò»ÐÐÏÂÒÆ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
 	if(order < 0 || order >= m_nowMaxLineSum - 1) return XFalse;	//·Ç·¨µÄÖµÔòÍË³ö
 	int thisLineStart = 0;	//ÕâÒ»ÐÐ¿ªÊ¼µÄÎ»ÖÃ
 	int nextLineStart = 0;	//ÏÂÒ»ÐÐ¿ªÊ¼µÄÎ»ÖÃ
@@ -1987,8 +1943,8 @@ _XBool _XMultiText::moveDownLine(int order)	//½«Ä³Ò»ÐÐÏÂÒÆ
 }
 _XBool _XMultiText::insertALine(const char *str,int lineOrder)	//ÏòÎÄ±¾µÄÖ¸¶¨ÐÐ²åÈëÒ»ÐÐ
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return XFalse;
+	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_haveSelect) return XFalse;
 	if(lineOrder < 0 || lineOrder >= m_nowMaxLineSum) return XFalse;	//·Ç·¨µÄÖµÔòÍË³ö
 	if(str == NULL || strlen(str) == 0) return XFalse;
 	if(strlen(str) + strlen(m_nowString) + 1 >= MAX_STRING_LENGTH) return XFalse;
@@ -2052,20 +2008,50 @@ _XBool _XMultiText::insertALine(const char *str,int lineOrder)	//ÏòÎÄ±¾µÄÖ¸¶¨ÐÐ²
 	XDELETE_ARRAY(tempStr);
 	return XTrue;
 }
-_XBool _XMultiText::isInRect(float x,float y)
+_XBool _XMultiText::keyboardProc(int keyOrder,_XKeyState keyState)
 {
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-_XVector2 _XMultiText::getBox(int order)
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(!m_isInited) return ret;
-	if(order == 0) ret.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y); else
-	if(order == 1) ret.set(m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.top * m_size.y); else
-	if(order == 2) ret.set(m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y); else
-	if(order == 3) ret.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y); 
-
-	return ret;
+	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
+		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+		!m_isEnable ||
+		!m_isBeChoose) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
+	if(keyState == KEY_STATE_UP)
+	{
+		switch(keyOrder)
+		{
+		case XKEY_UP:
+			if(m_needShowVSlider) 
+			{
+				m_verticalSlider.m_isBeChoose = XTrue;
+				m_verticalSlider.keyboardProc(XKEY_UP,KEY_STATE_UP);
+				m_verticalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		case XKEY_DOWN:
+			if(m_needShowVSlider) 
+			{
+				m_verticalSlider.m_isBeChoose = XTrue;
+				m_verticalSlider.keyboardProc(XKEY_DOWN,KEY_STATE_UP);
+				m_verticalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		case XKEY_LEFT:		//×óÓÒÑ¡Ôñ(ÉÐÎ´Íê³É)
+			if(m_needShowHSlider) 
+			{
+				m_horizontalSlider.m_isBeChoose = XTrue;
+				m_horizontalSlider.keyboardProc(XKEY_LEFT,KEY_STATE_UP);
+				m_horizontalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		case XKEY_RIGHT:	//×óÓÒÑ¡Ôñ(ÉÐÎ´Íê³É)
+			if(m_needShowHSlider) 
+			{
+				m_horizontalSlider.m_isBeChoose = XTrue;
+				m_horizontalSlider.keyboardProc(XKEY_RIGHT,KEY_STATE_UP);
+				m_horizontalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		}
+	}
+	return XTrue;
 }

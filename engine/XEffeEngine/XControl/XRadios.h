@@ -17,7 +17,7 @@
 
 typedef _XCheckTexture _XRadiosTexture;
 
-class _XRadios:public _XControlBasic
+class _XRadios:public _XControlBasic,public _XBasicOprate
 {
 private:
 	_XBool m_isInited;	//空间时都已经初始化
@@ -47,26 +47,51 @@ public:
 		const _XRect &Area,			//选择图标的鼠标响应范围
 		const _XRadiosTexture* tex,const _XFontUnicode &font,float captionSize,
 		const _XVector2& textPosition);		//单选框初始化
-	_XBool initEx(int radioSum,			//选项的数量
-		const _XVector2& distance,	//每个单选项之间的距离
-		const _XVector2& position,	//控件的位置
-		const _XRadiosTexture* tex,const _XFontUnicode &font,float captionSize);
+	_XBool initEx(int radioSum,			//对上面接口的简化
+		const _XVector2& distance,	
+		const _XVector2& position,	
+		const _XRadiosTexture* tex,const _XFontUnicode &font,float captionSize = 1.0);
 	_XBool initPlus(int radioSum,			//选项的数量
 		const _XVector2& distance,	//每个单选项之间的距离
-		const char *path,const _XFontUnicode &font,float captionSize,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const char *path,const _XFontUnicode &font,float captionSize = 1.0f,
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(int radioSum,
 		const _XVector2& distance,
 		const _XRect &area,
 		const _XFontUnicode &font,float captionSize,
 		const _XVector2& textPosition);
+	_XBool initWithoutTex(int radioSum,
+		const _XVector2& distance,
+		const _XRect &area,
+		const _XFontUnicode &font,
+		const _XVector2& textPosition)
+	{
+		return initWithoutTex(radioSum,distance,area,font,1.0f,textPosition);
+	}
+	_XBool initWithoutTex(int radioSum,
+		const _XVector2& distance,
+		const _XRect &area,
+		const _XVector2& textPosition)
+	{
+		return initWithoutTex(radioSum,distance,area,XEE::systemFont,1.0f,textPosition);
+	}
+	_XBool initWithoutTex(int radioSum,
+		const _XVector2& distance,
+		const _XVector2 &pixelSize,
+		const _XVector2& textPosition)
+	{
+		return initWithoutTex(radioSum,distance,_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			XEE::systemFont,1.0f,textPosition);
+	}
 protected:
 	void draw();
-	void drawUp(){};						//do nothing
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);		//当处于激活状态的时候，可以通过上下左右4个按键改变选择的值
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
+	_XBool canLostFocus(float,float){return XTrue;}
 public:
 	void disable();
 	void enable();
@@ -74,97 +99,56 @@ public:
 	void setRadioPosition(const _XVector2& position,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
 	void setRadioPosition(float x,float y,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
 	
-	void setDistance(const _XVector2& distance)
-	{
-		if(m_isInited == 0) return;
-		m_distance = distance;
-		//更新数据
-		for(int i = 0;i < m_radioSum;++ i)
-		{
-			m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
-			m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_size.x,m_position.y + m_checkPosition[i].y * m_size.y);
-		}
-	}
+	void setDistance(const _XVector2& distance);
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);				//设置缩放比例
 
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);		//设置位置
 
-	void setTextColor(const _XFColor& color) 
-	{
-		if(m_isInited == 0) return;
-		m_textColor = color;
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_radioSum;++ i)
-		{
-			m_radio[i].setTextColor(m_textColor * m_color);
-		}
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		if(m_isInited == 0) return;
-		m_color.setColor(r,g,b,a);
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_radioSum;++ i)
-		{
-			m_radio[i].setColor(m_color);
-		}
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		if(m_isInited == 0) return;
-		m_color.setA(a);
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_radioSum;++ i)
-		{
-			m_radio[i].setColor(m_color);
-		}
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a);//设置按钮的颜色
+	void setAlpha(float a);//设置按钮的颜色
 
 	_XBool setACopy(const _XRadios &temp);			//设置一个副本
 	_XBool setRadioSum(int radioSum);
 
 	_XRadios();
-	~_XRadios();
+	~_XRadios(){release();}
     //下面是内联函数
 	void release();	//释放分配的资源
 	void setCallbackFun(void (* funStateChange)(void *,int),void *pClass = NULL);
-	int getNowChoose();	//返回当前单选项中选择的项的编号
+	int getNowChoose() const;	//返回当前单选项中选择的项的编号
 	void setRadioText(const char *temp,int order);	//设置单选项中某一项的文字
-	void setRadiosText(const char * temp);			//设置多项的值，每项之间用'\n'隔开,如果总项数不匹配，则自动匹配
+	void setRadiosText(const char * temp);			//设置多项的值，每项之间用';'隔开,如果总项数不匹配，则自动匹配
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 private:	//为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XRadios(const _XRadios &temp);
 	_XRadios& operator = (const _XRadios& temp);
+public:
+	void setOprateState(void * data)
+	{
+		int index = *(int *)data;
+		setChoosed(index);
+	}
+	void *getOprateState() const
+	{
+		int *data = createMem<int>();
+		*data =  getNowChoose();
+		return data;
+	}
+	virtual bool isSameState(void * data)
+	{
+		if(data == NULL) return false;
+		return(*(int*)data == getNowChoose());
+	}
 };
-inline void _XRadios::setCallbackFun(void (* funStateChange)(void *,int),void *pClass)
-{
-	if(funStateChange != NULL) m_funStateChange = funStateChange;
-	if(pClass == NULL) m_pClass = this;
-	else m_pClass = pClass;
-}
-inline int _XRadios::getNowChoose()	//返回当前单选项中选择的项的编号
-{
-	return m_nowChoose;
-}
-inline void _XRadios::setRadioText(const char *temp,int order)	//设置单选项中某一项的文字
-{
-	if(!m_isInited) return ;	//如果没有初始化直接退出
-	if(temp == NULL) return;
-	if(order < 0 || order >= m_radioSum) return;
-	m_radio[order].setText(temp);
-}
-inline void _XRadios::setRadioPosition(const _XVector2& position,int order)
-{
-	setRadioPosition(position.x,position.y,order);
-}
-
+#include "XRadios.inl"
 #endif

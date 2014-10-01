@@ -1,7 +1,7 @@
 #include "XEffeEngine.h"
 #include "XThread.h"
 
-bool _XThread::createAThread(int *id,void (* fun)(void *),void *p)			//建立一个线程
+bool _XThread::createAThread(int *,void (* fun)(void *),void *p)			//建立一个线程
 {
 	HANDLE h = CreateThread(0,0,(LPTHREAD_START_ROUTINE)fun,p,0,NULL);
 	if(h == 0) return false;	//连接线程建立失败

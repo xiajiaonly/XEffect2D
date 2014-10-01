@@ -6,24 +6,17 @@
 #include "XProgress.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-#include "XResourcePack.h"
-#include "XResourceManager.h"
 
 _XProgressTexture::_XProgressTexture()
 :m_isInited(XFalse)
 ,progressBackGround(NULL)			//进度条的背景贴图
 ,progressMove(NULL)				//进度条用移动变化的贴图
 ,progressUpon(NULL)				//进度条中上层的遮罩或者立体光效
-{
-}
-_XProgressTexture::~_XProgressTexture()
-{
-	release();
-}
+{}
 _XBool _XProgressTexture::init(const char *backgound,const char *move,const char *upon,_XResourcePosition resoursePosition)
 {
-	if(m_isInited) return XFalse;
-	if(move == NULL) return XFalse;	//进度条最少必须要有中间移动的贴图
+	if(m_isInited ||
+		move == NULL) return XFalse;	//进度条最少必须要有中间移动的贴图
 	int ret = 1;
 	if(backgound != NULL && 
 		(progressBackGround = createATextureData(backgound,resoursePosition)) == NULL) ret = 0;
@@ -45,8 +38,8 @@ _XBool _XProgressTexture::init(const char *backgound,const char *move,const char
 #define PROGRESS_CONFIG_FILENAME ("Progress.txt")
 _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resoursePosition)
 {
-	if(m_isInited) return XFalse;
-	if(filename == NULL) return XFalse;
+	if(m_isInited ||
+		filename == NULL) return XFalse;
 	char tempFilename[MAX_FILE_NAME_LENGTH];
 	sprintf(tempFilename,"%s/%s",filename,PROGRESS_CONFIG_FILENAME);
 	//先打开配置文件
@@ -54,18 +47,18 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
 	{//外部资源
 		FILE *fp = NULL;
-		if((fp = fopen(tempFilename,"r")) == 0) return XFalse; //信息文件读取失败
+		if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
 		//下面开始依次读取数据
 		int flag = 0;
 		char resFilename[MAX_FILE_NAME_LENGTH] = "";
 		//normal
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//没有普通状态是不行的
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressBackGround = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//资源读取失败
@@ -73,14 +66,14 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			return XFalse;
 		}
 		//down
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//没有普通状态是不行的
 			XDELETE(progressBackGround);
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressMove = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//资源读取失败
@@ -89,7 +82,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			return XFalse;
 		}
 		//on
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//没有普通状态是不行的
 			XDELETE(progressBackGround);
@@ -97,7 +90,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressUpon = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//资源读取失败
@@ -108,9 +101,9 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 		}
 		//读取两组数据
 		int l,t,r,b,x,y;
-		fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b);
+		if(fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {fclose(fp);return XFalse;}
 		m_mouseRect.set(l,t,r,b);
-		fscanf(fp,"%d,%d,",&x,&y);
+		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
 		m_fontPosition.set(x,y);
 		//所有数据读取完成
 		fclose(fp);
@@ -123,14 +116,14 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 		char resFilename[MAX_FILE_NAME_LENGTH] = "";
 		//normal
 		int offset = 0;
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//没有普通状态是不行的
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressBackGround = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -139,7 +132,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			return XFalse;
 		}
 		//down
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//没有普通状态是不行的
@@ -147,7 +140,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressMove = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -157,7 +150,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			return XFalse;
 		}
 		//on
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//没有普通状态是不行的
@@ -166,7 +159,7 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((progressUpon = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -178,10 +171,10 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 		}
 		//读取两组数据
 		int l,t,r,b,x,y;
-		sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b);
+		if(sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		m_mouseRect.set(l,t,r,b);
-		sscanf((char *)(p + offset),"%d,%d,",&x,&y);
+		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		m_fontPosition.set(x,y);
 		//所有数据读取完成
@@ -190,24 +183,16 @@ _XBool _XProgressTexture::initEx(const char *filename,_XResourcePosition resours
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XProgressTexture::release()
-{
-	if(!m_isInited) return;
-	XDELETE(progressBackGround);
-	XDELETE(progressMove);
-	XDELETE(progressUpon);
-	m_isInited = XFalse;
-}
 _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 		const _XRect &Area,	//进度条区域的范围
 		const _XProgressTexture &tex,	//控件的贴图
 		_XNumber *font,float captionSize,const _XVector2& textPosition,	//控件的文字
 		int mode)
 {
-	if(m_isInited) return XFalse;
-	if(Area.getHeight() <= 0 || Area.getWidth() <= 0) return XFalse;	//空间必须要有一个响应区间，不然会出现除零错误
-	if(tex.progressMove == NULL) return 0;//按键的普通状态的贴图不能为空，否则直接返回错误
-	if(captionSize < 0) return XFalse;
+	if(m_isInited ||
+		Area.getHeight() <= 0 || Area.getWidth() <= 0 ||	//空间必须要有一个响应区间，不然会出现除零错误
+		tex.progressMove == NULL ||//按键的普通状态的贴图不能为空，否则直接返回错误
+		captionSize < 0) return XFalse;
 	m_mouseRect = Area;
 	m_position = position;
 
@@ -225,7 +210,7 @@ _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 	{
 		m_caption.setACopy(* font);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+		_XObjManger.decreaseAObject(&m_caption);
 #endif
 		m_isShowFont = XTrue;
 	}
@@ -257,7 +242,7 @@ _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 	//初始化显示的精灵
 	m_spriteBackground.init(m_progressBackGround->texture.m_w,m_progressBackGround->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackground);
+	_XObjManger.decreaseAObject(&m_spriteBackground);
 #endif
 	m_spriteBackground.setPosition(m_position);
 	m_spriteBackground.setSize(m_size);
@@ -265,7 +250,7 @@ _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 
 	m_spriteMove.init(m_progressMove->texture.m_w,m_progressMove->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
+	_XObjManger.decreaseAObject(&m_spriteMove);
 #endif
 	m_spriteMove.setPosition(m_position);
 	m_spriteMove.setSize(m_size);
@@ -274,7 +259,7 @@ _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 
 	m_spriteUpon.init(m_progressUpon->texture.m_w,m_progressUpon->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteUpon);
+	_XObjManger.decreaseAObject(&m_spriteUpon);
 #endif
 	m_spriteUpon.setPosition(m_position);
 	m_spriteUpon.setSize(m_size);
@@ -287,215 +272,13 @@ _XBool _XProgress::init(const _XVector2& position,//控件所在的位置
 		m_spriteUpon.setAngle(90);
 	}
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 	//注册这个控件
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_PROGRESS);	//在物件管理器中注册当前物件
+	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-
-	m_isInited = XTrue;
-	return XTrue;
-}
-_XBool _XProgress::initEx(const _XVector2& position,//控件所在的位置
-	const _XProgressTexture &tex,	//控件的贴图
-	_XNumber* font,float captionSize,	//控件的文字
-	int mode)
-{
-	if(m_isInited) return XFalse;
-	if(tex.m_mouseRect.getHeight() <= 0 || tex.m_mouseRect.getWidth() <= 0) return XFalse;	//空间必须要有一个响应区间，不然会出现除零错误
-	if(tex.progressMove == NULL) return XFalse;//按键的普通状态的贴图不能为空，否则直接返回错误
-	if(captionSize < 0) return XFalse;
-	m_mouseRect = tex.m_mouseRect;
-	m_position = position;
-
-	if(mode != 0) m_mode = 1;
-	else m_mode = 0;
-
-	m_progressBackGround = tex.progressBackGround;		
-	m_progressMove = tex.progressMove;				
-	m_progressUpon = tex.progressUpon;		
-	m_withoutTex = XFalse;
-
-	m_nowValue = 0.0f;
-	if(font == NULL) m_isShowFont = 0;
-	else
-	{
-		m_caption.setACopy(* font);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_caption);
-#endif
-		m_isShowFont = 1;
-	}
-	m_size.set(1.0f,1.0f);
-	if(m_mode == 0)
-	{
-		m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-			m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
-	}else
-	{
-		m_nowMouseRect.set(m_position.x - m_mouseRect.top * m_size.y,m_position.y + m_mouseRect.left * m_size.x,
-			m_position.x - m_mouseRect.bottom * m_size.y,m_position.y + m_mouseRect.right * m_size.x);
-	}
-
-	//初始化数字显示的信息
-	m_caption.setNumber("0%");
-	m_caption.setAlignmentMode(NUMBER_ALIGNMENT_MODE_MIDDLE);
-	m_textPosition = tex.m_fontPosition;
-	if(m_mode != 0)
-	{
-		m_caption.setAngle(90);
-		m_caption.setPosition(m_position.x - m_textPosition.y * m_size.y,m_position.y + m_textPosition.x * m_size.x);
-	}else m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-
-	m_textSize.set(captionSize,captionSize);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
-	//初始化显示的精灵
-	m_spriteBackground.init(m_progressBackGround->texture.m_w,m_progressBackGround->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackground);
-#endif
-	m_spriteBackground.setPosition(m_position);
-	m_spriteBackground.setSize(m_size);
-	m_spriteBackground.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_spriteMove.init(m_progressMove->texture.m_w,m_progressMove->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
-#endif
-	m_spriteMove.setPosition(m_position);
-	m_spriteMove.setSize(m_size);
-	m_spriteMove.setIsTransformCenter(POINT_LEFT_TOP);
-	m_spriteMove.setClipRect(m_mouseRect.left,m_mouseRect.top,m_mouseRect.left + 1.0f,m_mouseRect.bottom);
-
-	m_spriteUpon.init(m_progressUpon->texture.m_w,m_progressUpon->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteUpon);
-#endif
-	m_spriteUpon.setPosition(m_position);
-	m_spriteUpon.setSize(m_size);
-	m_spriteUpon.setIsTransformCenter(POINT_LEFT_TOP);
-	if(m_mode != 0)
-	{
-		m_caption.setAngle(90);
-		m_spriteBackground.setAngle(90);
-		m_spriteMove.setAngle(90);
-		m_spriteUpon.setAngle(90);
-	}
-
-	m_isVisiable = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	//注册这个控件
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_PROGRESS);	//在物件管理器中注册当前物件
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-
-	m_isInited = XTrue;
-	return XTrue;
-}
-_XBool _XProgress::initPlus(const char * path,
-		_XNumber* font,float captionSize,	//控件的文字
-		int mode,_XResourcePosition resoursePosition)
-{
-	if(m_isInited) return XFalse;
-	m_resInfo = _XResourceManager::GetInstance().loadResource(path,RESOURCE_TYPE_XPROGRESS_TEX,resoursePosition);
-	if(m_resInfo == NULL) return XFalse;
-	_XProgressTexture * tex = (_XProgressTexture *)m_resInfo->m_pointer;
-	if(tex->m_mouseRect.getHeight() <= 0 || tex->m_mouseRect.getWidth() <= 0) return XFalse;	//空间必须要有一个响应区间，不然会出现除零错误
-	if(tex->progressMove == NULL) return XFalse;//按键的普通状态的贴图不能为空，否则直接返回错误
-	if(captionSize < 0) return XFalse;
-	m_mouseRect = tex->m_mouseRect;
-	m_position.set(0.0f,0.0f);
-
-	if(mode != 0) m_mode = 1;
-	else m_mode = 0;
-
-	m_progressBackGround = tex->progressBackGround;		
-	m_progressMove = tex->progressMove;				
-	m_progressUpon = tex->progressUpon;	
-	m_withoutTex = XFalse;
-
-	m_nowValue = 0.0f;
-	if(font == NULL) m_isShowFont = XFalse;
-	else
-	{
-		m_caption.setACopy(* font);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_caption);
-#endif
-		m_isShowFont = XTrue;
-	}
-	m_size.set(1.0f,1.0f);
-	if(m_mode == 0)
-	{
-		m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-			m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
-	}else
-	{
-		m_nowMouseRect.set(m_position.x - m_mouseRect.top * m_size.y,m_position.y + m_mouseRect.left * m_size.x,
-			m_position.x - m_mouseRect.bottom * m_size.y,m_position.y + m_mouseRect.right * m_size.x);
-	}
-
-	//初始化数字显示的信息
-	m_caption.setNumber("0%");
-	m_caption.setAlignmentMode(NUMBER_ALIGNMENT_MODE_MIDDLE);
-	m_textPosition = tex->m_fontPosition;
-	if(m_mode != 0)
-	{
-		m_caption.setAngle(90);
-		m_caption.setPosition(m_position.x - m_textPosition.y * m_size.y,m_position.y + m_textPosition.x * m_size.x);
-	}else m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-
-	m_textSize.set(captionSize,captionSize);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
-	//初始化显示的精灵
-	m_spriteBackground.init(m_progressBackGround->texture.m_w,m_progressBackGround->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackground);
-#endif
-	m_spriteBackground.setPosition(m_position);
-	m_spriteBackground.setSize(m_size);
-	m_spriteBackground.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_spriteMove.init(m_progressMove->texture.m_w,m_progressMove->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
-#endif
-	m_spriteMove.setPosition(m_position);
-	m_spriteMove.setSize(m_size);
-	m_spriteMove.setIsTransformCenter(POINT_LEFT_TOP);
-	m_spriteMove.setClipRect(m_mouseRect.left,m_mouseRect.top,m_mouseRect.left + 1.0f,m_mouseRect.bottom);
-
-	m_spriteUpon.init(m_progressUpon->texture.m_w,m_progressUpon->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteUpon);
-#endif
-	m_spriteUpon.setPosition(m_position);
-	m_spriteUpon.setSize(m_size);
-	m_spriteUpon.setIsTransformCenter(POINT_LEFT_TOP);
-	if(m_mode != 0)
-	{
-		m_caption.setAngle(90);
-		m_spriteBackground.setAngle(90);
-		m_spriteMove.setAngle(90);
-		m_spriteUpon.setAngle(90);
-	}
-
-	m_isVisiable = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	//注册这个控件
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_PROGRESS);	//在物件管理器中注册当前物件
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
@@ -505,8 +288,8 @@ _XBool _XProgress::initWithoutTex(const _XRect &area,
 	_XNumber* font,float captionSize,	//控件的文字
 	const _XVector2& textPosition,int mode)
 {
-	if(m_isInited) return XFalse;
-	if(captionSize < 0) return XFalse;
+	if(m_isInited ||
+		captionSize < 0) return XFalse;
 	m_mouseRect = area;
 	m_position.set(0.0f,0.0f);
 
@@ -521,7 +304,7 @@ _XBool _XProgress::initWithoutTex(const _XRect &area,
 	{
 		m_caption.setACopy(* font);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+		_XObjManger.decreaseAObject(&m_caption);
 #endif
 		m_isShowFont = XTrue;
 	}
@@ -560,13 +343,13 @@ _XBool _XProgress::initWithoutTex(const _XRect &area,
 //		m_spriteUpon.setAngle(90);
 	}
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 	//注册这个控件
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_PROGRESS);	//在物件管理器中注册当前物件
+	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 
 	m_isInited = XTrue;
@@ -574,7 +357,7 @@ _XBool _XProgress::initWithoutTex(const _XRect &area,
 }
 void _XProgress::setSize(float x,float y)
 {
-	if(x <= 0 && y <= 0) return;
+	if(x <= 0 || y <= 0) return;
 	m_size.set(x,y);
 	if(!m_withoutTex)
 	{
@@ -618,14 +401,16 @@ void _XProgress::setPosition(float x,float y)
 }
 void _XProgress::draw()
 {
-	if(!m_isInited) return ;	//如果没有初始化直接退出
-	if(!m_isVisiable) return;	//如果不可见直接退出
+	if(!m_isInited ||	//如果没有初始化直接退出
+		!m_isVisible) return;	//如果不可见直接退出
 	if(m_withoutTex)
 	{
-		drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
-				_XVector2(m_mouseRect.getWidth() * m_size.x,m_mouseRect.getHeight() * m_size.y),0.5f,0.5f,0.5f);
-		drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
-				_XVector2(m_mouseRect.getWidth() * m_nowValue/100.0f * m_size.x,m_mouseRect.getHeight() * m_size.y),0.85f,0.85f,0.85f);
+		drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			_XVector2(m_mouseRect.getWidth() * m_size.x,m_mouseRect.getHeight() * m_size.y),
+			0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+		drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			_XVector2(m_mouseRect.getWidth() * m_nowValue/100.0f * m_size.x,m_mouseRect.getHeight() * m_size.y),
+			0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
 		if(m_isShowFont) m_caption.draw();	//显示数字
 	}else
 	{
@@ -660,17 +445,14 @@ _XProgress::_XProgress()
 ,m_resInfo(NULL)
 ,m_withoutTex(XFalse)
 {
-}
-_XProgress::~_XProgress()
-{
-	release();
+	m_ctrlType = CTRL_OBJ_PROGRESS;
 }
 void _XProgress::release()
 {
 	if(!m_isInited) return;
-	_XControlManager::GetInstance().decreaseAObject(this);	//注销这个物件
+	_XCtrlManger.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	if(m_resInfo != NULL)
 	{
@@ -688,9 +470,9 @@ _XBool _XProgress::setACopy(const _XProgress &temp)		//建立一个副本
 	m_nowValue = temp.m_nowValue;					//进度条的当前值
 	if(!m_isInited)
 	{//如果没有经过初始化就进行副本的话这里需要注册控件
-		_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_PROGRESS);	//在物件管理器中注册当前物件
+		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+		_XObjManger.addAObject(this);
 #endif
 	}
 	m_isInited = temp.m_isInited;					//进度条是否被初始化
@@ -699,7 +481,7 @@ _XBool _XProgress::setACopy(const _XProgress &temp)		//建立一个副本
 	{
 		if(!m_caption.setACopy(temp.m_caption))	return XFalse;				//进度条的标题
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+		_XObjManger.decreaseAObject(&m_caption);
 #endif
 	}
 	if(m_resInfo != NULL) _XResourceManager::GetInstance().releaseResource(m_resInfo);
@@ -716,9 +498,9 @@ _XBool _XProgress::setACopy(const _XProgress &temp)		//建立一个副本
 	m_spriteUpon.setACopy(temp.m_spriteUpon);			//用于显示上层遮罩的精灵
 	//m_uponPosition = temp.m_uponPosition;			//遮罩相对于背景的位置
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackground);
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteUpon);
+	_XObjManger.decreaseAObject(&m_spriteBackground);
+	_XObjManger.decreaseAObject(&m_spriteMove);
+	_XObjManger.decreaseAObject(&m_spriteUpon);
 #endif
 	m_textPosition = temp.m_textPosition;			//文字显示的位置
 	m_textSize = temp.m_textSize;				//文字的尺寸
@@ -727,20 +509,4 @@ _XBool _XProgress::setACopy(const _XProgress &temp)		//建立一个副本
 	m_isShowFont = temp.m_isShowFont;				//是否显示数字文字
 	m_isACopy = XTrue;
 	return XTrue;
-}
-_XBool _XProgress::isInRect(float x,float y)
-{
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-_XVector2 _XProgress::getBox(int order)
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(!m_isInited) return ret;
-	if(order == 0) ret.set(m_nowMouseRect.left,m_nowMouseRect.top);else
-	if(order == 1) ret.set(m_nowMouseRect.right,m_nowMouseRect.top);else
-	if(order == 2) ret.set(m_nowMouseRect.right,m_nowMouseRect.bottom);else
-	if(order == 3) ret.set(m_nowMouseRect.left,m_nowMouseRect.bottom);
-	return ret;
 }

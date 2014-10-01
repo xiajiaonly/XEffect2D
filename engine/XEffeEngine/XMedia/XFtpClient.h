@@ -23,15 +23,14 @@ private:
 		int ret = recv(m_cmdsocket,m_commandBuff,RECV_BUFF_SIZE,0);
 		if(ret == SOCKET_ERROR || ret == 0) 
 		{
-			printf("Recv error!\n");
+			LogStr("Recv error!");
 			return XFalse;
 		}
 		m_commandBuff[ret] = '\0';
-		printf("%s",m_commandBuff);
+		LogNull("%s",m_commandBuff);
 		if(!getRetCode(m_commandBuff,ret)) return XFalse;
 		return XTrue;
 	}
-
 	_XBool getRetCode(const char *buf,int len)
 	{
 		if(len > 4 && buf[0] >= '0' && buf[0] <= '9'
@@ -46,6 +45,7 @@ private:
 	}
 	_XBool sendCommand(const char * cmd)		//向服务器发送命令
 	{
+		LogNull("%s",cmd);
 		send(m_cmdsocket,cmd,strlen(cmd),0);
 		return recvRetCode();
 	}
@@ -83,7 +83,8 @@ public:
 		if(m_retCode != 230) return XFalse;	//登录成功
 		return XTrue;
 	}
-	_XBool setPort(SOCKET *listenSock);	//设置通讯端口
+	_XBool setPort(SOCKET &listenSock);	//设置通讯端口
+	_XBool setPasv(SOCKET &listenSock);
 	_XBool sendFileList();	//获取文件列表
 	_XBool sendDeleteFile(const char *filename)	//发送删除文件的命令
 	{
@@ -128,8 +129,7 @@ public:
 
 	_XFtpClient()
 		:m_isConnect(XFalse)
-	{
-	}
+	{}
 };
 
 #endif

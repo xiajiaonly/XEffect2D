@@ -6,7 +6,7 @@
 #include "XPressDataMode.h"
 #include "math.h"
 
-void _XPressDataModeS::init(float normalValue,float maxDeformValue,int sensitivity)
+void _XPressDataSingle::init(float normalValue,float maxDeformValue,int sensitivity)
 {
 	m_normalData = normalValue;
 	m_maxDeformData = maxDeformValue;
@@ -18,16 +18,11 @@ void _XPressDataModeS::init(float normalValue,float maxDeformValue,int sensitivi
 	if(m_sensitivity < 0) m_sensitivity = 0;
 	m_nowPressTimer = 0;
 
-	//下面的几个数据使用默认值
-	m_startChangeData = 1.0f;
-	m_minChangeData = 0.01f;
-	m_maxChangeData = 0.1f;
 	//m_isRecover = XTrue;
 
 	m_nowDeformData = m_minChangeData;
 }
-
-void _XPressDataModeS::setPress()
+void _XPressDataSingle::setPress()
 {
 	m_pressState = PRESS_STATE_PRESS;
 	m_nowPressTimer = 0;
@@ -47,8 +42,7 @@ void _XPressDataModeS::setPress()
 		}
 	}
 }
-
-void _XPressDataModeS::move(int stepTime)
+void _XPressDataSingle::move(int stepTime)
 {
 	if(m_pressState == PRESS_STATE_PRESS)
 	{//处于按下状态
@@ -97,8 +91,8 @@ void _XPressDataModeS::move(int stepTime)
 		}
 	}
 }
-
-void _XPressDataModeD::init(float normalValue,float maxDeformValue,float minDeformValue,int sensitivity,char canRecover)
+void _XPressDataDouble::init(float normalValue,float maxDeformValue,
+							float minDeformValue,int sensitivity,_XPressDataRecoverMode recoverMode)
 {
 	m_normalData = normalValue;
 	if(maxDeformValue > minDeformValue)
@@ -118,16 +112,12 @@ void _XPressDataModeD::init(float normalValue,float maxDeformValue,float minDefo
 	if(m_sensitivity < 0) m_sensitivity = 0;
 	m_nowPressTimer = 0;
 
-	m_startChangeData = 1.0f;
-	m_minChangeData = 0.01f;	//这个数值需要可变
-	m_maxChangeData = 0.1f;		//这个数值需要可变
 	m_isRecover = XTrue;
-	m_canRecover = canRecover;
+	m_recoverMode = recoverMode;
 
 	m_nowDeformData = m_minChangeData;
 }
-
-void _XPressDataModeD::setPressMax()
+void _XPressDataDouble::setPressMax()
 {
 	if(m_pressMinState == PRESS_STATE_NORMAL && 
 		m_pressMaxState == PRESS_STATE_NORMAL) 
@@ -142,8 +132,7 @@ void _XPressDataModeD::setPressMax()
 	}
 	m_pressMaxState = PRESS_STATE_PRESS;
 }
-
-void _XPressDataModeD::setPressMin()
+void _XPressDataDouble::setPressMin()
 {
 	if(m_pressMinState == PRESS_STATE_NORMAL && 
 		m_pressMaxState == PRESS_STATE_NORMAL) 
@@ -158,8 +147,7 @@ void _XPressDataModeD::setPressMin()
 	}
 	m_pressMinState = PRESS_STATE_PRESS;
 }
-
-void _XPressDataModeD::move(int stepTime)
+void _XPressDataDouble::move(int stepTime)
 {
 	if(m_pressMaxState == PRESS_STATE_PRESS && 
 		m_pressMinState == PRESS_STATE_PRESS)	return;//同时按下不做反应
@@ -212,7 +200,7 @@ void _XPressDataModeD::move(int stepTime)
 			m_nowDeformData -= 0.01f * stepTime;
 			if(m_nowDeformData < m_minChangeData) m_minChangeData = m_minChangeData;
 		}
-		if(m_canRecover == 1 && !m_isRecover)
+		if(m_recoverMode == MODE_SLOW_RECOVER && !m_isRecover)
 		{//当前数值缓慢恢复
 			if(abs(m_normalData - m_nowData) < 1.0f)
 			{
@@ -223,7 +211,7 @@ void _XPressDataModeD::move(int stepTime)
 				m_nowData = m_nowData + (m_normalData - m_nowData) * 0.01f * stepTime;
 			}
 		}else
-		if(m_canRecover == 2 && !m_isRecover)
+		if(m_recoverMode == MODE_IMM_RECOVER && !m_isRecover)
 		{//立即回复
 			m_nowData = m_normalData;
 			m_isRecover = XTrue;

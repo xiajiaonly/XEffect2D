@@ -9,9 +9,6 @@
 //这是一个基本的多列列表框，只实现了一些基本的功能
 
 #include "XSlider.h"
-#include "XControlBasic.h"
-#include "../XFontUnicode.h"
-#include "../XSprite.h"
 #include "XMouseRightButtonMenu.h"
 #include "XMultiList.h"
 #include "XCheck.h"
@@ -60,18 +57,10 @@ private:
 	_XBool m_withoutTex;	//没有贴图的形式
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 public:
-	_XBool getHaveSelectState(int i)
-	{
-		if(i < 0 || i >= m_tableLineSum) return XFalse;
-		return m_haveSelectFlag[i];
-	}
-	int getTableLineSum()
-	{
-		return m_tableLineSum;
-	}
+	_XBool getHaveSelectState(int i);
+	int getTableLineSum();
 private:
 	//--------------------------------------------------------
-
 	int m_showStartLine;			//显示的是从第几行开始的
 	float m_showStartRow;			//显示的头一列的像素宽度
 	int m_canShowLineSum;			//控件中能显示的行数
@@ -104,14 +93,13 @@ private:
 	void *m_pClass;				//回调函数的参数
 
 public:
-	int getSelectOrder() const	//返回选择操作的行号
-	{
-		return m_selectLineOrder;
-	}
+	int getSelectIndex() const;	//返回选择操作的行号
 	void setCallbackFun(void (* funSelectChange)(void *,int),void (* funCheckStateChange)(void *,int),void *pClass);
 	void clearAllSelect();	//清除所有的选择
 
-	void setTileStr(const char *str,int order);		//设置某个标题的文字
+	int getLineSum() const {return m_tableLineSum;}
+	int getRowSum() const {return m_tableRowSum;}
+	void setTitleStr(const char *str,int order);		//设置某个标题的文字
 	void setBoxStr(const char *str,int line,int row);	//设置某一个单元格的文字
 	_XBool setRowWidth(int temp,int order);		//设置其中一行的宽度
 private:
@@ -134,34 +122,8 @@ private:
 	_XBool *m_check0State;		//是否可见的状态
 	_XBool *m_check1State;		//是否可编辑的状态
 public:
-	_XBool getCheckState(int order,int lineOrder)
-	{
-		if(!m_isInited) return XFalse;
-	//	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return XFalse;
-	//	if(order == 0) return m_check0[lineOrder].getState();
-	//	else return m_check1[lineOrder].getState();
-		if(lineOrder < 0 || lineOrder >= m_tableLineSum) return XFalse;
-		if(order == 0) return m_check0State[lineOrder];
-		else return m_check1State[lineOrder];
-	}
-	void setCheckState(int order,int lineOrder,_XBool state)
-	{
-		if(!m_isInited) return;
-	//	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return;
-	//	if(order == 0) m_check0[lineOrder].setState(state);
-	//	else m_check1[lineOrder].setState(state);
-		if(lineOrder < 0 || lineOrder >= m_tableLineSum) return;
-		if(order == 0) m_check0State[lineOrder] = state;
-		else m_check1State[lineOrder] = state;
-		//下面更新列表框的选择状态的信息
-		if(lineOrder >= m_showStartLine && lineOrder < min(m_showStartLine + m_canShowLineSum,m_tableLineSum))
-		{
-			if(m_check0State[lineOrder]) m_check0[lineOrder - m_showStartLine].setState(XTrue);
-			else m_check0[lineOrder - m_showStartLine].setState(XFalse);
-			if(m_check1State[lineOrder]) m_check1[lineOrder - m_showStartLine].setState(XTrue);
-			else m_check1[lineOrder - m_showStartLine].setState(XFalse);
-		}
-	}
+	_XBool getCheckState(int order,int lineOrder);
+	void setCheckState(int order,int lineOrder,_XBool state);
 
 	_XBool init(const _XVector2& position,		//空间所在的位置
 		const _XRect& Area,					//控件的实际显示区域
@@ -175,17 +137,17 @@ public:
 		//const _XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
 		const _XSlider &vSlider,	//垂直滑动条
 		const _XSlider &hSlider);	//水平滑动条
-	_XBool initEx(const _XVector2& position,		//空间所在的位置
-		const _XMultiListTexture &tex,		//控件的贴图
-		const _XCheckTexture &checktex0,		//单选框的贴图
-		const _XCheckTexture &checktex1,		//单选框的贴图
-		const _XFontUnicode &font,			//控件中使用的字体
-		float strSize,						//字体的缩放大小
-		int rowSum,					//控件中的列数
-		int lineSum,				//控件中的行数
+	_XBool initEx(const _XVector2& position,		//上面接口的简化版本
+		const _XMultiListTexture &tex,		
+		const _XCheckTexture &checktex0,		
+		const _XCheckTexture &checktex1,		
+		const _XFontUnicode &font,			
+		float strSize,						
+		int rowSum,				
+		int lineSum,			
 		//const _XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
-		const _XSlider &vSlider,	//垂直滑动条
-		const _XSlider &hSlider);	//水平滑动条
+		const _XSlider &vSlider,	
+		const _XSlider &hSlider);
 	_XBool initPlus(const char *path,		//单选框的贴图
 		const _XFontUnicode &font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
@@ -198,14 +160,29 @@ public:
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum);
+	_XBool initWithoutTex(const _XRect& area,
+		int rowSum,					//控件中的列数
+		int lineSum)
+	{
+		return initWithoutTex(area,XEE::systemFont,1.0f,rowSum,lineSum);
+	}
+	_XBool initWithoutTex(const _XVector2& pixelSize,
+		int rowSum,					//控件中的列数
+		int lineSum)
+	{
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			XEE::systemFont,1.0f,rowSum,lineSum);
+	}
 protected:
 	void draw();					//描绘函数
-	void drawUp(){};						//do nothing
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);					//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y) {return XTrue;}
+	_XBool canLostFocus(float x,float y);
+	void setLostFocus();
 public:
 	_XBool exportData(const char *fileName = NULL);			//数据导出
 	_XBool importData(const char *fileName = NULL);			//数据导入
@@ -224,48 +201,15 @@ public:
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);			//设置尺寸
 
-	void setTextColor(const _XFColor& color) 
-	{
-		if(!m_isInited) return;
-		m_textColor = color;
-		m_caption.setColor(m_textColor);
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
-	void setColor(const _XFColor& color) 
-	{
-		if(!m_isInited) return;
-		m_color = color;
-		m_spriteBackGround.setColor(m_color);
-		m_spriteSelect.setColor(m_color);
-		m_spriteMove.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		updateChildColor();
-	}	//设置按钮的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		if(!m_isInited) return;
-		m_color.setColor(r,g,b,a);
-		m_spriteBackGround.setColor(m_color);
-		m_spriteSelect.setColor(m_color);
-		m_spriteMove.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		updateChildColor();
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		if(!m_isInited) return;
-		m_color.setA(a);
-		m_spriteBackGround.setColor(m_color);
-		m_spriteSelect.setColor(m_color);
-		m_spriteMove.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		updateChildAlpha();
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 
 	_XMultiListBasic();
-	~_XMultiListBasic();
+	~_XMultiListBasic(){release();}
 	void release();
 private:
 	void releaseTempMemory();	//释放不完整的内存空间
@@ -280,48 +224,11 @@ public:
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XMultiListBasic(const _XMultiListBasic &temp);
 	_XMultiListBasic& operator = (const _XMultiListBasic& temp);
 };
-
-inline _XBool _XMultiListBasic::addALine()					//在末尾加入一行
-{
-	return setLineSum(m_tableLineSum + 1);
-}
-inline _XBool _XMultiListBasic::addARow()					//在末尾加入一列
-{
-	return setRowSum(m_tableRowSum + 1);
-}
-inline _XBool _XMultiListBasic::deleteNowSelectLine()			//删除选取的一行
-{
-	if(!m_isInited) return XFalse;
-	if(!m_haveSelect) return XFalse;
-	return deleteLine(m_selectLineOrder);
-}
-inline _XBool _XMultiListBasic::deleteSelectLines()
-{
-	if(!m_isInited) return XFalse;
-	for(int i = 0;i < m_tableLineSum;++ i)
-	{
-		if(m_haveSelectFlag[i])
-		{
-			deleteLine(i);
-			-- i;
-		}
-	}
-	m_haveSelect = XFalse;	//清除选择的标记
-	m_selectLineOrder = 0;
-	return XTrue;
-}
-inline _XBool _XMultiListBasic::moveUpLine(int order)		//将order行上移
-{
-	return moveDownLine(order - 1);
-}
-inline _XBool _XMultiListBasic::moveLeftRow(int order)		//将order列左移
-{
-	return moveRightRow(order - 1);
-}
+#include "XMultiListBasic.inl"
 
 #endif

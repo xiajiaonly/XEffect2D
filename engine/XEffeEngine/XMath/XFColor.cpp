@@ -20,7 +20,7 @@ void _XFColor::setColor(float r,float g,float b,float a)
     fB = b;
     fA = a;
 }
-_XFColor colorMix(_XFColor &color1,_XFColor &color2,float rate1,float rate2)
+_XFColor colorMix(const _XFColor &color1,const _XFColor &color2,float rate1,float rate2)
 {
 	float w1 = max(color1.fR,max(color1.fG,color1.fB));
 	float w2 = max(color2.fR,max(color2.fG,color2.fB));
@@ -40,7 +40,7 @@ _XFColor colorMix(_XFColor &color1,_XFColor &color2,float rate1,float rate2)
 	}
 	return ret;
 }
-_XFColor colorMix(_XFColor &color1,_XFColor &color2,_XFColor &color3,_XFColor &color4,
+_XFColor colorMix(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4)
 {
 	float w1 = max(color1.fR,max(color1.fG,color1.fB));
@@ -63,7 +63,7 @@ _XFColor colorMix(_XFColor &color1,_XFColor &color2,_XFColor &color3,_XFColor &c
 	}
 	return ret;
 }
-_XFColor colorMixEx(_XFColor &color1,_XFColor &color2,_XFColor &color3,_XFColor &color4,
+_XFColor colorMixEx(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4)
 {
 	_XFColor ret;

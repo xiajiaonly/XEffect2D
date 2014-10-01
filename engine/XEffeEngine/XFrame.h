@@ -25,7 +25,7 @@
 #include "XBasicOpenGL.h"
 #include "XShaderGLSL.h"
 
-#define MAX_FRAME_SUM 65		//序列帧最多只能256帧
+#define MAX_FRAME_SUM (65)		//序列帧最多只能256帧
 
 class _XFrame
 {
@@ -55,7 +55,7 @@ private:
 	float colorGreen;		//绿色
 	float colorBlue;		//蓝色
 	_XBool m_isOverturn;		//是否x方向左右翻转
-	_XBool m_isVisiable;
+	_XBool m_isVisible;
 
 	_XTexture *m_texnum;						//序列帧图片的指针
 
@@ -89,9 +89,9 @@ private:
 	_XVector2 *m_keyFramePosition;	//关键帧偏移坐标
 	//------------------------------------
 public:
-	void setVisiable() {m_isVisiable = XTrue;}					//设置物件可见
-	void disVisiable() {m_isVisiable = XFalse;}						//设置物件不可见
-	_XBool getVisiable() const {return m_isVisiable;}					//获取物件是否可见的状态 
+	void setVisible() {m_isVisible = XTrue;}					//设置物件可见
+	void disVisible() {m_isVisible = XFalse;}						//设置物件不可见
+	_XBool getVisible() const {return m_isVisible;}					//获取物件是否可见的状态 
 
 	void setAttribute(const _XVector2& position,			//序列帧播放的位置
 		_XBool loop,				//序列帧是否循环

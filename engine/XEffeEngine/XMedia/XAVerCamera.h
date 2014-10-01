@@ -53,12 +53,8 @@ public:
 		,m_isUp2Down(XFalse)
 		,m_isLeft2Right(XFalse)
 		,m_isNewFrame(XFalse)
-	{
-	}
-	~_XAVerCamera()
-	{
-		release();
-	}
+	{}
+	~_XAVerCamera(){release();}
 	void release();
 };
 

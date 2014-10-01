@@ -23,4 +23,6 @@ public:
 	void release();				//TODO:程序结束时的资源释放
 };
 
+#define _GGameMain _GGame::GetInstance()
+
 #endif

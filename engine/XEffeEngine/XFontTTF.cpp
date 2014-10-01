@@ -127,7 +127,7 @@ int _XFontTTF::getTTFFileOrder(const char * filename,int ptsize)
 	{
 		if(m_fontInfo[i].isEnable)
 		{
-			if(ptsize == m_fontInfo[i].fontSize && fileNameCompare(filename,m_fontInfo[i].filename) != 0) return i;
+			if(ptsize == m_fontInfo[i].fontSize && fileNameCompare(filename,m_fontInfo[i].filename)) return i;
 			++ sum;
 			if(sum >= MAX_TTF_FONT_FILE_SUM) return -1;
 		}
@@ -159,9 +159,22 @@ int _XFontTTF::loadTTFFile(const char * filename,int ptsize,_XResourcePosition r
 				XDELETE_ARRAY(p);
 			}else
 			{//从外部读取资源
-				m_fontInfo[i].font = TTF_OpenFont(filename, ptsize);
+				char * tmp = ANSIToUTF8(filename);
+				m_fontInfo[i].font = TTF_OpenFont(tmp, ptsize);
+				XDELETE_ARRAY(tmp);
 			}
-			if(m_fontInfo[i].font == NULL) return -1;
+			if(m_fontInfo[i].font == NULL)
+			{//如果字体文件加载失败的话，这里尝试从系统字体目录中加载字体文件
+				LogStr("字体文件加载失败,下面尝试从系统字体目录下加载该字体!");
+				std::string tmpSysFontPath = getWindowsSysFontPath();
+				tmpSysFontPath += getFilenameFormPath(filename);
+				m_fontInfo[i].font = TTF_OpenFont(ANSI2UTF8(tmpSysFontPath.c_str()).c_str(), ptsize);
+				if(m_fontInfo[i].font == NULL)
+				{
+					LogNull("%s :字体文件加载失败!",tmpSysFontPath.c_str());
+					return -1;
+				}
+			}
 			m_fontInfo[i].isEnable = XTrue;
 			m_fontInfo[i].fontSize = ptsize;
 			m_fontInfo[i].setType(m_fontInfo[i].type);
@@ -176,7 +189,7 @@ int _XFontTTF::loadTTFFile(const char * filename,int ptsize,_XResourcePosition r
 unsigned int _XFontTTF::getTexture(int fontOrder,const char * str,_XVector2& size)
 {
 	if(fontOrder < 0 || fontOrder >= MAX_TTF_FONT_FILE_SUM) return 0;
-	if(m_fontInfo[fontOrder].isEnable == 0) return 0;
+	if(!m_fontInfo[fontOrder].isEnable) return 0;
 	SDL_Surface *surface = getSurface(fontOrder,str);
 	if(surface == NULL) return 0;
 	GLuint ret = loadTextureFormSDL(surface,size);
@@ -376,23 +389,6 @@ _XBool _XFontTTF::getTextureFont(int fontOrder,unsigned int &tex,_XVector2 &layo
 	return XTrue;
 }
 #include "XFontUnicode.h"
-int getStrLen(const char * p)	//获得字符串的表意字符长度
-{
-	int len = 0;
-	int length = strlen(p);
-	for(int i = 0;i < length;++ i)
-	{
-		if(p[i] < 0) 
-		{
-			++ len;
-			++ i;
-		}else
-		{
-			++ len;
-		}
-	}
-	return len;
-}
 _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& texSum,_XVector2 &layout,_XBool withBlackOutLine)
 {
 	if(fontOrder < 0 || fontOrder >= MAX_TTF_FONT_FILE_SUM) return XFalse;
@@ -404,14 +400,36 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 	int hByC = (y << 1);
 	int w = 1024;
 	int h = 1024;
+#if !WITH_FULL_ALL_CHINESE
 	int len = getStrLen(TEXT_FONT_UNICODE_MODE);
+#else
+	int len = getStrLen(TEXT_FONT_UNICODE_MODE0);
+	len += getStrLen(TEXT_FONT_UNICODE_MODE1);
+	len += getStrLen(TEXT_FONT_UNICODE_MODE2);
+	len += getStrLen(TEXT_FONT_UNICODE_MODE3);
+#endif
 	texSum = len / (x * y);
 	if(texSum * x * y < len) ++ texSum;
 	//扩展这个字符串，使得可以便于使用
+#if !WITH_FULL_ALL_CHINESE
 	int length = strlen(TEXT_FONT_UNICODE_MODE);
+#else
+	int length = strlen(TEXT_FONT_UNICODE_MODE0);
+	length += strlen(TEXT_FONT_UNICODE_MODE1);
+	length += strlen(TEXT_FONT_UNICODE_MODE2);
+	length += strlen(TEXT_FONT_UNICODE_MODE3);
+#endif
 	char *str = createArrayMem<char>(length + 128);
 	if(str == NULL) return XFalse;
+#if !WITH_FULL_ALL_CHINESE
 	char tempStr[] = TEXT_FONT_UNICODE_MODE;
+#else
+	std::string tmp = TEXT_FONT_UNICODE_MODE0;
+	tmp += TEXT_FONT_UNICODE_MODE1;
+	tmp += TEXT_FONT_UNICODE_MODE2;
+	tmp += TEXT_FONT_UNICODE_MODE3;
+	const char *tempStr = tmp.c_str();
+#endif
 	int j = 0;
 	for(int i = 0;i < length;)
 	{
@@ -426,15 +444,24 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 			str[j] = tempStr[i];
 			str[j + 1] = ' ';
 			j += 2;
-			i ++;
+			++ i;
 		}
 	}
 	str[j] = '\0';
 	str[j + 1] = '\0';
 	//下面依次建立贴图
-	char pStr[] = TEXT_FONT_UNICODE_MODE;
-	char *pStr1;
 	int maxLen = strlen(str);
+#if !WITH_FULL_ALL_CHINESE
+	char pStr[] = TEXT_FONT_UNICODE_MODE;
+#else
+	char *pStr = createArrayMem<char>(maxLen);
+	if(pStr == NULL) 
+	{
+		XDELETE_ARRAY(str);
+		return XFalse;
+	}
+#endif
+	char *pStr1;
 	for(int i = 0;i < texSum;++ i)
 	{//建立真实尺寸的贴图
 		SDL_Surface *image = SDL_CreateRGBSurface(
@@ -446,7 +473,14 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 				0xFF000000,0x00FF0000,0x0000FF00,0x000000FF
 #endif
 				   );
-		if(image == NULL) return XFalse;
+		if(image == NULL)
+		{
+			XDELETE_ARRAY(str);
+#if WITH_FULL_ALL_CHINESE
+			XDELETE_ARRAY(pStr);
+#endif
+			return XFalse;
+		}
 		//然后使用贴图
 		for(j = 0;j < y;++ j)
 		{
@@ -473,9 +507,17 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 					pStr[(wByC) - removeSum] = '\0';
 					pStr[(wByC) - removeSum + 1] = '\0';
 				}
-				pStr1 = localeToUTF8(pStr);
+				pStr1 = ANSIToUTF8(pStr);
 				SDL_Surface * temp = getSurface(fontOrder,pStr1);
-				if(temp == NULL) return XFalse;
+				XDELETE_ARRAY(pStr1);
+				if(temp == NULL)
+				{
+					XDELETE_ARRAY(str);
+#if WITH_FULL_ALL_CHINESE
+					XDELETE_ARRAY(pStr);
+#endif
+					return XFalse;
+				}
 				//if(withBlackOutLine)
 				//{
 				//	unsigned char * p = (unsigned char *)temp->pixels;
@@ -537,9 +579,17 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 					pStr[(wByC) - removeSum] = '\0';
 					pStr[(wByC) - removeSum + 1] = '\0';
 				}
-				pStr1 = localeToUTF8(pStr);
+				pStr1 = ANSIToUTF8(pStr);
 				SDL_Surface * temp = getSurface(fontOrder,pStr1);
-				if(temp == NULL) return XFalse;
+				XDELETE_ARRAY(pStr1);
+				if(temp == NULL)
+				{
+					XDELETE_ARRAY(str);
+#if WITH_FULL_ALL_CHINESE
+					XDELETE_ARRAY(pStr);
+#endif
+					return XFalse;
+				}
 				//粘贴
 				//if(withBlackOutLine)
 				//{
@@ -586,14 +636,21 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 		{//增加黑色的外框,存在结果和源互相影响的问题
 			unsigned char * p = (unsigned char *)image->pixels;
 			unsigned char * px = createArrayMem<unsigned char>(w * h * 4);
-			if(px == NULL) return XFalse;
+			if(px == NULL) 
+			{
+				XDELETE_ARRAY(str);
+#if WITH_FULL_ALL_CHINESE
+				XDELETE_ARRAY(pStr);
+#endif
+				return XFalse;
+			}
 			memcpy(px,p,w * h * 4);
 			int index = 0;
 			int sum,a;
 			int tempW = w << 2;
 			for(int th = 0;th < h;++ th)
 			{
-				index = th * w * 4;
+				index = th * tempW;
 				for(int tw = 0;tw < w;++ tw,index += 4)
 				{
 					if(px[index + 3] < 127)
@@ -619,7 +676,7 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 							if(tw < w - 1 && th < h - 1){a += px[index + 4 + tempW + 3];++sum;}
 							a = a / sum;
 							if(a > 127) a = 127;
-							p[index + 3] = a * 2;	//目前较为理想的值
+							p[index + 3] = a << 1;	//目前较为理想的值
 							//p[index + 3] = 255;
 							p[index + 0] = 0;
 							p[index + 1] = 0;
@@ -648,5 +705,8 @@ _XBool _XFontTTF::getTextureFontUnicode(int fontOrder,unsigned int *tex,int& tex
 	}
 	layout.set(x,y);
 	XDELETE_ARRAY(str);
+#if WITH_FULL_ALL_CHINESE
+	XDELETE_ARRAY(pStr);
+#endif
 	return XTrue;
 }

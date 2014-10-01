@@ -57,6 +57,7 @@ public:
 	float getA() const;
 	void randColor();
 	float limit() const {return 1.0f;}
+	_XFColor anti(){return _XFColor(1.0f - fR,1.0f - fG,1.0f - fB,fA);}
 	static const _XFColor white, gray, black, red, green, blue, cyan, magenta,
         yellow,aliceBlue,antiqueWhite,aqua,aquamarine,azure,beige,bisque,blanchedAlmond,
         blueViolet,brown,burlyWood,cadetBlue,chartreuse,chocolate,coral,cornflowerBlue,cornsilk,
@@ -88,12 +89,12 @@ inline _XFColor getInterpolationColor(const _XFColor &color1,const _XFColor &col
 		color1.fA + (color2.fA - color1.fA) * rate);
 }
 //两种颜色按比例混合的计算公式：rate1 + rate = 1
-extern _XFColor colorMix(_XFColor &color1,_XFColor &color2,float rate1,float rate2);
+extern _XFColor colorMix(const _XFColor &color1,const _XFColor &color2,float rate1,float rate2);
 //四种颜色按比例混合的计算公式
-extern _XFColor colorMix(_XFColor &color1,_XFColor &color2,_XFColor &color3,_XFColor &color4,
+extern _XFColor colorMix(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4);
 //四种颜色混合，不单独计算明度
-extern _XFColor colorMixEx(_XFColor &color1,_XFColor &color2,_XFColor &color3,_XFColor &color4,
+extern _XFColor colorMixEx(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4);
 //多种颜色混合，目前尚未实现
 extern _XFColor colorMix(const _XFColor *color,const float *rate,int mixSum);	//需要注意参数的匹配问题

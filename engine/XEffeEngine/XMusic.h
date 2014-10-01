@@ -85,7 +85,7 @@ inline _XBool _XMusic::playMusic(XMusicHandle musicHandle,int loop)
 		|| m_music[musicHandle] == NULL) return XFalse;
 	if(_XSoundHandle.playMusic(m_music[musicHandle],loop) == -1)
 	{
-		AddLogInfoStr("Sound play error!\n");
+		LogStr("Sound play error!");
 		return XFalse;
 	}
 	return XTrue;

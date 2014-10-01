@@ -7,6 +7,8 @@
 #include "stdlib.h"
 #include "glew.h"
 #include "XBasicOpenGL.h"
+#include "XMath/XVector2.h"
+#include "XMath/XVector3.h"
 
 void _XShaderDataInfo::updateData()	//更新数据
 {
@@ -43,29 +45,54 @@ void _XShaderDataInfo::updateData()	//更新数据
 	case DATA_TYPE_4FLOAT_MATRIX:
 		glUniformMatrix4fv(m_handle,m_size,GL_FALSE,(float *)(m_p));
 		break;
+	case DATA_TYPE_2INT:
+		glUniform2i(m_handle,((_XVector2 *)m_p)->x,((_XVector2 *)m_p)->y);
+		break;
+	case DATA_TYPE_2FLOAT:
+		glUniform2f(m_handle,((_XVector2 *)m_p)->x,((_XVector2 *)m_p)->y);
+		break;
+	case DATA_TYPE_3INT:
+		glUniform3i(m_handle,((_XVector3 *)m_p)->x,((_XVector3 *)m_p)->y,((_XVector3 *)m_p)->z);
+		break;
+	case DATA_TYPE_3FLOAT:
+		glUniform3f(m_handle,((_XVector3 *)m_p)->x,((_XVector3 *)m_p)->y,((_XVector3 *)m_p)->z);
+		break;
 	}
 }
-_XBool _XShaderGLSL::init(const char* vertFile,const char* fragFile,_XResourcePosition resoursePosition)
+_XBool _XShaderGLSL::init(const char* vertFile,const char* fragFile,_XResourcePosition resoursePosition,const char* geomFile)
 {
 	if(m_isInited) return XTrue;
-	if(setShader(vertFile,fragFile,m_shaderHandle,resoursePosition) == 0) return XFalse;
+	if(!setShader(vertFile,fragFile,geomFile,m_shaderHandle,resoursePosition)) return XFalse;
 	m_dataSum = 0;
 	m_texSum = 0;
 	m_UBOSum = 0;
 	m_isInited = XTrue;
 	return XTrue;
 }
+void _XShaderGLSL::setGeometryInfo(unsigned int inType,unsigned int outType,int outSum)
+{
+	if(m_shaderHandle.shaderHandle == 0) m_shaderHandle.shaderHandle = glCreateProgram();
+	glProgramParameteriEXT(m_shaderHandle.shaderHandle,GL_GEOMETRY_INPUT_TYPE_EXT,inType);
+	glProgramParameteriEXT(m_shaderHandle.shaderHandle,GL_GEOMETRY_OUTPUT_TYPE_EXT,outType);
+	glProgramParameteriEXT(m_shaderHandle.shaderHandle,GL_GEOMETRY_VERTICES_OUT_EXT,outSum);
+}
+int getGeometryMaxOutputCount()
+{
+	int temp = 0;
+	glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES_EXT, &temp);
+	return temp;
+}
 //链接数据
 _XBool _XShaderGLSL::connectData(const char *name,_XShaderDataType type,int size,void *p)
 {
-	if(size < 0) return XFalse;
-	if(p == NULL) return XFalse;
-	if(name == NULL) return XFalse;
-	if(m_isInited == 0) return XFalse;
-	if(m_dataSum >= MAX_SHADER_GLSL_DATA_SUM - 1) return XFalse;
+	if(size < 0 ||
+		p == NULL ||
+		name == NULL ||
+		!m_isInited ||
+		m_dataSum >= MAX_SHADER_GLSL_DATA_SUM - 1) return XFalse;
 //	strcpy(m_dataInfo[m_dataSum].m_name,name);
-//	m_dataInfo[m_dataSum].m_handle = glGetUniformLocation(m_shaderHandle,name);
-	m_dataInfo[m_dataSum].m_handle = glGetUniformLocation(m_shaderHandle,name);
+//	m_dataInfo[m_dataSum].m_handle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
+	m_dataInfo[m_dataSum].m_handle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
 	m_dataInfo[m_dataSum].m_type = type;
 	m_dataInfo[m_dataSum].m_p = p;
 	m_dataInfo[m_dataSum].m_size = size;
@@ -77,9 +104,9 @@ _XBool _XShaderGLSL::connectTexture(const char *name,unsigned int * tex,int type
 {
 	if(name == NULL) return XFalse;
 	if(m_texSum != 0 && tex == NULL) return XFalse;
-	//if(m_texSum >= MAX_SHADER_GLSL_DATA_SUM - 1) return 0;
+	//if(m_texSum >= MAX_SHADER_GLSL_DATA_SUM - 1) return XFalse;
 	if(m_texSum >= 32 - 1) return XFalse;
-	m_texHandle[m_texSum] = glGetUniformLocation(m_shaderHandle,name);
+	m_texHandle[m_texSum] = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
 	//glUniform1i(handle,m_texSum);
 	m_texture[m_texSum] = tex;
 	m_texType[m_texSum] = type;
@@ -90,7 +117,7 @@ _XBool _XShaderGLSL::connectUBO(const char *uboName,_XUBO *ubo)
 {
 	if(uboName == NULL || ubo == NULL) return XFalse;
 	if(m_UBOSum >= MAX_SHADER_GLSL_DATA_SUM - 1) return XFalse;
-	m_UBOInfo[m_UBOSum].m_handle = glGetUniformBlockIndex(m_shaderHandle,uboName);
+	m_UBOInfo[m_UBOSum].m_handle = glGetUniformBlockIndex(m_shaderHandle.shaderHandle,uboName);
 	m_UBOInfo[m_UBOSum].m_pUBO = ubo;
 	++ m_UBOSum;
 	return XTrue;
@@ -98,20 +125,20 @@ _XBool _XShaderGLSL::connectUBO(const char *uboName,_XUBO *ubo)
 _XBool _XShaderGLSL::getUBOInfo(_XShaderUBOData &uboData,int valueSum,const char *uboName,const char **valueNames)	//连接UBO
 {
 	if(valueSum <= 0 || valueSum >= MAX_SHADER_GLSL_DATA_SUM) return XFalse;
-	uboData.m_handle = glGetUniformBlockIndex(m_shaderHandle,uboName);  //获取结构的编号 
+	uboData.m_handle = glGetUniformBlockIndex(m_shaderHandle.shaderHandle,uboName);  //获取结构的编号 
 	if(GL_INVALID_INDEX == uboData.m_handle) return XFalse;
-	glGetActiveUniformBlockiv(m_shaderHandle,  
+	glGetActiveUniformBlockiv(m_shaderHandle.shaderHandle,  
 		                        uboData.m_handle,  
 		                        GL_UNIFORM_BLOCK_DATA_SIZE,  
 								&uboData.m_size);					//获取结构的尺寸
-	glGetUniformIndices(m_shaderHandle,valueSum,valueNames,uboData.m_index);  //获得每个变量的标签
-	glGetActiveUniformsiv(m_shaderHandle,valueSum,uboData.m_index,GL_UNIFORM_OFFSET,uboData.m_offset);	//获取每个变量的偏移
+	glGetUniformIndices(m_shaderHandle.shaderHandle,valueSum,valueNames,uboData.m_index);  //获得每个变量的标签
+	glGetActiveUniformsiv(m_shaderHandle.shaderHandle,valueSum,uboData.m_index,GL_UNIFORM_OFFSET,uboData.m_offset);	//获取每个变量的偏移
 	return XTrue;
 }
 void _XShaderGLSL::useShader(bool withTex0)	//使用shader
 {
 	if(!m_isInited) return;
-	glUseProgram(m_shaderHandle);
+	glUseProgram(m_shaderHandle.shaderHandle);
 	//glUseProgramObjectARB(m_shaderHandle);
 	//下面更新数据
 	for(int i = 0;i < m_dataSum;++ i)
@@ -148,7 +175,7 @@ void _XShaderGLSL::useShader(bool withTex0)	//使用shader
 void _XShaderGLSL::useShaderEx(unsigned int tex0,int type)
 {
 	if(!m_isInited) return;
-	glUseProgram(m_shaderHandle);
+	glUseProgram(m_shaderHandle.shaderHandle);
 	//glUseProgramObjectARB(m_shaderHandle);
 	//下面更新数据
 	for(int i = 0;i < m_dataSum;++ i)
@@ -203,6 +230,30 @@ void _XShaderGLSL::disShader()
 		}
 		glActiveTexture(GL_TEXTURE0);
 	}
+}
+void _XShaderGLSL::release()
+{
+	if(m_shaderHandle.shaderHandle == 0) return;
+	if(m_shaderHandle.shaderV != 0)
+	{
+		glDetachShader(m_shaderHandle.shaderHandle,m_shaderHandle.shaderV);
+		glDeleteShader(m_shaderHandle.shaderV);
+		m_shaderHandle.shaderV = 0;
+	}
+	if(m_shaderHandle.shaderF != 0)
+	{
+		glDetachShader(m_shaderHandle.shaderHandle,m_shaderHandle.shaderF);
+		glDeleteShader(m_shaderHandle.shaderF);
+		m_shaderHandle.shaderF = 0;
+	}
+	if(m_shaderHandle.shaderG != 0)
+	{
+		glDetachShader(m_shaderHandle.shaderHandle,m_shaderHandle.shaderG);
+		glDeleteShader(m_shaderHandle.shaderG);
+		m_shaderHandle.shaderG = 0;
+	}
+	glDeleteProgram(m_shaderHandle.shaderHandle);
+	m_shaderHandle.shaderHandle = 0;
 }
 _XBool _XUBO::init(int size,const void * p)
 {
@@ -292,7 +343,7 @@ _XBool _XPBO::getPixel(unsigned char * buff,int target)
 	switch(m_colorType)
 	{
 	case COLOR_RGBA:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_RGB:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_UNSIGNED_BYTE,0);break;
+	case COLOR_RGB:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGB,GL_UNSIGNED_BYTE,0);break;
 	case COLOR_GRAY:glReadPixels(m_px,m_py,m_wx,m_wy,GL_LUMINANCE,GL_UNSIGNED_BYTE,0);break;
 	case COLOR_RGBA_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_FLOAT,0);break;
 	case COLOR_GRAY_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_LUMINANCE,GL_FLOAT,0);break;
@@ -384,7 +435,7 @@ _XBool _XVBO::init(int size,const float *v,const float *t,const float *n,const f
 	{
 		glGenBuffersARB(1,&m_i);
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
-		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * 3 * sizeof(int),i,GL_STATIC_DRAW_ARB);
+		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * sizeof(int),i,GL_STATIC_DRAW_ARB);
 	}
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 
@@ -510,15 +561,15 @@ _XBool _XVBO::updateDate(int size,const float *v,const float *t,const float *n,c
 	if(m_withI && i != NULL)
 	{
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
-		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * 3 * sizeof(float),c,GL_STATIC_DRAW_ARB);
+		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * sizeof(float),c,GL_STATIC_DRAW_ARB);
 	}
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 	return XTrue;
 }
 _XBool _XVBO::updateDataV(int size,const float *v)
 {
-	if(!m_isInited) return false;
-	if(size != m_size || !m_withV || v == NULL) return false;
+	if(!m_isInited) return XFalse;
+	if(size != m_size || !m_withV || v == NULL) return XFalse;
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,m_v);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,size * 3 * sizeof(float),v,GL_STATIC_DRAW_ARB);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
@@ -526,8 +577,8 @@ _XBool _XVBO::updateDataV(int size,const float *v)
 }
 _XBool _XVBO::updateDataT(int size,const float *t)
 {
-	if(!m_isInited) return false;
-	if(size != m_size || !m_withT || t == NULL) return false;
+	if(!m_isInited) return XFalse;
+	if(size != m_size || !m_withT || t == NULL) return XFalse;
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,m_t);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,size * 2 * sizeof(float),t,GL_STATIC_DRAW_ARB);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
@@ -535,8 +586,8 @@ _XBool _XVBO::updateDataT(int size,const float *t)
 }
 _XBool _XVBO::updateDataN(int size,const float *n)
 {
-	if(!m_isInited) return false;
-	if(size != m_size || !m_withN || n == NULL) return false;
+	if(!m_isInited) return XFalse;
+	if(size != m_size || !m_withN || n == NULL) return XFalse;
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,m_n);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,size * 3 * sizeof(float),n,GL_STATIC_DRAW_ARB);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
@@ -544,8 +595,8 @@ _XBool _XVBO::updateDataN(int size,const float *n)
 }
 _XBool _XVBO::updateDataC(int size,const float *c)
 {
-	if(!m_isInited) return false;
-	if(size != m_size || !m_withC || c == NULL) return false;
+	if(!m_isInited) return XFalse;
+	if(size != m_size || !m_withC || c == NULL) return XFalse;
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,m_c);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,size * 4 * sizeof(float),c,GL_STATIC_DRAW_ARB);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
@@ -553,9 +604,9 @@ _XBool _XVBO::updateDataC(int size,const float *c)
 }
 _XBool _XVBO::updateDataI(int size,const unsigned int *i)
 {
-	if(!m_isInited) return false;
+	if(!m_isInited) return XFalse;
 	//if(size != m_indexSize || !m_withI || i == NULL) return false;
-	if(!m_withI || i == NULL) return false;
+	if(!m_withI || i == NULL) return XFalse;
 	m_indexSize = size;
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,size * 3 * sizeof(float),i,GL_STATIC_DRAW_ARB);
@@ -606,6 +657,25 @@ void _XVBO::disuse()
 	if(m_withI) glDisableClientState(GL_INDEX_ARRAY);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 }
+void _XVBO::drawByIndex(unsigned int type,_XBool withTex)
+{
+	if(!m_withI) return;
+	use(withTex);
+	glDrawElements(type,m_indexSize,GL_UNSIGNED_INT,0);
+	disuse();
+}
+void _XVBO::drawByIndex(unsigned int type,int size,unsigned int indexType,void *pIndex,_XBool withTex)
+{
+	use(withTex);
+	glDrawElements(type,size,indexType,pIndex);
+	disuse();
+}
+void _XVBO::drawByArray(unsigned int type,_XBool withTex)
+{
+	use(withTex);
+	glDrawArrays(type,0,m_size); 
+	disuse();
+}
 void _XVBO::release()
 {
 	if(!m_isInited) return;
@@ -639,7 +709,7 @@ _XBool isFBOSupported()
         printf("FBO is not supported.");
 		return XFalse;
 	}
-//	return 0;
+//	return XFalse;
 }
 _XBool isFramebufferReady()
 {
@@ -680,14 +750,12 @@ _XBool _XFBO::init(int w,int h,_XFBOTextureType type)
 {
 	if(m_nowFBOTextureSum != 0) return XTrue;
 	//检查是否支持FBO
-	if(!isFBOSupported()) 
-	{
-		printf("FBO is not supported!\n");
-		return XFalse;
-	}
+	if(!isFBOSupported()) return XFalse;
+
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &m_maxTextureSum);
 	//建立贴图
 	addOneTexture(w,h,type);
+	m_type = type;
 	if(type == TEXTURE_DEEPTH)	//这里需要测试是否可以合并这种判断
 	{
 		glGenFramebuffersEXT(1,&m_fboId);					//建立FBO
@@ -698,6 +766,7 @@ _XBool _XFBO::init(int w,int h,_XFBOTextureType type)
 
 		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT,m_rboId);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,m_textureId[0],0);
+		m_zeroTexIndex = 0;
 	}else
 	{
 		//建立一个framebuffer object，当退出时需要删除
@@ -716,6 +785,7 @@ _XBool _XFBO::init(int w,int h,_XFBOTextureType type)
 
 		//挂接贴图
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_textureId[0], 0);
+		m_zeroTexIndex = 0;
 		//挂接深度渲染点
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT,m_rboId);
 	}
@@ -726,7 +796,7 @@ _XBool _XFBO::init(int w,int h,_XFBOTextureType type)
     //glDrawBuffer(GL_NONE);
     //glReadBuffer(GL_NONE);
 
-	if(isFramebufferReady() == 0) return XFalse;
+	if(!isFramebufferReady()) return XFalse;
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	return XTrue;
@@ -816,21 +886,36 @@ void _XFBO::useFBO(bool newSize,int w,int h)
 			break;
 		}
 	}
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);
+	bind();
 }
-void _XFBO::useFBO3D()
+void _XFBO::bind()
 {
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);
+	if(XEE::isMultiSampleSupport == 1)
+	{
+		glDisable(GL_MULTISAMPLE);
+		glDisable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+		glDisable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+		if(XEE::isLineSmooth) glDisable(GL_LINE_SMOOTH);
+	}
 }
-void _XFBO::removeFBO3D()
+void _XFBO::unbind()
 {
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // unbind
+	if(XEE::isMultiSampleSupport == 1)
+	{
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+		glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+		if(XEE::isLineSmooth) glEnable(GL_LINE_SMOOTH);
+	}
 }
 void _XFBO::attachTex(int order)
 {
 	if(m_nowFBOTextureSum > 1 && order >= 0 && order < m_nowFBOTextureSum)
 	{//挂接贴图
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_textureId[order], 0);
+		m_zeroTexIndex = order;
 		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	}
 }
@@ -856,6 +941,7 @@ _XBool _XFBO::attachTexs(int sum,int index,...)
 	{
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + i,GL_TEXTURE_2D,m_textureId[indexs[i]],0);
 	}
+	m_zeroTexIndex = indexs[0];
 	//m_upTextureSum = sum;
 	GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT,GL_COLOR_ATTACHMENT1_EXT,
 		GL_COLOR_ATTACHMENT2_EXT,GL_COLOR_ATTACHMENT3_EXT,
@@ -872,7 +958,7 @@ _XBool _XFBO::attachTexs(int sum,int index,...)
 }
 void _XFBO::removeFBO()
 {
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // unbind
+	unbind();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
@@ -897,6 +983,8 @@ void _XFBO::addOneTexture(int w,int h,_XFBOTextureType type)
 {
 //	if(type != TEXTURE_RGBA_F)
 //	{
+		m_w[m_nowFBOTextureSum] = w;
+		m_h[m_nowFBOTextureSum] = h;
 		glGenTextures(1, &m_textureId[m_nowFBOTextureSum]);
 		glBindTexture(GL_TEXTURE_2D, m_textureId[m_nowFBOTextureSum]);
 		//效果好
@@ -962,44 +1050,192 @@ void _XFBO::release()
 	}
 
 	glDeleteFramebuffersEXT(1, &m_fboId);
-	//glDeleteRenderbuffersEXT(1, &m_rboId);
+	if(m_type == TEXTURE_DEEPTH) glDeleteRenderbuffersEXT(1, &m_rboId);
 	m_nowFBOTextureSum = 0;
+}
+void _XFBO::getPixelFromFboEx(const _XFBOEx& ex)
+{
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT,ex.getFboID());
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,m_fboId);
+	glBlitFramebufferEXT(0, 0, getW(), getH(), 0, 0, ex.getW(), ex.getH(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+}
+bool _XFBOEx::init(int w,int h,_XFBOTextureType type)
+{
+	if(m_isInited) return false;
+	m_w = w;
+	m_h = h;
+	unsigned int colorMode = GL_RGBA;
+	switch(type)
+	{
+		case TEXTURE_RGBA:colorMode = GL_RGBA;break;
+		case TEXTURE_RGB:colorMode = GL_RGB;break;
+		case TEXTURE_DEEPTH:colorMode = GL_DEPTH_COMPONENT;break;
+		case TEXTURE_RGBA_F:colorMode = GL_RGBA;break;
+	}
+	glGenFramebuffersEXT(1,&m_fboId);				//建立FBO
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);  
+
+	glGenRenderbuffersEXT(1,&m_rboId);			//建立渲染目标
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,m_rboId);	
+	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,4,colorMode,w,h);  //启用多重采样
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_RENDERBUFFER_EXT,m_rboId);//挂接渲染目标
+
+	glGenRenderbuffersEXT(1,&m_rbdId);			//建立深度渲染目标
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,m_rbdId);  
+	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,4,GL_DEPTH_COMPONENT,w,h);    //启用多重采样
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER,m_rbdId);  //挂接深度渲染目标
+
+	if(!isFramebufferReady()) return false;
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);		//FBO建立完成
+
+	m_isInited = true;
+	return true;
+}
+void _XFBOEx::useFBO(bool newSize,int w,int h)
+{
+	if(newSize)
+	{
+		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+		glPushMatrix();
+		glLoadIdentity();								//变换坐标系函数
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0:
+			glOrtho(0,w,0,h,-1,1);
+			glViewport(0,0,w,h);
+			break;
+		case WINDOW_ROTATE_MODE_90:
+			glOrtho(w,0,h,0,-1,1);
+			glViewport(0,0,w,h);
+			break;
+		case WINDOW_ROTATE_MODE_180:
+			glOrtho(0,w,0,h,-1,1);
+			glViewport(0,0,w,h);
+			break;
+		case WINDOW_ROTATE_MODE_270:
+			glOrtho(w,0,h,0,-1,1);
+			glViewport(0,0,w,h);
+			break;
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0: break;	//do nothing
+		case WINDOW_ROTATE_MODE_90: 
+			glTranslatef(w,h,0);
+			glRotatef(180,0,0,1);
+			break;
+		case WINDOW_ROTATE_MODE_180: 
+			break;
+		case WINDOW_ROTATE_MODE_270: 
+			glTranslatef(w,h,0);
+			glRotatef(180,0,0,1);
+			break;
+		}	
+	}else
+	{
+		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+		glPushMatrix();
+		glLoadIdentity();								//变换坐标系函数
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0:
+			glOrtho(0,XEE::windowData.sceneW,0,XEE::windowData.sceneH,-1,1);
+			glViewport(0,0,XEE::windowData.sceneW,XEE::windowData.sceneH);
+			break;
+		case WINDOW_ROTATE_MODE_90:
+			glOrtho(XEE::windowData.sceneW,0,XEE::windowData.sceneH,0,-1,1);
+			glViewport(0,0,XEE::windowData.sceneW,XEE::windowData.sceneH);
+			break;
+		case WINDOW_ROTATE_MODE_180:
+			glOrtho(0,XEE::windowData.sceneW,0,XEE::windowData.sceneH,-1,1);
+			glViewport(0,0,XEE::windowData.sceneW,XEE::windowData.sceneH);
+			break;
+		case WINDOW_ROTATE_MODE_270:
+			glOrtho(XEE::windowData.sceneW,0,XEE::windowData.sceneH,0,-1,1);
+			glViewport(0,0,XEE::windowData.sceneW,XEE::windowData.sceneH);
+			break;
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0: break;	//do nothing
+		case WINDOW_ROTATE_MODE_90: 
+			glTranslatef(XEE::windowData.sceneW,XEE::windowData.sceneH,0);
+			glRotatef(180,0,0,1);
+			break;
+		case WINDOW_ROTATE_MODE_180: 
+			break;
+		case WINDOW_ROTATE_MODE_270: 
+			glTranslatef(XEE::windowData.sceneW,XEE::windowData.sceneH,0);
+			glRotatef(180,0,0,1);
+			break;
+		}
+	}
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);
+}
+void _XFBOEx::removeFBO()
+{
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // unbind
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+	glPopMatrix();
+	switch(XEE::windowData.rotateMode)
+	{
+	case WINDOW_ROTATE_MODE_0:
+		glViewport(0,0,XEE::windowData.w,XEE::windowData.h);
+		break;
+	case WINDOW_ROTATE_MODE_90:
+		glViewport(0,0,XEE::windowData.h,XEE::windowData.w);
+		break;
+	case WINDOW_ROTATE_MODE_180:
+		glViewport(0,0,XEE::windowData.w,XEE::windowData.h);
+		break;
+	case WINDOW_ROTATE_MODE_270:
+		glViewport(0,0,XEE::windowData.h,XEE::windowData.w);
+		break;
+	}
+}
+void _XFBOEx::release()
+{
+	if(!m_isInited) return;
+	glDeleteRenderbuffersEXT(1,&m_fboId);  
+	glDeleteRenderbuffersEXT(1,&m_rboId);  
+	glDeleteFramebuffersEXT(1,&m_rbdId);  
+	m_isInited = false;
 }
 void drawBlankPlane(int w,int h,unsigned int tex,_XShaderGLSL *pShader)
 {
 	if(pShader != NULL)
 	{
-	//	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	//	glActiveTexture(GL_TEXTURE0);
-	//	glEnable(GL_TEXTURE_2D);
-	//	glBindTexture(GL_TEXTURE_2D,tex);
-		pShader->useShaderEx(tex);
-		glBegin(GL_QUADS);
-			glTexCoord2f(0,0);
-			glVertex2f(0,0);
-			glTexCoord2f(0,1);
-			glVertex2f(0,h);
-			glTexCoord2f(1,1);
-			glVertex2f(w,h);
-			glTexCoord2f(1,0);
-			glVertex2f(w,0);
-		glEnd();
-		pShader->disShader();
-	//	glPopAttrib();
-	}else
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		pShader->useShader();
+	}
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0,0);
+		glVertex2f(0,0);
+		glTexCoord2f(0,1);
+		glVertex2f(0,h);
+		glTexCoord2f(1,1);
+		glVertex2f(w,h);
+		glTexCoord2f(1,0);
+		glVertex2f(w,0);
+	glEnd();
+	if(pShader != NULL)
 	{
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D,tex);
-		glBegin(GL_QUADS);
-			glTexCoord2f(0,0);
-			glVertex2f(0,0);
-			glTexCoord2f(0,1);
-			glVertex2f(0,h);
-			glTexCoord2f(1,1);
-			glVertex2f(w,h);
-			glTexCoord2f(1,0);
-			glVertex2f(w,0);
-		glEnd();
+		pShader->disShader();
+		glPopAttrib();
 	}
 }

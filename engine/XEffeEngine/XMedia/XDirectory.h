@@ -23,8 +23,7 @@ public:
 		,directory(NULL)
 		,allPath(NULL)
 		,filename(NULL)
-	{
-	}
+	{}
 	_XDir * directory;	//如果是目录的话，这里是下一级目录的信息
 	void release();
 };
@@ -38,8 +37,7 @@ public:
 		:isEnable(XFalse)
 		,level(0)
 		,directoryName(NULL)
-	{
-	}
+	{}
 	void release();
 	int level;			//路径层级,是图化而定义的变量[0 - n]
 };
@@ -53,13 +51,9 @@ public:
 	_XBool initEx(const char *directoryName);	//使用相对路径，相对于工程路径
 
 	_XDirectory()
-		:m_isInited(0)
-	{
-	}
-	~_XDirectory()
-	{
-		release();
-	}
+		:m_isInited(XFalse)
+	{}
+	~_XDirectory(){release();}
 	void release()
 	{//释放所有的资源
 		if(!m_isInited) return;

@@ -121,3 +121,16 @@ inline void _XFrameEx::setRestart()
 {
 	m_nowFramesNumble = (float)(m_startFrame);
 }
+inline _XBool _XFrameEx::isInRect(float x,float y)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+{
+	int temp = m_nowFramesNumble;
+	if(m_nowFramesNumble < 0 || m_nowFramesNumble >= m_allFramesSum) temp = 0;
+	return m_pSprite[m_keyFrameArray[temp]].isInRect(x,y);
+}
+//获取四个顶点的坐标，目前先不考虑旋转和缩放
+inline _XVector2 _XFrameEx::getBox(int order)
+{
+	int temp = m_nowFramesNumble;
+	if(m_nowFramesNumble < 0 || m_nowFramesNumble >= m_allFramesSum) temp = 0;
+	return m_pSprite[m_keyFrameArray[temp]].getBox(order);
+}

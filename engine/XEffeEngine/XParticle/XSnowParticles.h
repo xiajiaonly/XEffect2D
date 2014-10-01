@@ -33,8 +33,20 @@ public:
 	void reset();
 	void move(int timeDelay);
 	void draw() const;
-	void release();
-	void setEnd();
+	void release()
+	{
+		if(m_isInited == 0) return;
+		XDELETE_ARRAY(m_atom);
+		m_isInited = 0;		//防止release之后调用其它成员函数而造成错误
+	}
+	void setEnd()
+	{
+		if(m_isInited == 0 ||
+			m_isEnd != 0 ||
+			m_isSetEnd != 0) return;
+
+		m_isSetEnd = 1;
+	}
 	_XSnowParticles();
 };
 #endif

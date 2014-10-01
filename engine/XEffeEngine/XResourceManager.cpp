@@ -14,7 +14,7 @@ void _XResourceTex::release()
 {
 	if(glIsTexture(m_texID)) 
 	{
-		printf("delete texture:%d\n",m_texID);
+		LogNull("delete texture:%d",m_texID);
 		glDeleteTextures(1,&m_texID);
 	}
 }
@@ -24,6 +24,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 	if(m_name == NULL) return XFalse;
 	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
 	//∏¸æﬂ≤ªÕ¨µƒ¿‡–Õµ˜”√≤ªÕ¨µƒ‘ÿ»Î∫Ø ˝
+	std::string logstr = "";
 	switch(m_type)
 	{
 	case RESOURCE_TYPE_NULL:
@@ -33,12 +34,12 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XResourceTex * temp = createMem<_XResourceTex>();
 			if(temp == NULL) return XFalse;
-			if(TextureLoadEx(temp->m_texID,m_name,&temp->m_width,&temp->m_height,resoursePosition) == 0) 
+			if(!TextureLoadEx(temp->m_texID,m_name,&temp->m_width,&temp->m_height,resoursePosition)) 
 			{
 				XDELETE(temp);
 				return XFalse;
 			}
-			printf("%d|",temp->m_texID);
+			logstr += toString(temp->m_texID) + "|";
 			m_pointer = temp;
 		}
 		break;
@@ -50,7 +51,8 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 			{
 				if(!_XSoundHandle.loadSound(m_name,temp->m_handle)) 
 				{
-					AddLogInfoStr("Sound load error!\n");
+					logstr += "Sound load error!";
+					LogStr(logstr.c_str());
 					XDELETE(temp);
 					return XFalse;
 				}
@@ -68,7 +70,8 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 				_XResourcePack::GetInstance().unpackResource(m_name,p);
 				if(!_XSoundHandle.loadSound(p,lengthTemp,temp->m_handle))
 				{
-					AddLogInfoStr("Sound load error!\n");
+					logstr += "Sound load error!";
+					LogStr(logstr.c_str());
 					XDELETE(temp);
 					return XFalse;
 				}
@@ -81,7 +84,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XButtonTexture * temp = createMem<_XButtonTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -93,7 +96,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XCheckTexture * temp = createMem<_XCheckTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -105,7 +108,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XEditTexture * temp = createMem<_XEditTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -117,7 +120,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XSliderTexture * temp = createMem<_XSliderTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -129,7 +132,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XProgressTexture * temp = createMem<_XProgressTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -141,7 +144,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XMultiListTexture * temp = createMem<_XMultiListTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -153,7 +156,7 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XComboTexture * temp = createMem<_XComboTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -165,7 +168,19 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		{
 			_XDirListTexture * temp = createMem<_XDirListTexture>();
 			if(temp == NULL) return XFalse;
-			if(temp->initEx(m_name,resoursePosition) == 0)
+			if(!temp->initEx(m_name,resoursePosition))
+			{
+				XDELETE(temp);
+				return XFalse;
+			}
+			m_pointer = temp;
+		}
+		break;
+	case RESOURCE_TYPE_XPASSWORDPAD_TEX:
+		{
+			_XPasswordPadTexture * temp = createMem<_XPasswordPadTexture>();
+			if(temp == NULL) return XFalse;
+			if(!temp->initEx(m_name,resoursePosition))
 			{
 				XDELETE(temp);
 				return XFalse;
@@ -174,7 +189,8 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		}
 		break;
 	}
-	printf("Load resource:%s\n",m_name);
+	logstr += "Load resource:" + std::string(m_name);
+	LogStr(logstr.c_str());
 
 	m_isInited = XTrue;
 	return XTrue;
@@ -185,7 +201,7 @@ void _XResourceInfo::release()			//◊ ‘¥µƒ Õ∑≈∫Ø ˝
 	// Õ∑≈ µº µƒ◊ ‘¥
 	if(m_counter > 0)
 	{
-		printf("There is something wrong! - %d:%s\n",m_counter,m_name);
+		LogNull("There is something wrong! - %d:%s",m_counter,m_name);
 	}
 	XDELETE_ARRAY(m_name);
 	switch(m_type)
@@ -260,6 +276,13 @@ void _XResourceInfo::release()			//◊ ‘¥µƒ Õ∑≈∫Ø ˝
 			XDELETE(m_pointer);
 		}
 		break;
+	case RESOURCE_TYPE_XPASSWORDPAD_TEX:
+		{
+			_XPasswordPadTexture * temp = (_XPasswordPadTexture *)m_pointer;
+			temp->release();
+			XDELETE(m_pointer);
+		}
+		break;
 	}
 	m_isInited = XFalse;
 }
@@ -270,7 +293,7 @@ _XResourceInfo *_XResourceManager::loadResource(const char * name,_XResourceType
 	if(temp != NULL && temp->m_type == type)
 	{//“—æ≠‘ÿ»Î,≤¢«“◊ ‘¥ «∆•≈‰µƒ
 		++ temp->m_counter;	//‘ˆº”“ª≤„“˝”√
-		printf("%d:%s\n",temp->m_counter,temp->m_name);
+		LogNull("%d:%s",temp->m_counter,temp->m_name);
 		return temp;
 	}else
 	{//…–Œ¥‘ÿ»Î
@@ -280,7 +303,7 @@ _XResourceInfo *_XResourceManager::loadResource(const char * name,_XResourceType
 		if(temp->m_name == NULL) return NULL;
 		strcpy(temp->m_name,name);
 		temp->m_type = type;
-		if(temp->load(resoursePosition) != 0)
+		if(temp->load(resoursePosition))
 		{
 			m_resourceBuff.push_back(temp);
 			++ m_resourceSum;
@@ -301,15 +324,15 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 	//	if(m_resourceBuff[i] == p)
 	//	{
 	//		m_resourceBuff[i]->m_counter --;
-	//		printf("%d:%s\n",m_resourceBuff[i]->m_counter,m_resourceBuff[i]->m_name);
+	//		LogNull("%d:%s",m_resourceBuff[i]->m_counter,m_resourceBuff[i]->m_name);
 	//		//if(m_resourceBuff[i]->m_counter == 0) //√ª”–“˝”√µƒ ±∫ÚæÕø…“‘ Õ∑≈¡À
-	//		if(m_resourceBuff[i]->m_counter < 0){printf("Error\n");}
+	//		if(m_resourceBuff[i]->m_counter < 0){LogStr("Error");}
 	//		return XTrue;
 	//	}
 	//}
 	if(m_resourceBuff.size() <= 0)//’‚¿Ô≤˙…˙Œ Ã‚ «”…”⁄∂®“Â“‘º∞ Õ∑≈µƒœ»∫Û‘Ï≥…µƒ£¨¿Ì¬€…œ”¶∏√√ª ≤√¥¥ÛŒ Ã‚
 	{//”…”⁄ŒˆππÀ≥–Ú‘Ï≥…µƒŒ Ã‚£¨’‚¿Ô–Ë“™øº¬«
-		printf("Error!\n");
+		LogStr("Error!");
 		return XFalse;
 	}
 	std::list<_XResourceInfo *>::iterator it;
@@ -318,9 +341,10 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 		if(* it == p)
 		{
 			-- (*it)->m_counter;
-			printf("%d:%s\n",(*it)->m_counter,(*it)->m_name);
-			if((*it)->m_counter == 0)
+			LogNull("%d:%s",(*it)->m_counter,(*it)->m_name);
+			if((*it)->m_counter <= 0)
 			{// Õ∑≈µÙ’‚∏ˆ◊ ‘¥
+				XDELETE_ARRAY((*it)->m_name);
 				XDELETE((* it));
 				m_resourceBuff.erase(it);
 				-- m_resourceSum;
@@ -328,7 +352,7 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 			return XTrue;
 		}
 	}
-	printf("Error:invalid resource!\n");
+	LogStr("Error:invalid resource!");
 	return XFalse;
 }
 void _XResourceManager::release()				// Õ∑≈À˘”–µƒ◊ ‘¥
@@ -346,6 +370,8 @@ void _XResourceManager::release()				// Õ∑≈À˘”–µƒ◊ ‘¥
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
 		//(* it)->release();
+		LogNull("%d:%s",(*it)->m_counter,(*it)->m_name);
+		XDELETE_ARRAY((*it)->m_name);
 		XDELETE((* it));
 	}
 	m_resourceBuff.clear();
@@ -356,7 +382,7 @@ _XBool _XResourceManager::isLoaded(const char * name)	//≈–∂œ÷∏∂®◊ ‘¥ «∑Ò“—æ≠‘ÿ»Î
 	if(name == NULL) return XFalse;
 	//for(int i = 0;i < m_resourceSum;++ i)
 	//{
-	//	if(m_resourceBuff[i]->isLoaded() && fileNameCompare(name,m_resourceBuff[i]->m_name) != 0)
+	//	if(m_resourceBuff[i]->isLoaded() && fileNameCompare(name,m_resourceBuff[i]->m_name))
 	//	{
 	//		return XTrue;
 	//	}
@@ -364,7 +390,7 @@ _XBool _XResourceManager::isLoaded(const char * name)	//≈–∂œ÷∏∂®◊ ‘¥ «∑Ò“—æ≠‘ÿ»Î
 	std::list<_XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
-		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name) != 0)
+		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name))
 		{
 			return XTrue;
 		}
@@ -376,7 +402,7 @@ _XResourceInfo * _XResourceManager::isLoad(const char * name)
 	if(name == NULL) return NULL;
 	//for(int i = 0;i < m_resourceSum;++ i)
 	//{
-	//	if(m_resourceBuff[i]->isLoaded() && fileNameCompare(name,m_resourceBuff[i]->m_name) != 0)
+	//	if(m_resourceBuff[i]->isLoaded() && fileNameCompare(name,m_resourceBuff[i]->m_name))
 	//	{
 	//		return m_resourceBuff[i];
 	//	}
@@ -384,7 +410,7 @@ _XResourceInfo * _XResourceManager::isLoad(const char * name)
 	std::list<_XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
-		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name) != 0)
+		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name))
 		{
 			return (*it);
 		}

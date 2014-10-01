@@ -136,7 +136,8 @@ int _XSoundFmod::soundFadeOut(int c,int ms)
 	return 1;
 }
 int sum = 0;
-FMOD_RESULT F_CALLBACK pcmreadcallback(FMOD_SOUND *sound, void *data, unsigned int datalen)
+//FMOD_RESULT F_CALLBACK pcmreadcallback(FMOD_SOUND *sound, void *data, unsigned int datalen)
+FMOD_RESULT F_CALLBACK pcmreadcallback(FMOD_SOUND *,void *data,unsigned int datalen)
 {
 //	printf("%d,%d\n",datalen,sum += datalen);
 //	if(_XSoundFmod::GetInstance().m_isCallBackOpen)

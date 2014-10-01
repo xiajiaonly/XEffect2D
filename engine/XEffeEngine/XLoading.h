@@ -52,8 +52,7 @@ public:
 		:m_pScene(NULL)
 		,m_isEnd(STATE_BEFORE_START)
 		,m_speed(1.0f)
-	{
-	}
+	{}
 };
 inline void _XLoading::setLoadPresent(float present)		//设置加载进度
 {
@@ -111,7 +110,7 @@ public:
 public:
     static void *loadingProc(void * pParam);	//载入的线程
 
-	void init(_XVector2 windowSize,int resoursePosition = 0);
+	void init(const _XVector2 &windowSize,int resoursePosition = 0);
 	void move();				//进度条动作
 	void draw();				//描绘进度条
 	void setStart();			//设置开始进度条
@@ -120,16 +119,13 @@ public:
 
 	_XLoading()
 	:m_loadFunc(NULL)
-	{
-	}
+	{}
 };
-
 inline void _XLoading::setLoadPresent(float present)		//设置加载进度
 {
 	m_loadPresent = present;
 	m_process.setValue(m_loadPresent);
 }
-
 inline void _XLoading::move()
 {
 	if(m_loadPresent < 100.0)
@@ -138,13 +134,11 @@ inline void _XLoading::move()
 		m_process.setValue(m_loadPresent);
 	}
 }
-
 inline void _XLoading::draw()
 {
 	m_loadingBG.draw();
 	m_process.draw();
 }
-
 inline void _XLoading::release()
 {
 	m_loadingBG.release();

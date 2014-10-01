@@ -1,0 +1,3 @@
+LIBRARY	XEffectEngine
+DESCRIPTION "XEffectEngine dll" 
+EXPORTS			

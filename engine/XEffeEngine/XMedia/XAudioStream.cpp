@@ -4,33 +4,34 @@
 //Date:		See the header file
 //--------------------------------
 #include "XAudioStream.h"
+#include "../XLogBook.h"
 
 _XBool _XAudioStream::load(const char * filename)
 {
-	if(m_isLoaded) return XFalse;
-	if(filename == NULL) return XFalse;
+	if(m_isLoaded ||
+		filename == NULL) return XFalse;
 	av_register_all();	
 	m_pFormatCtx = NULL;
 	if(avformat_open_input(&m_pFormatCtx,filename,NULL,NULL) != 0)
 	{
-		printf("File open error!\n");
+		LogStr("File open error!");
 		return XFalse;
 	}
 	if(av_find_stream_info(m_pFormatCtx) < 0)		//检查视频流信息
 	{
-		printf("can not find stream information!\n");
+		LogStr("can not find stream information!");
 		return XFalse;
 	}
 	m_pAudioCodecCtx = m_pFormatCtx->streams[0]->codec;
 	AVCodec *aCodec = avcodec_find_decoder(m_pAudioCodecCtx->codec_id);
 	if(aCodec == NULL)
 	{//找不到音频解码器
-		printf("can not find audio decoder information!\n");
+		LogStr("can not find audio decoder information!");
 		return XFalse;
 	} 
 	if(avcodec_open2(m_pAudioCodecCtx,aCodec,NULL) < 0)
 	{//找不到音频解码包
-		printf("can not open audio decoder!\n");
+		LogStr("can not open audio decoder!");
 		return XFalse;
 	}
 	//m_pFrame = avcodec_alloc_frame();
@@ -43,7 +44,7 @@ _XBool _XAudioStream::load(const char * filename)
 	av_init_packet(&m_dataPacket);
 
 	m_pSwrContext = swr_alloc();
-	if(m_pSwrContext == NULL) return NULL;
+	if(m_pSwrContext == NULL) return XFalse;
 	if(m_pAudioCodecCtx->channel_layout == 0)
 	{
 		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEE::audioChannel),AV_SAMPLE_FMT_S16,XEE::audioFrequency,
@@ -73,7 +74,7 @@ _XBool _XAudioStream::getAFrame()	//从流中提取一帧数据
 		{
 			if(swr_init(m_pSwrContext) < 0)
 			{
-				printf("swr_init() fail");
+				LogStr("swr_init() fail");
 				return XFalse;
 			}
 			uint8_t *out[] = {m_audioBuf}; 
@@ -87,7 +88,7 @@ _XBool _XAudioStream::getAFrame()	//从流中提取一帧数据
 	}else 
 	{
 		gotoFrame(0.0f);	//跳到头
-		printf("File end!\n");
+		LogStr("File end!");
 		return XFalse;
 	}
 	return XFalse;

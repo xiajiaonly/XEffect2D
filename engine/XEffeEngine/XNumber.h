@@ -36,7 +36,7 @@ private:
 
 	_XSprite m_sprite;					//贴图
 	_XBool m_isInited;
-	_XBool m_isVisiable;
+	_XBool m_isVisible;
 
 	float m_angle;			//字体的角度
 	float m_angleSin;	//角度的sin值
@@ -44,25 +44,10 @@ private:
 
 	_XNumberAlignmentMode m_alignmentMode;
 public:
-	void setAlignmentMode(_XNumberAlignmentMode mode)
-	{
-		if(mode != m_alignmentMode)
-		{
-			m_alignmentMode = mode;
-			m_needUpdateData = 1;
-		}
-	}
-	void setVisiable() 
-	{
-		m_isVisiable = XTrue;
-		updateChildVisiable();
-	}					//设置物件可见
-	void disVisiable() 
-	{
-		m_isVisiable = XFalse;
-		updateChildVisiable();
-	}						//设置物件不可见
-	_XBool getVisiable() const {return m_isVisiable;}					//获取物件是否可见的状态 
+	void setAlignmentMode(_XNumberAlignmentMode mode);
+	void setVisible();					//设置物件可见
+	void disVisible();						//设置物件不可见
+	_XBool getVisible() const {return m_isVisible;}					//获取物件是否可见的状态 
 private:
 	char *m_string;
 
@@ -70,24 +55,8 @@ private:
 	int m_maxPixelWidth;	//字体的最大像素宽度
 	int m_maxPixelHeight;	//字体的最大像素高度
 public:
-	int getMaxPixelWidth()
-	{
-		if(m_needUpdateData != 0)
-		{
-			updateData();
-			m_needUpdateData = 0;
-		}
-		return m_maxPixelWidth;
-	}
-	int getMaxPixelHeight()
-	{
-		if(m_needUpdateData != 0)
-		{
-			updateData();
-			m_needUpdateData = 0;
-		}
-		return m_maxPixelHeight;
-	}
+	int getMaxPixelWidth();
+	int getMaxPixelHeight();
 private:
 	_XBool m_needUpdateData;	//是否需要更新内部数据
 	void updateData();		//根据需要更新内部数据
@@ -105,8 +74,8 @@ private:
 	_XVector2 m_rotateBasicPoint;	//字体旋转的中心点
 public:
 	_XBool init(const char *fileName,	//字体图片的名字
-		_XVector2 size,			//字体的像素大小
-		_XVector2 layout,			//字体图片的布局
+		const _XVector2 &size,			//字体的像素大小
+		const _XVector2 &layout,			//字体图片的布局
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);		
 	_XBool initEx(const char *fileName,	//字体图片的名字
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	
@@ -152,7 +121,7 @@ public:
 	_XNumber();
 	~_XNumber();
 
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 };
 
 #include "XNumber.inl"

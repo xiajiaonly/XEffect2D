@@ -8,10 +8,24 @@
 _XBool _XFontBasic::setACopy(const _XFontBasic &temp)
 {
 	if(this == &temp) return XFalse;				//防止自生拷贝
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 	m_isCliped = temp.m_isCliped;		
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
+
+	m_withFBO = temp.m_withFBO;
+	m_needUpdateFBO = temp.m_needUpdateFBO;
+	if(temp.m_pFbo != NULL)
+	{
+		XDELETE(m_pFbo);
+		m_pFbo = createMem<_XFBO>();
+		if(m_pFbo == NULL) return XFalse;
+		if(!m_pFbo->init(temp.m_pFbo->getWidth(0),temp.m_pFbo->getHeight(0))) return XFalse;
+	}else
+	{
+		XDELETE(m_pFbo);
+	}
+	m_fboSprite.setACopy(temp.m_fboSprite);		//贴图
 
 //	m_maxStringLen = temp.m_maxStringLen;
 //	strcpy(m_string,temp.m_string);			//需要现实的字符串
@@ -46,10 +60,24 @@ _XBool _XFontBasic::setACopy(const _XFontBasic &temp)
 _XFontBasic& _XFontBasic::operator = (const _XFontBasic& temp)
 {
 	if(this == &temp) return * this;		//防止自生拷贝
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 	m_isCliped = temp.m_isCliped;		
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
+
+	m_withFBO = temp.m_withFBO;
+	m_needUpdateFBO = temp.m_needUpdateFBO;
+	if(temp.m_pFbo != NULL)
+	{
+		XDELETE(m_pFbo);
+		m_pFbo = createMem<_XFBO>();
+		if(m_pFbo == NULL) return *this;
+		if(!m_pFbo->init(temp.m_pFbo->getWidth(0),temp.m_pFbo->getHeight(0))) return *this;
+	}else
+	{
+		XDELETE(m_pFbo);
+	}
+	m_fboSprite.setACopy(temp.m_fboSprite);
 
 //	m_maxStringLen = temp.m_maxStringLen;
 //	strcpy(m_string,temp.m_string);		//需要现实的字符串
@@ -84,7 +112,7 @@ _XFontBasic& _XFontBasic::operator = (const _XFontBasic& temp)
 _XFontBasic::_XFontBasic(const _XFontBasic& temp)
 {
 	if(this == &temp) return;		//防止自生拷贝
-	m_isVisiable = temp.m_isVisiable;
+	m_isVisible = temp.m_isVisible;
 	m_isCliped = temp.m_isCliped;		
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
@@ -117,126 +145,144 @@ _XFontBasic::_XFontBasic(const _XFontBasic& temp)
 	m_lineSum = temp.m_lineSum;
 	m_needShowTextSum = temp.m_needShowTextSum;
 }
-_XBool _XFontBasic::isInRect(float x,float y)
-{
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
 //这个函数存在已经隐藏的bug就是如果位置或者角度等相关信息改变但是又没有调用updateData(),这时候，这个函数获得的值，时间上是不正确的
 _XVector2 _XFontBasic::getBox(int order)
 {
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
 	if(m_needUpdateData)
 	{
 		updateData();
 		m_needUpdateData = XFalse;
 	}
-	if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_LEFT)
+	switch(m_alignmentModeX)
 	{
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+	case FONT_ALIGNMENT_MODE_X_LEFT:
+		switch(m_alignmentModeY)
 		{
-			if(order == 0) ret = m_setPosition; else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelHeight * m_angleSin,
+		case FONT_ALIGNMENT_MODE_Y_UP:
+			switch(order)
+			{
+			case 0:return m_setPosition;
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
 				m_setPosition.y + m_maxPixelHeight * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-		{
-			if(order == 0) ret.set(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
 				m_setPosition.y + m_maxPixelHeight * 0.5 * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-		{
-			if(order == 0) ret.set(m_setPosition.x + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin); else
-			if(order == 3) ret.set(m_setPosition.x,
-				m_setPosition.y);
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_DOWN:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelHeight * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos,
+				m_setPosition.y + m_maxPixelWidth * m_angleSin);
+			case 3:return m_setPosition;
+			}
+			break;
 		}
-	}else
-	if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_MIDDLE)
-	{
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+		break;
+	case FONT_ALIGNMENT_MODE_X_MIDDLE:
+		switch(m_alignmentModeY)
 		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
+		case FONT_ALIGNMENT_MODE_Y_UP:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
 				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_DOWN:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 2:return _XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
+				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
+				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin);
+			}
+			break;
 		}
-	}else
-	if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_RIGHT)
-	{
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+		break;
+	case FONT_ALIGNMENT_MODE_X_RIGHT:
+		switch(m_alignmentModeY)
 		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin); else
-			if(order == 1) ret.set(m_setPosition.x,m_setPosition.y); else
-			if(order == 2) ret.set(m_setPosition.x - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * 0.5f * m_angleCos); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
-		}else
-		if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-		{
-			if(order == 0) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos); else
-			if(order == 1) ret.set(m_setPosition.x + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * m_angleCos); else
-			if(order == 2) ret.set(m_setPosition.x,
-				m_setPosition.y); else
-			if(order == 3) ret.set(m_setPosition.x - m_maxPixelWidth * m_angleCos,
+		case FONT_ALIGNMENT_MODE_Y_UP:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos,
 				m_setPosition.y - m_maxPixelWidth * m_angleSin);
+			case 1:return m_setPosition;
+			case 2:return _XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
+				m_setPosition.y + m_maxPixelHeight * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 2:return _XVector2(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			}
+			break;
+		case FONT_ALIGNMENT_MODE_Y_DOWN:
+			switch(order)
+			{
+			case 0:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 1:return _XVector2(m_setPosition.x + m_maxPixelHeight * m_angleSin,
+				m_setPosition.y - m_maxPixelHeight * m_angleCos);
+			case 2:return m_setPosition;
+			case 3:return _XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos,
+				m_setPosition.y - m_maxPixelWidth * m_angleSin);
+			}
+			break;
 		}
+		break;
 	}
-	return ret;
+	return _XVector2::zero;
 }

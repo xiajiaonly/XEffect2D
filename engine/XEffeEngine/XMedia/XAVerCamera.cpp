@@ -5,16 +5,13 @@
 //--------------------------------
 #include "XAVerCamera.h"
 
-BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO VideoInfo, BYTE *pbData,LONG lLength, __int64 tRefTime, LONG lUserData)
+BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO/*VideoInfo*/, BYTE *pbData,LONG lLength, __int64/*tRefTime*/,LONG lUserData)
 {
-	_XAVerCamera *pPar = (_XAVerCamera *)lUserData;
-	if(pPar->m_isInited)
+	_XAVerCamera &pPar = *(_XAVerCamera *)lUserData;
+	if(pPar.m_isInited && pPar.m_isWork)
 	{
-		if(pPar->m_isWork)
-		{
-			pPar->m_isNewFrame = XTrue;
-			memcpy(pPar->m_frameDataBuff,pbData,lLength);
-		}
+		pPar.m_isNewFrame = XTrue;
+		memcpy(pPar.m_frameDataBuff,pbData,lLength);
 	}
 	return TRUE;
 }

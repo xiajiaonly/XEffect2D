@@ -8,8 +8,6 @@
 #include "XSlider.h"
 #include "XEdit.h"
 #include "XCheck.h"
-#include "XControlBasic.h"
-#include "../XFontUnicode.h"
 #include "XButton.h"
 #include "XMedia/XDirectory.h"
 //工作正在进行中，尚未经过测试
@@ -25,7 +23,7 @@ public:
 	_XRect m_mouseRect;			//鼠标的响应范围
 
 	_XDirListTexture();
-	~_XDirListTexture();
+	~_XDirListTexture(){release();}
 	_XBool init(const char *normal,const char *disable,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
@@ -48,19 +46,9 @@ public:
 		,m_check(NULL)
 		,m_string(NULL)
 		,m_file(NULL)
-	{
-	}
-	~_XDirListOneLine()
-	{
-		release();
-	}
-	void release()
-	{
-		if(!m_isEnable) return;
-		XDELETE_ARRAY(m_string);
-		XDELETE(m_check);
-		m_isEnable = XFalse;
-	}
+	{}
+	~_XDirListOneLine(){release();}
+	void release();
 };
 #ifndef DEFAULT_SLIDER_WIDTH
 #define DEFAULT_SLIDER_WIDTH (32)		//默认的滑动条宽度
@@ -127,13 +115,7 @@ private:
 	_XBool m_canChangePath;
 public:
 	_XBool getCanChangePath() const {return m_canChangePath;}
-	void setCanChangePath(_XBool flag)
-	{
-		if((flag && m_canChangePath) || (!flag && !m_canChangePath)) return;
-		m_canChangePath = flag;
-		if(flag) m_edit.enable();
-		else m_edit.disable();
-	}
+	void setCanChangePath(_XBool flag);
 public:
 	_XBool init(const _XVector2& position,
 		const _XRect& Area,	
@@ -145,104 +127,96 @@ public:
 		const _XEdit &edit,
 		const _XSlider &vSlider,	//垂直滑动条
 		const _XSlider &hSlider);
-	_XBool initEx(const _XVector2& position,
+	_XBool initEx(const _XVector2& position,	//对上面接口的简化
 		_XDirListTexture & tex,
 		_XFontUnicode &font,
 		float fontSize,
 		const _XCheck &check,
 		const _XButton &button,
 		const _XEdit &edit,
-		const _XSlider &vSlider,	//垂直滑动条
+		const _XSlider &vSlider,
 		const _XSlider &hSlider);
 	_XBool initPlus(const char * path,
-		_XFontUnicode &font,
-		float fontSize,
+		_XFontUnicode &font,float fontSize = 1.0f,
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(const _XRect& area,	
-		_XFontUnicode &font,
-		float fontSize);	//尚未实现
-	const char * getSelectFileName() const	//获取全路径
+		_XFontUnicode &font,float fontSize = 1.0f);
+	_XBool initWithoutTex(const _XRect& area) {return initWithoutTex(area,XEE::systemFont,1.0f);}
+	_XBool initWithoutTex(const _XVector2& pixelSize) 
 	{
-		if(m_haveSelect) return m_lineData[m_selectLineOrder]->m_file->allPath;
-		else return NULL;
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),XEE::systemFont,1.0f);
 	}
-	int getSelectLineOrder() const
-	{
-		if(m_haveSelect) return m_selectLineOrder;
-		else return -1;
-	}
+	const char * getSelectFileName() const;	//获取全路径
+	int getSelectLineOrder() const;
 protected:
+	//下面三个函数需要进行优化，也可以进行优化
 	void draw();
-	void drawUp(){;}	//do nothing
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);					//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
-	void insertChar(const char * ch,int len) {;}
-	_XBool canGetFocus(float x,float y)//用于判断当前物件是否可以获得焦点
-	{
-		if(!m_isInited) return XFalse;	//如果没有初始化直接退出
-		if(!m_isActive) return XFalse;		//没有激活的控件不接收控制
-		if(!m_isVisiable) return XFalse;	//如果不可见直接退出
-		if(!m_isEnable) return XFalse;		//如果无效则直接退出
-		return isInRect(x,y);
-	}
-	_XBool canLostFocus(float x,float y){return XTrue;}
+	void insertChar(const char *,int) {;}
+	_XBool canGetFocus(float x,float y);//用于判断当前物件是否可以获得焦点
+	_XBool canLostFocus(float,float){return XTrue;}
 public:
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y)
-	{
-		m_position.set(x,y);
-		updateShowPosition();
-		if(!m_withoutTex) m_spriteBackGround.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_size);
-		m_button.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),0.0f) * m_size);
-		m_verticalSlider.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_size);
-		m_horizontalSlider.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_size);
-		m_edit.setPosition(m_position);
-		updateChildPos();
-	}
+	void setPosition(float x,float y);
 
 	using _XObjectBasic::setSize;		//避免覆盖的问题
-	void setSize(float x,float y)
-	{//左上角对其
-		m_size.set(x,y);
-		updateShowPosition();
-		if(!m_withoutTex) 
-		{
-			m_spriteBackGround.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_size);
-			m_spriteBackGround.setSize(m_size);
-		}
-		m_button.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),0.0f) * m_size);
-		m_button.setSize(m_size);
-		m_verticalSlider.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_size);
-		m_verticalSlider.setSize(m_size);
-		m_horizontalSlider.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_size);
-		m_horizontalSlider.setSize(m_size);
-		m_edit.setPosition(m_position);
-		m_edit.setSize(m_size);
-		updateChildSize();
-	}			//设置尺寸
+	void setSize(float x,float y);			//设置尺寸
 
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y);						//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);						//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	virtual void setColor(float r,float g,float b,float a){updateChildColor();}
-
-	virtual void setAlpha(float a){updateChildAlpha();}
-	virtual void justForTest() {;}
+	virtual void setColor(float r,float g,float b,float a)
+	{
+		m_color.setColor(r,g,b,a);
+		m_caption.setColor(m_color);
+		m_spriteBackGround.setColor(m_color);
+		m_verticalSlider.setColor(m_color);
+		m_horizontalSlider.setColor(m_color);
+		m_button.setColor(m_color);
+		m_edit.setColor(m_color);
+		m_check.setColor(m_color);
+		for(int i = 0;i < m_lineData.size();++ i)
+		{
+			m_lineData[i]->m_font.setColor(m_color);
+			if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setColor(m_color); 
+		}
+		updateChildColor();
+	}
+	virtual void setAlpha(float a)
+	{
+		m_color.setA(a);
+		m_caption.setAlpha(a);
+		m_spriteBackGround.setAlpha(a);
+		m_verticalSlider.setAlpha(a);
+		m_horizontalSlider.setAlpha(a);
+		m_button.setAlpha(a);
+		m_edit.setAlpha(a);
+		m_check.setAlpha(a);
+		for(int i = 0;i < m_lineData.size();++ i)
+		{
+			m_lineData[i]->m_font.setAlpha(a);
+			if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setAlpha(a); 
+		}
+		updateChildAlpha();
+	}
+	//virtual void justForTest() {;}
 
 	void release();
 	_XDirectoryList()
-		:m_isInited(0)
+		:m_isInited(XFalse)
 		,m_resInfo(NULL)
 		,m_withoutTex(XFalse)
 		,m_canChangePath(XTrue)
 	{
+		m_ctrlType = CTRL_OBJ_DIRECTORYLIST;
 	}
-	~_XDirectoryList()
-	{
-		release();
-	}
+	~_XDirectoryList(){release();}
 };
+#include "XDirectoryList.inl"
 
 #endif

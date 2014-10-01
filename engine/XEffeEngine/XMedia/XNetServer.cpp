@@ -79,7 +79,7 @@ _XBool _XNetServer::sendDataSocket(char * data,int len)
 	return XTrue;
 	//方案2：限制发送的最小数据单位
 	//int offset = 0;
-	//while(1)
+	//while(true)
 	//{
 	//	if(len - offset < 4096)
 	//	{
@@ -113,11 +113,11 @@ _XBool _XNetServer::getDataPacket(unsigned char *buff,int len)
 		if(len >= PACKET_HEAD_LEN)
 		{//完整的包头
 			m_recvPacket = createMem<_XNetData>();
-			if(m_recvPacket == NULL) return 0;
+			if(m_recvPacket == NULL) return XFalse;
 			m_recvPacket->type = (_XNetDataType)buff[0];
 			memcpy(&(m_recvPacket->dataLen),buff + 1,sizeof(int));
 			m_recvPacket->data = createArrayMem<unsigned char>(m_recvPacket->dataLen);
-			if(m_recvPacket->data == NULL) return 0;
+			if(m_recvPacket->data == NULL) return XFalse;
 			if(len - PACKET_HEAD_LEN >= m_recvPacket->dataLen)
 			{//数据完整
 				m_recvPacket->isEnable = XTrue;
@@ -170,11 +170,11 @@ _XBool _XNetServer::getDataPacket(unsigned char *buff,int len)
 				memcpy(m_packetHeadData + m_recvPacketSize,buff,PACKET_HEAD_LEN - m_recvPacketSize);
 				//解析包头
 				m_recvPacket = createMem<_XNetData>();
-				if(m_recvPacket == NULL) return 0;
+				if(m_recvPacket == NULL) return XFalse;
 				m_recvPacket->type = (_XNetDataType)m_packetHeadData[0];
 				memcpy(&(m_recvPacket->dataLen),m_packetHeadData + 1,sizeof(int));
 				m_recvPacket->data = createArrayMem<unsigned char>(m_recvPacket->dataLen);
-				if(m_recvPacket->data == NULL) return 0;
+				if(m_recvPacket->data == NULL) return XFalse;
 				//解析余下的数据
 				if(len - (PACKET_HEAD_LEN - m_recvPacketSize) >= m_recvPacket->dataLen)
 				{//数据完整
@@ -205,26 +205,26 @@ _XBool _XNetServer::getDataPacket(unsigned char *buff,int len)
 }
 DWORD WINAPI _XNetServer::recvThread(void * pParam)
 {
-	_XNetServer * pPar = (_XNetServer *)pParam;
+	_XNetServer &pPar = *(_XNetServer *)pParam;
 	int buffLen = 4096;
 	char recvBuff[4096];
 	int ret = 0;
-	pPar->m_recvPacketSize = 0;
-	while(1)
+	pPar.m_recvPacketSize = 0;
+	while(true)
 	{
-		if(pPar->m_isExit) break;
-		if(pPar->m_connectState == CONNECT_STATE_DISCONNECT)
+		if(pPar.m_isExit) break;
+		if(pPar.m_connectState == CONNECT_STATE_DISCONNECT)
 		{
-			if(pPar->m_recvPacketSize != 0)
+			if(pPar.m_recvPacketSize != 0)
 			{//如果网络断开，但是最后一个包没有接收完整，则丢弃最后一个包
-				XDELETE(pPar->m_recvPacket);	//丢弃不完整的包
-				pPar->m_recvPacketSize = 0;
+				XDELETE(pPar.m_recvPacket);	//丢弃不完整的包
+				pPar.m_recvPacketSize = 0;
 			}
 			Sleep(1);
 			continue;
 		}
 		//下面接收数据
-		//if(pPar->m_clientConnect)
+		//if(pPar.m_clientConnect)
 		{
 			//非阻塞访问
 			fd_set readfds;
@@ -232,14 +232,14 @@ DWORD WINAPI _XNetServer::recvThread(void * pParam)
 			timeout.tv_sec = 0;
 			timeout.tv_usec = 0;
 			FD_ZERO(&readfds);
-			FD_SET(pPar->m_netSocket,&readfds);
+			FD_SET(pPar.m_netSocket,&readfds);
 			int test_error = select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
-			if(test_error > 0 && FD_ISSET(pPar->m_netSocket,&readfds))
+			if(test_error > 0 && FD_ISSET(pPar.m_netSocket,&readfds))
 			{//可以接受数据
-				FD_CLR(pPar->m_netSocket, &readfds);
-				ret = recv(pPar->m_netSocket,recvBuff,buffLen,0);
-				if(ret == SOCKET_ERROR) pPar->m_connectState = CONNECT_STATE_DISCONNECT;	//连接断开
-				if(ret > 0) pPar->getDataPacket((unsigned char *)recvBuff,ret);//接收到数据
+				FD_CLR(pPar.m_netSocket, &readfds);
+				ret = recv(pPar.m_netSocket,recvBuff,buffLen,0);
+				if(ret == SOCKET_ERROR) pPar.m_connectState = CONNECT_STATE_DISCONNECT;	//连接断开
+				if(ret > 0) pPar.getDataPacket((unsigned char *)recvBuff,ret);//接收到数据
 			}
 		}
 		Sleep(1);
@@ -248,24 +248,24 @@ DWORD WINAPI _XNetServer::recvThread(void * pParam)
 }
 DWORD WINAPI _XNetServer::sendThread(void * pParam)
 {
-	_XNetServer * pPar = (_XNetServer *)pParam;
+	_XNetServer &pPar = *(_XNetServer *)pParam;
 	int buffSize = 4096;
 	char * sendBuff = createArrayMem<char>(buffSize);
 	if(sendBuff == NULL) return 0;
-	while(1)
+	while(true)
 	{
-		if(pPar->m_isExit) break;
-		if(pPar->m_connectState == CONNECT_STATE_DISCONNECT)
+		if(pPar.m_isExit) break;
+		if(pPar.m_connectState == CONNECT_STATE_DISCONNECT)
 		{
 			Sleep(1);
 			continue;
 		}
-		pPar->m_mutex.Lock();
-		if(pPar->m_sendDataBuff.size() > 0)// && pPar->m_clientConnect)
+		pPar.m_mutex.Lock();
+		if(pPar.m_sendDataBuff.size() > 0)// && pPar.m_clientConnect)
 		{//有数据需要发送
-			_XNetData *tempData = (* pPar->m_sendDataBuff.begin());
-			pPar->m_sendDataBuff.pop_front();
-			pPar->m_mutex.Unlock();
+			_XNetData *tempData = (* pPar.m_sendDataBuff.begin());
+			pPar.m_sendDataBuff.pop_front();
+			pPar.m_mutex.Unlock();
 			if(tempData->isEnable)
 			{
 				if(tempData->dataLen + PACKET_HEAD_LEN > buffSize)
@@ -279,11 +279,11 @@ DWORD WINAPI _XNetServer::sendThread(void * pParam)
 				memcpy(sendBuff + 1,&tempData->dataLen,sizeof(int));
 				memcpy(sendBuff + PACKET_HEAD_LEN,tempData->data,tempData->dataLen);
 				//发送数据
-				if(!pPar->sendDataSocket(sendBuff,tempData->dataLen + PACKET_HEAD_LEN))
+				if(!pPar.sendDataSocket(sendBuff,tempData->dataLen + PACKET_HEAD_LEN))
 				{//发送失败则将数据推回
-					pPar->m_mutex.Lock();
-					pPar->m_sendDataBuff.push_front(tempData);
-					pPar->m_mutex.Unlock();
+					pPar.m_mutex.Lock();
+					pPar.m_sendDataBuff.push_front(tempData);
+					pPar.m_mutex.Unlock();
 				}else
 				{
 					showNetData(tempData);
@@ -296,7 +296,7 @@ DWORD WINAPI _XNetServer::sendThread(void * pParam)
 			}
 		}else
 		{
-			pPar->m_mutex.Unlock();
+			pPar.m_mutex.Unlock();
 		}
 		Sleep(1);
 	}
@@ -305,26 +305,26 @@ DWORD WINAPI _XNetServer::sendThread(void * pParam)
 }
 DWORD WINAPI _XNetServer::acceptThread(void * pParam)
 {//默认每次只连接一个客户端
-	_XNetServer * pPar = (_XNetServer *)pParam;
+	_XNetServer &pPar = *(_XNetServer *)pParam;
 	int sinSize = sizeof(sockaddr_in);
 	sockaddr_in clientAddr;
 	int clientSock;	//客户端的套接字
-	while(1)
+	while(true)
 	{
-		if(pPar->m_isExit) break;
-		//if(pPar->m_connectState == CONNECT_STATE_DISCONNECT) break;
-		clientSock = accept(pPar->m_serverSocket,(sockaddr *)&clientAddr,&sinSize);
+		if(pPar.m_isExit) break;
+		//if(pPar.m_connectState == CONNECT_STATE_DISCONNECT) break;
+		clientSock = accept(pPar.m_serverSocket,(sockaddr *)&clientAddr,&sinSize);
 		if(clientSock == -1)
 		{//连接失败
 			printf("Accept error!\n");
 			return 0;
 		}else
 		{//连接成功
-			pPar->m_netSocket = clientSock;
+			pPar.m_netSocket = clientSock;
 			printf("client connect!\n");
-			//pPar->m_clientConnect = XTrue;
-			if(pPar->m_connectState == CONNECT_STATE_DISCONNECT)
-				pPar->m_connectState = CONNECT_STATE_CONNECT;
+			//pPar.m_clientConnect = XTrue;
+			if(pPar.m_connectState == CONNECT_STATE_DISCONNECT)
+				pPar.m_connectState = CONNECT_STATE_CONNECT;
 		}
 		Sleep(1);
 	}
@@ -332,7 +332,7 @@ DWORD WINAPI _XNetServer::acceptThread(void * pParam)
 }
 DWORD WINAPI _XNetServer::boardcastThread(void * pParam)
 {
-	_XNetServer * pPar = (_XNetServer *)pParam;
+	_XNetServer &pPar = *(_XNetServer *)pParam;
 	unsigned char tempCheck;
 	int offset = 0;
 	int len;
@@ -366,10 +366,10 @@ DWORD WINAPI _XNetServer::boardcastThread(void * pParam)
 	//下面准备需要发送的数据
 	unsigned char needSendData[BOARDCAST_DATA_LEN];
 	needSendData[0] = 0xcc;needSendData[1] = 0x00;offset = 2;
-	memcpy(needSendData + offset,&pPar->m_serverPort,sizeof(int));offset += sizeof(int);
-	len = strlen(pPar->m_projectStr);
+	memcpy(needSendData + offset,&pPar.m_serverPort,sizeof(int));offset += sizeof(int);
+	len = strlen(pPar.m_projectStr);
 	memcpy(needSendData + offset,&len,sizeof(int));offset += sizeof(int);
-	memcpy(needSendData + offset,pPar->m_projectStr,len);offset += len;
+	memcpy(needSendData + offset,pPar.m_projectStr,len);offset += len;
 	tempCheck = 0;
 	for(int i = 1;i < offset;++ i)
 	{
@@ -389,9 +389,9 @@ DWORD WINAPI _XNetServer::boardcastThread(void * pParam)
 	unsigned char szRecvBuffer[BOARDCAST_DATA_LEN];
 	memset(szRecvBuffer,0,BOARDCAST_DATA_LEN);
 	char recvProjectStr[PROJECT_STRING_LEN];
-	while(1)
+	while(true)
 	{//下面开始接收数据
-		if(pPar->m_isExit) break;
+		if(pPar.m_isExit) break;
 		memset(szRecvBuffer,0,BOARDCAST_DATA_LEN);
 		//非阻塞访问
 		fd_set readfds;
@@ -423,7 +423,7 @@ DWORD WINAPI _XNetServer::boardcastThread(void * pParam)
 				memcpy(recvProjectStr,szRecvBuffer + 2 + sizeof(int),len);
 				recvProjectStr[len] = '\0';
 				printf("recv:%s\n",recvProjectStr);
-				if(strcmp(recvProjectStr,pPar->m_projectStr) != 0) continue;
+				if(strcmp(recvProjectStr,pPar.m_projectStr) != 0) continue;
 				//下面回应客户端的请求
 				sendto(sendSocket,(char *)needSendData,offset,0,(sockaddr *)&addrUDP,sizeof(addrUDP));
 			}

@@ -99,19 +99,10 @@ public:
 		if(temp == 0) m_optimizeLevel = 0;
 		else m_optimizeLevel = 1;
 	}
-	int getOptimizeLevel() const
-	{
-		return m_optimizeLevel;
-	}
+	int getOptimizeLevel() const {return m_optimizeLevel;}
 	//设置放置的时候是否允许将物件旋转90度
-	void setCanRotate(_XBool temp)
-	{
-		m_canRotate = temp;
-	}
-	_XBool getCanRotate() const
-	{
-		return m_canRotate;
-	}
+	void setCanRotate(_XBool temp) {m_canRotate = temp;}
+	_XBool getCanRotate() const {return m_canRotate;}
 	void reset();	//重置所有信息，以便于可以重新摆放
 
 	_X2DPacker()
@@ -122,8 +113,7 @@ public:
 		,m_objectBox(NULL)
 		//,m_wellRate(1.0f)
 		,m_canRotate(XFalse)
-	{
-	}
+	{}
 };
 
 #endif

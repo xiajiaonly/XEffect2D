@@ -37,9 +37,7 @@
 17、‘Shift’：片选物件，可以同时改变多个物件的状态
 ***********************************/
 
-using namespace std;
-
-#define OBJ_MANAGER_WITH_ID (1)
+#define OBJ_MANAGER_WITH_ID (1)	//显示物件ID会由于字体的建立而递归调用，会造成问题
 
 //物件的类型的定义
 enum _XObjectOptionType
@@ -73,7 +71,14 @@ enum _XObjectOptionState	//物件当前设置的状态
 	OBJ_OPTION_STATE_NO_MOUSE_PROC,			//不接受鼠标操作
 	OBJ_OPTION_STATE_NO_KEY_PROC,			//不接受鼠键盘操作
 };
-#define MAX_OBJECT_SUM (4096)	//最大可以注册的物件数量
+//#define MAX_OBJECT_SUM (4096)	//最大可以注册的物件数量
+enum _XObjectMouseState	//物件的鼠标状态状态
+{
+	OBJ_STATE_NULL,			//无状态
+	OBJ_STATE_MOUSE_DOWN,	//鼠标按下状态
+	OBJ_STATE_MOUSE_MOVE,	//鼠标拖动状态
+	OBJ_STATE_MOUSE_ON,		//鼠标悬浮状态
+};
 //物件需要使用到的信息
 struct _XObjectInfo
 {
@@ -82,63 +87,92 @@ struct _XObjectInfo
 	float m_angle;			//物件的角度
 //	float m_alpha;			//物件的透明度
 	float length;			//对于NodeLine来说还需要显示他的长度
-};
-enum _XObjectMouseState	//物件的鼠标状态状态
-{
-	OBJ_STATE_NULL,			//无状态
-	OBJ_STATE_MOUSE_DOWN,	//鼠标按下状态
-	OBJ_STATE_MOUSE_MOVE,	//鼠标拖动状态
-	OBJ_STATE_MOUSE_ON,		//鼠标悬浮状态
+
+	_XObjectBasic *m_pObject;	//物件的指针
+	_XObjectMouseState m_objectMouseState;	//物件的鼠标状态
+	_XVector2 m_objectMousePoint;//鼠标按键的位置
+	_XObjectOption m_objectKeyOption;	//物件当前按键按下对应的功能 0：无效，1：移动，2：缩放，3：旋转，4：改变旋转模式，5：设置翻转状态
+	_XObjectOptionState m_objectSetState;	//物件当前被设置的状态，0：没有设置状态，1：设置为不能选择状态，2：设置为不接受鼠标操作状态，3：设置为不接受键盘操作状态
+	int m_objectEditParm;	//物件进行编辑的时候的辅助参数，对于NodeLine就是鼠标选中的点的编号
+	//下面这两个数据没有与列表框的操作相对应，因而存在问题
+	_XBool m_objCanEdit;		//物件是否可以编辑		
+	_XBool m_objBeSelect;		//物件是否被选择
+
+	int m_objLineOrder;		//物件与列表框行的对应关系
+	int m_lineObjOrder;		//列表框行与物件的对应关系
+#if OBJ_MANAGER_WITH_ID
+	_XFontUnicode *m_fontID;		//显示物件的ID，这个非常消耗性能，需要斟酌
+#endif
+	_XObjectInfo()
+		:m_pObject(NULL)
+		,m_objectMouseState(OBJ_STATE_NULL)
+		,m_objectKeyOption(OBJ_OPTION_NULL)
+		,m_objectSetState(OBJ_OPTION_STATE_NULL)
+		,m_objLineOrder(-1)
+		,m_lineObjOrder(-1)
+		,m_objCanEdit(XFalse)	//初始化所有的物件都是不可编辑的
+		,m_objBeSelect(XFalse)	//初始化物件不被选择
+#if OBJ_MANAGER_WITH_ID
+		,m_fontID(NULL)
+#endif
+	{}
 };
 //这个类是一个单子系统，在整个应用中只有一个实体
 class _XObjectManager
 {
-	//+++++++++++++++++++++++++++++++++++++++++++
-	//这种单子模式的设计方式比之前的要好
 protected:
 	_XObjectManager();
 	_XObjectManager(const _XObjectManager&);
 	_XObjectManager &operator= (const _XObjectManager&);
 	virtual ~_XObjectManager(); 
 public:
-	static _XObjectManager& GetInstance();
-	//-------------------------------------------
+	static _XObjectManager& GetInstance()
+	{
+		static _XObjectManager m_instance;
+		return m_instance;
+	}
 private:
-	void *m_pObject[MAX_OBJECT_SUM];	//物件的指针
-	_XObjectMouseState m_objectMouseState[MAX_OBJECT_SUM];		//物件的鼠标状态
+	//_XObjectBasic *m_pObject[MAX_OBJECT_SUM];	//物件的指针
+	//_XObjectMouseState m_objectMouseState[MAX_OBJECT_SUM];		//物件的鼠标状态
 
-	_XVector2 m_objectMousePoint[MAX_OBJECT_SUM];		//鼠标按键的位置
-	_XObjectType m_objectType[MAX_OBJECT_SUM];			//物件类型的标记
-	int m_nowObjectSum;					//当前的注册的物件数量
+	//_XVector2 m_objectMousePoint[MAX_OBJECT_SUM];		//鼠标按键的位置
+//	_XObjectType m_objectType[MAX_OBJECT_SUM];			//物件类型的标记
+//	int m_nowObjectSum;					//当前的注册的物件数量
 	int m_nowMouseOnObjectSum;			//当前处于鼠标on状态下的物件数量
-	_XObjectOption m_objectKeyOption[MAX_OBJECT_SUM];	//物件当前按键按下对应的功能 0：无效，1：移动，2：缩放，3：旋转，4：改变旋转模式，5：设置翻转状态
+	//_XObjectOption m_objectKeyOption[MAX_OBJECT_SUM];	//物件当前按键按下对应的功能 0：无效，1：移动，2：缩放，3：旋转，4：改变旋转模式，5：设置翻转状态
 	//下面这个变量需要加一个接口来设置
-	_XObjectOptionState m_objectSetState[MAX_OBJECT_SUM];	//物件当前被设置的状态，0：没有设置状态，1：设置为不能选择状态，2：设置为不接受鼠标操作状态，3：设置为不接受键盘操作状态
+	//_XObjectOptionState m_objectSetState[MAX_OBJECT_SUM];	//物件当前被设置的状态，0：没有设置状态，1：设置为不能选择状态，2：设置为不接受鼠标操作状态，3：设置为不接受键盘操作状态
 
-	int m_objectEditParm[MAX_OBJECT_SUM];	//物件进行编辑的时候的辅助参数，对于NodeLine就是鼠标选中的点的编号
+	//int m_objectEditParm[MAX_OBJECT_SUM];	//物件进行编辑的时候的辅助参数，对于NodeLine就是鼠标选中的点的编号
 	_XVector2 m_nowMousePosition;			//鼠标当前的位置
 
 	void objectKeyOption(int order,_XObjectOptionType optionType);	//对相应的物件进行操作，OptionType，是动作
 
 	//需要一个字体的支持用于显示物件信息
-	_XObjectInfo m_objInfo[MAX_OBJECT_SUM];	//物件的信息
+	std::vector<_XObjectInfo> m_objInfo;
+	//_XObjectInfo m_objInfo[MAX_OBJECT_SUM];	//物件的信息
 	//下面这两个数据没有与列表框的操作相对应，因而存在问题
-	_XBool m_objCanEdit[MAX_OBJECT_SUM];		//物件是否可以编辑		
-	_XBool m_objBeSelect[MAX_OBJECT_SUM];		//物件是否被选择
+	//_XBool m_objCanEdit[MAX_OBJECT_SUM];		//物件是否可以编辑		
+	//_XBool m_objBeSelect[MAX_OBJECT_SUM];		//物件是否被选择
 
-	int m_objLineOrder[MAX_OBJECT_SUM];		//物件与列表框行的对应关系
-	int m_lineObjOrder[MAX_OBJECT_SUM];		//列表框行与物件的对应关系
+	//int m_objLineOrder[MAX_OBJECT_SUM];		//物件与列表框行的对应关系
+	//int m_lineObjOrder[MAX_OBJECT_SUM];		//列表框行与物件的对应关系
+	_XBool m_canAddObj;		//是否允许注册物件,设置这个变量用于使得注册物件失败
 #if OBJ_MANAGER_WITH_ID
 	char m_showObjID;		//是否显示ObjID
-	_XFontUnicode m_fontID[MAX_OBJECT_SUM];		//显示物件的ID，这个非常消耗性能，需要斟酌
-	void setShowObjID()
-	{
-		if(!m_isShowUI) return;
-		if(m_showObjID == 0) m_showObjID = 1;
-		else m_showObjID = 0;
-	}
+	//_XFontUnicode m_fontID[MAX_OBJECT_SUM];		//显示物件的ID，这个非常消耗性能，需要斟酌
+	void setShowObjID();
 #endif
-	void release(){}
+	void release()
+	{
+#if OBJ_MANAGER_WITH_ID
+		for(int i = 0;i < m_objInfo.size();++ i)
+		{
+			XDELETE(m_objInfo[i].m_fontID);
+		}
+#endif
+		m_objInfo.clear();
+	}
 	_XFontUnicode m_font;		//显示的字符
 	_XBool m_isInited;	//是否初始化
 	_XBool checkNeedUpdate(int order);	//检查物件信息是否需要更新
@@ -161,51 +195,13 @@ private:
 	_XBool m_isShowUI;		//是否显示界面元素
 	_XBool m_isOption;		//是否可以操作
 	_XBool m_canSelect;		//是否允许鼠标点选物件
-	void chengeCanSelectState()
-	{//改变物件是否可以被点选的标签
-		if(!m_isShowUI) return;
-		if(!m_canSelect) m_canSelect = XTrue;
-		else m_canSelect = XFalse;
-	}
-	char m_editWindowsPos;	//编辑窗口的位置	1	0
-	void setEditWidowsPos()					//	2	3
-	{
-		if(!m_isShowUI) return;
-		++ m_editWindowsPos;
-		if(m_editWindowsPos >= 4) m_editWindowsPos = 0;
-		switch(m_editWindowsPos)
-		{
-		case 0:m_mutiList.setPosition(XEE::sceneX + XEE::sceneWidth - 289.0f,XEE::sceneY);break;
-		case 1:m_mutiList.setPosition(XEE::sceneX,XEE::sceneY);break;
-		case 2:m_mutiList.setPosition(XEE::sceneX,XEE::sceneY + XEE::sceneHeight - 257.0f);break;
-		case 3:m_mutiList.setPosition(XEE::sceneX + XEE::sceneWidth - 289.0f,XEE::sceneY + XEE::sceneHeight - 257.0f);break;
-		}
-	}
-	void setShow()	
-	{
-		m_isShowUI = XTrue;
-		m_mutiList.setVisiable();
-	}	//设置显示
-	void disShow() 
-	{
-		m_isShowUI = XFalse;
-		m_mutiList.disVisiable();
-	}	//设置不显示
-	void setOption()
-	{
-		m_isOption = XTrue;
-		setShow();
-	}
-	void disOption()
-	{
-		m_isOption = XFalse;
-		disShow();
-		//取消掉所有的动作
-		for(int i = 0;i < m_nowObjectSum;++ i)
-		{
-			m_objectKeyOption[i] = OBJ_OPTION_NULL;
-		}
-	}
+	void chengeCanSelectState();	//改变物件是否可以被点选的标签
+	char m_editWindowsPos;		//编辑窗口的位置	1	0
+	void setEditWidowsPos();					//	2	3
+	void setShow();//设置显示
+	void disShow();//设置不显示
+	void setOption();
+	void disOption();
 public:
 	//下面是为了实现按键的连续动作而定义的
 	_XKeyState m_keyState[4];	//对应于上下左右四个按键
@@ -217,7 +213,7 @@ public:
 	_XKeyState m_ctrlKeyState;	//ctrl按键的案件状态
 public:
 	_XBool init(_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	int addAObject(void * object,_XObjectType type);			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
+	int addAObject(_XObjectBasic * object);			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
 	void decreaseAObject(int objectID);							//去除一个物件的注册
 	void decreaseAObject(const void * object);					//去除一个物件的注册
 	int findObjectID(const void * object) const;		//获取指定物件的ID -1表示该物件没有注册
@@ -233,8 +229,10 @@ public:
 
 	void draw();			//描绘物件的一些信息
 	void move(int delay);	//动作
+private:	//2014.4.18这里增加实时显示鼠标位置
+	_XFontUnicode m_mousePosFont;	//实时显示鼠标位置的字符串
 };
-
+#define _XObjManger _XObjectManager::GetInstance()
 #include "XObjectManager.inl"
 
 #endif

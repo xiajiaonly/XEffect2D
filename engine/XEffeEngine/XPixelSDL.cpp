@@ -11,7 +11,9 @@ SDL_Surface * loadImageEx(const char *pFileName,_XResourcePosition resoursePosit
 	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
 	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
 	{//这里是没有经过资源管理器的，所以会出现资源管理器没有管理的资源
-		temp_back = IMG_Load(pFileName);
+		char * tmp = ANSIToUTF8(pFileName);
+		temp_back = IMG_Load(tmp);
+		XDELETE_ARRAY(tmp);
 	}else
 	if(resoursePosition == RESOURCE_LOCAL_PACK)
 	{//对于内部资源的读取
@@ -24,7 +26,7 @@ SDL_Surface * loadImageEx(const char *pFileName,_XResourcePosition resoursePosit
 		if(_XResourcePack::GetInstance().unpackResource(pFileName,p) != 1)
 		{
 			//printf("LoadIMG Error!\n");
-			AddLogInfoStr("LoadIMG Error!\n");
+			LogStr("LoadIMG Error!");
 			return NULL;
 		}
 		SDL_RWops *fileData = SDL_RWFromMem(p,length);
@@ -71,7 +73,7 @@ SDL_Surface * loadImageEx(const char *pFileName,_XResourcePosition resoursePosit
 	}
     if(temp_back == NULL)
     {
-		AddLogInfoNull("%s file load error!\n",pFileName);
+		LogNull("%s file load error!\n",pFileName);
     	return NULL;
     }
     return temp_back;

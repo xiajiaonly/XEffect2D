@@ -8,10 +8,10 @@
 
 DWORD WINAPI _XFtpServer::serverCMDThread(void * pParam)		//·şÎñÆ÷ÃüÁîÏß³Ì
 {
-	_XFtpServer * pPar = (_XFtpServer *) pParam;
+	_XFtpServer &pPar = *(_XFtpServer *) pParam;
 	char srv_cmd[SERVER_COMMAND_LEN];
 
-	while(1)
+	while(true)
 	{
 		printf("ftp_server> ");	
 		fgets(srv_cmd,SERVER_COMMAND_LEN,stdin);
@@ -20,8 +20,8 @@ DWORD WINAPI _XFtpServer::serverCMDThread(void * pParam)		//·şÎñÆ÷ÃüÁîÏß³Ì
 			printf("Thank you for use!\nBye!\n");
 			exit(1);	//·şÎñÆ÷ÍË³ö
 		}
-		if(strncmp("clientsum",srv_cmd,9) == 0) printf("There are %d Current active users.\n",pPar->m_clientSum); //ÏÔÊ¾Á¬½ÓµÄ¿Í»§¶ËµÄÊıÁ¿
-		if(strncmp("countall",srv_cmd,8) == 0) printf("There are %d visitors\n",pPar->m_allClientSum);
+		if(strncmp("clientsum",srv_cmd,9) == 0) printf("There are %d Current active users.\n",pPar.m_clientSum); //ÏÔÊ¾Á¬½ÓµÄ¿Í»§¶ËµÄÊıÁ¿
+		if(strncmp("countall",srv_cmd,8) == 0) printf("There are %d visitors\n",pPar.m_allClientSum);
 		if(strncmp("listname",srv_cmd,8) == 0) 
 		{//ÂŞÁĞËùÓĞ¿Í»§¶ËµÄÃû×Ö
 			printf("It is not finished!\n");
@@ -43,12 +43,12 @@ DWORD WINAPI _XFtpServer::serverAcceptThread(void * pParam)	//·şÎñÆ÷Á¬½ÓÏß³Ì
 {
 	int sinSize = sizeof(sockaddr_in);
 	sockaddr_in clientAddr;
-	_XFtpServer * pPar = (_XFtpServer *) pParam;
+	_XFtpServer & pPar = *(_XFtpServer *) pParam;
 	int clientSock;	//¿Í»§¶ËµÄÌ×½Ó×Ö
-	while(1)
+	while(true)
 	{
 		printf("ftp_server> ");	
-		clientSock = accept(pPar->m_serverSock,(sockaddr *)&clientAddr,&sinSize);
+		clientSock = accept(pPar.m_serverSock,(sockaddr *)&clientAddr,&sinSize);
 		if(clientSock == -1)
 		{
 			printf("Accept error!\n");
@@ -80,21 +80,21 @@ DWORD WINAPI _XFtpServer::serverAcceptThread(void * pParam)	//·şÎñÆ÷Á¬½ÓÏß³Ì
 DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³Ì(ÉĞÎ´Íê³É)
 {//¶Ô¿Í»§¶ËµÄÇëÇó×÷³öÏàÓ¦,ÕâÊÇÕû¸öµÄºËĞÄ²¿·Ö
 	_XFtpClientSockInfo  *clientInfo = (_XFtpClientSockInfo *)pParam;
-	_XFtpServer * pPar = (_XFtpServer *) clientInfo->pClass;
+	_XFtpServer &pPar = *(_XFtpServer *) clientInfo->pClass;
 	printf("You got a connection from %s\n",inet_ntoa(clientInfo->clientAddr.sin_addr));
 	//login²Ù×÷(´æÔÚÎÊÌâ)
-	_XFtpUserType clientType = pPar->clientLoginProc(clientInfo->clientSock);
+	_XFtpUserType clientType = pPar.clientLoginProc(clientInfo->clientSock);
 	char recvBuf[RECV_BUFF_SIZE];
 	if(clientType == FTP_USER_TYPE_DEFAULT)
 	{//ÆÕÍ¨ÓÃ»§µÄÃüÁî»ØÓ¦
-		while(1)
+		while(true)
 		{//½ÓÊÜÓÃ»§ÃüÁî²¢¶ÔÓÃ»§µÄÃüÁî×÷³ö»ØÓ¦(ÉĞÎ´Íê³É)
-			if(!pPar->recvData(clientInfo->clientSock,recvBuf)) break;
+			if(!pPar.recvData(clientInfo->clientSock,recvBuf)) break;
 			//ÏÂÃæ·ÖÎö²¢´¦ÀíÃüÁî
 			if(strncmp("quit",recvBuf,4) == 0 || strncmp("QUIT",recvBuf,4) == 0)
 			{//quit
-				pPar->sendData(clientInfo->clientSock,returnStr221,strlen(returnStr221));
-				-- pPar->m_clientSum;	//×¢Òâ¶àÏß³Ì»¥³â
+				pPar.sendData(clientInfo->clientSock,returnStr221,strlen(returnStr221));
+				-- pPar.m_clientSum;	//×¢Òâ¶àÏß³Ì»¥³â
 				break;	//½áÊø½ÓÊÕÑ­»·
 			}else
 			if(strncmp("close",recvBuf,5) == 0 || strncmp("CLOSE",recvBuf,5) == 0)
@@ -105,7 +105,7 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 			{//ÉèÖÃµ±Ç°Â·¾¶
 				char retStr[RECV_BUFF_SIZE];
 				sprintf(retStr,returnStr257,clientInfo->nowPath);
-				pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+				pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 			}else
 			if(strncmp("cwd",recvBuf,3) == 0 || strncmp("CWD",recvBuf,3) == 0)
 			{//¸Ä±äµ±Ç°Â·¾¶
@@ -119,11 +119,11 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				{//´æÔÚÔò·µ»ØÂ·¾¶ÉèÖÃ³É¹¦
 					strcpy(clientInfo->nowPath,path);
 					sprintf(retStr,returnStr250,clientInfo->nowPath);
-					pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}else
 				{//²»´æÔÚÔò·µ»ØÂ·¾¶ÉèÖÃÊ§°Ü
 					sprintf(retStr,"550 %s is not exist!\r\n",path);
-					pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
 			}else
 			if(strncmp("dele",recvBuf,4) == 0 || strncmp("DELE",recvBuf,4) == 0)
@@ -138,16 +138,16 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				if(isExistFileEx(retStr) && !isFolderEx(retStr) && deleteFile(retStr))
 				{//ÎÄ¼ş´æÔÚ
 					sprintf(retStr,"250 \"%s\" is deleted!\r\n",filename);
-					pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}else
 				{//Èç¹ûÉ¾³ıÊ§°Ü
 					sprintf(retStr,"550 %s is not exist!\r\n",filename);
-					pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
 			}else
 			if(strncmp("list",recvBuf,4) == 0 || strncmp("LIST",recvBuf,4) == 0)
 			{//·µ»Øµ±Ç°Ä¿Â¼µÄÎÄ¼şÁĞ±í
-				pPar->sendData(clientInfo->clientSock,returnStr125,strlen(returnStr125));	//ÌáÊ¾¾ÍĞ÷
+				pPar.sendData(clientInfo->clientSock,returnStr125,strlen(returnStr125));	//ÌáÊ¾¾ÍĞ÷
 				//¿ªÊ¼´«ÊälistÊı¾İ
 				char pathStr[RECV_BUFF_SIZE];
 				char nowPath[MAX_FILE_NAME_LENGTH];
@@ -160,7 +160,7 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				hFind = FindFirstFile(pathStr, &fileInfo);
 				if(hFind != INVALID_HANDLE_VALUE)
 				{
-					while(1)
+					while(true)
 					{
 						if(strcmp(fileInfo.cFileName,".") != 0 && strcmp(fileInfo.cFileName,"..") != 0)
 						{
@@ -193,28 +193,30 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 
 				//Êı¾İ´«ÊäÍê³É·µ»Ø
 				closesocket(clientInfo->clientDataSock);
-				pPar->sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
+				pPar.sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
 			}else
 			if(strncmp("port",recvBuf,4) == 0 || strncmp("PORT",recvBuf,4) == 0)
 			{//ÉèÖÃ´«Êä¶Ë¿Ú:PORT 192,168,1,110,20,30
 				int portData[6];
-				sscanf(recvBuf + 5,"%d,%d,%d,%d,%d,%d",&portData[0],&portData[1],&portData[2],&portData[3],&portData[4],&portData[5]);
-				clientInfo->clientDataSock = socket(AF_INET,SOCK_STREAM,0);
-				sockaddr_in clientDataSock;
-				clientDataSock.sin_addr.S_un.S_un_b.s_b1 = portData[0];
-				clientDataSock.sin_addr.S_un.S_un_b.s_b2 = portData[1];
-				clientDataSock.sin_addr.S_un.S_un_b.s_b3 = portData[2];
-				clientDataSock.sin_addr.S_un.S_un_b.s_b4 = portData[3];
-				clientDataSock.sin_family = AF_INET;
-				clientDataSock.sin_port = htons((portData[4] << 8) + portData[5]);
-				if(connect(clientInfo->clientDataSock,(const sockaddr *)&clientDataSock,sizeof(sockaddr))==SOCKET_ERROR)
-				{//¶Ë¿ÚÁ¬½ÓÊ§°Ü
-					printf("connect error!\n");
-					return 1;	//ÕâÀïĞèÒª×¢Òâ
+				if(sscanf(recvBuf + 5,"%d,%d,%d,%d,%d,%d",&portData[0],&portData[1],&portData[2],&portData[3],&portData[4],&portData[5]) == 6)
+				{//ÕıÈ·µÄÊı¾İ
+					clientInfo->clientDataSock = socket(AF_INET,SOCK_STREAM,0);
+					sockaddr_in clientDataSock;
+					clientDataSock.sin_addr.S_un.S_un_b.s_b1 = portData[0];
+					clientDataSock.sin_addr.S_un.S_un_b.s_b2 = portData[1];
+					clientDataSock.sin_addr.S_un.S_un_b.s_b3 = portData[2];
+					clientDataSock.sin_addr.S_un.S_un_b.s_b4 = portData[3];
+					clientDataSock.sin_family = AF_INET;
+					clientDataSock.sin_port = htons((portData[4] << 8) + portData[5]);
+					if(connect(clientInfo->clientDataSock,(const sockaddr *)&clientDataSock,sizeof(sockaddr))==SOCKET_ERROR)
+					{//¶Ë¿ÚÁ¬½ÓÊ§°Ü
+						printf("connect error!\n");
+						return 1;	//ÕâÀïĞèÒª×¢Òâ
+					}
+					char retStr[RECV_BUFF_SIZE];
+					sprintf(retStr,returnStr200,"PORT");
+					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
-				char retStr[RECV_BUFF_SIZE];
-				sprintf(retStr,returnStr200,"PORT");
-				pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
 			}else
 			if(strncmp("type",recvBuf,4) == 0 || strncmp("TYPE",recvBuf,4) == 0)
 			{//¸Ä±äÊı¾İµÄ´«Êä·½Ê½
@@ -223,11 +225,11 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				if(mode == 'A' || mode == 'a') clientInfo->transnatType = FTP_TRANSNAION_TYPE_ASCII;
 				char retStr[RECV_BUFF_SIZE];
 				sprintf(retStr,returnStr200,"MODE");
-				pPar->sendData(clientInfo->clientSock,retStr,strlen(retStr));
+				pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 			}else
 			if(strncmp("retr",recvBuf,4) == 0 || strncmp("RETR",recvBuf,4) == 0)
 			{//ÏÂÔØÎÄ¼ş
-				pPar->sendData(clientInfo->clientSock,returnStr150,strlen(returnStr150));	//ÌáÊ¾¾ÍĞ÷
+				pPar.sendData(clientInfo->clientSock,returnStr150,strlen(returnStr150));	//ÌáÊ¾¾ÍĞ÷
 				char filename[RECV_BUFF_SIZE];
 				int len = strlen(recvBuf);
 				memcpy(filename,recvBuf + 5,len - 7);	//»ñÈ¡ÎÄ¼şÃû
@@ -257,11 +259,11 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				fclose(fp);
 				//Êı¾İ´«ÊäÍê³É·µ»Ø
 				closesocket(clientInfo->clientDataSock);
-				pPar->sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
+				pPar.sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
 			}else
 			if(strncmp("stor",recvBuf,4) == 0 || strncmp("STOR",recvBuf,4) == 0)
 			{//ÉÏ´«ÎÄ¼ş
-				pPar->sendData(clientInfo->clientSock,returnStr150,strlen(returnStr150));	//ÌáÊ¾¾ÍĞ÷
+				pPar.sendData(clientInfo->clientSock,returnStr150,strlen(returnStr150));	//ÌáÊ¾¾ÍĞ÷
 				unsigned char filename[RECV_BUFF_SIZE];
 				int len = strlen(recvBuf);
 				memcpy(filename,recvBuf + 5,len - 7);	//»ñÈ¡ÎÄ¼şÃû
@@ -277,7 +279,7 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 					return 1;	//ÕâÀïĞèÒª×¢Òâ
 				}
 				int ret = 0;
-				while(1)
+				while(true)
 				{
 					ret = recv(clientInfo->clientDataSock,(char *)filename,RECV_BUFF_SIZE,0);
 					if(ret <= 0) break;
@@ -287,7 +289,7 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 				fclose(fp);
 				//Êı¾İ´«ÊäÍê³É·µ»Ø
 				closesocket(clientInfo->clientDataSock);
-				pPar->sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
+				pPar.sendData(clientInfo->clientSock,returnStr226,strlen(returnStr226));	//ÌáÊ¾Êı¾İ´«ÊäÍê³É
 			}else
 			//if(strncmp("size",recvBuf,4) == 0 || strncmp("SIZE",recvBuf,4) == 0)
 			//{//»ñÈ¡ÎÄ¼ş´óĞ¡
@@ -311,14 +313,14 @@ DWORD WINAPI _XFtpServer::serverRequestThread(void * pParam)	//·şÎñÆ÷ÇëÇó»ØÓ¦Ïß³
 			//{//¹¦ÄÜ»¹²»ÊÇºÜÇå³ş
 			//}else
 			{//²»Ö§³ÖµÄÃüÁî¸ñÊ½
-				pPar->sendData(clientInfo->clientSock,returnStr202,strlen(returnStr202));
+				pPar.sendData(clientInfo->clientSock,returnStr202,strlen(returnStr202));
 			}
 			Sleep(1);
 		}
 	}else
 	if(clientType == FTP_USER_TYPE_ANONY)
 	{//ÄäÃûµÇÂ¼µÄÓÃ»§µÄ¶¯×÷ÏìÓ¦
-		while(1)
+		while(true)
 		{//½ÓÊÜÓÃ»§ÃüÁî²¢¶ÔÓÃ»§µÄÃüÁî×÷³ö»ØÓ¦(ÉĞÎ´Íê³É)
 			Sleep(1);
 		}
@@ -391,7 +393,7 @@ _XFtpUserType _XFtpServer::clientLoginProc(int clientSock)//´¦Àí¿Í»§¶ËµÇÂ½²Ù×÷£¬
 	if(!sendData(clientSock,returnStr220,strlen(returnStr220))) return FTP_USER_TYPE_NULL;	//·µ»ØÊı¾İ
 	//ºóÃæÊÇÓÃ»§ÃûµÄÊı¾İµÈ²Ù×÷
 	char recvBuf[RECV_BUFF_SIZE];
-	while(1)
+	while(true)
 	{//µÈ´ıÊäÈëÓÃ»§Ãû
 		if(recvData(clientSock,recvBuf))
 		{//Èç¹û½ÓÊÕµ½Êı¾İ

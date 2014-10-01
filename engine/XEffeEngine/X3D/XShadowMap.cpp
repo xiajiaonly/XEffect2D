@@ -10,8 +10,8 @@
 _XBool _XShadowMap::init()
 {
 	if(m_isInited) return XFalse;
-	if(m_fbo.init(SHADOW_MAP_TEXTURE_SIZE,SHADOW_MAP_TEXTURE_SIZE,
-		TEXTURE_DEEPTH) == 0) return XFalse;
+	if(!m_fbo.init(SHADOW_MAP_TEXTURE_SIZE,SHADOW_MAP_TEXTURE_SIZE,
+		TEXTURE_DEEPTH)) return XFalse;
 	m_isInited = XTrue;
 	return XTrue;
 }
@@ -20,7 +20,7 @@ void _XShadowMap::updateShadowMap()
 	if(!m_isInited) return;
 	if(_X3DWorld::GetInstance().m_drawFun == NULL) return;
 
-	m_fbo.useFBO3D();
+	m_fbo.bind();
 	m_fbo.attachTex();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
@@ -40,7 +40,7 @@ void _XShadowMap::updateShadowMap()
 	glCullFace(GL_BACK);
 	glShadeModel(GL_SMOOTH);
 	glColorMask(1,1,1,1);
-	m_fbo.removeFBO3D();
+	m_fbo.unbind();
 }
 void _XShadowMap::release()
 {

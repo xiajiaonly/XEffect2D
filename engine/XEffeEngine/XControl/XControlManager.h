@@ -8,33 +8,22 @@
 #include "stdlib.h"
 #include "XControlBasic.h"
 
-#define MAX_CTRL_OBJ_SUM (512)	//控件管理器中允许注册的总控件数量
+//#define MAX_CTRL_OBJ_SUM (512)	//控件管理器中允许注册的总控件数量
 
-enum _XCtrlObjType
+struct _XCtrlObjetInfo
 {
-	CTRL_OBJ_NULL,		//无效的物件
-	CTRL_OBJ_BUTTON,	//按钮物件
-	CTRL_OBJ_BUTTONEX,	//按钮物件
-	CTRL_OBJ_CHECK,		//复选框的物件
-	CTRL_OBJ_EDIT,		//输入框的物件
-	CTRL_OBJ_MOUSERIGHTBUTTONMENU,	//鼠标右键菜单的物件
-	CTRL_OBJ_SLIDER,	//滑动条的物件
-	CTRL_OBJ_RADIOS,	//单选框的物件
-	CTRL_OBJ_PROGRESS,	//进度条的物件
-	CTRL_OBJ_MUTITEXT,	//多行文本的物件
-	CTRL_OBJ_MUTILIST,	//多列列表框
-	CTRL_OBJ_COMBO,		//下拉列表框的物件
-	CTRL_OBJ_DIRECTORYLIST,	//路径列表框
-	CTRL_OBJ_GROUP,		//群组框
-	CTRL_OBJ_POINTCTRL,		//点原
-	CTRL_OBJ_LINECTRL,		//线原
-	CTRL_OBJ_SLIDEREX,	//滑动条的物件
-	CTRL_OBJ_FUNCTION,	//绘图函数
-};
-struct _XCtrlObjetP
-{
-	void *pObject;
-	void (*pFunction)(void);
+	_XControlBasic *pObject;	//控件的指针
+	void (*pFunction)(void);	//绘制函数的指针
+//	_XCtrlObjType type;			//控件的类型
+	_XBool needDraw;			//是否拥有绘制权限
+	_XBool neadInput;			//是否拥有输入处理权限
+	_XCtrlObjetInfo()
+		:pObject(NULL)
+		,pFunction(NULL)
+//		,type(CTRL_OBJ_NULL)
+		,needDraw(XFalse)
+		,neadInput(XFalse)
+	{}
 };
 //这个类需要使用到单子系统
 class _XControlManager
@@ -42,28 +31,52 @@ class _XControlManager
 	//+++++++++++++++++++++++++++++++++++++++++++
 	//这种单子模式的设计方式比之前的要好
 protected:
-	_XControlManager();
+	_XControlManager()
+		:m_isAutoDraw(1)
+		,m_focusOrder(-1)
+		,m_isShiftDown(false)
+	{
+		//for(int i = 0;i < MAX_CTRL_OBJ_SUM;++ i)
+		//{
+		//	m_pObject[i].pObject = NULL;
+		//	m_pObject[i].pFunction = NULL;
+		//	m_objectType[i] = CTRL_OBJ_NULL;
+		//	m_objectDrawOrderMap[i] = 0;
+		//}
+	}
 	_XControlManager(const _XControlManager&);
 	_XControlManager &operator= (const _XControlManager&);
-	virtual ~_XControlManager(); 
-public:
-	static _XControlManager& GetInstance();
-	//-------------------------------------------
-private:
-	_XCtrlObjetP m_pObject[MAX_CTRL_OBJ_SUM];				//物件注册的序列
-	_XCtrlObjType m_objectType[MAX_CTRL_OBJ_SUM];	//物件的类型
-	int m_objectSum;	//物件的数量
-	int m_objectDrawOrderMap[MAX_CTRL_OBJ_SUM];		//物件描绘顺序的映射表
-	char m_isAutoDraw;	//是否自己管理按钮的绘制
-	int m_focusOrder;	//当前获得焦点的控件的编号，只有获得焦点的控件才能对鼠标键盘事件作出响应
+	virtual ~_XControlManager(){;}
 
 public:
-	int getObjSum() {return m_objectSum;}
-	int addAObject(void * object,_XCtrlObjType type);			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
-	int addAObject(void (* function)());			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
-	void decreaseAObject(int objectID);							//去除一个物件的注册
-	void decreaseAObject(const void * object);					//去除一个物件的注册
-	void decreaseAObject(void (* function)());					//去除一个物件的注册
+	static _XControlManager& GetInstance()
+	{
+		static _XControlManager m_instance;
+		return m_instance;
+	}
+	//-------------------------------------------
+private:
+	std::vector<_XCtrlObjetInfo> m_ctrlObjInfos;
+	std::vector<int> m_ctrlDrawOrderMap;
+//	_XCtrlObjetP m_pObject[MAX_CTRL_OBJ_SUM];		//物件注册的序列
+//	_XCtrlObjType m_objectType[MAX_CTRL_OBJ_SUM];	//物件的类型
+//	int m_objectSum;	//物件的数量
+//	int m_objectDrawOrderMap[MAX_CTRL_OBJ_SUM];		//物件描绘顺序的映射表
+	char m_isAutoDraw;	//是否自己管理按钮的绘制
+	int m_focusOrder;	//当前获得焦点的控件的编号，只有获得焦点的控件才能对鼠标键盘事件作出响应
+	bool m_isShiftDown;
+
+public:
+	int getObjSum() const {return m_ctrlObjInfos.size();}
+	_XBool addACtrl(_XControlBasic * object);			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
+	_XBool addAFunction(void (* function)());			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
+	void setNeedDraw(_XBool flag,int objectID);			//设置某个物件是否有管理器显示
+	void setNeedDraw(_XBool flag,const void *object);	//设置某个物件是否有管理器显示
+	void setNeedInput(_XBool flag,int objectID);			//设置某个物件是否有管理器显示
+	void setNeedInput(_XBool flag,const void *object);	//设置某个物件是否有管理器显示
+	void decreaseAObject(int objectID);					//去除一个物件的注册,传入物件的属顺序
+	void decreaseAObject(const void * object);			//去除一个物件的注册
+	void decreaseAObject(void (* function)());			//去除一个物件的注册
 	int findObjectID(const void * object) const;		//获取指定物件的ID -1表示该物件没有注册
 	int findObjectID(void (* function)()) const;		//获取指定物件的ID -1表示该物件没有注册
 	_XCtrlObjType getObjectType(int objectID) const;	//获取物件的类型
@@ -85,35 +98,63 @@ public:
 
 	void draw(const void * obj);	//手动描绘某个物体
 };
-
+#define _XCtrlManger _XControlManager::GetInstance()
+inline void _XControlManager::setNeedDraw(_XBool flag,int objectID)
+{
+	if(objectID < 0 || objectID >= m_ctrlObjInfos.size()) return;	//输入参数非法
+	m_ctrlObjInfos[objectID].needDraw = flag;
+}
+inline void _XControlManager::setNeedDraw(_XBool flag,const void *object)
+{
+	setNeedDraw(flag,findObjectID(object));
+}
+inline void _XControlManager::setNeedInput(_XBool flag,int objectID)
+{
+	if(objectID < 0 || objectID >= m_ctrlObjInfos.size()) return;	//输入参数非法
+	m_ctrlObjInfos[objectID].neadInput = flag;
+}
+inline void _XControlManager::setNeedInput(_XBool flag,const void *object)
+{
+	setNeedInput(flag,findObjectID(object));
+}
 inline void _XControlManager::decreaseAObject(const void * object)
 {
 	decreaseAObject(findObjectID(object));
 }
-
 inline void _XControlManager::decreaseAObject(void (* function)())
 {
 	decreaseAObject(findObjectID(function));
 }
-
 inline _XCtrlObjType _XControlManager::getObjectType(int objectID) const
 {
-	if(objectID < 0 || objectID >= m_objectSum) return CTRL_OBJ_NULL;	//输入参数非法
-	return m_objectType[objectID];
+	if(objectID < 0 || objectID >= m_ctrlObjInfos.size()) return CTRL_OBJ_NULL;	//输入参数非法
+	if(m_ctrlObjInfos[objectID].pObject == NULL) return CTRL_OBJ_FUNCTION;
+	else return m_ctrlObjInfos[objectID].pObject->getCtrlType();
 }
-
 inline void *_XControlManager::getObject(int objectID) const
 {
-	if(objectID < 0 || objectID >= m_objectSum) return NULL;	//输入参数非法
-	return m_pObject[objectID].pObject;
+	if(objectID < 0 || objectID >= m_ctrlObjInfos.size()) return NULL;	//输入参数非法
+	return m_ctrlObjInfos[objectID].pObject;
 }
-
 inline void _XControlManager::changeTowObject(int object1,int object2)				//将object1与object2的两个物体对调
 {
-	if(object1 < 0 || object1 >= m_objectSum) return;	//数据非法
-	if(object2 < 0 || object2 >= m_objectSum) return;	//数据非法
-	if(object1 == object2) return;	//多余的操作
-	xChangeTwoSum(m_objectDrawOrderMap[object1],m_objectDrawOrderMap[object2]);
+	if(object1 < 0 || object1 >= m_ctrlObjInfos.size() ||
+		object2 < 0 || object2 >= m_ctrlObjInfos.size() ||
+		object1 == object2) return;	//多余的操作
+	xChangeTwoSum(m_ctrlDrawOrderMap[object1],m_ctrlDrawOrderMap[object2]);
 }
-
+inline void _XControlManager::insertChar(const char *ch,int len)
+{
+	if(m_focusOrder < 0 || m_focusOrder >= m_ctrlDrawOrderMap.size()) return;
+	int index = m_ctrlDrawOrderMap[m_focusOrder];
+	if(m_ctrlObjInfos[index].pObject != NULL) 
+			m_ctrlObjInfos[index].pObject->insertChar(ch,len);
+}
+inline void _XControlManager::draw(const void * obj)	//手动描绘某个物体
+{
+	if(m_isAutoDraw != 0 ||
+		findObjectID(obj) < 0) return;
+	((_XControlBasic *)obj)->draw();
+	((_XControlBasic *)obj)->drawUp();
+}
 #endif

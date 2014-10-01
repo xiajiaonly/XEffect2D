@@ -6,7 +6,7 @@
 #include "XEngineLogo.h"
 #include "XResourcePack.h"
 
-int _XEngineLogo::init(_XVector2 position,_XResourcePosition resoursePosition,int mode)
+int _XEngineLogo::init(const _XVector2 &position,_XResourcePosition resoursePosition,int mode)
 {
 	if(m_isInited != 0) return 0;	//重复初始化
 
@@ -16,22 +16,22 @@ int _XEngineLogo::init(_XVector2 position,_XResourcePosition resoursePosition,in
 	else m_mode = 0;
 	setPosition(position);
 
-	if(m_back.init("ResourcePack/pic/Back.png",m_resoursePosition) == 0) return 0;
+	if(!m_back.init("ResourcePack/pic/Back.png",m_resoursePosition)) return 0;
 //	m_back.setPosition(m_position.x - 160,m_position.y - 96);	//居中
 //	m_back.setPosition(0,0);	//全窗口
 	m_back.setIsTransformCenter(POINT_LEFT_TOP);
-	if(m_logoBack.init("ResourcePack/pic/logo/Back.png",m_resoursePosition) == 0) return 0;
+	if(!m_logoBack.init("ResourcePack/pic/logo/Back.png",m_resoursePosition)) return 0;
 	m_logoBack.setPosition(m_position);
-	if(m_logoLight.init("ResourcePack/pic/logo/Light.png",m_resoursePosition) == 0) return 0;
+	if(!m_logoLight.init("ResourcePack/pic/logo/Light.png",m_resoursePosition)) return 0;
 	m_logoLight.setPosition(m_position);
-	if(m_logoMiddle.init("ResourcePack/pic/logo/Middle.png",m_resoursePosition) == 0) return 0;
+	if(!m_logoMiddle.init("ResourcePack/pic/logo/Middle.png",m_resoursePosition)) return 0;
 	m_logoMiddle.setPosition(m_position);
-	if(m_logoTextX.init("ResourcePack/pic/logo/X.png",m_resoursePosition) == 0) return 0;
+	if(!m_logoTextX.init("ResourcePack/pic/logo/X.png",m_resoursePosition)) return 0;
 	m_logoTextX.setPosition(m_position);
-	if(m_logoTextE.init("ResourcePack/pic/logo/E.png",m_resoursePosition) == 0) return 0;
+	if(!m_logoTextE.init("ResourcePack/pic/logo/E.png",m_resoursePosition)) return 0;
 	m_logoTextE.setPosition(m_position.x + 63,m_position.y + 1);
 	m_logoTextE.setAlpha(0);
-	if(m_logoTextRE.init("ResourcePack/pic/logo/RE.png",resoursePosition) == 0) return 0;
+	if(!m_logoTextRE.init("ResourcePack/pic/logo/RE.png",resoursePosition)) return 0;
 	m_logoTextRE.setPosition(m_position.x + 63,m_position.y + 1);
 	m_logoTextRE.setAlpha(0);
 	m_logoTextEC.setACopy(m_logoTextE);
@@ -71,7 +71,6 @@ int _XEngineLogo::init(_XVector2 position,_XResourcePosition resoursePosition,in
 	m_isInited = 1;
 	return 1;
 }
-
 void _XEngineLogo::reset()
 {
 	m_logoStage = -1;
@@ -80,7 +79,6 @@ void _XEngineLogo::reset()
 		m_stageFlag[i] = 0;
 	}
 }
-
 void _XEngineLogo::move(int timeDelay)
 {
 	if(m_isInited == 0) return;
@@ -227,7 +225,6 @@ void _XEngineLogo::move(int timeDelay)
 		m_logoMiddle.setAlpha(0.0f);
 	}
 }
-
 void _XEngineLogo::draw()
 {
 	if(m_isInited == 0) return;	
@@ -255,12 +252,8 @@ void _XEngineLogo::draw()
 _XEngineLogo::_XEngineLogo()
 :m_isInited(0)
 ,m_resoursePosition(RESOURCE_LOCAL_FOLDER)
-{
-}
-_XEngineLogo::~_XEngineLogo()
-{
-	release();
-}
+{}
+_XEngineLogo::~_XEngineLogo(){release();}
 int _XEngineLogo::release()
 {
 	if(m_isInited == 0) return 1;

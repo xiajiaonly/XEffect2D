@@ -63,8 +63,8 @@ int _XJetParticles::init(const _XVector2& position,float jetSpeed,float jetAngle
 
 void _XJetParticles::reset(const _XVector2& position)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd == 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd == 0) return;
 	m_atomBasic->m_isInited = 0;
 	m_atomBasic->init(m_texture,100,2,position,0.95f,-0.001f);
 	m_atomBasic->m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
@@ -81,8 +81,8 @@ void _XJetParticles::reset(const _XVector2& position)
 
 void _XJetParticles::reset(float x,float y)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd == 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd == 0) return;
 	m_atomBasic->m_isInited = 0;
 	m_atomBasic->init(m_texture,100,2,_XVector2(x,y),0.95f,-0.001f);
 	m_atomBasic->m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
@@ -99,8 +99,8 @@ void _XJetParticles::reset(float x,float y)
 
 void _XJetParticles::move(int timeDelay)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	m_atomBasic->move(timeDelay);
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
@@ -169,8 +169,8 @@ void _XJetParticles::move(int timeDelay)
 
 void _XJetParticles::draw() const
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	m_atomBasic->draw();
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{

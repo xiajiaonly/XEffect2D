@@ -17,14 +17,20 @@
 
 struct _XAudioInfo
 {
-	int channelSum;
-	AVSampleFormat sampleFormat;
-	int sampleRate;
+	int channelSum;		//通道数量
+	AVSampleFormat sampleFormat;	//音频采样格式
+	int sampleRate;		//音频采样率
 };
 enum _XAudioDeviceType
 {
 	AUDIO_DEVICE_TYPE_MIC,
 	AUDIO_DEVICE_TYPE_FILE,
+};
+enum _XAVStreamQuality
+{
+	AVS_QUALITY_HEIGHT,	//高质量
+	AVS_QUALITY_MIDDLE,	//中等质量
+	AVS_QUALITY_LOW,	//低质量
 };
 
 class _XAVStream 
@@ -70,7 +76,7 @@ private:
 		XDELETE_ARRAY(m_audioTempBuff);
 	}
 
-	AVStream *openVideo();	//打开视频流
+	AVStream *openVideo(_XAVStreamQuality quality = AVS_QUALITY_HEIGHT);	//打开视频流
 	void closeVideo()		//关闭视频流
 	{
 		avcodec_close(m_videoST->codec);
@@ -106,7 +112,8 @@ private:
 		}
 		return m_videoFrameIndex * m_audioInfo.sampleRate * m_audioInfo.channelSum * len / m_videoFrameRate > m_inputAudioDataSum;
 	}
-	_XBool openFile(const char *filename,int width,int height,int frameRate,_XAudioInfo *info = NULL);
+	_XBool openFile(const char *filename,int width,int height,int frameRate,
+		_XAudioInfo *info = NULL,_XAVStreamQuality quality = AVS_QUALITY_HEIGHT);
 	void pushVideoFrame();
 	//下面是用于清空队列的
 	void flushAudioQueue();
@@ -119,7 +126,8 @@ private:
 	//int m_audioFrameIndex;
 public:	//对外接口
 	//方案1，时间帧同步需要外部处理
-	_XBool open(const char *filename,int width,int height,int frameRate,_XAudioInfo *info = NULL);   
+	_XBool open(const char *filename,int width,int height,int frameRate,
+		_XAudioInfo *info = NULL,_XAVStreamQuality quality = AVS_QUALITY_HEIGHT);   
 	void addFrameAudio(const unsigned char * data,int size);	//这个函数传入的数据必须是LFLFLF....交错的数据，不能使LLLLL……FFFFF……的数据，否则会造成问题。
 	void addFrameRGB(unsigned char*p);
 	//方案1的一个延伸版本
@@ -139,7 +147,8 @@ public:	//对外接口
 	}
 	//方案2：多线程，音频设备外部处理
 	_XBool open(const char *filename,int width,int height,int frameRate,void * audioDevice,
-		_XAudioDeviceType deviceType = AUDIO_DEVICE_TYPE_MIC,_XAudioInfo *info = NULL);   
+		_XAudioDeviceType deviceType = AUDIO_DEVICE_TYPE_MIC,_XAudioInfo *info = NULL,
+		_XAVStreamQuality quality = AVS_QUALITY_HEIGHT);   
 	void updataFrameRGB(unsigned char*p){addFrameRGB(p);}
 	void setStop()
 	{
@@ -195,8 +204,7 @@ public:
 		,m_videoOutbuf(NULL)
 		,m_audioFrame(NULL)
 		,m_audioSwr(NULL)
-	{
-	}
+	{}
 };  
 
 #endif 

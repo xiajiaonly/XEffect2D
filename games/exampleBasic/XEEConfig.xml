@@ -1,4 +1,5 @@
-﻿<!--这个文件中定义的所有变量是与系统相关的-->
+﻿<?xml version="1.0" encoding="gb2312" standalone="yes" ?>
+<!--这个文件中定义的所有变量是与系统相关的-->
 <root>
   <!--窗口类型：0、普通窗口，1、可自适应、旋转和翻转的窗口，2、支持3D渲染的窗口-->
   <windowType>0</windowType>
@@ -47,4 +48,8 @@
   <shutDownTimer_hour>17</shutDownTimer_hour>
   <shutDownTimer_minute>55</shutDownTimer_minute>
   <shutDownTimer_second>0</shutDownTimer_second>
+  <!--系统字体文件-->
+  <fontFilename>../../Common/SIMLI.TTF</fontFilename>
+  <!--公用资源文件目录，注意不能少最后的"/"-->
+  <commonResource>../../Common/</commonResource>
 </root>

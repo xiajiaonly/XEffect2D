@@ -26,9 +26,6 @@
 
 #include "XBasicOpenGL.h"
 
-#include "SDL.h"
-#include "SDL_image.h"
-
 #include "XSprite.h"
 #include "XMaskTex.h"
 #include "XFrame.h"
@@ -49,7 +46,7 @@
 #include "XParticle/XParticles.h"
 #include "XControl/XControls.h"
 #include "XPhysics/XPhysicsBasic.h"
-#include "tinyxml.h"
+#include "XXml.h"
 #include "XCommonDefine.h"
 #include "XConfigManager.h"
 #include "XTimer.h"
@@ -58,12 +55,14 @@
 #include "XPixelCommon.h"
 #include "XInputEventCommon.h"
 #include "XWindowCommon.h"
+#include "XPressDataMode.h"
 
 #include "XMovieFfmpeg.h"
 
 #include "XEffeEngine.h"
 #include "XBmp.h"
 #include "XDataBasic.h"
+#include "XWindowTitle.h"
 
 #include "XTextureInformation.h"
 #include "XFrameEx.h"
@@ -84,17 +83,11 @@ extern _XBool saveSystemConfigData(const _XWindowData &data);
 extern _XBool initWindowEx(const _XWindowData& windowData);
 inline _XBool initWindowEx(void)
 {
-	if(!readSystemConfigData(XEE::windowData)) return XFalse;
+	//if(!readSystemConfigData(XEE::windowData)) return XFalse;
+	if(!readSystemConfigData(XEE::windowData)) LogStr("读取配置文件失败!");	//2014.4.13修改为读取配置文件失败之后不退出，而是使用默认值建立窗口
 	return initWindowEx(XEE::windowData);
 }
 extern void setProjectAsDaemon();	//设置项目为后台项目
-inline void setWindowPos(int x,int y)
-{
-	RECT rect;
-	GetWindowRect(XEE::wHandle,&rect);
-	SetWindowPos(XEE::wHandle,HWND_TOP,x,y,rect.right - rect.left,rect.bottom - rect.top,SWP_SHOWWINDOW);
-//	SetWindowPos(XEE::wHandle,HWND_TOPMOST,x,y,rect.right - rect.left,rect.bottom - rect.top,SWP_SHOWWINDOW);
-}
 
 #if WITH_OBJECT_MANAGER
 #include "XObjectManager.h"
@@ -108,44 +101,12 @@ namespace XEE
 	//{
 	//	_XErrorReporter::GetInstance().errorProc();
 	//}
-	extern _XBool stopFlag;	//是否暂停
-	extern int manualFPS;	//-1是不设置帧率
-	extern float manualFrameTime;	//设置的每帧的时间
-
-	extern _XBool haveSystemFont;
-	extern _XFontUnicode systemFont;
-	extern _XBool isSuspend;	//程序是否进入中断，如果进入中断的话要退出loading的多线程
-	//下面的变量用于自动显示版本号
-	extern int showVersionTimer;			//显示版本号的计时器
-	extern _XFontUnicode showVersionStr;	//显示版本号的字符串
-	extern int autoShutDownTimer;			//自动关机的计时
-	extern char autoShutDownState;			//自动关机的状态，只有跨越设定时间才会触发自动关机
-
-	inline void setStop(int temp = -1)	//停止 0,play,1,stop,-1,change state
-	{
-		if(temp > 0) XEE::stopFlag = XTrue; 
-		else if(temp == 0) XEE::stopFlag = XFalse; 
-		else
-		if(temp < 0)
-		{
-			XEE::stopFlag = !XEE::stopFlag;
-		}
-	}
-	inline _XBool getStopState()
-	{
-		return XEE::stopFlag;
-	}
-	inline void setFPS(int temp)		//设置游戏帧率，小于0为不限制帧率(目前这个函数好像没有起到应有的作用)
-	{
-		if(temp <= 0) return;	//不合理的数据
-		XEE::manualFPS = temp;
-		XEE::manualFrameTime = 2000.0f / temp;
-	}
 	extern int engineIdle();		//引擎的自循环函数用于循环事件处理
-	extern _XBool needReset3DParam;	//是否需要回复3D参数的设置
+	extern void (*drawAfterCtrl)();	//描绘玩控件之后的描绘动作的回调函数
 	inline void begin2DDraw()
 	{
-		if(XEE::windowData.windowType == WINDOW_TYPE_3D)
+		if(XEE::windowData.windowType == WINDOW_TYPE_3D &&
+			!needReset3DParam)
 		{//如果原来为3D窗口才需要这么做
 			needReset3DParam = XTrue;
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -197,9 +158,10 @@ namespace XEE
 	extern _XBool engineInit();	//窗口建立之前的初始化
 	inline void engineSysInit()	//窗口建立之后的初始化
 	{
-		setSystemFont(XEE_SYSTEM_FONT_PATH);
+		setSystemFont(XEE::windowData.systemFontFile.c_str());
+		if(XEE::windowData.withCustomTitle) XEE::customWinTitle.init();
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().init();
+		_XObjManger.init();
 #endif
 		_XErrorReporter::GetInstance().init();
 	}
@@ -207,9 +169,21 @@ namespace XEE
 	{
 		if(XEE::haveSystemFont && XEE::windowData.isShowVersion
 			&& XEE::showVersionTimer < 60000) XEE::showVersionStr.draw();
-		_XControlManager::GetInstance().draw();
+		if(XEE::windowData.withCustomTitle) XEE::customWinTitle.draw();
+		_XCtrlManger.draw();
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().draw();
+		_XObjManger.draw();
+#endif
+		if(drawAfterCtrl != NULL) drawAfterCtrl();
+		//2014.4.14,修改为显示自己的光标
+#ifdef WITH_XEE_CURSOR
+		if(XEE::windowData.isShowCursor != 0)
+		{//下面显示光标
+			drawLine(XEE::mousePosition.x - 10.0f,XEE::mousePosition.y,XEE::mousePosition.x + 10.0f,XEE::mousePosition.y,3,1.0f,1.0f,1.0f);
+			drawLine(XEE::mousePosition.x,XEE::mousePosition.y - 10.0f,XEE::mousePosition.x,XEE::mousePosition.y + 10.0f,3,1.0f,1.0f,1.0f);
+			drawLine(XEE::mousePosition.x - 10.0f,XEE::mousePosition.y,XEE::mousePosition.x + 10.0f,XEE::mousePosition.y,1,0.0f,0.0f,0.0f);
+			drawLine(XEE::mousePosition.x,XEE::mousePosition.y - 10.0f,XEE::mousePosition.x,XEE::mousePosition.y + 10.0f,1,0.0f,0.0f,0.0f);
+		}
 #endif
 	}
 	inline void updateScreen()				//更新屏幕的内容

@@ -15,7 +15,7 @@ extern unsigned int loadTextureFormSDL(SDL_Surface *surface,_XVector2& size);	//
 
 #define MAX_TTF_FONT_FILE_SUM (128)	//允许载入的最大字体库数量
 
-#pragma comment(lib, "../../engine/lib/FreeType/libfreetype-6.lib")
+#pragma comment(lib, "../../engine/lib/FreeType/freetype253.lib")
 
 enum _XTTFRenderType
 {
@@ -23,7 +23,6 @@ enum _XTTFRenderType
 	RENDER_UTF8,
 	RENDER_UNICODE
 };
-
 struct _XFontTTFInfo
 {
 	_XBool isEnable;							//是否有效
@@ -68,7 +67,6 @@ struct _XFontTTFInfo
 		color.unused = 0x00;
 	}
 };
-
 class _XFontTTF
 {
 	//+++++++++++++++++++++++++++++++++++++++++++
@@ -99,17 +97,17 @@ public:
 	int releaseTTFFile(int order)	//释放某个字体库文件
 	{
 		if(order < 0 || order >= MAX_TTF_FONT_FILE_SUM) return 0;
-		if(m_fontInfo[order].isEnable == 0) return 0;
+		if(!m_fontInfo[order].isEnable) return 0;
 
 		TTF_CloseFont(m_fontInfo[order].font);
-		m_fontInfo[order].isEnable = 0;
+		m_fontInfo[order].isEnable = XFalse;
 		m_fontInfo[order].font = NULL;
 		-- m_nowLoadTTFFontFileSum;
 		return 1;
 	}
 	void setAttitude(int fontOrder,_XTTFRenderType type,SDL_Color color)	//设置字体的渲染参数
 	{//这里调用会造成逻辑上的不完整
-		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable != 0) 
+		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable) 
 		{
 			m_fontInfo[fontOrder].setType(type);
 			m_fontInfo[fontOrder].setColor(color);
@@ -119,14 +117,14 @@ public:
 	}
 	void setOutline(int fontOrder,int outLine)
 	{
-		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable != 0) 
+		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable) 
 		{
 			TTF_SetFontOutline(m_fontInfo[fontOrder].font,outLine);
 		}
 	}
 	void setStyle(int fontOrder,int style)
 	{
-		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable != 0) 
+		if(fontOrder >= 0 && fontOrder < MAX_TTF_FONT_FILE_SUM && m_fontInfo[fontOrder].isEnable) 
 		{
 			TTF_SetFontStyle(m_fontInfo[fontOrder].font,style);
 		}
@@ -136,10 +134,10 @@ public:
 	{
 		for(int i = 0;i < MAX_TTF_FONT_FILE_SUM;++ i)
 		{
-			if(m_fontInfo[i].isEnable != 0) 
+			if(m_fontInfo[i].isEnable) 
 			{
 				TTF_CloseFont(m_fontInfo[i].font);
-				m_fontInfo[i].isEnable = 0;
+				m_fontInfo[i].isEnable = XFalse;
 				m_fontInfo[i].font = NULL;
 			}
 		}
@@ -148,7 +146,6 @@ public:
 	//下面是为了支持_XNumber,_XFont,_XFontUnicode而定义的接口
 	_XBool getTextureNumber(int fontOrder,unsigned int &tex,_XVector2 &layout);
 	_XBool getTextureFont(int fontOrder,unsigned int &tex,_XVector2 &layout);
-	_XBool getTextureFontUnicode(int fontOrder,unsigned int *tex,int& texSum,_XVector2 &layout,_XBool withBlackOutLine = false);
+	_XBool getTextureFontUnicode(int fontOrder,unsigned int *tex,int& texSum,_XVector2 &layout,_XBool withBlackOutLine = XFalse);
 };
-extern int getStrLen(const char * p);
 #endif

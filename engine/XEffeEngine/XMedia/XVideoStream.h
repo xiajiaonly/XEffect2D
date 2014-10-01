@@ -42,10 +42,7 @@ public:
 		,m_pFrameYUV(NULL)
 		,m_videoOutbuf(NULL)
 	{}
-	~_XVideoEncode()
-	{
-		release();
-	}
+	~_XVideoEncode(){release();}
 };
 //ÊÓÆÁÁ÷½âÂë
 class _XVideoDecode
@@ -77,12 +74,8 @@ public:
 		,m_pixelData(NULL)
 		,m_videoCodec(NULL)
 		,m_pSwsContext(NULL)
-	{
-	}
-	~_XVideoDecode()
-	{
-		release();
-	}
+	{}
+	~_XVideoDecode(){release();}
 };
 
 #endif

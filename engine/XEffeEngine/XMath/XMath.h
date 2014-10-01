@@ -12,13 +12,49 @@
 #define PI 3.1415926535897932384626433832795f
 #define PI_HALF 1.5707963267948966192313216916395f								//(PI * 0.5)
 #define PI2 6.283185307179586476925286766558f									//(PI * 2.0)
-#define RADIAN_TO_ANGLE	57.295779513082320876798154814114f						//(180.0 / PI)
-#define ANGLE_TO_RADIAN	0.01745329251994329576923690768488f						//(PI / 180.0)
+#define RADIAN2DEGREE	57.295779513082320876798154814114f						//(180.0 / PI)
+#define DEGREE2RADIAN	0.01745329251994329576923690768488f						//(PI / 180.0)
 #define SIN45 (0.70710678118654752440084436210485f)
 
 #define XEE_Max(a,b) (((a) > (b)) ? (a) : (b))
 #define XEE_Min(a,b) (((a) < (b)) ? (a) : (b))
 
+//»ñÈ¡fµÄ½üËÆÊı¾İ£¬½üËÆ¾«¶ÈÎªlen
+//f = 0.0123456 len = 2;
+//·µ»Ø 1.23 ex = 2
+//Ò²¾ÍÊÇ 0.0123456 = 1.23 * 10^-2 ,ÏòÏÂÈ¡Õû×ª»»³É¿ÆÑ§¼ÆÊı·¨
+inline float getApproximateData(float f,int len,int &ex)
+{
+	ex = 0;
+	if(f == 0.0f || len <= 0 || len >= 6) return 0.0f;
+	float tmp = pow(10.0f,len);
+	if(int (f) != 0)
+	{//´øÕûÊı
+		for(ex = 0;ex < 10;++ ex)
+		{
+			if(int(f) == 0)
+			{
+				ex = ex - 1;
+				if(f < 0.0f) return ceil(f * tmp * 10.0f) / tmp;
+				else return floor(f * tmp * 10.0f) / tmp;
+			}
+			f *= 0.1f;
+		}
+	}else
+	{//´¿Ğ¡Êı
+		for(ex = 0;ex < 10;++ ex)
+		{
+			if(int(f) != 0)
+			{
+				ex = -ex;
+				if(f < 0.0f) return ceil(f * tmp) / tmp;
+				else return floor(f * tmp) / tmp;
+			}
+			f *= 10.0f;
+		}
+	}
+	return 0.0f;
+}
 //ÏÂÃæÊÇÒ»¸ösinµÄÓÅ»¯Ëã·¨
 inline double sinTay(double x)
 {
@@ -49,6 +85,12 @@ inline double cosTay(double x)
     }
     return cos;
 }
+//ËÄÉáÎåÈëÈ¡Õû
+inline int toInt(float f) {return int(f + 0.5f);}
+//ÏòÏÂÈ¡Õû
+inline int toIntFloor(float f) {return floorf(f);}
+//ÏòÉÏÈ¡Õû
+inline int toIntCeil(float f) {return ceilf(f);}
 
 //½Ç¶È»¯¼ò
 extern float getAngleXY(float x,float y);	//ÓÃÓÚ»ñµÃx,y¹¹³ÉµÄ½Ç¶È
@@ -56,7 +98,7 @@ inline float angleAbbreviation(float angle)	//»¡¶È½Ç¶È»¯¼ò
 {
 	angle = fmod(angle,PI2);
 	if(angle < 0.0f) angle += (float)(PI2);
-//	while(1)
+//	while(true)
 //	{
 //		if(angle >= PI2) angle -= (float)(PI2);
 //		else if(angle < 0) angle += (float)(PI2);
@@ -79,31 +121,45 @@ inline float maping1D(float in,float imin,float imax,float omin,float omax)//Ò»Î
 	if(ret > omax) return omax;
 	return ret;
 }
+class _XVector2;
+//0   1
+//3   2
+//×¢Òâ:ĞèÒª¾¡Á¿±£Ö¤ÊäÈëÊä³ö¶¼ÎªÍ¹¶à±ßĞÎ£¬·ñÔò»áÔì³ÉÎÊÌâ¡£¹ØÓÚ°¼¶à±ßĞÎĞèÒªÔÙ×ĞÏ¸¿¼ÂÇ
+extern _XVector2 maping2D(const _XVector2 *inRect,const _XVector2 *outRect,const _XVector2 &in);
+
 template<typename T> 
-T lineSlerp(const T &s,const T &e,float r)//ÏßĞÔ²îÖµ£¬s:Æğµã£¬e:ÖÕµã£¬r£º°Ù·Ö±È[0 - 1.0]
+T lineSlerp(const T &s,const T &e,float r)//ÏßĞÔ²åÖµ£¬s:Æğµã£¬e:ÖÕµã£¬r£º°Ù·Ö±È[0 - 1.0]
 {
 	return e * r + s * (1.0f  - r);
+}
+//²åÖµ x[0 - 1]
+template<typename T> 
+T cSlerp(const T &u0,const T &u1,const T &u2,const T &u3,float x)
+{
+	T p = (u3 - u2) - (u0 - u1);
+	T q = (u0 - u1) - p;
+	T r = u2 - u0;
+	return x * (x * (x * p + q) + r) + u1;
 }
 ///////////////////////////////////////////////////////////
 inline int getMinWellSize2n(int temp)			//Ñ°ÕÒ±Ètemp´óµÄ×îĞ¡µÄ·ûºÏ2µÄn´Î·½µÄ³ß´ç
 {
 	return (int)powf(2.0, ceilf(logf((float)temp)/logf(2.0f)));
 	//int i = 1;
-	//while(1)
+	//while(true)
 	//{
 	//	if(i > temp) break;
 	//	i = i << 1;
 	//}
 	//return i;
 }
-inline _XBool isNPOT(int width, int height)		//ÅĞ¶ÏÊÇ·ñ·ûºÏ2µÄn´Î·½
+inline _XBool isNPOT(int width, int height)		//ÅĞ¶ÏÊÇ·ñ²»·ûºÏ2µÄn´Î·½
 {
 	if((int)powf(2.0f,ceilf(logf((float)width)/logf(2.0f))) != width) return XTrue;
 	if((int)powf(2.0f,ceilf(logf((float)height)/logf(2.0f))) != height) return XTrue;
-	else return XFalse;
+	return XFalse;
 }
 
-class _XVector2;
 class _XLine;
 class _XRect;
 
@@ -158,9 +214,11 @@ extern double minDistancePointToLine(const _XVector2& point,const _XVector2& lin
 //Á½Ïß¶ÎµÄ×î¶Ì¾àÀë
 extern _XVector2 minDistanceTwoLine(const _XVector2& line1S,const _XVector2& line1E,const _XVector2& line2S,const _XVector2& line2E);
 //»ñÈ¡pÊÇ·ñÔÚp1 p2 p3 p4Î§³ÉµÄËÄ±ßĞÎÄÚ²¿
+extern _XBool getIsInRect(float x,float y,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,const _XVector2& p4);
 extern _XBool getIsInRect(const _XVector2& p,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,const _XVector2& p4);
 //ÅĞ¶ÏµãpÊÇ·ñÔÚpRËùÎ§³ÉµÄ¶à±ßĞÎÄÚ²¿
 extern _XBool getIsInRect(const _XVector2& p,const _XVector2 *pR,int pRSum);
+extern _XBool getIsInRect(float x,float y,const _XVector2 *pR,int pRSum);
 
 #include  <complex>
 #include  <iostream>
@@ -176,5 +234,14 @@ extern int quarticEquation(
 extern int quarticEquation(
 					  double a,double b,double c,double d,double e,
 					  double *x);
-
+//¼ÆËã´óĞ¡ÎªsµÄ·½ÕóµÄÖµ£¬dataÎª·½ÕıµÄÊı¾İ
+//0,1,2
+//3,4,5
+//6,7,8
+extern double getValueMatrix(const double *d,int s);
+//ÏÂÃæÊÇCRC16¼ÆËã
+//pÎª×Ö·û´®
+//lenÎª×Ö·û´®³¤¶È
+extern unsigned short CRC16_Modbus(unsigned char *p,unsigned short len);
+extern unsigned short CRC16_XModen(unsigned char *buf,unsigned short length);
 #endif

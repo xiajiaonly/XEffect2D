@@ -10,7 +10,7 @@
 
 #include "XSlider.h"
 
-class _XSliderEx:public _XControlBasic
+class _XSliderEx:public _XControlBasic,public _XBasicOprate
 {
 private:
 	_XBool m_isInited;
@@ -35,19 +35,25 @@ private:
 	friend void sliderExSldUpProc(void *pClass,int id);
 	friend void sliderExSldMoveProc(void *pClass,int id);
 	friend void sliderExSldChangeProc(void *pClass,int id);
+	friend void stateChangeProc(void *);
 protected:
 	void update(int stepTime);
 	void draw();//描绘滑动条
 	void drawUp(){;}						//do nothing
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
-	void setLostFocus();	//设置失去焦点
+	_XBool canLostFocus(float,float){return XTrue;}
+	//void setLostFocus();	//设置失去焦点
 public:
 	_XBool initWithoutTex(const _XRect& area,float max = 100.0f,float min = 0.0f,
-		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2(0.0f,0.0f));
+		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2::zero);
+	_XBool initWithoutTex(const _XVector2& pixelSize,float max = 100.0f,float min = 0.0f,
+		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2::zero)
+	{
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),max,min,type,fontPosition);
+	}
 	_XSliderEx()
 		:m_isInited(XFalse)
 		,m_timer(0)
@@ -59,9 +65,10 @@ public:
 		,m_funMouseMove(NULL)	//鼠标拖动花条时调用
 		,m_funValueChange(NULL)	//滑动条的数值变化
 		,m_pClass(NULL)				//回调函数的参数
-	{}
-	virtual ~_XSliderEx()
-	{release();}
+	{
+		m_ctrlType = CTRL_OBJ_SLIDEREX;
+	}
+	virtual ~_XSliderEx(){release();}
 
 	void release();
 	//下面是一些公共方法
@@ -73,6 +80,9 @@ public:
 
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);
+
+	void setTextColor(const _XFColor& color){m_mainSld.setTextColor(color);}	//设置字体的颜色
+	_XFColor getTextColor() const {return m_mainSld.getTextColor();}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
 	void setColor(float r,float g,float b,float a);//设置字体的颜色
@@ -94,144 +104,27 @@ public:
 
 	void disable();		//使控件无效
 	void enable();		//使控件有效
-	void setVisiable();
-	void disVisiable();
+	void setVisible();
+	void disVisible();
 	float getNowValue() const;	//获取滑块当前的值
 	float getMaxValue() const; 
 	float getMinValue() const;
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y); //点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);		//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 private:	//为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XSliderEx(const _XSliderEx &temp);
 	_XSliderEx& operator = (const _XSliderEx& temp);
+	//下面是关于关联变量的接口
+public:
+	void setConnectVar(float * p) {m_mainSld.setConnectVar(p);}	//关联变量
+	void disConnectVar() {m_mainSld.disConnectVar();}			//取消变量关联
+public:
+	void setOprateState(void * data);
+	void *getOprateState() const;
+	virtual bool isSameState(void * data);
 };
-inline void _XSliderEx::disable()//使控件无效
-{
-	m_mainSld.disable();
-	m_secondarySld.disable();
-	m_chooseBtn.disable();
-}
-inline void _XSliderEx::enable()//使控件有效
-{
-	m_mainSld.enable();
-	m_secondarySld.enable();
-	m_chooseBtn.enable();
-}
-inline float _XSliderEx::getNowValue() const	//获取滑块当前的值
-{
-	return m_mainSld.getNowValue();
-}
-inline float _XSliderEx::getMaxValue() const
-{
-	return m_mainSld.getMaxValue();
-}
-inline float _XSliderEx::getMinValue() const
-{
-	return m_mainSld.getMinValue();
-}
-inline void _XSliderEx::setCallbackFun(void (* funInit)(void *,int),
-	void (* funRelease)(void *,int),
-	void (* funMouseOn)(void *,int),
-	void (* funMouseDown)(void *,int),
-	void (* funMouseUp)(void *,int),
-	void (* funValueChange)(void *,int),
-	void (* funMouseMove)(void *,int),
-	void *pClass)
-{
-	m_funInit = funInit;
-	m_funRelease = funRelease;
-	m_funMouseOn = funMouseOn;
-	m_funMouseDown = funMouseDown;		//有效
-	m_funMouseUp = funMouseUp;
-	m_funValueChange = funValueChange;
-	m_funMouseMove = funMouseMove;
-	m_pClass = pClass;
-}
-inline void _XSliderEx::setNowValue(float temp)
-{
-	m_mainSld.setNowValue(temp);
-}
-inline void _XSliderEx::setRange(float max,float min)
-{
-	m_mainSld.setRange(max,min);
-}
-inline _XBool _XSliderEx::isInRect(float x,float y) //点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-{
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-inline _XVector2 _XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑旋转和缩放
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(!m_isInited) return ret;
-	return m_mainSld.getBox(order);
-	return ret;
-}
-inline void _XSliderEx::setColor(float r,float g,float b,float a)
-{
-	if(!m_isInited) return;
-	m_color.setColor(r,g,b,a);
-	m_mainSld.setColor(m_color);
-	m_secondarySld.setColor(m_color);
-	m_chooseBtn.setColor(m_color);
-	updateChildColor();
-}//设置字体的颜色
-inline void _XSliderEx::setAlpha(float a)
-{
-	if(!m_isInited) return;
-	m_color.setA(a);
-	m_mainSld.setColor(m_color);
-	m_secondarySld.setColor(m_color);
-	m_chooseBtn.setColor(m_color);
-	updateChildAlpha();
-}
-inline void _XSliderEx::release()
-{
-	if(!m_isInited) return;
-	if(m_funRelease != NULL) m_funRelease(m_pClass,getControlID());
-	m_isInited = false;
-}
-//下面是一些公共方法
-inline _XBool _XSliderEx::setFont(const char *caption,const _XFontUnicode &font,float captionSize,const _XVector2 &fontPosition)
-{
-	return m_mainSld.setFont(caption,font,captionSize,fontPosition);
-}
-inline _XBool _XSliderEx::setFontEx(const char *caption,const _XFontUnicode &font,float captionSize)
-{
-	return m_mainSld.setFontEx(caption,font,captionSize);
-}
-inline _XBool _XSliderEx::keyboardProc(int keyOrder,_XKeyState keyState)
-{
-	return m_mainSld.keyboardProc(keyOrder,keyState);
-}
-inline void _XSliderEx::setLostFocus() 
-{
-	if(!m_isInited) return;	//如果没有初始化直接退出
-	if(!m_isActive) return;		//没有激活的控件不接收控制
-	if(!m_isVisiable) return;	//如果不可见直接退出
-	if(!m_isEnable) return;		//如果无效则直接退出
+#include "XSliderEx.inl"
 
-	m_mainSld.setLostFocus();
-	m_secondarySld.setLostFocus();
-	m_chooseBtn.setLostFocus();
-}
-inline void _XSliderEx::setVisiable()
-{
-	m_isVisiable = XTrue;
-	m_mainSld.setVisiable();
-	//m_secondarySld.setVisiable();
-	//m_chooseBtn.setVisiable();
-	updateChildVisiable();
-}
-inline void _XSliderEx::disVisiable()
-{
-	m_isVisiable = XFalse;
-	m_mainSld.disVisiable();
-	m_secondarySld.disVisiable();
-	m_chooseBtn.disVisiable();
-	updateChildVisiable();
-}
 #endif

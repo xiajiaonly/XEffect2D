@@ -1,10 +1,10 @@
 //inline нд╪Ч
 inline _XBool _XNumberEx::setNumber(const char *temp)
 {
-	if(temp == NULL) return 0;
-	if(strlen(temp) >= MAX_NUMBER_LENGTH) return 0;
+	if(temp == NULL) return XFalse;
+	if(strlen(temp) >= MAX_NUMBER_LENGTH) return XFalse;
 	strcpy(m_number,temp);
-	return 1;
+	return XTrue;
 }
 
 inline void _XNumberEx::setColor(float r,float g,float b,float a)
@@ -32,8 +32,8 @@ inline void _XNumberEx::setAngle(float angle)
 {
 	m_angle = angle;
 	m_sprite.setAngle(angle);
-	m_angleSin = sin(m_angle * ANGLE_TO_RADIAN) ;
-	m_angleCos = cos(m_angle * ANGLE_TO_RADIAN) ;
+	m_angleSin = sin(m_angle * DEGREE2RADIAN) ;
+	m_angleCos = cos(m_angle * DEGREE2RADIAN) ;
 	_XVector2 tempPosition;
 	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
 		- m_rotateBasicPoint.y * m_angleSin);

@@ -19,6 +19,7 @@
 #include "XMath/XRect.h"
 #include "XMath/XCColor.h"
 #include "XMath/XFColor.h"
+#include "XMath/XKalman.h"
 #include "XCritical.h" 
 #include "XThread.h" 
 //ÕûÐÎË÷Òý

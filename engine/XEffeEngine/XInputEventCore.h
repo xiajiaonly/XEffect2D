@@ -15,6 +15,7 @@ enum _XInputType
 	EVENT_KEYBOARD,	//键盘事件
 	EVENT_JOYSTICK,	//手柄事件
 	EVENT_SYSTEM,	//系统事件
+	EVENT_RESIZE,	//改变窗口事件
 	EVENT_EXIT,		//退出事件
 };
 //输入事件(尚未完成，可以更具需求增加)

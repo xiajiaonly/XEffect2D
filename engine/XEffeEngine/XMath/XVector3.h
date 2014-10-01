@@ -13,6 +13,7 @@ public:
     float y;
     float z;
 public:
+	static const _XVector3 zero;
     void reset();//重置这个点
     void add(float a,float b,float c);//设置这个点的值
     void set(float a,float b,float c);//这个点的值加上一个点的值
@@ -80,9 +81,12 @@ typedef _XVector3 _XPoint3;
 #include "XVector3.inl"
 inline _XVector3 normalize(const _XVector3& v) 
 {
-    float d = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-    if(d == 0.0f) d = 0.0000001f;
-    return v * (1.0f/d);
+	float d = v.getLengthSqure();
+	if(d == 0.0f) return v * (1.0f/0.0000001f);
+	else return v * (1.0f/sqrt(d));
+	//float d = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	//if(d == 0.0f) d = 0.0000001f;
+	//return v * (1.0f/d);
 }
 //计算空间三个点构成的面的法线
 inline _XVector3 getNormal(const _XVector3 &p0,const _XVector3 &p1,const _XVector3 &p2)

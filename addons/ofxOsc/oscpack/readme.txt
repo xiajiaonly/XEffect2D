@@ -1,0 +1,1 @@
+svn checkout http://oscpack.googlecode.com/svn/trunk/ oscpack-read-only

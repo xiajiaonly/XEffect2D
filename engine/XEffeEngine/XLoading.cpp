@@ -11,7 +11,7 @@ _XLoading *xLoading = NULL;
 _XLoadingScene *xLoadingScene = NULL;
 
 _XBool startLoading(_XLoadingScene * scene,
-		_XResourcePosition resoursePosition)
+		_XResourcePosition/*resoursePosition*/)
 {
 	if(isLoadingStart) return XFalse;
 	if(scene == NULL) return XFalse;
@@ -59,9 +59,9 @@ void _XLoading::setStart()
 
 	if(CreateThread(0,0,loadingProc,this,0,&moveThreadP) == 0) 
 	{
-		AddLogInfoStr("多线程开启失败！\n");
+		LogStr("多线程开启失败！");
 	}
-	while(1)
+	while(true)
 	{
 		if(m_isEnd == STATE_START) break;
 		mySleep(10);
@@ -72,7 +72,7 @@ void _XLoading::setEnd()
 	setLoadPresent(100.0);
 	mySleep(100);
 	m_isShow = XFalse;
-	while(1)
+	while(true)
 	{
 		if(m_isEnd == STATE_END) break;
 		mySleep(10);
@@ -80,11 +80,11 @@ void _XLoading::setEnd()
 }
 DWORD WINAPI _XLoading::loadingProc(void * pParam)
 {
-	_XLoading *pPar = (_XLoading *) pParam;
+	_XLoading &pPar = *(_XLoading *) pParam;
 
-	//pPar->m_hDC = wglGetCurrentDC();
-	HGLRC hGlrc = wglCreateContext(pPar->m_hDC);
-	wglMakeCurrent(pPar->m_hDC,hGlrc);
+	//pPar.m_hDC = wglGetCurrentDC();
+	HGLRC hGlrc = wglCreateContext(pPar.m_hDC);
+	wglMakeCurrent(pPar.m_hDC,hGlrc);
 
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式（对投影矩阵应用之后的矩阵操作）
 	glLoadIdentity();								//变换坐标系函数
@@ -94,42 +94,42 @@ DWORD WINAPI _XLoading::loadingProc(void * pParam)
 	glClearColor(XEE::defaultBGColor.fR,XEE::defaultBGColor.fG,XEE::defaultBGColor.fB,XEE::defaultBGColor.fA);			//清除颜色
 	glDisable(GL_DEPTH);							//2D项目不需要深度测试
 
-	if(pPar->m_pScene != NULL) pPar->m_pScene->init(pPar->m_resoursePosition);
+	if(pPar.m_pScene != NULL) pPar.m_pScene->init(pPar.m_resoursePosition);
 
-	AddLogInfoStr("Enter LoadingProc!\n");
-	pPar->m_isEnd = STATE_START;
-	while(1)
+	LogStr("Enter LoadingProc!");
+	pPar.m_isEnd = STATE_START;
+	while(true)
 	{
 		if(XEE::isSuspend) break;
-		pPar->move();
+		pPar.move();
 
-		//wglMakeCurrent(pPar->m_hDC,hGlrc);
+		//wglMakeCurrent(pPar.m_hDC,hGlrc);
 		//清除屏幕
 	//	clearScreen();
-		pPar->draw();
+		pPar.draw();
 		XEE::updateScreen();
 		//wglMakeCurrent(NULL,NULL);
 
-		if(!pPar->m_isShow)
+		if(!pPar.m_isShow)
 		{
 	//		clearScreen();
 			break;
 		}
-		if(pPar->m_loadPresent < 100) pPar->m_loadPresent += pPar->m_speed;
-		if(pPar->m_pScene != NULL) pPar->m_pScene->setLoadPresent(pPar->m_loadPresent);
+		if(pPar.m_loadPresent < 100) pPar.m_loadPresent += pPar.m_speed;
+		if(pPar.m_pScene != NULL) pPar.m_pScene->setLoadPresent(pPar.m_loadPresent);
 		mySleep(20000);
 	}
-	pPar->release();
+	pPar.release();
 	wglMakeCurrent(NULL,NULL);
 	wglDeleteContext(hGlrc);
-	AddLogInfoStr("Loading End!\n");
-	pPar->m_isEnd = STATE_END;
+	LogStr("Loading End!");
+	pPar.m_isEnd = STATE_END;
 	return 1;
 }
 #endif
 
 #ifdef XEE_OS_LINUX
-void _XLoading::init(_XVector2 windowSize,int resoursePosition)
+void _XLoading::init(const _XVector2 &windowSize,int resoursePosition)
 {
 	if(resoursePosition != RESOURCE_OUTSIDE)
 	{
@@ -145,7 +145,7 @@ void _XLoading::init(_XVector2 windowSize,int resoursePosition)
 	m_windowSize = windowSize;
 	//在这里载入相关资源
 	m_loadingBG.init("pic/Loading/LoadingBG.png",NULL,1,m_resoursePosition);		//设置界面的第一个界面
-	m_loadingBG.setPosition(_XVector2(0,0));
+	m_loadingBG.setPosition(_XVector2::zero);
 //	m_loadingBG.setSize(m_windowSize.x/64.0,m_windowSize.y/64.0);
 //	m_loadingBG.setIsResizeCenter(POINT_LEFT_TOP);
 
@@ -196,26 +196,26 @@ void _XLoading::setStart()
 
     	if(pthread_create(&moveThreadP, NULL, &loadingProc, (void*) this) != 0) 
 	{
-		AddLogInfoStr("多线程开启失败！\n");
+		LogStr("多线程开启失败！");
 	}
 }
 
 void *_XLoading::loadingProc(void * pParam)
 {
-	_XLoading *pPar = (_XLoading *) pParam;
+	_XLoading &pPar = *(_XLoading *) pParam;
 	//切换上下文
-	glXMakeCurrent(pPar->m_mainDisplay,pPar->m_threadPBuffer,pPar->m_threadContext);
+	glXMakeCurrent(pPar.m_mainDisplay,pPar.m_threadPBuffer,pPar.m_threadContext);
 	int isSuccess = 0;					//记录加载是否成功的标记变量
-	if(pPar->m_loadFunc != NULL)
+	if(pPar.m_loadFunc != NULL)
 	{
-		isSuccess = pPar->m_loadFunc();	//记录加载是否成功
+		isSuccess = pPar.m_loadFunc();	//记录加载是否成功
 	}
 	//还原原有的上下文
-	glXMakeCurrent(pPar->m_mainDisplay,None,NULL);
-	glXDestroyContext(pPar->m_mainDisplay,pPar->m_threadContext);
-	glXDestroyPbuffer(pPar->m_mainDisplay,pPar->m_threadPBuffer);
-	glXMakeCurrent(pPar->m_mainDisplay,pPar->m_mainPBuffer,pPar->m_mainContext);
-	if(isSuccess == 1) pPar->m_isEnd = 1;	//加载成功
-	else pPar->m_isEnd = 2;					//加载失败
+	glXMakeCurrent(pPar.m_mainDisplay,None,NULL);
+	glXDestroyContext(pPar.m_mainDisplay,pPar.m_threadContext);
+	glXDestroyPbuffer(pPar.m_mainDisplay,pPar.m_threadPBuffer);
+	glXMakeCurrent(pPar.m_mainDisplay,pPar.m_mainPBuffer,pPar.m_mainContext);
+	if(isSuccess == 1) pPar.m_isEnd = 1;	//加载成功
+	else pPar.m_isEnd = 2;					//加载失败
 }
 #endif

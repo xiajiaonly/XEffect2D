@@ -58,12 +58,8 @@ public:
 		,m_pixelData(NULL)
 		,m_position(0.0f,0.0f)
 		,m_size(0.0f,0.0f)
-	{
-	}
-	~_XMaskTex()
-	{
-		release();
-	}
+	{}
+	~_XMaskTex(){release();}
 	void release()
 	{
 		if(!m_isInited) return;

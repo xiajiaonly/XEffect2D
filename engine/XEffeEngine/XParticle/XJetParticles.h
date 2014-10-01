@@ -51,17 +51,17 @@ public:
 
 inline void _XJetParticles::setEnd()
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
-	if(m_isSetEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0 ||
+		m_isSetEnd != 0) return;
 	m_isSetEnd = 1;
 	m_atomBasic->setEnd();
 }
 
 inline void _XJetParticles::setPosition(const _XVector2& position)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	//计算角度
 	m_directionAngle = m_nowPosition.getAngle(position);
 	m_nowPosition = position;
@@ -70,8 +70,8 @@ inline void _XJetParticles::setPosition(const _XVector2& position)
 
 inline void _XJetParticles::setPosition(float x,float y)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	//计算角度
 	m_directionAngle = m_nowPosition.getAngle(x,y);
 	m_nowPosition.set(x,y);

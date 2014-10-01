@@ -10,15 +10,16 @@
 #include "string.h"
 #include "XColorSpace.h"
 #include "XTimer.h"
+#include "../XLogBook.h"
 
 //float STREAM_DURATION = 5.0f;
 //int STREAM_NB_FRAMES = 0;//  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 //这个函数中的音频转换的数据存在问题，需要考量
 void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 {//将音频数据写入到文件中
-	if(!m_isOpen) return;
-	if(data == NULL) return;
-	if(m_audioST == NULL) return;
+	if(!m_isOpen ||
+		data == NULL ||
+		m_audioST == NULL) return;
 	//++++++++++++++++++++++++++++++++++
 	//下面对音频buff进行处理
 	if(m_audioDataPos + size <= m_audioOutbufSize)
@@ -31,7 +32,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 	{//分多次将数据考入
 		int tempSize = 0;
 		int offset = 0;
-		while(1)
+		while(true)
 		{
 			if(size - offset + m_audioDataPos > m_audioOutbufSize) tempSize = m_audioOutbufSize - m_audioDataPos;
 			else 
@@ -60,7 +61,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 				m_audioSwr = swr_alloc();
 				if(m_audioSwr == NULL)
 				{
-					printf("ERROR:swr_alloc!\n");
+					LogStr("ERROR:swr_alloc!");
 					return;
 				}
 				swr_alloc_set_opts(m_audioSwr,c->channel_layout,c->sample_fmt,c->sample_rate,
@@ -68,7 +69,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 			}
 			if(swr_init(m_audioSwr)<0)
 			{
-				printf("swr_init() for AV_SAMPLE_FMT_S16P fail");
+				LogStr("swr_init() for AV_SAMPLE_FMT_S16P fail");
 				return;
 			}
 		//	int audioBufferSize = av_samples_get_buffer_size(NULL, c->channels, c->frame_size,
@@ -93,7 +94,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 		}
 		if(ret < 0) 
 		{  
-			printf("Could not setup audio frame\n");  
+			LogStr("Could not setup audio frame");  
 			return; 
 		} 
 
@@ -108,7 +109,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 		ret = avcodec_encode_audio2(c,&m_audioPkt,m_audioFrame,&haveData);  
 		if(ret < 0) 
 		{  
-            printf("Error encoding audio frame\n");  
+            LogStr("Error encoding audio frame");  
             return;
         }
 		if(haveData)
@@ -120,7 +121,7 @@ void _XAVStream::addFrameAudio(const unsigned char * data,int size)
 			m_audioPkt.flags |= AV_PKT_FLAG_KEY;
 			m_audioPkt.stream_index = m_audioST->index;
             if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
-				printf("Error:音频数据写入失败!\n");
+				LogStr("Error:音频数据写入失败!");
 		}
 
 		m_audioDataPos -= m_audioFrameInSize;
@@ -138,7 +139,7 @@ AVStream *_XAVStream::openAudio()
 	AVStream *st = av_new_stream(m_pOutContext, 1); //建立一个音频流
     if(!st) 
 	{
-		printf("Error:音频流建立失败!\n");
+		LogStr("Error:音频流建立失败!");
 		return NULL;
     }
     AVCodecContext * c = st->codec;
@@ -146,7 +147,7 @@ AVStream *_XAVStream::openAudio()
 	AVCodec *codec = avcodec_find_encoder(m_pFormat->audio_codec);
     if(!codec) 
 	{
-        printf("Error:音频编码器寻找失败!\n");
+        LogStr("Error:音频编码器寻找失败!");
         return NULL;
     }
 	avcodec_get_context_defaults3(c,codec);
@@ -162,7 +163,7 @@ AVStream *_XAVStream::openAudio()
 	//打开音频编码器
     if(avcodec_open2(c, codec,NULL) < 0) 
 	{
-        printf("Error:音频编码器打开失败!\n");
+        LogStr("Error:音频编码器打开失败!");
         return NULL;
     }
 	//为音频数据建立缓存
@@ -174,7 +175,7 @@ AVStream *_XAVStream::openAudio()
 	m_audioFrame = avcodec_alloc_frame();
 	if(m_audioFrame == NULL)
 	{
-		printf("ERROR:avcodec_alloc_frame!\n");
+		LogStr("ERROR:avcodec_alloc_frame!");
 		return NULL;
 	}
 	m_audioFrame->nb_samples = c->frame_size;  
@@ -187,7 +188,7 @@ AVStream *_XAVStream::openAudio()
 		m_audioSwr = swr_alloc();
 		if(m_audioSwr == NULL)
 		{
-			printf("ERROR:swr_alloc!\n");
+			LogStr("ERROR:swr_alloc!");
 			return NULL;
 		}
 		swr_alloc_set_opts(m_audioSwr,c->channel_layout,c->sample_fmt,c->sample_rate,
@@ -196,12 +197,12 @@ AVStream *_XAVStream::openAudio()
 	av_init_packet(&m_audioPkt);
 	return st;
 }
-AVStream *_XAVStream::openVideo()
+AVStream *_XAVStream::openVideo(_XAVStreamQuality quality)
 {
 	AVStream *st = av_new_stream(m_pOutContext, 0);
     if(!st) 
 	{
-        printf("Error:视频数据流建立失败!\n");
+        LogStr("Error:视频数据流建立失败!");
         return NULL;
     }
     AVCodecContext *c = st->codec;
@@ -209,7 +210,7 @@ AVStream *_XAVStream::openVideo()
     AVCodec * codec = avcodec_find_encoder(m_pFormat->video_codec);
     if(!codec) 
 	{
-		printf("Error:视频编码器失败！\n");
+		LogStr("Error:视频编码器失败!");
 		return NULL;
     }
 	avcodec_get_context_defaults3(c,codec);
@@ -223,33 +224,60 @@ AVStream *_XAVStream::openVideo()
     c->pix_fmt = AV_PIX_FMT_YUV420P;
 	//+++++++++++++++++++++++++
 	//这些参数是为了提升画质
-	c->qcompress = 0.5f;
-	c->pre_me = 2;
-	c->lmin = 1;
-	c->lmax = 5;
-	c->qmin = 1;
-	c->qmax = 5;
-	c->qblur = 0.0f;
-	c->spatial_cplx_masking = 0.3f;
-	c->me_pre_cmp = 2;
-	c->rc_qsquish = 1;
-	c->b_quant_factor = 1.25f;
-	c->b_quant_offset = 1.25f;
-	c->i_quant_factor = -0.8f;
-	c->i_quant_offset = 0.0f;
-	c->rc_strategy = 2;
-	c->b_frame_strategy = 0;
-	c->dct_algo = 0;
-	c->lumi_masking = 0.0f;
-	c->dark_masking = 0.0f; 
-	//-----------------------
+	switch(quality)
+	{
+	case AVS_QUALITY_HEIGHT:	//高质量
+		c->qcompress = 0.5f;
+		c->pre_me = 2;
+		c->lmin = 1;
+		c->lmax = 5;
+		c->qmin = 1;
+		c->qmax = 5;
+		c->qblur = 0.0f;
+		c->spatial_cplx_masking = 0.3f;
+		c->me_pre_cmp = 2;
+		c->rc_qsquish = 1;
+		c->b_quant_factor = 1.25f;
+		c->b_quant_offset = 1.25f;
+		c->i_quant_factor = -0.8f;
+		c->i_quant_offset = 0.0f;
+		c->rc_strategy = 2;
+		c->b_frame_strategy = 0;
+		c->dct_algo = 0;
+		c->lumi_masking = 0.0f;
+		c->dark_masking = 0.0f; 
+		break;
+	case AVS_QUALITY_MIDDLE:	//低质量
+		c->qcompress = 0.5f;
+		c->pre_me = 0;
+		c->lmin = 20;
+		c->lmax = 200;
+		c->qmin = 4;
+		c->qmax = 20;
+		c->qblur = 0.5f;
+		c->spatial_cplx_masking = 0.3f;
+		c->me_pre_cmp = 2;
+		c->rc_qsquish = 1;
+		c->b_quant_factor = 1.25f;
+		c->b_quant_offset = 1.25f;
+		c->i_quant_factor = -0.8f;
+		c->i_quant_offset = 0.0f;
+		c->rc_strategy = 2;
+		c->b_frame_strategy = 0;
+		c->dct_algo = 0;
+		c->lumi_masking = 0.0f;
+		c->dark_masking = 0.0f;
+		break;
+	case AVS_QUALITY_LOW:	//低质量，默认值
+		break;
+	}
 
     if(m_pFormat->video_codec == AV_CODEC_ID_H264)
         av_opt_set(c->priv_data, "preset", "slow", 0);
 
     if(avcodec_open2(c, codec,NULL) < 0) 
 	{
-		printf("Error:视频编码器打开失败！\n");
+		LogStr("Error:视频编码器打开失败!");
 		return NULL;
     }
 
@@ -264,7 +292,7 @@ AVStream *_XAVStream::openVideo()
 	av_init_packet(&m_videoPkt);
 	return st;
 }    
-_XBool _XAVStream::openFile(const char *filename,int width,int height,int frameRate,_XAudioInfo *info)
+_XBool _XAVStream::openFile(const char *filename,int width,int height,int frameRate,_XAudioInfo *info,_XAVStreamQuality quality)
 {	
 	//记录相关的数据
 	m_videoWidth = width;
@@ -281,13 +309,14 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 	}
 	//初始化
 	av_register_all();
+	avcodec_register_all();
 	m_pFormat = av_guess_format(NULL,filename,NULL); //根据文件名获取文件格式信息，默认格式为MPEG
 	if(m_pFormat)
 	{
 		m_pOutContext = avformat_alloc_output_context(NULL,NULL,filename);
 		if(!m_pOutContext)
 		{
-			printf("内存错误！\n");
+			LogStr("内存错误!");
 			return XFalse;
 		}
 	}else
@@ -295,13 +324,13 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 		m_pFormat = av_guess_format("mpeg", NULL, NULL);
 		if(!m_pFormat)
 		{
-			printf("文件格式不支持!\n");
+			LogStr("文件格式不支持!");
 			return XFalse;
 		}
 		m_pOutContext = avformat_alloc_output_context("mpeg",NULL,filename);
 		if(!m_pOutContext)
 		{
-			printf("内存错误！\n");
+			LogStr("内存错误!");
 			return XFalse;
 		}
 	}
@@ -312,7 +341,7 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 	//根据视频格式建立对应的视频音频数据
 	m_videoST = NULL;
     m_audioST = NULL;
-    if(m_pFormat->video_codec != CODEC_ID_NONE) m_videoST = openVideo();
+    if(m_pFormat->video_codec != CODEC_ID_NONE) m_videoST = openVideo(quality);
     if(m_pFormat->audio_codec != CODEC_ID_NONE) m_audioST = openAudio();
 	if(m_videoST == NULL || m_audioST == NULL) return XFalse;	//注意：遇到有图像没声音或者是有声音没图像的视频会有问题！！！
 	av_dump_format(m_pOutContext, 0, filename, 1);	//将设置的所有数据显示出来
@@ -339,7 +368,7 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 	{
         if(avio_open(&m_pOutContext->pb,filename,AVIO_FLAG_WRITE) < 0) 
 		{
-            printf("文件打开失败!\n");
+            LogStr("文件打开失败!");
             return XFalse;
         }
     }
@@ -358,7 +387,7 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 
 	if(avformat_write_header(m_pOutContext,NULL) != 0) //写入文件头
 	{
-		printf("文件头写入失败!\n");
+		LogStr("文件头写入失败!");
 		return XFalse;
 	}
 	m_pSwsContext = sws_getContext(m_videoST->codec->width,m_videoST->codec->height,PIX_FMT_RGB24,   
@@ -367,11 +396,11 @@ _XBool _XAVStream::openFile(const char *filename,int width,int height,int frameR
 	if(m_pSwsContext == NULL) return XFalse;
 	return XTrue;
 }
-_XBool _XAVStream::open(const char *filename,int width,int height,int frameRate,_XAudioInfo *info)  
+_XBool _XAVStream::open(const char *filename,int width,int height,int frameRate,_XAudioInfo *info,_XAVStreamQuality quality)  
 {	
 	if(m_isOpen) return XTrue;	//防止重复打开流
 	if(filename == NULL || width <= 0 || height <= 0 || frameRate <= 0) return XFalse;
-	if(!openFile(filename,width,height,frameRate,info)) return XFalse;
+	if(!openFile(filename,width,height,frameRate,info,quality)) return XFalse;
 	//所有的打开完成
 	m_withThread = XFalse;
 	m_withDevice = XFalse;
@@ -423,7 +452,7 @@ void _XAVStream::pushVideoFrame()
 	int ret = avcodec_encode_video2(c,&m_videoPkt,m_pictureYUV,&haveData);
 	if(ret < 0)
 	{
-		printf("ERROR!\n");
+		LogStr("视频编码失败!");
 		return;
 	}
 	if(haveData) av_write_frame(m_pOutContext, &m_videoPkt);
@@ -431,9 +460,9 @@ void _XAVStream::pushVideoFrame()
 }
 void _XAVStream::addFrameRGB(unsigned char* p)
 {
-	if(!m_isOpen) return;
-	if(p == NULL) return;
-	if(m_videoST == NULL) return;
+	if(!m_isOpen ||
+		p == NULL ||
+		m_videoST == NULL) return;
 	//static int frames = 0;
 	AVCodecContext * c = m_videoST->codec;
 	m_pictureRGB->data[0] = p;  
@@ -461,20 +490,18 @@ void _XAVStream::addFrameRGB(unsigned char* p)
 }      
 void _XAVStream::flushAudioQueue()
 {
-	if(!m_isOpen) return;
-	if(m_inputAudioDataSum <= 0) return;
+	if(!m_isOpen ||
+		m_inputAudioDataSum <= 0) return;
 	AVCodecContext *c = m_audioST->codec;
 	int haveData = 0;	//是否有获得数据
-	int ret;
-	while(1)
+	while(true)
 	{
 		av_init_packet(&m_audioPkt);
 		m_audioPkt.data = NULL;
-		m_audioPkt.size = 0;
-		ret = avcodec_encode_audio2(c,&m_audioPkt,NULL,&haveData);  
-		if(ret < 0) 
+		m_audioPkt.size = 0; 
+		if(avcodec_encode_audio2(c,&m_audioPkt,NULL,&haveData) < 0) 
 		{  
-            printf("Error encoding audio frame\n");  
+            LogStr("Error encoding audio frame");  
 			break;
         }
 		if(haveData)
@@ -487,7 +514,7 @@ void _XAVStream::flushAudioQueue()
 			m_audioPkt.flags |= AV_PKT_FLAG_KEY;
 			m_audioPkt.stream_index = m_audioST->index;
             if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
-				printf("Error:音频数据写入失败!\n");
+				LogStr("Error:音频数据写入失败!");
 			av_free_packet(&m_audioPkt); 
 		}else
 		{
@@ -502,16 +529,14 @@ void _XAVStream::flushVideoQueue()
 	if(!m_isOpen) return;
 	AVCodecContext * c = m_videoST->codec;
 	int haveData;
-	int ret;
-	while(1)
+	while(true)
 	{
 		av_init_packet(&m_videoPkt);
 		m_videoPkt.data = NULL;
 		m_videoPkt.size = 0;
-		ret = avcodec_encode_video2(c,&m_videoPkt,NULL,&haveData);
-		if(ret < 0)
+		if(avcodec_encode_video2(c,&m_videoPkt,NULL,&haveData) < 0)
 		{
-			printf("ERROR!\n");
+			LogStr("视频编码失败!");
 			return;
 		}
 		if(haveData)
@@ -534,7 +559,7 @@ _XBool _XAVStream::close()
 		if(m_threadState == 1)
 		{
 			m_threadState = 2;
-			while(1)
+			while(true)
 			{
 				if(m_threadState == 3) break;
 				Sleep(1);
@@ -585,11 +610,11 @@ _XBool _XAVStream::close()
 	return XTrue;
 }  
 _XBool _XAVStream::open(const char *filename,int width,int height,int frameRate,
-	void * audioDevice,_XAudioDeviceType deviceType,_XAudioInfo *info)
+	void * audioDevice,_XAudioDeviceType deviceType,_XAudioInfo *info,_XAVStreamQuality quality)
 {
 	if(m_isOpen) return XTrue;	//防止重复打开流
 	if(filename == NULL || width <= 0 || height <= 0 || frameRate <= 0) return XFalse;
-	if(!openFile(filename,width,height,frameRate,info)) return XFalse;
+	if(!openFile(filename,width,height,frameRate,info,quality)) return XFalse;
 	//所有的打开完成
 	m_withThread = XTrue;
 	m_withDevice = XFalse;
@@ -602,7 +627,7 @@ _XBool _XAVStream::open(const char *filename,int width,int height,int frameRate,
 	//下面开启线程
 	if(CreateThread(0,0,encodeThread,this,0,&m_encodeThread) == 0)
 	{//线程建立失败
-		printf("Encode thread create error!\n");
+		LogStr("Encode thread create error!");
 		return XFalse;
 	}
 
@@ -614,42 +639,42 @@ _XBool _XAVStream::open(const char *filename,int width,int height,int frameRate,
 }
 DWORD WINAPI _XAVStream::encodeThread(void * pParam)
 {
-	_XAVStream *pPar = (_XAVStream *)pParam;
-	pPar->m_threadState = 1;
+	_XAVStream &pPar = *(_XAVStream *)pParam;
+	pPar.m_threadState = 1;
 
 	int upTime = getCurrentTicks();
 	int nowTime = getCurrentTicks();
 
-	while(1)
+	while(true)
 	{
-		if(pPar->m_threadState == 2) break;
-		if(pPar->m_isStop)
+		if(pPar.m_threadState == 2) break;
+		if(pPar.m_isStop)
 		{//这里需要丢弃麦克风的声音
-			if(pPar->m_audioDeviceType == AUDIO_DEVICE_TYPE_MIC && pPar->m_audioDevice != NULL)
+			if(pPar.m_audioDeviceType == AUDIO_DEVICE_TYPE_MIC && pPar.m_audioDevice != NULL)
 			{
-				((_XMicrophone *)pPar->m_audioDevice)->getCaptureData();
+				((_XMicrophone *)pPar.m_audioDevice)->getCaptureData();
 			}
 			nowTime = getCurrentTicks();
 			upTime = nowTime;
 			continue;
 		} 
 		nowTime = getCurrentTicks();
-		pPar->m_autoTimer += nowTime - upTime;	//这里是时间差
+		pPar.m_autoTimer += nowTime - upTime;	//这里是时间差
 		upTime = nowTime;
-		if(pPar->m_autoTimer >= pPar->m_frameTime)
+		if(pPar.m_autoTimer >= pPar.m_frameTime)
 		{//需要增加一帧数据
-			pPar->m_autoTimer -= pPar->m_frameTime;
+			pPar.m_autoTimer -= pPar.m_frameTime;
 
-			pPar->m_mutex.Lock();
-			pPar->pushVideoFrame();
-			pPar->m_mutex.Unlock();
+			pPar.m_mutex.Lock();
+			pPar.pushVideoFrame();
+			pPar.m_mutex.Unlock();
 		}
 		//下面加入音频数据
-		if(pPar->m_audioDeviceType == AUDIO_DEVICE_TYPE_MIC && pPar->m_audioDevice != NULL) pPar->addFrameAudio(*((_XMicrophone *)pPar->m_audioDevice)); else
-		if(pPar->m_audioDeviceType == AUDIO_DEVICE_TYPE_FILE && pPar->m_audioDevice != NULL) pPar->addFrameAudio(*((_XAudioStream *)pPar->m_audioDevice));
+		if(pPar.m_audioDeviceType == AUDIO_DEVICE_TYPE_MIC && pPar.m_audioDevice != NULL) pPar.addFrameAudio(*((_XMicrophone *)pPar.m_audioDevice)); else
+		if(pPar.m_audioDeviceType == AUDIO_DEVICE_TYPE_FILE && pPar.m_audioDevice != NULL) pPar.addFrameAudio(*((_XAudioStream *)pPar.m_audioDevice));
 		Sleep(1);
 	}
-	pPar->m_threadState = 3;
+	pPar.m_threadState = 3;
 	return 1;
 }
 _XBool _XAVStream::openEx(const char *filename,int width,int height,int frameRate,
@@ -659,9 +684,9 @@ _XBool _XAVStream::openEx(const char *filename,int width,int height,int frameRat
 	//下面打开设备
 	if(deviceType == AUDIO_DEVICE_TYPE_MIC) 
 	{
-		if(m_micDevice.openDevice(deviceName,XEE::audioFrequency,AL_FORMAT_STEREO16,20000) == 0) return XFalse;
+		if(!m_micDevice.openDevice(deviceName,XEE::audioFrequency,AL_FORMAT_STEREO16,20000)) return XFalse;
 		m_micDevice.captureStop();
-		if(open(filename,width,height,frameRate,&m_micDevice,deviceType) == 0)
+		if(!open(filename,width,height,frameRate,&m_micDevice,deviceType))
 		{
 			m_micDevice.release();
 			return XFalse;
@@ -670,7 +695,7 @@ _XBool _XAVStream::openEx(const char *filename,int width,int height,int frameRat
 	if(deviceType == AUDIO_DEVICE_TYPE_FILE)
 	{
 		if(!m_AudioStream.load(deviceName)) return XFalse;
-		if(open(filename,width,height,frameRate,&m_AudioStream,deviceType) == 0)
+		if(!open(filename,width,height,frameRate,&m_AudioStream,deviceType))
 		{
 			m_AudioStream.close();
 			return XFalse;

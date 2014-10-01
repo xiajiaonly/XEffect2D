@@ -4,106 +4,95 @@
 //Version:	1.0.0
 //Date:		2013.9.25
 //--------------------------------
-//CRC的高位
+#include "XLogBook.h"
 #include "XTimer.h"
-const unsigned char auchCRCHi[] = { 
-    0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
-    0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
-    0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01,
-    0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
-    0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81,
-    0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
-    0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01,
-    0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
-    0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
-    0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
-    0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01,
-    0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
-    0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
-    0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
-    0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01,
-    0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
-    0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
-    0x40 }; 
-//CRC的低位
-const unsigned char auchCRCLo[] = {
-    0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7, 0x05, 0xC5, 0xC4,
-    0x04, 0xCC, 0x0C, 0x0D, 0xCD, 0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09,
-    0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9, 0x1B, 0xDB, 0xDA, 0x1A, 0x1E, 0xDE, 0xDF, 0x1F, 0xDD,
-    0x1D, 0x1C, 0xDC, 0x14, 0xD4, 0xD5, 0x15, 0xD7, 0x17, 0x16, 0xD6, 0xD2, 0x12, 0x13, 0xD3,
-    0x11, 0xD1, 0xD0, 0x10, 0xF0, 0x30, 0x31, 0xF1, 0x33, 0xF3, 0xF2, 0x32, 0x36, 0xF6, 0xF7,
-    0x37, 0xF5, 0x35, 0x34, 0xF4, 0x3C, 0xFC, 0xFD, 0x3D, 0xFF, 0x3F, 0x3E, 0xFE, 0xFA, 0x3A,
-    0x3B, 0xFB, 0x39, 0xF9, 0xF8, 0x38, 0x28, 0xE8, 0xE9, 0x29, 0xEB, 0x2B, 0x2A, 0xEA, 0xEE,
-    0x2E, 0x2F, 0xEF, 0x2D, 0xED, 0xEC, 0x2C, 0xE4, 0x24, 0x25, 0xE5, 0x27, 0xE7, 0xE6, 0x26,
-    0x22, 0xE2, 0xE3, 0x23, 0xE1, 0x21, 0x20, 0xE0, 0xA0, 0x60, 0x61, 0xA1, 0x63, 0xA3, 0xA2,
-    0x62, 0x66, 0xA6, 0xA7, 0x67, 0xA5, 0x65, 0x64, 0xA4, 0x6C, 0xAC, 0xAD, 0x6D, 0xAF, 0x6F,
-    0x6E, 0xAE, 0xAA, 0x6A, 0x6B, 0xAB, 0x69, 0xA9, 0xA8, 0x68, 0x78, 0xB8, 0xB9, 0x79, 0xBB,
-    0x7B, 0x7A, 0xBA, 0xBE, 0x7E, 0x7F, 0xBF, 0x7D, 0xBD, 0xBC, 0x7C, 0xB4, 0x74, 0x75, 0xB5,
-    0x77, 0xB7, 0xB6, 0x76, 0x72, 0xB2, 0xB3, 0x73, 0xB1, 0x71, 0x70, 0xB0, 0x50, 0x90, 0x91,
-    0x51, 0x93, 0x53, 0x52, 0x92, 0x96, 0x56, 0x57, 0x97, 0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C,
-    0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E, 0x5A, 0x9A, 0x9B, 0x5B, 0x99, 0x59, 0x58, 0x98, 0x88,
-    0x48, 0x49, 0x89, 0x4B, 0x8B, 0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C,
-    0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83, 0x41, 0x81, 0x80,
-    0x40 };
+#include "XMath/XMath.h"
 
-unsigned short CRC16(unsigned char * p,unsigned short len)     
+inline void showData(const _XModBusData &data,const std::string &title)
 {
-    unsigned char uchCRCHi = 0xFF ;
-    unsigned char uchCRCLo = 0xFF ;
-    unsigned short uIndex;
-	if(p == NULL || len <= 0) return (uchCRCHi << 8 | uchCRCLo);
-    while(len --) 
+	std::string tmp = title + "data:";
+	char tmpStr[32];
+	for(int i = 0;i < data.dataLen;++ i)
 	{
-        uIndex = uchCRCLo ^ *p++;
-        uchCRCLo = uchCRCHi ^ auchCRCHi[uIndex];
-        uchCRCHi = auchCRCLo[uIndex];
+		sprintf(tmpStr,"0x%02x ",data.data[i]);
+		tmp += tmpStr;
 	}
-    return (uchCRCHi << 8 | uchCRCLo);
+	LogStr(tmp.c_str());
 }
 void recvCallback(void *pClass,unsigned char * data,int len)
 {
-	_XModBusProtocol * p = (_XModBusProtocol *)pClass;
+	_XModBusProtocol &pPar = *(_XModBusProtocol *)pClass;
+	if(pPar.m_sendThreadState == STATE_SET_TO_END ||
+		pPar.m_sendThreadState == STATE_END) return;	//数据直接丢弃
 	_XModBusData tempData;
-	tempData.data = data;
+	tempData.data = createArrayMem<unsigned char>(len);
+	if(tempData.data == NULL) return;
+	memcpy(tempData.data,data,len);
+//	tempData.data = data;
 	tempData.dataLen = len;
-	tempData.delayTime = p->m_delayTime;
-	if(data[0] == p->m_modbusState.deviceID)
+	tempData.delayTime = pPar.m_delayTime;
+	if(data[0] == pPar.m_modbusState.deviceID || pPar.m_modbusState.workType == TYPE_MASTER)
 	{//自己的数据
-		for(int i = 0;i < tempData.dataLen;++ i)
+		if(tempData.dataLen < 3)
 		{
-			printf("0x%02x ",tempData.data[i]);
+			LogStr(" - data ERROR");
+			showData(tempData,"接收: ");
+			XDELETE_ARRAY(tempData.data);
+			return;
 		}
-		unsigned short crcCheck = CRC16(tempData.data,tempData.dataLen - 2);
+		unsigned short crcCheck = CRC16_Modbus(tempData.data,tempData.dataLen - 2);
 		if(tempData.data[tempData.dataLen - 1] != (crcCheck >> 8)
 			|| tempData.data[tempData.dataLen - 2] != (crcCheck & 0xff))
 		{
-			printf(" - CRC ERROR\n");
+			LogStr(" - CRC ERROR");
+			showData(tempData,"接收: ");
+			XDELETE_ARRAY(tempData.data);
 			return;
-		}else
-		{
-			printf(" - \n");
 		}
-		if(p->m_modbusState.workType == TYPE_MASTER)
+#if WITH_LOG
+		if(pPar.m_withLog) showData(tempData,"接收: ");
+#endif
+		if(pPar.m_modbusState.workType == TYPE_MASTER)
 		{//主的方式
-			p->m_recvMutex.Lock();
-			p->m_recvData.push_back(tempData);
-			p->m_recvMutex.Unlock();
-			p->m_sendMutex.Lock();
-			p->m_needRecv = XFalse;
-			XDELETE_ARRAY(p->m_nowSendData.data);
-			p->m_sendMutex.Unlock();
+			pPar.m_recvMutex.Lock();
+			switch(pPar.m_nowSendData.data[1])
+			{
+			case CMD_READ_COIL_VOLUME:
+			case CMD_READ_INPUT:
+			case CMD_READ_HOLD_REGISTER:
+			case CMD_READ_INPUT_REGISTER:
+				tempData.addr = (pPar.m_nowSendData.data[2] << 8) + pPar.m_nowSendData.data[3];
+				break;
+			case CMD_SET_ONE_COIL:
+			case CMD_SET_ONE_REGISTER:
+			case CMD_SET_COILS:
+			case CMD_SET_REGISTERS:
+				tempData.addr = (tempData.data[2] << 8) + tempData.data[3];
+				break;
+			}
+			if(pPar.m_withStatistics) 
+			{
+				++ pPar.m_comunicateTimesNow;
+				pPar.m_delayTimeNow += tempData.delayTime;
+			}
+			pPar.m_recvData.push_back(tempData);
+			pPar.m_recvMutex.Unlock();
+			pPar.m_sendMutex.Lock();	//发送锁提前好像不必要，需要进一步考察
+			pPar.m_needRecv = XFalse;
+			pPar.m_delaySendTime = 0;
+			XDELETE_ARRAY(pPar.m_nowSendData.data);
+			pPar.m_sendMutex.Unlock();
 		}else
 		{//从的方式
-			p->answerProc(tempData);
+			pPar.answerProc(tempData);
+			XDELETE_ARRAY(tempData.data);	
 		}
 	}else
 	{//别人的数据
-		printf("别人的数据:");
-		for(int i = 0;i < tempData.dataLen;++ i)
-		{
-			printf("0x%02x ",tempData.data[i]);
-		}
-		printf(" - \n");
+#if WITH_LOG
+		if(pPar.m_withLog)  showData(tempData,"接收:别人的数据 ");
+#endif
+		XDELETE_ARRAY(tempData.data);	//释放数据
 	}
 }
 _XBool _XModBusProtocol::openDevice(_XModbusState &modbusState)
@@ -114,6 +103,7 @@ _XBool _XModBusProtocol::openDevice(_XModbusState &modbusState)
 	//if(!m_serialPort.open(m_modbusState.nPort,m_modbusState.nBaud,m_modbusState.nParity)) return XFalse;
 	if(!m_serialPort.open(m_modbusState.nPort,m_modbusState.nBaud,m_modbusState.nParity,SP_MODE_AUTO)) return XFalse;
 	m_serialPort.setCallBackFun(recvCallback,this);
+	m_serialPort.setWaitingDataTime(modbusState.maxWaitingDataTime);
 	//下面开启接受线程和发送线程
 //	m_recvThreadState = STATE_BEFORE_START;
 	m_sendThreadState = STATE_BEFORE_START;
@@ -121,6 +111,7 @@ _XBool _XModBusProtocol::openDevice(_XModbusState &modbusState)
 //	m_headLen = 0;
 	m_needRecv = XFalse;
 	m_connectState = XTrue;
+	m_delaySendTime = 0;
 //	if(m_modbusState.workType == TYPE_MASTER) m_modbusNeedHeadLen = 3;
 //	if(m_modbusState.workType == TYPE_SLAVE) m_modbusNeedHeadLen = 7;
 
@@ -188,6 +179,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				}
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -271,11 +263,12 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				for(int i = 0;i < sum;++ i)
 				{
 					//memcpy(&tempData.data[3 + i * 2],&m_modbusState.hRegisterBuff[start + i],2);
-					tempData.data[3 + i * 2 + 0] = m_modbusState.hRegisterBuff[start + i] >> 8;
-					tempData.data[3 + i * 2 + 1] = m_modbusState.hRegisterBuff[start + i] & 0xff;
+					tempData.data[3 + (i << 1) + 0] = m_modbusState.hRegisterBuff[start + i] >> 8;
+					tempData.data[3 + (i << 1) + 1] = m_modbusState.hRegisterBuff[start + i] & 0xff;
 				}
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -314,11 +307,12 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				for(int i = 0;i < sum;++ i)
 				{
 					//memcpy(&tempData.data[3 + i * 2],&m_modbusState.iRegisterBuff[start + i],2);
-					tempData.data[3 + i * 2 + 0] = m_modbusState.iRegisterBuff[start + i] >> 8;
-					tempData.data[3 + i * 2 + 1] = m_modbusState.iRegisterBuff[start + i] & 0xff;
+					tempData.data[3 + (i << 1) + 0] = m_modbusState.iRegisterBuff[start + i] >> 8;
+					tempData.data[3 + (i << 1) + 1] = m_modbusState.iRegisterBuff[start + i] & 0xff;
 				}
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -403,6 +397,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[5] = value & 0xff;
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -450,6 +445,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[5] = sum & 0xff;
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -483,8 +479,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				//int temp = 0;
 				for(int i = 0;i < sum;++ i)
 				{
-					//memcpy(&m_modbusState.hRegisterBuff[pos + i],&data.data[7 + i * 2],2);
-					m_modbusState.hRegisterBuff[pos + i] = (data.data[7 + i * 2] << 8) + data.data[7 + i * 2 + 1];
+					//memcpy(&m_modbusState.hRegisterBuff[pos + i],&data.data[7 + (i << 1)],2);
+					m_modbusState.hRegisterBuff[pos + i] = (data.data[7 + (i << 1)] << 8) + data.data[7 + (i << 1) + 1];
 				}
 
 				tempData.dataLen = 8;
@@ -497,6 +493,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[5] = sum & 0xff;
 				pushAData(tempData);
 				XDELETE_ARRAY(tempData.data);
+				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -525,21 +522,13 @@ void _XModBusProtocol::release()
 	//if(m_recvThreadState == STATE_START)
 	//{
 	//	m_recvThreadState = STATE_SET_TO_END;
-	//	while(1)
+	//	while(true)
 	//	{
 	//		if(m_recvThreadState == STATE_END) break;
 	//		Sleep(1);
 	//	}
 	//}
-	if(m_sendThreadState == STATE_START)
-	{
-		m_sendThreadState = STATE_SET_TO_END;
-		while(1)
-		{
-			if(m_sendThreadState == STATE_END) break;
-			Sleep(1);
-		}
-	}
+	waitThreadEnd(m_sendThreadState);
 	//清除所有的数据
 	for(int i = 0;i < m_sendData.size();++ i)
 	{
@@ -652,8 +641,8 @@ void _XModBusProtocol::release()
 //						tempData.data = m_tempDataBuff;
 //						tempData.dataLen = m_tempDataLen;
 //						tempData.delayTime = m_delayTime;
-//						//这里要进行CRC16校验
-//						unsigned short crcCheck = CRC16(tempData.data,tempData.dataLen - 2);
+//						//这里要进行CRC16_Modbus校验
+//						unsigned short crcCheck = CRC16_Modbus(tempData.data,tempData.dataLen - 2);
 //						if(tempData.data[tempData.dataLen - 1] != (crcCheck >> 8)
 //							|| tempData.data[tempData.dataLen - 2] != (crcCheck & 0xff))
 //						{//校验失败丢弃数据
@@ -709,104 +698,110 @@ void _XModBusProtocol::release()
 //}
 //DWORD WINAPI _XModBusProtocol::recvThread(void * pParam)
 //{
-//	_XModBusProtocol *pPar = (_XModBusProtocol *)pParam;
-//	pPar->m_recvThreadState = STATE_START;
+//	_XModBusProtocol &pPar = *(_XModBusProtocol *)pParam;
+//	pPar.m_recvThreadState = STATE_START;
 //	unsigned char tempBuff[MODBUS_MAX_DATA_LEN];	//假设数据长度不会超过
 //	int ret = 0;
-//	while(1)
+//	while(true)
 //	{
-//		if(pPar->m_recvThreadState == STATE_SET_TO_END) break;
-//		//if(!pPar->m_needRecv) continue;
+//		if(pPar.m_recvThreadState == STATE_SET_TO_END) break;
+//		//if(!pPar.m_needRecv) continue;
 //		//这里接受数据
-//		ret = pPar->m_serialPort.readData(tempBuff,MODBUS_MAX_DATA_LEN);
+//		ret = pPar.m_serialPort.readData(tempBuff,MODBUS_MAX_DATA_LEN);
 //		if(ret > 0)
 //		{//读取到有效数据
-//			pPar->recvDataProc(tempBuff,ret);
+//			pPar.recvDataProc(tempBuff,ret);
 //		}else
 //		if(ret < 0)
 //		{
-//			pPar->m_connectState = XFalse;
+//			pPar.m_connectState = XFalse;
 //			break;
 //		}
 //		Sleep(1);
 //	}
-//	pPar->m_recvThreadState = STATE_END;
+//	pPar.m_recvThreadState = STATE_END;
 //	return 0;
 //}
 void _XModBusProtocol::sendNowData()
 {
+	if(m_nowSendData.data == NULL) return;
 	++ m_sendTime;
-	unsigned short crcCheck = CRC16(m_nowSendData.data,m_nowSendData.dataLen - 2);	//最后两个字节为校验位
-	m_nowSendData.data[0] = m_modbusState.deviceID;
+	unsigned short crcCheck = CRC16_Modbus(m_nowSendData.data,m_nowSendData.dataLen - 2);	//最后两个字节为校验位
+//	m_nowSendData.data[0] = m_modbusState.deviceID;
 	m_nowSendData.data[m_nowSendData.dataLen - 1] = (crcCheck >> 8);
 	m_nowSendData.data[m_nowSendData.dataLen - 2] = (crcCheck & 0xff);
-	printf("%d : ",m_sendTime);
-	for(int i = 0;i < m_nowSendData.dataLen;++ i)
-	{
-		printf("0x%02x ",m_nowSendData.data[i]);
-	}
-	printf(" + \n");
+#if WITH_LOG
+	if(m_withLog)  showData(m_nowSendData,std::string("发送:T-") + toString(m_sendTime) + " ");
+#endif
 	m_serialPort.sendData(m_nowSendData.data,m_nowSendData.dataLen);
-	m_needRecv = XTrue;
+	if(m_modbusState.workType == TYPE_MASTER) m_needRecv = XTrue;	//只有做主时才标记需要等待接收
 	m_delayTime = 0;
 }
 DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
 {
-	_XModBusProtocol *pPar = (_XModBusProtocol *)pParam;
-	pPar->m_sendThreadState = STATE_START;
+	_XModBusProtocol &pPar = *(_XModBusProtocol *)pParam;
+	pPar.m_sendThreadState = STATE_START;
 	int upTime = getCurrentTicks();
-	while(1)
+	while(pPar.m_sendThreadState != STATE_SET_TO_END)
 	{
-		if(pPar->m_sendThreadState == STATE_SET_TO_END) break;
-		if(pPar->m_modbusState.workType == TYPE_MASTER)
+		if(pPar.m_modbusState.workType == TYPE_MASTER)
 		{
-			pPar->m_sendMutex.Lock();
-			if(pPar->m_needRecv)  
+			pPar.m_sendMutex.Lock();
+			if(pPar.m_needRecv)  
 			{
-				pPar->m_delayTime += getCurrentTicks() - upTime;
+				pPar.m_delayTime += getCurrentTicks() - upTime;
 				upTime = getCurrentTicks();
 
-				if(pPar->m_delayTime >= pPar->m_modbusState.outTime)
-				{//如果超时则重新发送
-					if(pPar->m_sendTime == pPar->m_modbusState.maxResendTimes)
+				if(pPar.m_delayTime >= pPar.m_modbusState.outTime)
+				{//如果超时则重新发送,（目前的重发机制或者抛弃机制都会造成逻辑问题，需要在考虑）
+					if(pPar.m_sendTime == pPar.m_modbusState.maxResendTimes)
 					{
-						printf("超过重发次数\n");
-						pPar->m_connectState = XFalse;
-						break;
+						LogStr("超过重发次数");
+						//方案1、标记连接断开,必须要重新连接才能继续使用
+					//	pPar.m_connectState = XFalse;	//设置连接异常
+					//	break;
+						//方案2、丢弃当前需要发送的数据，任然可以继续工作
+						pPar.m_needRecv = XFalse;
+						XDELETE_ARRAY(pPar.m_nowSendData.data);
 					}else
 					{//重发
-						pPar->sendNowData();
+						pPar.sendNowData();
 					}
 				}
-				pPar->m_sendMutex.Unlock();
+				pPar.m_sendMutex.Unlock();
 				continue;
 			}else
 			{
-				pPar->m_sendMutex.Unlock();
+				pPar.m_delaySendTime += getCurrentTicks() - upTime;
+				pPar.m_sendMutex.Unlock();
 
 				upTime = getCurrentTicks();
 			}
 		}
-		//这里接收数据
-		pPar->m_sendMutex.Lock();
-		if(pPar->m_sendData.size() > 0)
+		//这里发送数据
+		pPar.m_sendMutex.Lock();
+	//	if(pPar.m_sendData.size() > 0 && (pPar.m_modbusState.workType != TYPE_MASTER || !pPar.m_needRecv))
+		if(pPar.m_sendData.size() > 0 && !pPar.m_needRecv)	//如果需要接收的话需要等待就收完成才能继续发送
 		{//有数据需要发送,这里发送数据
-			pPar->m_nowSendData = pPar->m_sendData[0];
-			pPar->m_sendData.pop_front();
-			pPar->m_sendMutex.Unlock();
-			pPar->m_sendTime = 0;
-			pPar->sendNowData();
-			if(pPar->m_modbusState.workType == TYPE_SLAVE)
-			{//做从时发送一次就丢弃数据
-				XDELETE_ARRAY(pPar->m_nowSendData.data);
+			if(pPar.m_modbusState.workType == TYPE_MASTER && 
+				pPar.m_delaySendTime < pPar.m_modbusState.maxR2STime)
+			{//接收和发送之间的时间差需要为5毫秒以上
+			}else
+			{
+				pPar.m_nowSendData = pPar.m_sendData[0];
+				pPar.m_sendData.pop_front();
+				pPar.m_sendTime = 0;
+				pPar.sendNowData();
+				if(pPar.m_modbusState.workType == TYPE_SLAVE)
+				{//做从时发送一次就丢弃数据
+					XDELETE_ARRAY(pPar.m_nowSendData.data);
+				}
 			}
-		}else
-		{
-			pPar->m_sendMutex.Unlock();
 		}
+		pPar.m_sendMutex.Unlock();
 		Sleep(1);
 	}
-	pPar->m_sendThreadState = STATE_END;
+	pPar.m_sendThreadState = STATE_END;
 	return 0;
 }
 int getModbusCMDDataSum(const _XModBusData &CMD)	//从命令中解析数据数量
@@ -816,56 +811,203 @@ int getModbusCMDDataSum(const _XModBusData &CMD)	//从命令中解析数据数量
 	{
 	case CMD_READ_COIL_VOLUME:
 	case CMD_READ_INPUT:
+		return CMD.data[2] << 3;
 	case CMD_READ_HOLD_REGISTER:
 	case CMD_READ_INPUT_REGISTER:
+		return CMD.data[2] >> 1;
 	case CMD_SET_ONE_COIL:
 	case CMD_SET_ONE_REGISTER:
+		return 1;
 	case CMD_SET_COILS:
-		return 0;
-		break;
 	case CMD_SET_REGISTERS:
-		return (CMD.data[4] << 8) + CMD.data[5];	//上面的都不支持
-		break;
+		return 0;
 	}
 	return 0;
-}
-bool getModbusCMDAddress(const _XModBusData &CMD,unsigned int &addr)
-{//根据协议获取命令的操作地址
-	if(CMD.dataLen <= 0) return false;
-	switch(CMD.data[1])
-	{
-	case CMD_READ_COIL_VOLUME:
-	case CMD_READ_INPUT:
-	case CMD_READ_HOLD_REGISTER:
-	case CMD_READ_INPUT_REGISTER:
-	case CMD_SET_ONE_COIL:
-	case CMD_SET_ONE_REGISTER:
-	case CMD_SET_COILS:
-	case CMD_SET_REGISTERS:
-		addr = (CMD.data[2] << 8) + CMD.data[3];
-		break;
-	}
-	return true;
 }
 bool getModbusCMDData(const _XModBusData &CMD,int index,unsigned int &data)
 {//根据协议获取命令的操作地址
 	if(CMD.dataLen <= 0) return false;
 	if(index < 0 || index >= getModbusCMDDataSum(CMD)) return false;
+	int len;
 	switch(CMD.data[1])
 	{
 	case CMD_READ_COIL_VOLUME:
 	case CMD_READ_INPUT:
+		len = index >> 3;
+		data = getBit(CMD.data[3 + len],index % 8);
+		break;
 	case CMD_READ_HOLD_REGISTER:
 	case CMD_READ_INPUT_REGISTER:
+		data = (CMD.data[3 + (index << 1)] << 8) + CMD.data[4 + (index << 1)];
+		break;
 	case CMD_SET_ONE_COIL:
 	case CMD_SET_ONE_REGISTER:
+		data = (CMD.data[4] << 8) + CMD.data[5];
+		break;
 	case CMD_SET_COILS:
-		return false;	//上面的都不支持
-		break;
 	case CMD_SET_REGISTERS:
-		data = (CMD.data[7 + (index << 1)] << 8) + CMD.data[8 + (index << 1)];
-		return true;
-		break;
+		return false;	//上面的都不支持
 	}
 	return true;
+}
+void _XModBusProtocol::readCoilState(int startAddr,int sum,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_READ_COIL_VOLUME;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+void _XModBusProtocol::readInputState(int startAddr,int sum,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_READ_INPUT;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+void _XModBusProtocol::writeOneCoilState(int addr,int value,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_SET_ONE_COIL;
+	data[2] = (addr >> 8) % 256;
+	data[3] = addr % 256;
+	data[4] = (value >> 8) % 256;
+	data[5] = value % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+void _XModBusProtocol::writeCoilsState(int startAddr,int sum,unsigned char *value,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0 || value == NULL) return;
+	int len = sum >> 3;
+	if(sum % 8 != 0) ++ len;
+	unsigned char *data = createArrayMem<unsigned char>(6 + 1 + len + 2);
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_SET_REGISTERS;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	data[6] = len;
+	//下面赋值
+	for(int i = 0;i < len;++ i)
+	{
+		data[7 + i] =  value[i];
+	}
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = (6 + 1 + len + 2);
+	pushData(tempData);
+	XDELETE_ARRAY(data);
+}
+void _XModBusProtocol::readHoldRegisters(int startAddr,int sum,int arm)	//读取多个保持寄存器
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_READ_HOLD_REGISTER;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+void _XModBusProtocol::readInputRegisters(int startAddr,int sum,int arm)	//读取多个保持寄存器
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_READ_INPUT_REGISTER;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+void _XModBusProtocol::writeRegisters(int startAddr,int sum,const unsigned short *value,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	if(sum <= 0 || value == NULL) return;
+	unsigned char *data = createArrayMem<unsigned char>(6 + 1 + (sum << 1) + 2);
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_SET_REGISTERS;
+	data[2] = (startAddr >> 8) % 256;
+	data[3] = startAddr % 256;
+	data[4] = (sum >> 8) % 256;
+	data[5] = sum % 256;
+	data[6] = sum << 1;
+	for(int i = 0;i < sum;++ i)
+	{
+		data[7 + (i << 1)] = (value[i] >> 8) % 256;
+		data[8 + (i << 1)] = value[i] % 256;
+	}
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = (6 + 1 + (sum << 1) + 2);
+	pushData(tempData);
+	XDELETE_ARRAY(data);
+}
+void _XModBusProtocol::writeOneRegister(int addr,int value,int arm)
+{
+	if(m_modbusState.workType == TYPE_SLAVE) return;
+	unsigned char data[8];
+	data[0] = arm;//m_modbusState.deviceID;
+	data[1] = CMD_SET_ONE_REGISTER;
+	data[2] = (addr >> 8) % 256;
+	data[3] = addr % 256;
+	data[4] = (value >> 8) % 256;
+	data[5] = value % 256;
+	_XModBusData tempData;
+	tempData.data = data;
+	tempData.dataLen = sizeof(data);
+	pushData(tempData);
+}
+#include "XBasicWindow.h"
+void _XModBusProtocol::update()
+{
+	if(!m_withStatistics) return;
+	m_statisticsTimer += XEE::frameTime;
+	if(m_statisticsTimer >= 5000)
+	{
+		if(m_comunicateTimesNow > 0.0f)
+		{
+			float tmp = m_comunicateTimesNow;
+			m_delayTimeAvg = m_delayTimeNow / tmp;	//平均计数
+		}
+		//重新统计
+		m_delayTimeNow = 0;
+		m_comunicateTimesNow = 0;
+		m_statisticsTimer = 0;
+	}
+	m_serialPort.update();
 }

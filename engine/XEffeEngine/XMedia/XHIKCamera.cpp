@@ -14,7 +14,7 @@ unsigned char* pOutRGB;	//输出的RGB颜色
 _XBool *haveNewFrame;		//结合接口
 //int *width = NULL;
 //int *height = NULL;
-void CALLBACK DecCBFun(long nPort,char * pBuf,long nSize, FRAME_INFO * pFrameInfo,long nReserved1,long) 
+void CALLBACK DecCBFun(long/*nPort*/,char * pBuf,long/*nSize*/, FRAME_INFO * pFrameInfo,long/*nReserved1*/,long) 
 {
 	if(pFrameInfo->nType == T_YV12) YUVToRGB((unsigned char *)pBuf,pOutRGB,pFrameInfo->nWidth,pFrameInfo->nHeight);
 	//YUVToRGB((unsigned char *)pBuf,pOutRGB,*width,*height);
@@ -22,7 +22,7 @@ void CALLBACK DecCBFun(long nPort,char * pBuf,long nSize, FRAME_INFO * pFrameInf
 }
 //实时解码的回调函数
 LONG lPort;
-void CALLBACK g_RealDataCallBack_V30(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffer,DWORD dwBufSize,DWORD dwUser)
+void CALLBACK g_RealDataCallBack_V30(LONG/*lRealHandle*/, DWORD dwDataType, BYTE *pBuffer,DWORD dwBufSize,DWORD/*dwUser*/)
 {
 	switch(dwDataType)
 	{
@@ -43,7 +43,7 @@ void CALLBACK g_RealDataCallBack_V30(LONG lRealHandle, DWORD dwDataType, BYTE *p
 		}
 	}
 }
-void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG lUserID, LONG lHandle, void *pUser)
+void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG/*lUserID*/, LONG/*lHandle*/, void *)/*pUser*/
 {
 	switch(dwType) 
 	{

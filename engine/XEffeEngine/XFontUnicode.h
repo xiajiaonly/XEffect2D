@@ -7,15 +7,18 @@
 //--------------------------------
 
 #include "XFontBasic.h"
+//注意汉字需要排序，否则将不能正确显示。
 
 //建议将一些字体属性的内容放在字体文本文件当中
-
-
 //注意页面值在代码中被限定最多不能超过100页
 //这个字符的类使用一张完整的贴图
 #define MAX_FONT_UNICODE_FILE_NAME_LENGTH (256)	//字符串图片的文件名的最大长度
-#define UNICODE_FONT_PAGE_SUM (24)	//款字符串的页面数量(10)
-#define MAX_UNICODE_TEXT_SUM (10000)	//字体库中字体元素的数量上限(16384)
+#define UNICODE_FONT_PAGE_SUM (30)	//款字符串的页面数量(10)
+#if !WITH_FULL_ALL_CHINESE
+#define MAX_UNICODE_TEXT_SUM (8000)	//字体库中字体元素的数量上限(16384)
+#else
+#define MAX_UNICODE_TEXT_SUM (50000)	//字体库中字体元素的数量上限(16384)
+#endif
 #define UNICODE_BYTES_WIDTH (2)		//宽字节的字宽度为2
 
 //给字体增加裁减功能
@@ -40,17 +43,18 @@ private:
 
 public:
 	_XBool init(const char *filenameIn,	//字体图片的文件名
-		_XVector2 size,			//字体的像素大小
-		_XVector2 layout,		//字体图片的布局
+		const _XVector2 &size,			//字体的像素大小
+		const _XVector2 &layout,		//字体图片的布局
 		int pageSum,			//字体库的页面数量
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	
-	_XBool initEx(const char *filenameIn,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//简化版本，从资源中读取相关数据
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse);	
+	_XBool initEx(const char *filenameIn,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse);	//简化版本，从资源中读取相关数据
 	_XBool initFromTTF(const char *filenameIn,int fontSize,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,bool withOutLine = false);	//从TTF中初始化（尚未实现）
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,bool withOutLine = false,_XBool withFBO = XFalse);	//从TTF中初始化（尚未实现）
 
 	int getStringLengthPix();	//获取字符串的像素宽度(为了向下兼容，任然保留这个接口，实际上已经有新的接口来替代)
 private:
 	//char m_isAcopy;				//是否为一个备份
+	int getTextIndex(const char p[UNICODE_BYTES_WIDTH]);	//找到指定的字符所在的位置
 public:
 	//建立temp的一个副本，自身没有资源，是用到的资源依赖于temp，temp的资源释放之后，就会出错
 	_XFontUnicode& operator = (const _XFontUnicode& temp);

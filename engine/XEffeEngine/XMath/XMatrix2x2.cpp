@@ -4,6 +4,7 @@
 //Date:		See the header file
 //--------------------------------
 #include "XMatrix2x2.h"
+const _XMatrix2x2 _XMatrix2x2::identity(1.0f,0.0f,0.0f,1.0f);	//µ•Œªæÿ’Û
 
 _XMatrix2x2 _XMatrix2x2::inverse()
 {

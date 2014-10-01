@@ -9,8 +9,8 @@
 //这是一个用于实现复选框的类
 
 #include "XControlBasic.h"
-#include "../XFontUnicode.h"
-#include "../XSprite.h"
+#include "XResourcePack.h"
+#include "XResourceManager.h"
 
 #define XCHECK_LEFT_ADD_LENGTH 15	//在字符后面加上这个像素长度作为响应范围，为了使控制更加合理
 
@@ -29,7 +29,7 @@ public:
 	_XVector2 m_fontPosition;	//放置文字的位置
 
 	_XCheckTexture();
-	~_XCheckTexture();
+	~_XCheckTexture(){release();}
 	_XBool init(const char *choosed,const char *disChoose,const char *disableChoosed,const char *disableDischoose,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
@@ -37,11 +37,13 @@ public:
 class _XRadios;
 class _XMultiListBasic;
 class _XDirectoryList;
-class _XCheck:public _XControlBasic
+class _XChart;
+class _XCheck:public _XControlBasic,public _XBasicOprate
 {
 	friend _XRadios;
 	friend _XMultiListBasic;
 	friend _XDirectoryList;
+	friend _XChart;
 private:
 	_XBool m_isInited;					//进度条是否被初始化
 	_XFontUnicode m_caption;			//进度条的标题
@@ -78,39 +80,48 @@ public:
 
 public:
 	_XBool getWithCaption() const {return m_withCaption;}
-	void setWithCaption(_XBool withCaption)
-	{
-		m_withCaption = withCaption;
-	}
+	void setWithCaption(_XBool withCaption) {m_withCaption = withCaption;}
 	_XBool init(const _XVector2 & position,	//控件的位置
 		const _XRect &Area,					//控件的图片的响应范围
 		const _XCheckTexture &tex,			//控件的贴图
 		const char *caption,const _XFontUnicode &font,float captionSize,	//显示的字体的相关信息
 		const _XVector2 &textPosition);		//字体的位置
-	_XBool initEx(const _XVector2 & position,	//控件的位置
-		const _XCheckTexture &tex,			//控件的贴图
-		const char *caption,const _XFontUnicode &font,float captionSize);	//显示的字体的相关信息
-	_XBool initPlus(const char * path,			//控件的贴图
-		const char *caption,const _XFontUnicode &font,
-		float captionSize,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//显示的字体的相关信息
+	_XBool initEx(const _XVector2 & position,	//对上面接口的简化
+		const _XCheckTexture &tex,			
+		const char *caption,const _XFontUnicode &font,float captionSize = 1.0f);
+	_XBool initPlus(const char * path,			//控件的贴图的文件夹路径
+		const char *caption,const _XFontUnicode &font,float captionSize = 1.0f,
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(const char *caption,				//文字
 		const _XFontUnicode &font,float captionSize,	//字体以及尺寸
-		const _XRect& area,_XVector2 captionPosition);	//空间的大小以及文字的相对位置
+		const _XRect& area,const _XVector2 &captionPosition);	//空间的大小以及文字的相对位置
+	_XBool initWithoutTex(const char *caption,			//这个是上一个接口的简化版本
+		const _XFontUnicode &font,const _XRect& area);
+	_XBool initWithoutTex(const char *caption,const _XRect& area) {return initWithoutTex(caption,XEE::systemFont,area);}
+	_XBool initWithoutTex(const char *caption,const _XVector2& pixelSize) 
+	{
+		return initWithoutTex(caption,XEE::systemFont,_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y));
+	}
+	_XBool initWithoutTex(const char *caption) 
+	{
+		return initWithoutTex(caption,XEE::systemFont,_XRect(0.0f,0.0f,32.0f,32.0f));
+	}
 protected:
 	void draw();
-	void drawUp(){};						//do nothing
+	void drawUp();
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数(返回动作是否造成改变)
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);		//对键盘动作的响应
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
+	_XBool canLostFocus(float,float){return XTrue;}
 public:
 	void setCallbackFun(void (* funInit)(void *,int),
-							 void (* funRelease)(void *,int),
-							 void (* funMouseOn)(void *,int),
-							 void (* funMouseDown)(void *,int),
-							 void (* funMouseUp)(void *,int),
-							 void (*funStateChange)(void *,int),void *pClass = NULL);
+						 void (* funRelease)(void *,int),
+						 void (* funMouseOn)(void *,int),
+						 void (* funMouseDown)(void *,int),
+						 void (* funMouseUp)(void *,int),
+						 void (*funStateChange)(void *,int),void *pClass = NULL);
+	void setStateChangeCB(void (*funStateChange)(void *,int),void *pClass = NULL);
 
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);//设置控件的位置
@@ -118,33 +129,18 @@ public:
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);
 
-	void setTextColor(const _XFColor& color) 
-	{
-		m_textColor = color;
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 	//设置按钮的颜色
-	{
-		m_color.setColor(r,g,b,a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		updateChildColor();
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		m_color.setA(a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		updateChildAlpha();
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a); 	//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 
-	void setText(const char *temp);				//设置复选框的文字
+	void setCaptionText(const char *temp);			//设置复选框的文字
+	const char *getCaptionString() const {return m_caption.getString();}
 	_XBool setACopy(const _XCheck &temp);			//复制一个副本
 	_XCheck();
-	~_XCheck();
+	~_XCheck(){release();}
 	void release();
 	void disable();
 	void enable();
@@ -153,33 +149,41 @@ public:
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 private:	//这里重载复制构造函数和赋值操作符，防止意外调用的错误
 	_XCheck(const _XCheck &temp);
 	_XCheck& operator = (const _XCheck& temp);
-};
+public:
+	void setOprateState(void * data)
+	{
+		_XBool index = *(_XBool *)data;
+		setState(index);
+	}
+	void *getOprateState() const
+	{
+		_XBool *data = createMem<_XBool>();
+		*data =  getState();
+		return data;
+	}
+	virtual bool isSameState(void * data)
+	{
+		if(data == NULL) return false;
+		return(*(_XBool*)data == getState());
+	}
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是对控件动态支持而定义的相关属性和方法
+private:
+	//_XMoveData m_actionMoveData;	//动态效果的变量
+	_XVector2 m_oldPos;				//动作播放时的位置
+	_XVector2 m_oldSize;			//动作播放时的大小
+	_XMoveData m_lightMD;
+	_XRect m_lightRect;
+public:
+protected:
+	void update(int stepTime);
+	//---------------------------------------------------------
 
-inline void _XCheck::disable()
-{
-	if(!m_isInited) return ;	//如果没有初始化直接退出
-	if(m_isEnable)m_isEnable = XFalse;
-}
-inline void _XCheck::enable()
-{
-	if(!m_isInited) return ;	//如果没有初始化直接退出
-	if(!m_isEnable) m_isEnable = XTrue;
-}
-inline _XBool _XCheck::getState() const
-{
-	return m_state;
-}
-inline void _XCheck::setState(_XBool temp)
-{
-	//理论上状态不论何时都是可以改变的
-//	if(!m_isVisiable) return;	//如果不可见直接退出
-//	if(!m_isEnable) return;
-	if((m_state && temp) || (!m_state && !temp)) return;
-	m_state = temp;
-//	if(m_funStateChange != NULL) m_funStateChange(m_pClass,m_objectID);
-}
+};
+#include "XCheck.inl"
+
 #endif

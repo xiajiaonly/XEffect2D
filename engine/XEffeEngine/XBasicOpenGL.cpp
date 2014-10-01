@@ -40,8 +40,7 @@ void printShaderInfoLog(GLuint obj)
         infoLog = createArrayMem<char>(infologLength);
 		if(infoLog == NULL) return;
         glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-        printf("%s\n",infoLog);
-		AddLogInfoNull("%s\n",infoLog);
+		LogNull("%s",infoLog);
         XDELETE_ARRAY(infoLog);
     }
 }
@@ -58,8 +57,7 @@ void printProgramInfoLog(GLuint obj)
         infoLog = createArrayMem<char>(infologLength);
 		if(infoLog == NULL) return;
         glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-		printf("%s\n",infoLog);
-		AddLogInfoNull("%s\n",infoLog);
+		LogNull("%s",infoLog);
         XDELETE_ARRAY(infoLog);
     }
 }
@@ -71,9 +69,9 @@ int printOglError(const char *file,int line)
     glErr = glGetError();
     while(glErr != GL_NO_ERROR)
     {
-	//	AddLogInfoNull("glError in file %s @ line %d: %s\n", file, line, gluErrorString(glErr));
- 		AddLogInfoNull("glError in file %s @ line %d\n",file,line);
-		printf("glError: 0x%x in file %s @ line %d\n",glErr,file,line);
+	//	LogNull("glError in file %s @ line %d: %s\n", file, line, gluErrorString(glErr));
+ 		LogNull("glError in file %s @ line %d",file,line);
+		//printf("glError: 0x%x in file %s @ line %d\n",glErr,file,line);
         retCode = 1;
         glErr = glGetError();
     }
@@ -112,11 +110,10 @@ char *textFileRead(const char *filename,_XResourcePosition resoursePosition)
 	}
 	return NULL;
 }
-
 int textFileWrite(const char *filename,const char *s) 
 {
-	if(filename == NULL) return 0;
-	if(s == NULL) return 0;
+	if(filename == NULL ||
+		s == NULL) return 0;
 	FILE *fp = NULL;
 	int status = 0;
 
@@ -127,7 +124,6 @@ int textFileWrite(const char *filename,const char *s)
 	}
 	return(status);
 }
-
 _XBool setShader(const char* vertFile,const char* fragFile,int &pHandle,_XResourcePosition resoursePosition)
 {
 	if(vertFile == NULL || fragFile == NULL) return XFalse;
@@ -163,7 +159,8 @@ _XBool setShader(const char* vertFile,const char* fragFile,int &pHandle,_XResour
 	printShaderInfoLog(v);
     printShaderInfoLog(f);
 
-    pHandle = glCreateProgram();
+    if(pHandle == 0) pHandle = glCreateProgram();	//如果没有建立则这里建立
+
 	glAttachShader(pHandle,v);
     glAttachShader(pHandle,f);
     //pHandle = glCreateProgramObjectARB();
@@ -175,8 +172,72 @@ _XBool setShader(const char* vertFile,const char* fragFile,int &pHandle,_XResour
     printProgramInfoLog(pHandle);
 	return XTrue;
 }
-void changeSize(int h, int w)
-{/*
+_XBool setShader(const char* vertFile,const char* fragFile,const char* geomFile,_XShaderHandle &pHandle,
+						_XResourcePosition resoursePosition)
+{
+	if(vertFile == NULL || fragFile == NULL) return XFalse;
+    char *vs = NULL;
+	char *fs = NULL;
+	char *gs = NULL;
+
+	if(pHandle.shaderV == 0) pHandle.shaderV = glCreateShader(GL_VERTEX_SHADER);
+    if(pHandle.shaderF == 0) pHandle.shaderF = glCreateShader(GL_FRAGMENT_SHADER);
+	if(geomFile != NULL && pHandle.shaderG == 0)
+		pHandle.shaderG = glCreateShader(GL_GEOMETRY_SHADER_EXT);
+	//v = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+    //f = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+
+	vs = textFileRead(vertFile,resoursePosition);
+    fs = textFileRead(fragFile,resoursePosition);
+	if(vs == NULL || fs == NULL) return XFalse;
+	if(geomFile != NULL)
+	{
+		gs = textFileRead(geomFile,resoursePosition);
+		if(gs == NULL) return XFalse;
+	}
+
+	const char * vv = vs;
+    const char * ff = fs;
+    const char * gg = gs;
+
+	glShaderSource(pHandle.shaderV, 1, &vv,NULL);
+    glShaderSource(pHandle.shaderF, 1, &ff,NULL);
+	if(geomFile != NULL)
+		 glShaderSource(pHandle.shaderG, 1, &gg,NULL);
+	//glShaderSourceARB(v, 1, &vv,NULL);
+    //glShaderSourceARB(f, 1, &ff,NULL);
+
+	XDELETE_ARRAY(vs);
+	XDELETE_ARRAY(fs);
+	XDELETE_ARRAY(gs);
+
+	glCompileShader(pHandle.shaderV);
+	glCompileShader(pHandle.shaderF);
+	if(geomFile != NULL)
+		glCompileShader(pHandle.shaderG);
+	//glCompileShaderARB(v);
+	//glCompileShaderARB(f);
+
+	printShaderInfoLog(pHandle.shaderV);
+    printShaderInfoLog(pHandle.shaderF);
+	if(geomFile != NULL) printShaderInfoLog(pHandle.shaderG);
+
+	if(pHandle.shaderHandle == 0) pHandle.shaderHandle = glCreateProgram();	//如果没有建立则这里建立
+
+	glAttachShader(pHandle.shaderHandle,pHandle.shaderV);
+    glAttachShader(pHandle.shaderHandle,pHandle.shaderF);
+	if(geomFile != NULL) glAttachShader(pHandle.shaderHandle,pHandle.shaderG);
+    //pHandle = glCreateProgramObjectARB();
+	//glAttachObjectARB(pHandle,v);
+    //glAttachObjectARB(pHandle,f);
+
+    glLinkProgram(pHandle.shaderHandle);
+    //glLinkProgramARB(pHandle);
+    printProgramInfoLog(pHandle.shaderHandle);
+	return XTrue;
+}
+/*void changeSize(int h, int w)
+{
     // Prevent a divide by zero, when window is too short
     // (you cant make a window of zero width).
     if(h == 0) h = 1;
@@ -193,8 +254,8 @@ void changeSize(int h, int w)
     // Set the correct perspective.
     //gluPerspective(90,ratio,1,1000);
     glMatrixMode(GL_MODELVIEW);
-	*/
-}
+	
+}*/
 //_XBool TextureLoad(GLuint &texture,const char *filename,int withAlpha,int *w,int *h,_XResourcePosition resoursePosition)
 //{
 //	if(filename == NULL || strlen(filename) <= 0) return XFalse;
@@ -216,7 +277,7 @@ void changeSize(int h, int w)
 //		if((temp->w > XEE::maxTetureSize) || (temp->h > XEE::maxTetureSize)) 
 //		{
 //			fprintf(stderr, "Image size exceeds max texture size, which is %d pixels for each side\n",XEE::maxTetureSize);
-//			AddLogInfoNull("Image size exceeds max texture size, which is %d pixels for each side\n",XEE::maxTetureSize);
+//			LogNull("Image size exceeds max texture size, which is %d pixels for each side\n",XEE::maxTetureSize);
 //			SDL_FreeSurface(temp);
 //			temp = NULL;
 //			return 0;
@@ -370,7 +431,7 @@ void changeSize(int h, int w)
 //	{
 //		return XFalse;
 //	}
-////	return 1;
+////	return XTrue;
 //}
 //测试发现这个函数中的SDL_FreeSurface会存在内存IPR和FIM错误，具体需要SDL的代码实现来检测
 _XBool TextureLoadEx(GLuint &texture,const char *filename,int *w,int *h,_XResourcePosition resoursePosition)
@@ -382,7 +443,7 @@ _XBool TextureLoadEx(GLuint &texture,const char *filename,int *w,int *h,_XResour
 	if((tmp.getWidth() > XEE::maxTetureSize || tmp.getHeight() > XEE::maxTetureSize) && XEE::maxTetureSize > 0) 	//贴图最大尺寸的检测
 	{
 		fprintf(stderr, "Image size exceeds max texture size, which is %d pixels for each side\n", XEE::maxTetureSize);
-		AddLogInfoNull("Image size exceeds max texture size, which is %d pixels for each side\n", XEE::maxTetureSize);
+		LogNull("Image size exceeds max texture size, which is %d pixels for each side\n", XEE::maxTetureSize);
 		tmp.release();
 		return XFalse;
 	}
@@ -430,7 +491,7 @@ _XBool TextureLoadEx(GLuint &texture,const char *filename,int *w,int *h,_XResour
 	}
 
 	tmp.release();
-	return true;
+	return XTrue;
 }
 _XBool TextureLoadQuarter(GLuint &texture,const char *filename)
 {
@@ -510,65 +571,240 @@ _XBool TextureLoadQuarter(GLuint &texture,const char *filename)
 	XDELETE_ARRAY(tempPixel);
 	return XTrue;
 }
-_XBool initOpenGL(int width,int height)
+void initWindowMatrix()
 {
-	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
-	glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_LINE_SMOOTH);
-	//glEnable(GL_POLYGON_SMOOTH);
-
-	glShadeModel(GL_SMOOTH);						//启动反走样
-	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
-	glLoadIdentity();								//变换坐标系函数
-	glOrtho(0,width,height,0,-1,1);					//only for 2D的原始数据
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glClearColor(XEE::defaultBGColor.fR,XEE::defaultBGColor.fG,XEE::defaultBGColor.fB,XEE::defaultBGColor.fA);			//清除颜色
-	//glDisable(GL_DEPTH);						//
-	glDisable(GL_DEPTH_TEST);						//2D项目不需要深度测试
-
-	if(glewInit() != 0)
-	{//初始化失败
-		AddLogInfoStr("Glew init error!\n");
-		XEE::isOpenGL2Support = 0;
-	}else
+	switch(XEE::windowData.windowType)
 	{
-		//记录显卡的最大贴图尺寸
-		glGetIntegerv(GL_MAX_TEXTURE_SIZE,&XEE::maxTetureSize);	
-		//检查硬件是否支持OpenGL2.0
-		if(glewIsSupported("GL_VERSION_2_0"))
+	case WINDOW_TYPE_EX:
+		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+		glLoadIdentity();								//变换坐标系函数
+		glViewport(0, 0, XEE::windowData.w, XEE::windowData.h);
+		switch(XEE::windowData.mode)
 		{
-			AddLogInfoStr("Ready for OpenGL 2.0\n");
-			XEE::isOpenGL2Support = 1;
-		}else
-		{
-			AddLogInfoStr("OpenGL 2.0 not supported\n");
-			XEE::isOpenGL2Support = 0;
+		case WINDOW_SIZE_MODE_CLIP_LP:
+			XEE::sceneX = XEE::windowData.positionX;
+			XEE::sceneY = XEE::windowData.positionY;
+			XEE::sceneWidth = XEE::windowData.w;
+			XEE::sceneHeight = XEE::windowData.h;
+			XEE::sceneSizeX = 1.0f;
+			XEE::sceneSizeY = 1.0f;
+			break;
+		case WINDOW_SIZE_MODE_CLIP_MID:
+			XEE::sceneX = ((XEE::windowData.sceneW - XEE::windowData.w) >> 1) + XEE::windowData.positionX;
+			XEE::sceneY = ((XEE::windowData.sceneH - XEE::windowData.h) >> 1) + XEE::windowData.positionY;
+			XEE::sceneWidth = XEE::windowData.w;
+			XEE::sceneHeight = XEE::windowData.h;
+			XEE::sceneSizeX = 1.0f;
+			XEE::sceneSizeY = 1.0f;
+			break;
+		case WINDOW_SIZE_MODE_CLIP_RESIZE:
+			XEE::sceneSizeX = (float)(XEE::windowData.sceneW) / (float)(XEE::windowData.w);
+			XEE::sceneSizeY = (float)(XEE::windowData.sceneH) / (float)(XEE::windowData.h);
+			if(XEE::sceneSizeX <= XEE::sceneSizeY)
+			{
+				XEE::sceneWidth = XEE::windowData.sceneW;
+				XEE::sceneHeight = XEE::windowData.h * XEE::sceneSizeX;
+				XEE::sceneX = XEE::windowData.positionX;
+				XEE::sceneY = ((XEE::windowData.sceneH - XEE::sceneHeight) >> 1) + XEE::windowData.positionY;
+			}else
+			{
+				XEE::sceneWidth = XEE::windowData.w * XEE::sceneSizeY;
+				XEE::sceneHeight = XEE::windowData.sceneH;
+				XEE::sceneX = ((XEE::windowData.sceneW - XEE::sceneWidth) >> 1) + XEE::windowData.positionX;
+				XEE::sceneY = XEE::windowData.positionY;
+			}
+			break;
+		case WINDOW_SIZE_MODE_RESIZE_CLIP:
+			XEE::sceneSizeX = (float)(XEE::windowData.sceneW) / (float)(XEE::windowData.w);
+			XEE::sceneSizeY = (float)(XEE::windowData.sceneH) / (float)(XEE::windowData.h);
+			if(XEE::sceneSizeX >= XEE::sceneSizeY)
+			{
+				XEE::sceneWidth = XEE::windowData.sceneW;
+				XEE::sceneHeight = XEE::windowData.h * XEE::sceneSizeX;
+				XEE::sceneX = XEE::windowData.positionX;
+				XEE::sceneY = ((XEE::windowData.sceneH - XEE::sceneHeight) >> 1) + XEE::windowData.positionY;
+			}else
+			{
+				XEE::sceneWidth = XEE::windowData.w * XEE::sceneSizeY;
+				XEE::sceneHeight = XEE::windowData.sceneH;
+				XEE::sceneX = ((XEE::windowData.sceneW - XEE::sceneWidth) >> 1) + XEE::windowData.positionX;
+				XEE::sceneY = XEE::windowData.positionY;
+			}
+			break;
+		case WINDOW_SIZE_MODE_RESIZE:
+			XEE::sceneX = XEE::windowData.positionX;
+			XEE::sceneY = XEE::windowData.positionY;
+			XEE::sceneWidth = XEE::windowData.sceneW;
+			XEE::sceneHeight = XEE::windowData.sceneH;
+			XEE::sceneSizeX = (float)(XEE::windowData.sceneW) / (float)(XEE::windowData.w);
+			XEE::sceneSizeY = (float)(XEE::windowData.sceneH) / (float)(XEE::windowData.h);
+			break;
 		}
-		//开启多重采样抗锯齿
-		//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB |GLUT_MULTISAMPLE);//，初始化的时候开启；2）
-		GLint bufSum = 0;
-		GLint samplesSum = 0;
-		glGetIntegerv(GL_SAMPLE_BUFFERS, &bufSum);
-		glGetIntegerv(GL_SAMPLES, &samplesSum);//可以检查多重采样是否可用，前者返回1，后者返回大于1表示可用; 3）
-		if(bufSum == 1 && samplesSum > 1) glEnable(GL_MULTISAMPLE);
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0:
+			switch(XEE::windowData.turnOverMode)
+			{
+			case WINDOW_TURNOVER_MODE_NULL:
+				glOrtho(XEE::sceneX,XEE::sceneWidth + XEE::sceneX,
+					XEE::sceneHeight + XEE::sceneY,XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR:
+				glOrtho(XEE::sceneWidth + XEE::sceneX,XEE::sceneX,
+					XEE::sceneHeight + XEE::sceneY,XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_TTD:
+				glOrtho(XEE::sceneX,XEE::sceneWidth + XEE::sceneX,
+					XEE::sceneY,XEE::sceneHeight + XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR_TTD:
+				glOrtho(XEE::sceneWidth + XEE::sceneX,XEE::sceneX,
+					XEE::sceneY,XEE::sceneHeight + XEE::sceneY,-1,1);
+				break;
+			}
+			break;
+		case WINDOW_ROTATE_MODE_90:
+			switch(XEE::windowData.turnOverMode)
+			{
+			case WINDOW_TURNOVER_MODE_NULL:
+				glOrtho(XEE::sceneHeight + XEE::sceneY,XEE::sceneY,
+					XEE::sceneX,XEE::sceneWidth + XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR:
+				glOrtho(XEE::sceneHeight + XEE::sceneY,XEE::sceneY,
+					XEE::sceneWidth + XEE::sceneX,XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_TTD:
+				glOrtho(XEE::sceneY,XEE::sceneHeight + XEE::sceneY,
+					XEE::sceneX,XEE::sceneWidth + XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR_TTD:
+				glOrtho(XEE::sceneY,XEE::sceneHeight + XEE::sceneY,
+					XEE::sceneWidth + XEE::sceneX,XEE::sceneX,-1,1);
+				break;
+			}
+			break;
+		case WINDOW_ROTATE_MODE_180:
+			switch(XEE::windowData.turnOverMode)
+			{
+			case WINDOW_TURNOVER_MODE_NULL:
+				glOrtho(XEE::sceneWidth + XEE::sceneX,XEE::sceneX,
+					XEE::sceneY,XEE::sceneHeight + XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR:
+				glOrtho(XEE::sceneX,XEE::sceneWidth + XEE::sceneX,
+					XEE::sceneY,XEE::sceneHeight + XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_TTD:
+				glOrtho(XEE::sceneWidth + XEE::sceneX,XEE::sceneX,
+					XEE::sceneHeight + XEE::sceneY,XEE::sceneY,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR_TTD:
+				glOrtho(XEE::sceneX,XEE::sceneWidth + XEE::sceneX,
+					XEE::sceneHeight + XEE::sceneY,XEE::sceneY,-1,1);
+				break;
+			}
+			break;
+		case WINDOW_ROTATE_MODE_270:
+			switch(XEE::windowData.turnOverMode)
+			{
+			case WINDOW_TURNOVER_MODE_NULL:
+				glOrtho(XEE::sceneY,XEE::sceneHeight + XEE::sceneY,
+					XEE::sceneWidth + XEE::sceneX,XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR:
+				glOrtho(XEE::sceneY,XEE::sceneHeight + XEE::sceneY,
+					XEE::sceneX,XEE::sceneWidth + XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_TTD:
+				glOrtho(XEE::sceneHeight + XEE::sceneY,XEE::sceneY,
+					XEE::sceneWidth + XEE::sceneX,XEE::sceneX,-1,1);
+				break;
+			case WINDOW_TURNOVER_MODE_LTR_TTD:
+				glOrtho(XEE::sceneHeight + XEE::sceneY,XEE::sceneY,
+					XEE::sceneX,XEE::sceneWidth + XEE::sceneX,-1,1);
+				break;
+			}
+			break;
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		switch(XEE::windowData.rotateMode)
+		{
+		case WINDOW_ROTATE_MODE_0: break;	//do nothing
+		case WINDOW_ROTATE_MODE_90: 
+			switch(XEE::windowData.mode)
+			{
+			case WINDOW_SIZE_MODE_CLIP_LP:
+				glTranslatef(XEE::windowData.h,0,0);
+				glRotatef(90,0,0,1);
+				break;
+			case WINDOW_SIZE_MODE_CLIP_MID:
+			case WINDOW_SIZE_MODE_CLIP_RESIZE:
+			case WINDOW_SIZE_MODE_RESIZE_CLIP:
+			case WINDOW_SIZE_MODE_RESIZE:
+				glTranslatef(XEE::windowData.sceneH,0,0);
+				glRotatef(90,0,0,1);
+				break;
+			}
+			break;
+		case WINDOW_ROTATE_MODE_180: break;	//do nothing
+		case WINDOW_ROTATE_MODE_270: 
+			switch(XEE::windowData.mode)
+			{
+			case WINDOW_SIZE_MODE_CLIP_LP:
+				glTranslatef(XEE::windowData.h,0,0);
+				glRotatef(90,0,0,1);
+				break;
+			case WINDOW_SIZE_MODE_CLIP_MID:
+			case WINDOW_SIZE_MODE_CLIP_RESIZE:
+			case WINDOW_SIZE_MODE_RESIZE_CLIP:
+			case WINDOW_SIZE_MODE_RESIZE:
+				glTranslatef(XEE::windowData.sceneH,0,0);
+				glRotatef(90,0,0,1);
+				break;
+			}
+			break;
+		}
+		break;
+	case WINDOW_TYPE_NORMAL:
+		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+		glLoadIdentity();								//变换坐标系函数
+		glViewport(0, 0, XEE::windowData.w, XEE::windowData.h);
+		glOrtho(0,XEE::windowData.w,XEE::windowData.h,0,-1,1);					//only for 2D的原始数据
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		XEE::sceneX = 0;
+		XEE::sceneY = 0;
+		XEE::sceneWidth = XEE::windowData.w;
+		XEE::sceneHeight = XEE::windowData.h;
+		XEE::sceneSizeX = 1.0f;
+		XEE::sceneSizeY = 1.0f;
+		break;
+	case WINDOW_TYPE_3D:
+		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
+		glLoadIdentity();								//变换坐标系函数
+		glViewport(0, 0, XEE::windowData.w, XEE::windowData.h);
+		gluPerspective(45.0f,(float)(XEE::windowData.w) / (float)(XEE::windowData.h),1.0f,10000.0f);		//最后两个数值需要与之前的吻合，不然会出现模型破损的问题
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		XEE::sceneX = 0;
+		XEE::sceneY = 0;
+		XEE::sceneWidth = XEE::windowData.w;
+		XEE::sceneHeight = XEE::windowData.h;
+		XEE::sceneSizeX = 1.0f;
+		XEE::sceneSizeY = 1.0f;
+		break;
 	}
-	XEE::sceneX = 0;
-	XEE::sceneY = 0;
-	XEE::sceneWidth = width;
-	XEE::sceneHeight = height;
-	XEE::sceneSizeX = 1.0f;
-	XEE::sceneSizeY = 1.0f;
-	return XTrue;
 }
 #pragma comment(lib,"glu32.lib")
-_XBool initOpenGL3D(int width,int height)
+inline void initGlew()
 {
 	if(glewInit() != 0)
 	{//初始化失败
-		AddLogInfoStr("Glew init error!\n");
+		LogStr("Glew init error!");
 		XEE::isOpenGL2Support = 0;
 	}else
 	{
@@ -577,11 +813,11 @@ _XBool initOpenGL3D(int width,int height)
 		//检查硬件是否支持OpenGL2.0
 		if(glewIsSupported("GL_VERSION_2_0"))
 		{
-			AddLogInfoStr("Ready for OpenGL 2.0\n");
+			LogStr("Ready for OpenGL 2.0");
 			XEE::isOpenGL2Support = 1;
 		}else
 		{
-			AddLogInfoStr("OpenGL 2.0 not supported\n");
+			LogStr("OpenGL 2.0 not supported");
 			XEE::isOpenGL2Support = 0;
 		}
 		//开启多重采样抗锯齿
@@ -590,18 +826,30 @@ _XBool initOpenGL3D(int width,int height)
 		GLint samplesSum = 0;
 		glGetIntegerv(GL_SAMPLE_BUFFERS, &bufSum);
 		glGetIntegerv(GL_SAMPLES, &samplesSum);//可以检查多重采样是否可用，前者返回1，后者返回大于1表示可用; 3）
-		if(bufSum == 1 && samplesSum > 1) glEnable(GL_MULTISAMPLE);
+		if(bufSum == 1 && samplesSum > 1)
+		{
+			XEE::isMultiSampleSupport = 1;
+			glEnable(GL_MULTISAMPLE);	//这里生效需要在显卡的控制面板中设置为最佳图像质量
+		}else
+			XEE::isMultiSampleSupport = 0;
 	}
-	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
-	glLoadIdentity();								//变换坐标系函数
-
-	gluPerspective(45.0f,(float)(width) / (float)(height),1.0f,10000.0f);		//最后两个数值需要与之前的吻合，不然会出现模型破损的问题
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	//3D
+}
+_XBool initOpenGL3D()
+{
+	initWindowMatrix();	//初始化矩阵
+	initGlew();			//初始化glew
 	glShadeModel(GL_SMOOTH);		//启动反走样
 	glClearColor(XEE::defaultBGColor.fR,XEE::defaultBGColor.fG,XEE::defaultBGColor.fB,XEE::defaultBGColor.fA);				//清除颜色
+	glHint(GL_POLYGON_SMOOTH,GL_NICEST);
+	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+	glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);//建议：优化掉这一步，不用每次都调用
+	if(XEE::isMultiSampleSupport)
+	{
+		glEnable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+		glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+		if(XEE::isLineSmooth) glEnable(GL_LINE_SMOOTH);
+	}
+	//3D
 	glClearDepth(1.0f);									//Depth Buffer Setup
 	glClearStencil(0);
 //	glEnable(GL_DEPTH);	
@@ -615,12 +863,7 @@ _XBool initOpenGL3D(int width,int height)
 	glAlphaFunc(GL_GREATER,0.1f);						//允许进行alpha测试
 	glEnable(GL_ALPHA_TEST); 
 	//下面的代码是为了解决背光面的问题
-	//glEnable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
-	//glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
-	glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_CULL_FACE);	//只允许渲染正面
+	//glEnable(GL_CULL_FACE);	//只允许渲染正面
 
 	glEnable(GL_NORMALIZE);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
@@ -634,763 +877,69 @@ _XBool initOpenGL3D(int width,int height)
 	//glDisable(GL_LINE_SMOOTH);
 	//glCullFace(GL_BACK);
 	//glEnable(GL_CULL_FACE);
-	XEE::sceneX = 0;
-	XEE::sceneY = 0;
-	XEE::sceneWidth = width;
-	XEE::sceneHeight = height;
-	XEE::sceneSizeX = 1.0f;
-	XEE::sceneSizeY = 1.0f;
 	return XTrue;
 }
-_XBool initOpenGLEx(const _XWindowData &windowData)
+_XBool initOpenGL2D()
 {
-	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
-	glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-	glEnable(GL_LINE_SMOOTH);
-	//glEnable(GL_POLYGON_SMOOTH);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
+	initWindowMatrix();	//初始化矩阵
+	initGlew();			//初始化glew
 	glShadeModel(GL_SMOOTH);						// Enable Smooth Shading
-	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
-	glLoadIdentity();								//变换坐标系函数
-	switch(windowData.mode)
-	{
-	case WINDOW_SIZE_MODE_CLIP_LP:
-		switch(windowData.rotateMode)
-		{
-		case WINDOW_ROTATE_MODE_0:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.positionX,windowData.w + windowData.positionX,
-					windowData.h + windowData.positionY,windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.w + windowData.positionX,windowData.positionX,
-					windowData.h + windowData.positionY,windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.positionX,windowData.w + windowData.positionX,
-					windowData.positionY,windowData.h + windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.w + windowData.positionX,windowData.positionX,
-					windowData.positionY,windowData.h + windowData.positionY,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_90:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.h + windowData.positionY,windowData.positionY,
-					windowData.positionX,windowData.w + windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.h + windowData.positionY,windowData.positionY,
-					windowData.w + windowData.positionX,windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.positionY,windowData.h + windowData.positionY,
-					windowData.positionX,windowData.w + windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.positionY,windowData.h + windowData.positionY,
-					windowData.w + windowData.positionX,windowData.positionX,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_180:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.w + windowData.positionX,windowData.positionX,
-					windowData.positionY,windowData.h + windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.positionX,windowData.w + windowData.positionX,
-					windowData.positionY,windowData.h + windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.w + windowData.positionX,windowData.positionX,
-					windowData.h + windowData.positionY,windowData.positionY,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.positionX,windowData.w + windowData.positionX,
-					windowData.h + windowData.positionY,windowData.positionY,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_270:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.positionY,windowData.h + windowData.positionY,
-					windowData.w + windowData.positionX,windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.positionY,windowData.h + windowData.positionY,
-					windowData.positionX,windowData.w + windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.h + windowData.positionY,windowData.positionY,
-					windowData.w + windowData.positionX,windowData.positionX,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.h + windowData.positionY,windowData.positionY,
-					windowData.positionX,windowData.w + windowData.positionX,-1,1);
-				break;
-			}
-			break;
-		}
-		XEE::sceneX = 0;
-		XEE::sceneY = 0;
-		XEE::sceneWidth = windowData.w;
-		XEE::sceneHeight = windowData.h;
-		XEE::sceneSizeX = 1.0f;
-		XEE::sceneSizeY = 1.0f;
-		break;
-	case WINDOW_SIZE_MODE_CLIP_MID: //no pos
-		{
-			int left = (windowData.sceneW - windowData.w) >> 1;
-			int top = (windowData.sceneH - windowData.h) >> 1;
-			switch(windowData.rotateMode)
-			{
-			case WINDOW_ROTATE_MODE_0:
-				switch(windowData.turnOverMode)
-				{
-				case WINDOW_TURNOVER_MODE_NULL:
-					glOrtho(left,left + windowData.w,top + windowData.h,top,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR:
-					glOrtho(left + windowData.w,left,top + windowData.h,top,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_TTD:
-					glOrtho(left,left + windowData.w,top,top + windowData.h,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR_TTD:
-					glOrtho(left + windowData.w,left,top,top + windowData.h,-1,1);
-					break;
-				}
-				break;
-			case WINDOW_ROTATE_MODE_90:
-				switch(windowData.turnOverMode)
-				{
-				case WINDOW_TURNOVER_MODE_NULL:
-					glOrtho(top + windowData.h,top,left,left + windowData.w,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR:
-					glOrtho(top + windowData.h,top,left + windowData.w,left,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_TTD:
-					glOrtho(top,top + windowData.h,left,left + windowData.w,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR_TTD:
-					glOrtho(top,top + windowData.h,left + windowData.w,left,-1,1);
-					break;
-				}
-				break;
-			case WINDOW_ROTATE_MODE_180:
-				switch(windowData.turnOverMode)
-				{
-				case WINDOW_TURNOVER_MODE_NULL:
-					glOrtho(left + windowData.w,left,top,top + windowData.h,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR:
-					glOrtho(left,left + windowData.w,top,top + windowData.h,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_TTD:
-					glOrtho(left + windowData.w,left,top + windowData.h,top,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR_TTD:
-					glOrtho(left,left + windowData.w,top + windowData.h,top,-1,1);
-					break;
-				}
-				break;
-			case WINDOW_ROTATE_MODE_270:
-				switch(windowData.turnOverMode)
-				{
-				case WINDOW_TURNOVER_MODE_NULL:
-					glOrtho(top,top + windowData.h,left + windowData.w,left,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR:
-					glOrtho(top,top + windowData.h,left,left + windowData.w,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_TTD:
-					glOrtho(top + windowData.h,top,left + windowData.w,left,-1,1);
-					break;
-				case WINDOW_TURNOVER_MODE_LTR_TTD:
-					glOrtho(top + windowData.h,top,left,left + windowData.w,-1,1);
-					break;
-				}
-				break;
-			}
-			XEE::sceneX = left;
-			XEE::sceneY = top;
-			XEE::sceneWidth = windowData.w;
-			XEE::sceneHeight = windowData.h;
-			XEE::sceneSizeX = 1.0f;
-			XEE::sceneSizeY = 1.0f;
-		}
-		break;
-	case WINDOW_SIZE_MODE_CLIP_RESIZE:
-		{
-			float sizeX = (float)(windowData.sceneW) / (float)(windowData.w);
-			float sizeY = (float)(windowData.sceneH) / (float)(windowData.h);
-			int resultX = 0;
-			int resultY = 0;
-			if(sizeX <= sizeY)
-			{
-				resultX = windowData.sceneW;
-				resultY = windowData.h * sizeX;
-				int top = (windowData.sceneH - resultY) >> 1;
-				switch(windowData.rotateMode)
-				{
-				case WINDOW_ROTATE_MODE_0:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(0,resultX,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(resultX,0,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(0,resultX,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(resultX,0,top,top + resultY,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_90:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(top + resultY,top,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(top + resultY,top,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(top,top + resultY,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(top,top + resultY,resultX,0,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_180:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(resultX,0,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(0,resultX,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(resultX,0,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(0,resultX,top + resultY,top,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_270:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(top,top + resultY,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(top,top + resultY,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(top + resultY,top,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(top + resultY,top,0,resultX,-1,1);
-						break;
-					}
-					break;
-				}
-				XEE::sceneX = 0;
-				XEE::sceneY = top;
-				XEE::sceneWidth = resultX;
-				XEE::sceneHeight = resultY;
-				XEE::sceneSizeX = sizeX;
-				XEE::sceneSizeY = sizeX;
-			}else
-			{
-				resultX = windowData.w * sizeY;
-				resultY = windowData.sceneH;
-				int left = (windowData.sceneW - resultX) >> 1;
-				switch(windowData.rotateMode)
-				{
-				case WINDOW_ROTATE_MODE_0:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(left,left + resultX,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(left + resultX,left,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(left,left + resultX,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(left + resultX,left,0,resultY,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_90:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(resultY,0,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(resultY,0,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(0,resultY,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(0,resultY,left + resultX,left,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_180:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(left + resultX,left,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(left,left + resultX,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(left + resultX,left,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(left,left + resultX,resultY,0,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_270:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(0,resultY,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(0,resultY,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(resultY,0,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(resultY,0,left,left + resultX,-1,1);
-						break;
-					}
-					break;
-				}
-				XEE::sceneX = left;
-				XEE::sceneY = 0;
-				XEE::sceneWidth = resultX;
-				XEE::sceneHeight = resultY;
-				XEE::sceneSizeX = sizeY;
-				XEE::sceneSizeY = sizeY;
-			}
-		}
-		break;
-	case WINDOW_SIZE_MODE_RESIZE_CLIP:
-		{
-			float sizeX = (float)(windowData.sceneW) / (float)(windowData.w);
-			float sizeY = (float)(windowData.sceneH) / (float)(windowData.h);
-			int resultX = 0;
-			int resultY = 0;
-			if(sizeX >= sizeY)
-			{
-				resultX = windowData.sceneW;
-				resultY = windowData.h * sizeX;
-				int top = (windowData.sceneH - resultY) >> 1;
-				switch(windowData.rotateMode)
-				{
-				case WINDOW_ROTATE_MODE_0:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(0,resultX,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(resultX,0,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(0,resultX,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(resultX,top,0,top + resultY,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_90:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(top + resultY,top,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(top + resultY,top,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(top,top + resultY,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(top,top + resultY,resultX,0,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_180:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(resultX,0,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(0,resultX,top,top + resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(resultX,0,top + resultY,top,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(0,resultX,top + resultY,top,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_270:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(top,top + resultY,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(top,top + resultY,0,resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(top + resultY,top,resultX,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(top + resultY,top,0,resultX,-1,1);
-						break;
-					}
-					break;
-				}
-				XEE::sceneX = 0;
-				XEE::sceneY = top;
-				XEE::sceneWidth = resultX;
-				XEE::sceneHeight = resultY;
-				XEE::sceneSizeX = sizeX;
-				XEE::sceneSizeY = sizeX;
-			}else
-			{
-				resultX = windowData.w * sizeY;
-				resultY = windowData.sceneH;
-				int left = (windowData.sceneW - resultX) >> 1;
-				switch(windowData.rotateMode)
-				{
-				case WINDOW_ROTATE_MODE_0:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(left,left + resultX,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(left + resultX,left,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(left,left + resultX,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(left + resultX,left,0,resultY,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_90:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(resultY,0,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(resultY,0,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(0,resultY,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(0,resultY,left + resultX,left,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_180:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(left + resultX,left,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(left,left + resultX,0,resultY,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(left + resultX,left,resultY,0,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(left,left + resultX,resultY,0,-1,1);
-						break;
-					}
-					break;
-				case WINDOW_ROTATE_MODE_270:
-					switch(windowData.turnOverMode)
-					{
-					case WINDOW_TURNOVER_MODE_NULL:
-						glOrtho(0,resultY,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR:
-						glOrtho(0,resultY,left,left + resultX,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_TTD:
-						glOrtho(resultY,0,left + resultX,left,-1,1);
-						break;
-					case WINDOW_TURNOVER_MODE_LTR_TTD:
-						glOrtho(resultY,0,left,left + resultX,-1,1);
-						break;
-					}
-					break;
-				}
-				XEE::sceneX = left;
-				XEE::sceneY = 0;
-				XEE::sceneWidth = resultX;
-				XEE::sceneHeight = resultY;
-				XEE::sceneSizeX = sizeY;
-				XEE::sceneSizeY = sizeY;
-			}
-		}
-		break;
-	case WINDOW_SIZE_MODE_RESIZE:
-		switch(windowData.rotateMode)
-		{
-		case WINDOW_ROTATE_MODE_0:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(0,windowData.sceneW,windowData.sceneH,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.sceneW,0,
-					windowData.sceneH,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(0,windowData.sceneW,
-					0,windowData.sceneH,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.sceneW,0,
-					0,windowData.sceneH,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_90:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.sceneH,0,0,windowData.sceneW,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(windowData.sceneH,0,windowData.sceneW,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(0,windowData.sceneH,0,windowData.sceneW,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(0,windowData.sceneH,windowData.sceneW,0,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_180:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(windowData.sceneW,0,0,windowData.sceneH,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(0,windowData.sceneW,0,windowData.sceneH,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.sceneW,0,windowData.sceneH,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(0,windowData.sceneW,windowData.sceneH,0,-1,1);
-				break;
-			}
-			break;
-		case WINDOW_ROTATE_MODE_270:
-			switch(windowData.turnOverMode)
-			{
-			case WINDOW_TURNOVER_MODE_NULL:
-				glOrtho(0,windowData.sceneH,windowData.sceneW,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR:
-				glOrtho(0,windowData.sceneH,0,windowData.sceneW,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_TTD:
-				glOrtho(windowData.sceneH,0,windowData.sceneW,0,-1,1);
-				break;
-			case WINDOW_TURNOVER_MODE_LTR_TTD:
-				glOrtho(windowData.sceneH,0,0,windowData.sceneW,-1,1);
-				break;
-			}
-			break;
-		}
-		XEE::sceneX = 0;
-		XEE::sceneY = 0;
-		XEE::sceneWidth = windowData.sceneW;
-		XEE::sceneHeight = windowData.sceneH;
-		XEE::sceneSizeX = (float)(windowData.sceneW) / (float)(windowData.w);
-		XEE::sceneSizeY = (float)(windowData.sceneH) / (float)(windowData.h);
-		break;
-	}
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	glClearColor(XEE::defaultBGColor.fR,XEE::defaultBGColor.fG,XEE::defaultBGColor.fB,XEE::defaultBGColor.fA);			//清除颜色
+	glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+	glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);//建议：优化掉这一步，不用每次都调用
+	glHint(GL_POLYGON_SMOOTH,GL_NICEST);
+	if(XEE::isMultiSampleSupport)
+	{
+		glEnable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+		glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+		if(XEE::isLineSmooth) glEnable(GL_LINE_SMOOTH);
+	}
+	//初始化GL的相关数据
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	//glDisable(GL_DEPTH);							//2D项目不需要深度测试
 	glDisable(GL_DEPTH_TEST);						//2D项目不需要深度测试
 	//glEnalbe(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
-	switch(windowData.rotateMode)
-	{
-	case WINDOW_ROTATE_MODE_0: break;	//do nothing
-	case WINDOW_ROTATE_MODE_90: 
-		switch(windowData.mode)
-		{
-		case WINDOW_SIZE_MODE_CLIP_LP:
-			glTranslatef(windowData.h,0,0);
-			glRotatef(90,0,0,1);
-			break;
-		case WINDOW_SIZE_MODE_CLIP_MID:
-		case WINDOW_SIZE_MODE_CLIP_RESIZE:
-		case WINDOW_SIZE_MODE_RESIZE_CLIP:
-		case WINDOW_SIZE_MODE_RESIZE:
-			glTranslatef(windowData.sceneH,0,0);
-			glRotatef(90,0,0,1);
-			break;
-		}
-		break;
-	case WINDOW_ROTATE_MODE_180: break;	//do nothing
-	case WINDOW_ROTATE_MODE_270: 
-		switch(windowData.mode)
-		{
-		case WINDOW_SIZE_MODE_CLIP_LP:
-			glTranslatef(windowData.h,0,0);
-			glRotatef(90,0,0,1);
-			break;
-		case WINDOW_SIZE_MODE_CLIP_MID:
-		case WINDOW_SIZE_MODE_CLIP_RESIZE:
-		case WINDOW_SIZE_MODE_RESIZE_CLIP:
-		case WINDOW_SIZE_MODE_RESIZE:
-			glTranslatef(windowData.sceneH,0,0);
-			glRotatef(90,0,0,1);
-			break;
-		}
-		break;
-	}
-	if(glewInit() != 0)
-	{//初始化失败
-		AddLogInfoStr("Glew init error!\n");
-		XEE::isOpenGL2Support = 0;
-	}else
-	{
-		//记录显卡的最大贴图尺寸
-		glGetIntegerv(GL_MAX_TEXTURE_SIZE,&XEE::maxTetureSize);	
-		//检查硬件是否支持OpenGL2.0
-		if(glewIsSupported("GL_VERSION_2_0"))
-		{
-			AddLogInfoStr("Ready for OpenGL 2.0\n");
-			XEE::isOpenGL2Support = 1;
-		}else
-		{
-			AddLogInfoStr("OpenGL 2.0 not supported\n");
-			XEE::isOpenGL2Support = 0;
-		}
-		//开启多重采样抗锯齿
-		//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB |GLUT_MULTISAMPLE);//，初始化的时候开启；2）
-		GLint bufSum = 0;
-		GLint samplesSum = 0;
-		glGetIntegerv(GL_SAMPLE_BUFFERS, &bufSum);
-		glGetIntegerv(GL_SAMPLES, &samplesSum);//可以检查多重采样是否可用，前者返回1，后者返回大于1表示可用; 3）
-		if(bufSum == 1 && samplesSum > 1) glEnable(GL_MULTISAMPLE);
-	}
 	return XTrue;
 }
-void drawLine(int ax,int ay,int bx,int by,int width,float r,float g,float b)
+void drawLine(float ax,float ay,float bx,float by,float width,float r,float g,float b)
 {
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+	//{
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//}
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor3f(r,g,b);
-		glLineWidth(width);
-		glBegin(GL_LINES);
-		glVertex2i(ax,ay);
-		glVertex2i(bx,by);
-		glEnd();
-		glDisable(GL_BLEND);
-	}else
-	{
-		glDisable(GL_TEXTURE_2D);
-		glColor3f(r,g,b);
-		glLineWidth(width);
-		glBegin(GL_LINES);
-		glVertex2i(ax,ay);
-		glVertex2i(bx,by);
-		glEnd();
-	}
+	glColor3f(r,g,b);
+	glLineWidth(width);
+	glBegin(GL_LINES);
+	glVertex2f(ax,ay);
+	glVertex2f(bx,by);
+	glEnd();
 	glEnable(GL_TEXTURE_2D);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
 }
-void drawLine(int ax, int ay, int bx, int by,int width, float r, float g, float b, float a,int type)
+void drawLine(float ax, float ay, float bx, float by,float width, float r, float g, float b, float a,int type)
 {
     glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(r,g,b,a);
+	glLineWidth(width);
 	if(type == 0)
 	{//实线
-		glColor4f( r, g, b, a);
-		glLineWidth(width);
 		glBegin(GL_LINES);
-		glVertex2i( ax, ay);
-		glVertex2i( bx, by);
+		glVertex2f(ax,ay);
+		glVertex2f(bx,by);
 		glEnd();
 	}else
 	{//虚线
-		glColor4f( r, g, b, a);
 		glEnable(GL_LINE_STIPPLE);
 		glLineStipple(1,0x00ff);
-		glLineWidth(width);
 		glBegin(GL_LINES);
-		glVertex2i( ax, ay);
-		glVertex2i( bx, by);
+		glVertex2f(ax,ay);
+		glVertex2f(bx,by);
 		glEnd();
 		glDisable(GL_LINE_STIPPLE);
 	}
@@ -1398,147 +947,108 @@ void drawLine(int ax, int ay, int bx, int by,int width, float r, float g, float 
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 } 
-void drawLine(const _XVector2& p0, const _XVector2& p1, int width,float r,float g,float b,float a,int type)
-{
-	drawLine(p0.x,p0.y,p1.x,p1.y,width,r,g,b,a,type);
-}
-void drawLine(const _XVector2& p,float angle,float length)
-{
-	_XVector2 temp(p.x + length * cos(angle * ANGLE_TO_RADIAN),p.y + length * sin(angle * ANGLE_TO_RADIAN));
-	drawLine(p,temp);
-}
-void drawRect(const _XRect& rect,int width,float r,float g,float b,float a,int type)
+void drawLinesVbo(unsigned int v,int pointSum,float w,float r,float g,float b)
 {
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+	//{
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//}
+
+	glLineWidth(w);
+	glEnableClientState(GL_VERTEX_ARRAY);	
+
+	glColor3f(r,g,b);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
+	glVertexPointer(2,GL_FLOAT,0,NULL);
+	glDrawArrays(GL_LINE_STRIP,0,pointSum);
+
+	glEnable(GL_TEXTURE_2D);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
+}
+void drawLinesVbo(unsigned int v,int pointSum,float w,float r,float g,float b,float a)
+{
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glLineWidth(w);
+	glEnableClientState(GL_VERTEX_ARRAY);	
+
+	glColor4f(r,g,b,a);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
+	glVertexPointer(2,GL_FLOAT,0,NULL);
+	glDrawArrays(GL_LINE_STRIP,0,pointSum);
+
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
+}
+//void drawLine(const _XVector2& p,float angle,float length)
+//{
+//	drawLine(p,_XVector2(p.x + length * cos(angle * DEGREE2RADIAN),p.y + length * sin(angle * DEGREE2RADIAN)));
+//}
+void drawRect(const _XRect& rect,float width,float r,float g,float b,float a,int type)
+{
+	glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	//普通效果
+	glColor4f( r, g, b, a);
 	if(type == 0)
 	{//实线
-		glColor4f( r, g, b, a);
 		glLineWidth(width);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(rect.left,rect.top);
-		glVertex2i(rect.right,rect.top);
-		glVertex2i(rect.right,rect.bottom);
-		glVertex2i(rect.left,rect.bottom);
-		glVertex2i(rect.left,rect.top);
-		glEnd();
+		drawRectS(rect);
 	}else
 	{//虚线
-		glColor4f( r, g, b, a);
 		glEnable(GL_LINE_STIPPLE);
 		glLineStipple(1,0x00ff);
 		glLineWidth(width);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(rect.left,rect.top);
-		glVertex2i(rect.right,rect.top);
-		glVertex2i(rect.right,rect.bottom);
-		glVertex2i(rect.left,rect.bottom);
-		glVertex2i(rect.left,rect.top);
-		glEnd();
+		drawRectS(rect);
 		glDisable(GL_LINE_STIPPLE);
 	}
 
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 }
-void drawBox(float x,float y,float sizeX,float sizeY)
+void drawRectAntiColor(const _XRect& rect,float width,int type)
 {
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(1.0f,1.0f,1.0f,1.0f);
-		glLineWidth(1);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(x - sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y + sizeY);
-		glEnd();
-		glDisable(GL_BLEND);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);	//反色效果
+	glColor4fv(_XFColor::white);
+	if(type == 0)
+	{//实线
+		glLineWidth(width);
+		drawRectS(rect);
 	}else
-	{
-		glColor4f(1.0f,1.0f,1.0f,1.0f);
-		glLineWidth(1);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(x - sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y + sizeY);
-		glEnd();
+	{//虚线
+		glEnable(GL_LINE_STIPPLE);
+		glLineStipple(1,0x00ff);
+		glLineWidth(width);
+		drawRectS(rect);
+		glDisable(GL_LINE_STIPPLE);
 	}
-	glEnable(GL_TEXTURE_2D);
-}
-void drawBox(float x,float y,float sizeX,float sizeY,int w,float r,float g,float b)
-{
-	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColor3f(r,g,b);
-		glLineWidth(w);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(x - sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y + sizeY);
-		glEnd();
-		glDisable(GL_BLEND);
-	}else
-	{
-		glColor3f(r,g,b);
-		glLineWidth(w);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(x - sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y - sizeY);
-		glVertex2i(x + sizeX,y + sizeY);
-		glVertex2i(x - sizeX,y + sizeY);
-		glEnd();
-	}
-	glEnable(GL_TEXTURE_2D);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
 }
 void drawBox(float x,float y,float sizeX,float sizeY,int w,float r,float g,float b,float a)
 {
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(r,g,b,a);
 	glLineWidth(w);
-	glBegin(GL_LINE_STRIP);
-	glVertex2i(x - sizeX,y + sizeY);
-	glVertex2i(x - sizeX,y - sizeY);
-	glVertex2i(x + sizeX,y - sizeY);
-	glVertex2i(x + sizeX,y + sizeY);
-	glVertex2i(x - sizeX,y + sizeY);
-	glEnd();
+	drawBoxS(x,y,sizeX,sizeY);
 	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
-//	drawLine(x - sizeX,y + sizeY,x - sizeX,y - sizeY,w,r,g,b,a);
-//	drawLine(x - sizeX,y + sizeY,x + sizeX,y + sizeY,w,r,g,b,a);
-//	drawLine(x + sizeX,y + sizeY,x + sizeX,y - sizeY,w,r,g,b,a);
-//	drawLine(x - sizeX,y - sizeY,x + sizeX,y - sizeY,w,r,g,b,a);
 }
 void drawBox(float x,float y,float sizeX,float sizeY,float angle)
 {
@@ -1549,93 +1059,62 @@ void drawBox(float x,float y,float sizeX,float sizeY,float angle)
 	_XVector2 P4(x + (sizeX * cos(angle) - sizeY * sin(angle)),y - (sizeX * sin(angle) + sizeY * cos(angle)));
 
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColor3f(1.0f,1.0f,1.0f);
-		glLineWidth(1);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(P1.x,P1.y);
-		glVertex2i(P2.x,P2.y);
-		glVertex2i(P4.x,P4.y);
-		glVertex2i(P3.x,P3.y);
-		glVertex2i(P1.x,P1.y);
-		glEnd();
-		glDisable(GL_BLEND);
-	}else
-	{
-		glColor3f(1.0f,1.0f,1.0f);
-		glLineWidth(1);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(P1.x,P1.y);
-		glVertex2i(P2.x,P2.y);
-		glVertex2i(P4.x,P4.y);
-		glVertex2i(P3.x,P3.y);
-		glVertex2i(P1.x,P1.y);
-		glEnd();
-	}
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+	//{
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//}
+	glColor3fv(_XFColor::white);
+	glLineWidth(1);
+	drawBoxS(P1,P2,P3,P4);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 }
-void drawBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,int width,float r,float g,float b)
+void drawBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,float width,float r,float g,float b)
 {
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glColor3f(r,g,b);
-		glLineWidth(width);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(p0.x,p0.y);
-		glVertex2i(p1.x,p1.y);
-		glVertex2i(p2.x,p2.y);
-		glVertex2i(p3.x,p3.y);
-		glVertex2i(p0.x,p0.y);
-		glEnd();
-		glDisable(GL_BLEND);
-	}else
-	{
-		glColor3f(r,g,b);
-		glLineWidth(width);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(p0.x,p0.y);
-		glVertex2i(p1.x,p1.y);
-		glVertex2i(p2.x,p2.y);
-		glVertex2i(p3.x,p3.y);
-		glVertex2i(p0.x,p0.y);
-		glEnd();
-		glDisable(GL_BLEND);
-	}
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+	//{
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//}
+	glColor3f(r,g,b);
+	glLineWidth(width);
+	drawBoxS(p0,p1,p3,p2);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 }
-void drawBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,int width,float r,float g,float b,float a)
+void drawBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,float width,float r,float g,float b,float a)
 {
 	glDisable(GL_TEXTURE_2D);
-	if(XEE::isLineSmooth != 0)
-	{
-		glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-		glEnable(GL_LINE_SMOOTH);
-	}
 	glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(r,g,b,a);
 	glLineWidth(width);
-	glBegin(GL_LINE_STRIP);
-	glVertex2i(p0.x,p0.y);
-	glVertex2i(p1.x,p1.y);
-	glVertex2i(p2.x,p2.y);
-	glVertex2i(p3.x,p3.y);
-	glVertex2i(p0.x,p0.y);
-	glEnd();
+	drawBoxS(p0,p1,p3,p2);
 	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 }
-void drawPoint(int x,int y,float r,float g,float b,float a)
+void drawTriangle(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,float width,float r,float g,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+	//{
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//}
+	glColor3f(r,g,b);
+	glLineWidth(width);
+	glBegin(GL_LINE_STRIP);
+	glVertex2fv(p0);
+	glVertex2fv(p1);
+	glVertex2fv(p2);
+	glVertex2fv(p0);
+	glEnd();
+	//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+}
+void drawPoint(float x,float y,float r,float g,float b,float a)
 {
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -1644,13 +1123,13 @@ void drawPoint(int x,int y,float r,float g,float b,float a)
 	glColor4f(r,g,b,a);
 	glPointSize(1.0f);
 	glBegin(GL_POINTS);
-		glVertex2i(x,y);
+		glVertex2f(x,y);
 	glEnd();
 
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 }
-void drawPoint(int x,int y,float size,float r,float g,float b,float a)
+void drawPoint(float x,float y,float size,float r,float g,float b,float a)
 {
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -1659,142 +1138,1292 @@ void drawPoint(int x,int y,float size,float r,float g,float b,float a)
 	glColor4f(r,g,b,a);
 	glPointSize(size);
 	glBegin(GL_POINTS);
-		glVertex2i(x,y);
+		glVertex2f(x,y);
 	glEnd();
 
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 }
+void drawPointsVbo(unsigned int v,int pointSum,float s,float r,float g,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+
+	glPointSize(s);
+	glEnableClientState(GL_VERTEX_ARRAY);	
+
+	glColor3f(r,g,b);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
+	glVertexPointer(2,GL_FLOAT,0,NULL);
+	glDrawArrays(GL_POINTS,0,pointSum);
+
+	glEnable(GL_TEXTURE_2D);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
+}
+void drawPointsVbo(unsigned int v,int pointSum,float s,float r,float g,float b,float a)
+{
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPointSize(s);
+	glEnableClientState(GL_VERTEX_ARRAY);	
+
+	glColor3f(r,g,b);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
+	glVertexPointer(2,GL_FLOAT,0,NULL);
+	glDrawArrays(GL_POINTS,0,pointSum);
+
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
+}
+void drawCross(const _XVector2& p,float size,float w,float r,float g,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+	glColor3f(r,g,b);
+	glLineWidth(w);
+	glBegin(GL_LINES);
+	glVertex2f(p.x - size,p.y);
+	glVertex2f(p.x + size,p.y);
+	glVertex2f(p.x,p.y - size);
+	glVertex2f(p.x,p.y + size);
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
 void drawCircle(float px, float py, float sr, int an,float r,float g,float b,float a)
 {
 	if(an <= 0 || sr <= 0.0f) return;
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(r,g,b,a);
+	r = (PI2)/an;	//为了优化计算
 	glBegin(GL_POLYGON);
-		for(float i = 0;i < PI2; i +=(PI2)/an)
+		for(float i = 0;i < PI2; i += r)
 		{
-			glVertex2i(px + cosf(i) * sr,py + sinf(i) * sr);
+			glVertex2f(px + cosf(i) * sr,py + sinf(i) * sr);
 		}
 	glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+void drawCircleLine(float px, float py, float sr, int an,float r,float g,float b,float a)
+{
+	if(an <= 0 || sr <= 0.0f) return;
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(r,g,b,a);
+	r = (PI2)/an;	//为了优化计算
+	glBegin(GL_LINE_STRIP);
+		for(float i = 0;i < PI2; i += r)
+		{
+			glVertex2f(px + cosf(i) * sr,py + sinf(i) * sr);
+		}
+	glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+void drawFillRing(float x,float y,float r0,float r1,float angleS,float angleE,int an,float r,float g,float b,float a)
+{//测试通过，但是计算需要进一步优化
+	if(angleE == angleS || r0 == r1 || an <= 0) return;
+	//喜爱按开始计算需要的点
+	std::vector<float> point;
+	float perAngle = (angleE - angleS) / an * DEGREE2RADIAN;
+	angleS *= DEGREE2RADIAN;
+	float s,c;
+	for(int i = 0;i <= an;++ i)
+	{
+		s = sin(angleS);
+		c = cos(angleS);
+		point.push_back(x - r0 * s);
+		point.push_back(y - r0 * c);
+		point.push_back(x - r1 * s);
+		point.push_back(y - r1 * c);
+		angleS += perAngle;
+	}
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(r,g,b,a);
+	glBegin(GL_TRIANGLE_STRIP);
+	for(int i = 0;i < point.size();i += 2)
+	{
+		glVertex2f(point[i],point[i + 1]);
+	}
+	glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+void drawFillRingEx(float x,float y,float r0,float r1,float angleS,float angleE,int an,float r,float g,float b,float a)
+{
+	if(angleE == angleS || r0 == r1 || an <= 0) return;
+	//喜爱按开始计算需要的点
+	std::vector<float> point;
+	float perAngle = (angleE - angleS) / an * DEGREE2RADIAN;
+	angleS *= DEGREE2RADIAN;
+	float s,c;
+	for(int i = 0;i <= an;++ i)
+	{
+		s = sin(angleS);
+		c = cos(angleS);
+		point.push_back(x - r0 * s);
+		point.push_back(y - r0 * c);
+		point.push_back(x - r1 * s);
+		point.push_back(y - r1 * c);
+		angleS += perAngle;
+	}
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	perAngle = a / point.size() * 2.0f;
+	glBegin(GL_TRIANGLE_STRIP);
+	for(int i = 0;i < point.size();i += 2)
+	{
+		glColor4f(r,g,b,perAngle * (i >> 1));
+		glVertex2f(point[i],point[i + 1]);
+	}
+	glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
 }
 //这里是关于圆角的定义
-bool isRoundCornerInit = false;
-#define ROUND_CORNER_DENSITY (5)
-_XVector2 roundCornerData[ROUND_CORNER_DENSITY * 4];	//10度一个弧
-float roundCornerR = 8.0f;	//圆角的半径
-float roundCornerD = 16.0f;	//圆角的直径
-inline void roundCornerInit()
+namespace _XGLCornerData
 {
-	if(!isRoundCornerInit)
+	bool isRoundCornerInit = false;
+	#define ROUND_CORNER_DENSITY (3)
+	_XVector2 roundCornerData[ROUND_CORNER_DENSITY * 4];	//10度一个弧
+	float roundCornerR = 10.0f;	//圆角的半径
+	float roundCornerD = 20.0f;	//圆角的直径
+	inline void roundCornerInit()
 	{
-		float angle;
-		for(int i = 0;i < ROUND_CORNER_DENSITY * 4;++ i)
+		if(!isRoundCornerInit)
 		{
-			angle = i * 360.0f / (ROUND_CORNER_DENSITY * 4.0f) * ANGLE_TO_RADIAN;
-			roundCornerData[i].set(roundCornerR * cos(angle),
-				roundCornerR * sin(angle));
+			float angle;
+			for(int i = 0;i < ROUND_CORNER_DENSITY * 4;++ i)
+			{
+				angle = i * 360.0f / (ROUND_CORNER_DENSITY * 4.0f) * DEGREE2RADIAN;
+				roundCornerData[i].set(roundCornerR * cos(angle),
+					roundCornerR * sin(angle));
+			}
+			isRoundCornerInit = true;
 		}
-		isRoundCornerInit = true;
+	}
+	inline void drawCornerLine(const _XVector2 &pos,const _XVector2 &size)
+	{
+		glBegin(GL_LINE_STRIP);
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+		{//右下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		}
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+		{//左下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		}
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+		{//左上角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + _XGLCornerData::roundCornerR + pos.y);
+		}
+		for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
+		{//右上角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + _XGLCornerData::roundCornerR + pos.y);
+		}
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
 	}
 }
+void drawFillBox(const _XVector2 &p0,const _XFColor &c0,		//第一个点以及颜色
+						const _XVector2 &p1,const _XFColor &c1,		//第二个点以及颜色
+						const _XVector2 &p2,const _XFColor &c2,		//第三个点以及颜色
+						const _XVector2 &p3,const _XFColor &c3)	//第四个点以及颜色
+{
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBegin(GL_QUADS);
+	glColor4fv(c0);
+	glVertex2fv(p0);
+	glColor4fv(c1);
+	glVertex2fv(p1);
+	glColor4fv(c2);
+	glVertex2fv(p2);
+	glColor4fv(c3);
+	glVertex2fv(p3);
+	glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+void drawFillBox(float x,float y,float w,float h,
+						float r,float g,float b,float a)	//描绘实心矩形
+{
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glColor4f(r,g,b,a);
+	drawFillBoxS(x,y,w,h);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
 void drawFillBox(const _XVector2& pos,const _XVector2& size,
-				 float r,float g,float b)	//描绘实心矩形
+				 float r,float g,float b,bool withLine)	//描绘实心矩形
 {
 	//drawLine(pos.x,pos.y + size.y * 0.5f,pos.x + size.x,pos.y + size.y * 0.5f,size.y,r,g,b);
 	glDisable(GL_TEXTURE_2D);
+	if(withLine)
+	{//描绘边框
+		glColor3f(0.15f,0.15f,0.15f);
+		glLineWidth(1.0f);
+		drawBox(pos,size);
+	}
 	glColor3f(r,g,b);
-	glBegin(GL_QUADS);
-	glVertex2i(pos.x,pos.y);
-	glVertex2i(pos.x + size.x,pos.y);
-	glVertex2i(pos.x + size.x,pos.y + size.y);
-	glVertex2i(pos.x,pos.y + size.y);
+	drawFillBoxS(pos.x,pos.y,size.x,size.y);
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillBoxA(const _XVector2& pos,const _XVector2& size,
+				 float r,float g,float b,float a,bool withLine)	//描绘实心矩形
+{
+	//drawLine(pos.x,pos.y + size.y * 0.5f,pos.x + size.x,pos.y + size.y * 0.5f,size.y,r,g,b);
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	if(withLine)
+	{//描绘边框
+		glColor4f(0.15f,0.15f,0.15f,a);
+		glLineWidth(1.0f);
+		drawBox(pos,size);
+	}
+	glColor4f(r,g,b,a);
+	drawFillBoxS(pos.x,pos.y,size.x,size.y);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+}
+void drawFillTriangle(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,
+						float r,float g ,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+	glColor3f(r,g,b);
+	glBegin(GL_TRIANGLES);
+	glVertex2fv(p0);
+	glVertex2fv(p1);
+	glVertex2fv(p2);
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillTriangleEx(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,
+						float r,float g,float b)	//描绘实心三角形
+{
+	float min = p0.y;
+	float max = p0.y;
+	if(p1.y < min) min = p1.y;
+	if(p1.y > max) max = p1.y;
+	if(p2.y < min) min = p2.y;
+	if(p2.y > max) max = p2.y;
+	float rate = 1.0f;
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_TRIANGLES);
+	rate = maping1D(p0.y,min,max,0.9f,1.1f);
+	glColor3f(r * rate,g * rate,b * rate);
+	glVertex2fv(p0);
+	rate = maping1D(p1.y,min,max,0.9f,1.1f);
+	glColor3f(r * rate,g * rate,b * rate);
+	glVertex2fv(p1);
+	rate = maping1D(p2.y,min,max,0.9f,1.1f);
+	glColor3f(r * rate,g * rate,b * rate);
+	glVertex2fv(p2);
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
 }
 void drawFillBoxEx(const _XVector2& pos,const _XVector2& size,
 				 float r,float g,float b,
-				 bool withLine,bool withRoundCorner)	//描绘实心矩形
+				 bool withLine,bool withRoundCorner,bool down)	//描绘实心矩形
 {
+	_XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,1.0f);
+	_XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,1.0f);
 	glDisable(GL_TEXTURE_2D);
-	if(withRoundCorner && size.x >= roundCornerD && size.y >= roundCornerD)
+	if(withRoundCorner && size.x >= _XGLCornerData::roundCornerD && size.y >= _XGLCornerData::roundCornerD)
 	{
-		roundCornerInit();
+		_XGLCornerData::roundCornerInit();
 		if(withLine)
 		{//描绘边框
 			glColor3f(0.15f,0.15f,0.15f);
 			glLineWidth(1.0f);
-			glBegin(GL_LINE_STRIP);
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-			{
-				glVertex2f(roundCornerData[i].x + size.x - roundCornerR + pos.x,
-					roundCornerData[i].y + size.y - roundCornerR + pos.y);
-			}
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-			{
-				glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY].x + roundCornerR + pos.x,
-					roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - roundCornerR + pos.y);
-			}
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-			{
-				glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY * 2].x + roundCornerR + pos.x,
-					roundCornerData[i + ROUND_CORNER_DENSITY * 2].y + roundCornerR + pos.y);
-			}
-			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
-			{
-				glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - roundCornerR + pos.x,
-					roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + roundCornerR + pos.y);
-			}
-			glVertex2i(roundCornerData[0].x + size.x - roundCornerR + pos.x,
-					roundCornerData[0].y + size.y - roundCornerR + pos.y);
-			glEnd();
+			_XGLCornerData::drawCornerLine(pos,size);
 		}
-		glColor3f(r * 0.9f,g * 0.9f,b * 0.9f);
+		//下半部分
 		glBegin(GL_POLYGON);
-		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-		{
-			glVertex2f(roundCornerData[i].x + size.x - roundCornerR + pos.x,
-				roundCornerData[i].y + size.y - roundCornerR + pos.y);
+		if(down) glColor3fv(lColor); 
+		else glColor3fv(dColor);
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+		{//右下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i].y + size.y - _XGLCornerData::roundCornerR + pos.y);
 		}
 		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-		{
-			glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY].x + roundCornerR + pos.x,
-				roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - roundCornerR + pos.y);
+		{//左下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - _XGLCornerData::roundCornerR + pos.y);
 		}
-		glColor3f(r * 1.1f,g * 1.1f,b * 1.1f);
+		glEnd();
+		//上半部分
+		glBegin(GL_POLYGON);
+		if(down) glColor3fv(dColor);
+		else glColor3fv(lColor);
 		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
-		{
-			glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY * 2].x + roundCornerR + pos.x,
-				roundCornerData[i + ROUND_CORNER_DENSITY * 2].y + roundCornerR + pos.y);
+		{//左上角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + _XGLCornerData::roundCornerR + pos.y);
 		}
 		for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
-		{
-			glVertex2f(roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - roundCornerR + pos.x,
-				roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + roundCornerR + pos.y);
+		{//左下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + _XGLCornerData::roundCornerR + pos.y);
 		}
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
+		//中间
+		glBegin(GL_POLYGON);
+		if(down) glColor3fv(lColor); 
+		else glColor3fv(dColor);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		if(down) glColor3fv(dColor);
+		else glColor3fv(lColor);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
 		glEnd();
 	}else
 	{
-		//drawLine(pos.x,pos.y + size.y * 0.5f,pos.x + size.x,pos.y + size.y * 0.5f,size.y,r,g,b);
 		if(withLine)
 		{//描绘边框
 			glColor3f(0.15f,0.15f,0.15f);
 			glLineWidth(1.0f);
-			glBegin(GL_LINE_STRIP);
-			glVertex2i(pos.x,pos.y);
-			glVertex2i(pos.x + size.x,pos.y);
-			glVertex2i(pos.x + size.x,pos.y + size.y);
-			glVertex2i(pos.x,pos.y + size.y);
-			glVertex2i(pos.x,pos.y);
+			drawBox(pos,size);
+		}
+		glBegin(GL_QUADS);
+		if(down) glColor3fv(dColor); 
+		else glColor3fv(lColor);
+		glVertex2fv(pos);
+		glVertex2f(pos.x + size.x,pos.y);
+		if(down) glColor3fv(lColor);
+		else glColor3fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y);
+		glEnd();
+	}
+	glEnable(GL_TEXTURE_2D);
+}
+//void drawFillBoxExA(const _XVector2& pos,const _XVector2& size,
+//				 float r,float g,float b,float a,
+//				 bool withLine,bool withRoundCorner,bool down)	//描绘实心矩形
+//{
+//	_XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
+//	_XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+//
+//	glDisable(GL_TEXTURE_2D);
+//	glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//	if(withRoundCorner && size.x >= _XGLCornerData::roundCornerD && size.y >= _XGLCornerData::roundCornerD)
+//	{
+//		_XGLCornerData::roundCornerInit();
+//		if(withLine)
+//		{//描绘边框
+//			glColor4f(0.15f,0.15f,0.15f,a);
+//			glLineWidth(1.0f);
+//			_XGLCornerData::drawCornerLine(pos,size);
+//		}
+//		//下半部分
+//		glBegin(GL_POLYGON);
+//		if(down) glColor3fv(lColor); 
+//		else glColor4fv(dColor);
+//		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+//		{//右下角圆角
+//			glVertex2f(_XGLCornerData::roundCornerData[i].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+//				_XGLCornerData::roundCornerData[i].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+//		}
+//		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+//		{//左下角圆角
+//			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + _XGLCornerData::roundCornerR + pos.x,
+//				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+//		}
+//		glEnd();
+//		//上半部分
+//		glBegin(GL_POLYGON);
+//		if(down) glColor4fv(dColor);
+//		else glColor4fv(lColor);
+//		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+//		{//左上角圆角
+//			glVertex2f(_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + _XGLCornerData::roundCornerR + pos.x,
+//				_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + _XGLCornerData::roundCornerR + pos.y);
+//		}
+//		for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
+//		{//左下角圆角
+//			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+//				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + _XGLCornerData::roundCornerR + pos.y);
+//		}
+//		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+//			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+//		glEnd();
+//		//中间
+//		glBegin(GL_POLYGON);
+//		if(down) glColor4fv(lColor); 
+//		else glColor4fv(dColor);
+//		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+//			_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+//		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+//			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+//		if(down) glColor4fv(dColor);
+//		else glColor4fv(lColor);
+//		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+//			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + _XGLCornerData::roundCornerR + pos.y);
+//		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+//			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+//		glEnd();
+//	}else
+//	{
+//		//调换绘制顺序，立体感会更强。
+//		glBegin(GL_QUADS);
+//		if(down) glColor4fv(dColor); 
+//		else glColor4fv(lColor);
+//		glVertex2fv(pos);
+//		glVertex2f(pos.x + size.x,pos.y);
+//		if(down) glColor4fv(lColor);
+//		else glColor4fv(dColor);
+//		glVertex2f(pos.x + size.x,pos.y + size.y);
+//		glVertex2f(pos.x,pos.y + size.y);
+//		glEnd();
+//		if(withLine)
+//		{
+//			//这里描绘高光
+//			if(down)
+//			{
+//				glColor4f(dColor.fR + 0.2f,dColor.fG + 0.2f,dColor.fB + 0.2f,dColor.fA); 
+//				glLineWidth(2.0f);
+//				glBegin(GL_LINES);
+//				glVertex2f(pos.x + size.x,pos.y + size.y - 1);
+//				glVertex2f(pos.x,pos.y + size.y - 1);
+//				glEnd();
+//			}else
+//			{
+//				glColor4f(lColor.fR + 0.2f,lColor.fG + 0.2f,lColor.fB + 0.2f,lColor.fA); 
+//				glLineWidth(2.0f);
+//				glBegin(GL_LINES);
+//				glVertex2fv(pos);
+//				glVertex2f(pos.x + size.x,pos.y);
+//				glEnd();
+//			}
+//			//描绘边框
+//			glColor4f(0.15f,0.15f,0.15f,a);
+//			glLineWidth(1.0f);
+//			drawBox(pos,size);
+//		}
+//	}
+//	glDisable(GL_BLEND);
+//	glEnable(GL_TEXTURE_2D);
+//}
+void drawFillBoxExAS(const _XVector2& pos,const _XVector2& size,
+				 float r,float g,float b,float a,
+				 bool withLine,bool withRoundCorner,bool down)	//描绘实心矩形
+{
+	_XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
+	_XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if(withRoundCorner && size.x >= _XGLCornerData::roundCornerD && size.y >= _XGLCornerData::roundCornerD)
+	{
+		_XGLCornerData::roundCornerInit();
+		if(withLine)
+		{//描绘边框
+			glColor4f(0.15f,0.15f,0.15f,a);
+			glLineWidth(1.0f);
+			_XGLCornerData::drawCornerLine(pos,size);
+		}
+		//下半部分
+		glBegin(GL_POLYGON);
+		if(down) glColor3fv(lColor); 
+		else glColor4fv(dColor);
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+		{//右下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		}
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+		{//左下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		}
+		glEnd();
+		//上半部分
+		glBegin(GL_POLYGON);
+		if(down) glColor4fv(dColor);
+		else glColor4fv(lColor);
+		for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+		{//左上角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + _XGLCornerData::roundCornerR + pos.y);
+		}
+		for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
+		{//左下角圆角
+			glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + _XGLCornerData::roundCornerR + pos.y);
+		}
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
+		//中间
+		glBegin(GL_POLYGON);
+		if(down) glColor4fv(lColor); 
+		else glColor4fv(dColor);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		if(down) glColor4fv(dColor);
+		else glColor4fv(lColor);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
+	}else
+	{
+		if(withLine)
+		{//描绘边框
+			glColor4f(0.15f,0.15f,0.15f,a);
+			glLineWidth(1.0f);
+			drawBox(pos,size);
+		}
+		glBegin(GL_QUADS);
+		if(down) glColor4fv(dColor); 
+		else glColor4fv(lColor);
+		glVertex2fv(pos);
+		glVertex2f(pos.x + size.x,pos.y);
+		if(down) glColor4fv(lColor);
+		else glColor4fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y);
+		glEnd();
+	}
+	glDisable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+}
+inline void drawCorner(const _XVector2& pos,const _XVector2& size,int style,int index)
+{
+	switch(style)
+	{
+	case 2:
+		switch(index)
+		{
+		case 0:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x + size.x,pos.y + size.y);
+			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+			{
+				glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+					pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+			}
+			glEnd();
+			break;
+		case 1:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x,pos.y + size.y);
+			for(int i = ROUND_CORNER_DENSITY;i <= (ROUND_CORNER_DENSITY << 1);++ i)	
+			{
+				glVertex2f(pos.x - (_XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR),
+					pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+			}
+			glEnd();
+			break;
+		case 2:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x,pos.y);
+			for(int i = (ROUND_CORNER_DENSITY << 1);i <= (ROUND_CORNER_DENSITY * 3);++ i)	
+			{
+				glVertex2f(pos.x - (_XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR),
+					pos.y + _XGLCornerData::roundCornerData[i].y + _XGLCornerData::roundCornerR);
+			}
+			glEnd();
+			break;
+		case 3:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x + size.x,pos.y);
+			for(int i = (ROUND_CORNER_DENSITY * 3);i < (ROUND_CORNER_DENSITY << 2);++ i)	
+			{
+				glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+					pos.y + _XGLCornerData::roundCornerData[i].y + _XGLCornerData::roundCornerR);
+			}
+			glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[0].x - _XGLCornerData::roundCornerR),
+				pos.y + _XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR);
+			glEnd();
+			break;
+		}
+		break;
+	case 3:
+		switch(index)
+		{
+		case 0:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x + size.x,pos.y + size.y);
+			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+			{
+				glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR,
+					pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+			}
+			glEnd();
+			break;
+		case 1:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x,pos.y + size.y);
+			for(int i = ROUND_CORNER_DENSITY;i <= (ROUND_CORNER_DENSITY << 1);++ i)	
+			{
+				glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+					pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+			}
+			glEnd();
+			break;
+		case 2:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x,pos.y);
+			for(int i = (ROUND_CORNER_DENSITY << 1);i <= (ROUND_CORNER_DENSITY * 3);++ i)	
+			{
+				glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+					pos.y - (_XGLCornerData::roundCornerData[i].y + _XGLCornerData::roundCornerR));
+			}
+			glEnd();
+			break;
+		case 3:
+			glBegin(GL_POLYGON);
+			glVertex2f(pos.x + size.x,pos.y);
+			for(int i = (ROUND_CORNER_DENSITY * 3);i < (ROUND_CORNER_DENSITY << 2);++ i)	
+			{
+				glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR,
+					pos.y - (_XGLCornerData::roundCornerData[i].y + _XGLCornerData::roundCornerR));
+			}
+			glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerData[0].x - _XGLCornerData::roundCornerR,
+				pos.y - (_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR));
+			glEnd();
+			break;
+		}
+		break;
+	}
+}
+inline void cornerData(const _XVector2& pos,const _XVector2& size,int style,int index)
+{
+	switch(style)
+	{
+	case 1:
+		switch(index)
+		{
+		case 0:
+			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+			{
+				glVertex2f(_XGLCornerData::roundCornerData[i].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+					_XGLCornerData::roundCornerData[i].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+			}
+			break;
+		case 1:
+			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+			{
+				glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + _XGLCornerData::roundCornerR + pos.x,
+					_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+			}
+			break;
+		case 2:
+			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+			{//左上角圆角
+				glVertex2f(_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + _XGLCornerData::roundCornerR + pos.x,
+					_XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + _XGLCornerData::roundCornerR + pos.y);
+			}
+			break;
+		case 3:
+			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
+			{//左下角圆角
+				glVertex2f(_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+					_XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + _XGLCornerData::roundCornerR + pos.y);
+			}
+			glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+				_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+			break;
+		}
+		break;
+	default:
+		switch(index)
+		{
+		case 0:
+			glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+				pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+			glVertex2f(pos.x + size.x,pos.y + size.y);
+			glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY].x,
+				pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY].y);
+			break;
+		case 1:
+			glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY].x,
+				pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY].y);
+			glVertex2f(pos.x,pos.y + size.y);
+			glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x,
+				pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y);
+			break;
+		case 2:
+			glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x,
+				pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y);
+			glVertex2f(pos.x,pos.y);
+			glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3].x,
+				pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3].y);
+			break;
+		case 3:
+			glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3].x,
+				pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3].y);
+			glVertex2f(pos.x + size.x,pos.y);
+			glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+				pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+			break;
+		}
+		break;
+	}
+}
+void drawFillBoxExEx(const _XVector2& pos,const _XVector2& size,
+						float r,float g,float b,
+						unsigned char lineStyle,unsigned char cornerStyle,bool down)
+{
+	_XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,1.0f);
+	_XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,1.0f);
+	glDisable(GL_TEXTURE_2D);
+	if(cornerStyle != 0 && size.x >= _XGLCornerData::roundCornerD && size.y >= _XGLCornerData::roundCornerD)
+	{//需要描绘圆角
+		_XGLCornerData::roundCornerInit();
+		if(lineStyle != 0)
+		{//描绘边框
+			glColor3f(0.15f,0.15f,0.15f);
+			glLineWidth(1.0f);
+			if(lineStyle & 0x01)
+			{//上边需要描绘
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0x30) >> 4)
+				{
+				case 0:glVertex2fv(pos);break;
+				case 1:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 2:glVertex2f(pos.x - _XGLCornerData::roundCornerR,pos.y);break;
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y));
+					}
+					break;
+				}
+				switch((cornerStyle & 0xc0) >> 6)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y);break;
+				case 1:glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR,pos.y);break;
+				case 2:glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerR,pos.y);break;
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y));
+					}
+					glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+						pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y));
+					break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x02)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0xc0) >> 6)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y);break;
+				case 1:
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+						pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+					break;
+				case 2:					
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{
+						glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[0].x - _XGLCornerData::roundCornerR),
+						pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+					break;
+				case 3:glVertex2f(pos.x + size.x,pos.y - _XGLCornerData::roundCornerR);break;
+				}
+				switch(cornerStyle & 0x03)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y + size.y);break;
+				case 1:glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);break;
+				case 2:					
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+							pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 3:glVertex2f(pos.x + size.x,pos.y + size.y + _XGLCornerData::roundCornerR);break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x04)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch(cornerStyle & 0x03)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y + size.y);break;
+				case 1:
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 2:glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerR,pos.y + size.y);break;					
+				case 3:
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR,
+							pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+					}
+					break;
+				}
+				switch((cornerStyle & 0x0c) >> 2)
+				{
+				case 0:glVertex2f(pos.x,pos.y + size.y);break;
+				case 1:glVertex2f(pos.x + _XGLCornerData::roundCornerR,pos.y + size.y);break;
+				case 2:glVertex2f(pos.x - _XGLCornerData::roundCornerR,pos.y + size.y);break;					
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+							pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+					}
+					break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x08)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0x0c) >> 2)
+				{
+				case 0:glVertex2f(pos.x,pos.y + size.y);break;
+				case 1:					
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+							pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+					}
+					break;
+				case 2:
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x - (_XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR),
+							pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+					}
+					break;
+				case 3:glVertex2f(pos.x,pos.y + size.y + _XGLCornerData::roundCornerR);break;
+				}
+				switch((cornerStyle & 0x30) >> 4)
+				{
+				case 0:glVertex2fv(pos);break;
+				case 1:glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);break;
+				case 2:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{
+						glVertex2f(pos.x - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x),
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 3:glVertex2f(pos.x,pos.y - _XGLCornerData::roundCornerR);break;
+				}
+				glEnd();
+			}
+		}
+		if(down) glColor3fv(lColor); 
+		else glColor3fv(dColor);
+		//下半部分
+		if(down) glColor3fv(lColor); 
+		else glColor3fv(dColor);
+		glBegin(GL_POLYGON);
+		cornerData(pos,size,cornerStyle & 0x03,0);	//右下角
+		cornerData(pos,size,(cornerStyle & 0x0c) >> 2,1);	//左下角
+		glEnd();
+		drawCorner(pos,size,cornerStyle & 0x03,0);
+		drawCorner(pos,size,(cornerStyle & 0x0c) >> 2,1);
+		//上半部分
+		if(down) glColor3fv(dColor);
+		else glColor3fv(lColor);
+		glBegin(GL_POLYGON);
+		cornerData(pos,size,(cornerStyle & 0x30) >> 4,2);	//右下角
+		cornerData(pos,size,(cornerStyle & 0xc0) >> 6,3);	//左下角
+		glEnd();
+		drawCorner(pos,size,(cornerStyle & 0x30) >> 4,2);	//左上角
+		drawCorner(pos,size,(cornerStyle & 0xc0) >> 6,3);	//右上角
+		//中间
+		glBegin(GL_POLYGON);
+		if(down) glColor3fv(lColor); 
+		else glColor3fv(dColor);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		if(down) glColor3fv(dColor);
+		else glColor3fv(lColor);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
+	}else
+	{//不需要描绘圆角
+		if(lineStyle != 0)
+		{//描绘边框
+			glColor3f(0.15f,0.15f,0.15f);
+			glLineWidth(1.0f);
+			glBegin(GL_LINES);
+			if(lineStyle & 0x01)
+			{
+				glVertex2fv(pos);
+				glVertex2f(pos.x + size.x,pos.y);
+			}
+			if(lineStyle & 0x02)
+			{
+				glVertex2f(pos.x + size.x,pos.y);
+				glVertex2f(pos.x + size.x,pos.y + size.y);
+			}
+			if(lineStyle & 0x04)
+			{
+				glVertex2f(pos.x + size.x,pos.y + size.y);
+				glVertex2f(pos.x,pos.y + size.y);
+			}
+			if(lineStyle & 0x08)
+			{
+				glVertex2f(pos.x,pos.y + size.y);
+				glVertex2fv(pos);
+			}
 			glEnd();
 		}
 		glBegin(GL_QUADS);
-		glColor3f(r * 1.1f,g * 1.1f,b * 1.1f);
-		glVertex2i(pos.x,pos.y);
-		glVertex2i(pos.x + size.x,pos.y);
-		glColor3f(r * 0.9f,g * 0.9f,b * 0.9f);
-		glVertex2i(pos.x + size.x,pos.y + size.y);
-		glVertex2i(pos.x,pos.y + size.y);
+		if(down) glColor3fv(dColor); 
+		else glColor3fv(lColor);
+		glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);
+		glVertex2fv(pos);
+		glVertex2f(pos.x + size.x,pos.y);
+		glVertex2f(pos.x + size.x,pos.y + _XGLCornerData::roundCornerR);
+		glEnd();
+		glBegin(GL_QUADS);
+		if(down) glColor3fv(lColor);
+		else glColor3fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x + size.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glEnd();
+		glBegin(GL_QUADS);
+		if(down) glColor3fv(dColor); 
+		else glColor3fv(lColor);
+		glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x + size.x,pos.y + _XGLCornerData::roundCornerR);
+		if(down) glColor3fv(lColor);
+		else glColor3fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x,pos.y + size.y - _XGLCornerData::roundCornerR);
 		glEnd();
 	}
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillBoxExExA(const _XVector2& pos,const _XVector2& size,
+						float r,float g,float b,float a,
+						unsigned char lineStyle,unsigned char cornerStyle,bool down)
+{
+	_XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
+	_XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if(cornerStyle != 0 && size.x >= _XGLCornerData::roundCornerD && size.y >= _XGLCornerData::roundCornerD)
+	{//需要描绘圆角
+		_XGLCornerData::roundCornerInit();
+		if(lineStyle != 0)
+		{//描绘边框
+			glColor4f(0.15f,0.15f,0.15f,a);
+			glLineWidth(1.0f);
+			if(lineStyle & 0x01)
+			{//上边需要描绘
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0x30) >> 4)
+				{
+				case 0:glVertex2fv(pos);break;
+				case 1:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 2:glVertex2f(pos.x - _XGLCornerData::roundCornerR,pos.y);break;
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y));
+					}
+					break;
+				}
+				switch((cornerStyle & 0xc0) >> 6)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y);break;
+				case 1:glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR,pos.y);break;
+				case 2:glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerR,pos.y);break;
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{//左上角圆角
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y));
+					}
+					glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+						pos.y - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y));
+					break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x02)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0xc0) >> 6)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y);break;
+				case 1:
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].x,
+						pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+					break;
+				case 2:					
+					for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					{
+						glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[0].x - _XGLCornerData::roundCornerR),
+						pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[0].y);
+					break;
+				case 3:glVertex2f(pos.x + size.x,pos.y - _XGLCornerData::roundCornerR);break;
+				}
+				switch(cornerStyle & 0x03)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y + size.y);break;
+				case 1:glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);break;
+				case 2:					
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x - (_XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR),
+							pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 3:glVertex2f(pos.x + size.x,pos.y + size.y + _XGLCornerData::roundCornerR);break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x04)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch(cornerStyle & 0x03)
+				{
+				case 0:glVertex2f(pos.x + size.x,pos.y + size.y);break;
+				case 1:
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x,
+							pos.y + size.y - _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 2:glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerR,pos.y + size.y);break;					
+				case 3:
+					for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					{
+						glVertex2f(pos.x + size.x + _XGLCornerData::roundCornerData[i].x - _XGLCornerData::roundCornerR,
+							pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+					}
+					break;
+				}
+				switch((cornerStyle & 0x0c) >> 2)
+				{
+				case 0:glVertex2f(pos.x,pos.y + size.y);break;
+				case 1:glVertex2f(pos.x + _XGLCornerData::roundCornerR,pos.y + size.y);break;
+				case 2:glVertex2f(pos.x - _XGLCornerData::roundCornerR,pos.y + size.y);break;					
+				case 3:
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+							pos.y + size.y - (_XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR));
+					}
+					break;
+				}
+				glEnd();
+			}
+			if(lineStyle & 0x08)
+			{
+				glBegin(GL_LINE_STRIP);
+				switch((cornerStyle & 0x0c) >> 2)
+				{
+				case 0:glVertex2f(pos.x,pos.y + size.y);break;
+				case 1:					
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x + _XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR,
+							pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+					}
+					break;
+				case 2:
+					for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					{
+						glVertex2f(pos.x - (_XGLCornerData::roundCornerData[i].x + _XGLCornerData::roundCornerR),
+							pos.y + size.y + _XGLCornerData::roundCornerData[i].y - _XGLCornerData::roundCornerR);
+					}
+					break;
+				case 3:glVertex2f(pos.x,pos.y + size.y + _XGLCornerData::roundCornerR);break;
+				}
+				switch((cornerStyle & 0x30) >> 4)
+				{
+				case 0:glVertex2fv(pos);break;
+				case 1:glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);break;
+				case 2:
+					for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+					{
+						glVertex2f(pos.x - (_XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].x),
+							pos.y + _XGLCornerData::roundCornerR + _XGLCornerData::roundCornerData[i].y);
+					}
+					break;
+				case 3:glVertex2f(pos.x,pos.y - _XGLCornerData::roundCornerR);break;
+				}
+				glEnd();
+			}
+		}
+		if(down) glColor4fv(lColor); 
+		else glColor4fv(dColor);
+		//下半部分
+		if(down) glColor4fv(lColor); 
+		else glColor4fv(dColor);
+		glBegin(GL_POLYGON);
+		cornerData(pos,size,cornerStyle & 0x03,0);	//右下角
+		cornerData(pos,size,(cornerStyle & 0x0c) >> 2,1);	//左下角
+		glEnd();
+		drawCorner(pos,size,cornerStyle & 0x03,0);
+		drawCorner(pos,size,(cornerStyle & 0x0c) >> 2,1);
+		//上半部分
+		if(down) glColor4fv(dColor);
+		else glColor4fv(lColor);
+		glBegin(GL_POLYGON);
+		cornerData(pos,size,(cornerStyle & 0x30) >> 4,2);	//右下角
+		cornerData(pos,size,(cornerStyle & 0xc0) >> 6,3);	//左下角
+		glEnd();
+		drawCorner(pos,size,(cornerStyle & 0x30) >> 4,2);	//左上角
+		drawCorner(pos,size,(cornerStyle & 0xc0) >> 6,3);	//右上角
+		//中间
+		glBegin(GL_POLYGON);
+		if(down) glColor4fv(lColor); 
+		else glColor4fv(dColor);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - _XGLCornerData::roundCornerR + pos.y);
+		if(down) glColor4fv(dColor);
+		else glColor4fv(lColor);
+		glVertex2f(_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + _XGLCornerData::roundCornerR + pos.y);
+		glVertex2f(_XGLCornerData::roundCornerData[0].x + size.x - _XGLCornerData::roundCornerR + pos.x,
+			_XGLCornerData::roundCornerData[0].y + _XGLCornerData::roundCornerR + pos.y);
+		glEnd();
+	}else
+	{//不需要描绘圆角
+		if(lineStyle != 0)
+		{//描绘边框
+			glColor4f(0.15f,0.15f,0.15f,a);
+			glLineWidth(1.0f);
+			glBegin(GL_LINES);
+			if(lineStyle & 0x01)
+			{
+				glVertex2fv(pos);
+				glVertex2f(pos.x + size.x,pos.y);
+			}
+			if(lineStyle & 0x02)
+			{
+				glVertex2f(pos.x + size.x,pos.y);
+				glVertex2f(pos.x + size.x,pos.y + size.y);
+			}
+			if(lineStyle & 0x04)
+			{
+				glVertex2f(pos.x + size.x,pos.y + size.y);
+				glVertex2f(pos.x,pos.y + size.y);
+			}
+			if(lineStyle & 0x08)
+			{
+				glVertex2f(pos.x,pos.y + size.y);
+				glVertex2fv(pos);
+			}
+			glEnd();
+		}
+		glBegin(GL_QUADS);
+		if(down) glColor4fv(dColor); 
+		else glColor4fv(lColor);
+		glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);
+		glVertex2fv(pos);
+		glVertex2f(pos.x + size.x,pos.y);
+		glVertex2f(pos.x + size.x,pos.y + _XGLCornerData::roundCornerR);
+		glEnd();
+		glBegin(GL_QUADS);
+		if(down) glColor4fv(lColor);
+		else glColor4fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x + size.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y);
+		glVertex2f(pos.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glEnd();
+		glBegin(GL_QUADS);
+		if(down) glColor4fv(dColor); 
+		else glColor4fv(lColor);
+		glVertex2f(pos.x,pos.y + _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x + size.x,pos.y + _XGLCornerData::roundCornerR);
+		if(down) glColor4fv(lColor);
+		else glColor4fv(dColor);
+		glVertex2f(pos.x + size.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glVertex2f(pos.x,pos.y + size.y - _XGLCornerData::roundCornerR);
+		glEnd();
+	}
+	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 }
 void drawFillBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,const _XVector2& p3,
@@ -1803,10 +2432,10 @@ void drawFillBox(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,con
 	glDisable(GL_TEXTURE_2D);
 	glColor3f(r,g,b);
 	glBegin(GL_QUADS);
-	glVertex2i(p0.x,p0.y);
-	glVertex2i(p1.x,p1.y);
-	glVertex2i(p2.x,p2.y);
-	glVertex2i(p3.x,p3.y);
+	glVertex2fv(p0);
+	glVertex2fv(p1);
+	glVertex2fv(p2);
+	glVertex2fv(p3);
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
 }
@@ -1817,24 +2446,117 @@ void drawFillBoxEx(const _XVector2& p0,const _XVector2& p1,const _XVector2& p2,c
 	glDisable(GL_TEXTURE_2D);
 	if(withLine)
 	{//描绘边框
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+		//{
+		//	glEnable(GL_BLEND);
+		//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//}
 		glColor3f(0.15f,0.15f,0.15f);
 		glLineWidth(1.0f);
-		glBegin(GL_LINE_STRIP);
-		glVertex2i(p0.x,p0.y);
-		glVertex2i(p1.x,p1.y);
-		glVertex2i(p2.x,p2.y);
-		glVertex2i(p3.x,p3.y);
-		glVertex2i(p0.x,p0.y);
-		glEnd();
+		drawBoxS(p0,p1,p2,p3);
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
 	}
 	glBegin(GL_QUADS);
 	glColor3f(r * 1.1f,g * 1.1f,b * 1.1f);
-	glVertex2i(p0.x,p0.y);
-	glVertex2i(p1.x,p1.y);
+	glVertex2fv(p0);
+	glVertex2fv(p1);
 	glColor3f(r * 0.9f,g * 0.9f,b * 0.9f);
-	glVertex2i(p2.x,p2.y);
-	glVertex2i(p3.x,p3.y);
+	glVertex2fv(p2);
+	glVertex2fv(p3);
 	glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillPolygon(const _XVector2 *p,int sum,float r,float g,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+	glColor3f(r,g,b);
+	glBegin(GL_POLYGON);
+	for(int i = 0;i < sum;++ i)
+	{
+		glVertex2fv(p[i]);
+	}
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillPolygon(const _XVector2 *p,int sum,const _XVector2 &pos,float angle,float r,float g,float b)
+{
+	glDisable(GL_TEXTURE_2D);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glTranslatef(pos.x,pos.y, 0);
+	glRotatef(angle,0,0,1);
+
+	glColor3f(r,g,b);
+	glBegin(GL_POLYGON);
+	for(int i = 0;i < sum;++ i)
+	{
+		glVertex2fv(p[i]);
+	}
+	glEnd();
+	glPopMatrix();
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillPolygonEx(const _XVector2 *p,const float *c,int sum,float r,float g,float b,bool withLine)
+{
+	glDisable(GL_TEXTURE_2D);
+	if(withLine)
+	{//描绘边框
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+		//{
+		//	glEnable(GL_BLEND);
+		//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//}
+		glColor3f(0.15f,0.15f,0.15f);
+		glLineWidth(1.0f);
+		glBegin(GL_LINE_STRIP);
+		for(int i = 0;i < sum;++ i)
+		{
+			glVertex2fv(p[i]);
+		}
+		glEnd();
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
+	}
+	glBegin(GL_POLYGON);
+	for(int i = 0;i < sum;++ i)
+	{
+		glColor3f(r * c[i],g * c[i],b * c[i]);
+		glVertex2fv(p[i]);
+	}
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
+void drawFillPolygonExA(const _XVector2 *p,const float *c,int sum,float r,float g,float b,float a,bool withLine)
+{
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	if(withLine)
+	{//描绘边框
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth)
+		//{
+		//	glEnable(GL_BLEND);
+		//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//}
+		glColor4f(0.15f,0.15f,0.15f,a);
+		glLineWidth(1.0f);
+		glBegin(GL_LINE_STRIP);
+		for(int i = 0;i < sum;++ i)
+		{
+			glVertex2fv(p[i]);
+		}
+		glEnd();
+		//if(XEE::isMultiSampleSupport && XEE::isLineSmooth) glDisable(GL_BLEND);
+	}
+	glBegin(GL_POLYGON);
+	for(int i = 0;i < sum;++ i)
+	{
+		glColor4f(r * c[i],g * c[i],b * c[i],a);
+		glVertex2fv(p[i]);
+	}
+	glEnd();
+	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 }
 void drawFillBoxBW(const _XVector2& pos,const _XVector2& size,const _XVector2& cSize)
@@ -1842,12 +2564,7 @@ void drawFillBoxBW(const _XVector2& pos,const _XVector2& size,const _XVector2& c
 	glDisable(GL_TEXTURE_2D);
 	glColor3f(1.0f,1.0f,1.0f);
 	//先描绘一个白色底
-	glBegin(GL_QUADS);
-	glVertex2i(pos.x,pos.y);
-	glVertex2i(pos.x + size.x,pos.y);
-	glVertex2i(pos.x + size.x,pos.y + size.y);
-	glVertex2i(pos.x,pos.y + size.y);
-	glEnd();
+	drawFillBoxS(pos.x,pos.y,size.x,size.y);
 	int w = size.x / cSize.x;
 	int h = size.y / cSize.y;
 	_XVector2 tempPos;
@@ -1862,7 +2579,7 @@ void drawFillBoxBW(const _XVector2& pos,const _XVector2& size,const _XVector2& c
 			if((i + j)%2 == 0)
 			{
 				tempPos.y = pos.y + j * cSize.y;
-				glVertex2f(tempPos.x,tempPos.y);
+				glVertex2fv(tempPos);
 				glVertex2f(tempPos.x + cSize.x,tempPos.y);
 				glVertex2f(tempPos.x + cSize.x,tempPos.y + cSize.y);
 				glVertex2f(tempPos.x,tempPos.y + cSize.y);
@@ -1900,7 +2617,7 @@ void drawFillBoxBW(const _XVector2& pos,const _XVector2& size,const _XVector2& c
 	//glEnable(GL_TEXTURE_2D);
 	//XDELETE_ARRAY(vPoint);
 }
-void drawTexture(_XTexture &tex,_XVector2 &pos,int cW,int cH,
+void drawTexture(_XTexture &tex,const _XVector2 &pos,int cW,int cH,
 	_XVector2 *vArray,_XVector2 *uArray,int arrayW,int arrayH)
 {
 	if(vArray == NULL || uArray == NULL) return;
@@ -1935,12 +2652,12 @@ void drawTexture(_XTexture &tex,_XVector2 &pos,int cW,int cH,
 		for(int i = 0;i < arrayW;++ i)
 		{	//左上
 			int offsetTemp = i + j * arrayW;
-			glTexCoord2d(ux + uArray[offsetTemp].x,uy + uArray[offsetTemp].y);	//u
-			glVertex2d(vx + vArray[offsetTemp].x,vy + vArray[offsetTemp].y);	//v
+			glTexCoord2f(ux + uArray[offsetTemp].x,uy + uArray[offsetTemp].y);	//u
+			glVertex2f(vx + vArray[offsetTemp].x,vy + vArray[offsetTemp].y);	//v
 
-			glTexCoord2d(ux + uArray[offsetTemp + arrayW].x,
+			glTexCoord2f(ux + uArray[offsetTemp + arrayW].x,
 				uy + uArray[offsetTemp + arrayW].y);	//u
-			glVertex2d(vx + vArray[offsetTemp + arrayW].x,
+			glVertex2f(vx + vArray[offsetTemp + arrayW].x,
 				vy + vArray[offsetTemp + arrayW].y);	//v
 		}
 		glEnd();
@@ -1956,7 +2673,8 @@ void drawTexture(_XTexture &tex,_XVector2 &pos,int cW,int cH,
 #endif
 	glDisable(GL_BLEND);
 }
-void drawTextureEx(unsigned int tex,const _XVector2 &pos,_XVector2 *vArray,_XVector2 *uArray,int arrayW,int arrayH,bool blend)
+void drawTextureEx(unsigned int tex,const _XVector2 &pos,const _XVector2 &size,
+				   _XVector2 *vArray,_XVector2 *uArray,int arrayW,int arrayH,bool blend)
 {
 	glEnable(GL_TEXTURE_2D);
 	if(blend)
@@ -1971,7 +2689,7 @@ void drawTextureEx(unsigned int tex,const _XVector2 &pos,_XVector2 *vArray,_XVec
 	glPushMatrix();
 	glLoadIdentity();
 	glTranslatef(pos.x,pos.y,0);
-	//glScalef(0.5f,0.5f,1.0);
+	glScalef(size.x,size.y,1.0);
 
 	glBindTexture(GL_TEXTURE_2D,tex);
 	glColor4f(1.0f,1.0f,1.0f,1.0f);
@@ -1982,13 +2700,11 @@ void drawTextureEx(unsigned int tex,const _XVector2 &pos,_XVector2 *vArray,_XVec
 		for(int i = 0;i < arrayW;++ i)
 		{	//左上
 			int offsetTemp = i + j * arrayW;
-			glTexCoord2d(uArray[offsetTemp].x,uArray[offsetTemp].y);	//u
-			glVertex2d(vArray[offsetTemp].x,vArray[offsetTemp].y);	//v
+			glTexCoord2fv(uArray[offsetTemp]);	//u
+			glVertex2fv(vArray[offsetTemp]);	//v
 
-			glTexCoord2d(uArray[offsetTemp + arrayW].x,
-				uArray[offsetTemp + arrayW].y);	//u
-			glVertex2d(vArray[offsetTemp + arrayW].x,
-				vArray[offsetTemp + arrayW].y);	//v
+			glTexCoord2fv(uArray[offsetTemp + arrayW]);	//u
+			glVertex2fv(vArray[offsetTemp + arrayW]);	//v
 		}
 		glEnd();
 	}
@@ -2018,14 +2734,14 @@ void drawTexture(unsigned int tex,const _XVector2 &pos,int texW,int texH,bool bl
 	glColor4f(1.0f,1.0f,1.0f,1.0f);
 
 	glBegin(GL_QUADS);
-		glTexCoord2d(0,0);	//u
-		glVertex2d(0,0);	//v
-		glTexCoord2d(1,0);	//u
-		glVertex2d(texW,0);	//v
-		glTexCoord2d(1,1);	//u
-		glVertex2d(texW,texH);	//v
-		glTexCoord2d(0,1);	//u
-		glVertex2d(0,texH);	//v
+		glTexCoord2f(0,0);	//u
+		glVertex2f(0,0);	//v
+		glTexCoord2f(1,0);	//u
+		glVertex2f(texW,0);	//v
+		glTexCoord2f(1,1);	//u
+		glVertex2f(texW,texH);	//v
+		glTexCoord2f(0,1);	//u
+		glVertex2f(0,texH);	//v
 	glEnd();
 
 	glMatrixMode(GL_MODELVIEW);
@@ -2037,7 +2753,8 @@ GLuint emptyTexture(int x,int y,_XColorMode mode)
 	GLuint txtnumber;
 
 	glGenTextures(1, &txtnumber);
-	glBindTexture(GL_TEXTURE_2D, txtnumber);					
+	glBindTexture(GL_TEXTURE_2D, txtnumber);		
+
 	//效果好
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2058,6 +2775,7 @@ GLuint emptyTexture(int x,int y,_XColorMode mode)
 //	case COLOR_GRAY_F:glTexImage2D(GL_TEXTURE_2D,0,GL_RGB32F,x,y,0,GL_RGB,GL_FLOAT,0);break;	//感觉存在问题
 	case COLOR_GRAY_F:glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,x,y,0,GL_LUMINANCE,GL_FLOAT,0);break;	//修改
 	}
+	//glClear(GL_COLOR_BUFFER_BIT);
 	//初始化像素
 	//glClearTexImage();	//这个貌似要GL3.0才支持，目前的版本好像不支持
 
@@ -2072,16 +2790,12 @@ struct _XScreenShotData
 	unsigned int *data;
 	_XScreenShotData()
 		:data(NULL)
-	{
-	}
+	{}
 };
-
 _XScreenShotData *screenShotData = NULL;
-
 //由于这里使用了多线程，这里需要进行数据互斥锁，尚未加入
-
 #ifdef XEE_OS_WINDOWS
-DWORD WINAPI saveDataToPNG(void * pParam)
+DWORD WINAPI saveDataToPNG(void *)
 #endif
 #ifdef XEE_OS_LINUX
 static void *saveDataToPNG(void * pParam)
@@ -2256,8 +2970,8 @@ void _XTexture::updateTextureR2B(const void *data,int w,int h,int x,int y)
 _XBool _XTexture::createTexture(int w,int h,_XColorMode mode)
 {
 	if(m_isLoaded) return XTrue;	//如果资源已经载入了，则不能重复载入
-	if(w <= 0) return XFalse;
-	if(h <= 0) return XFalse;
+	if(w <= 0 ||
+		h <= 0) return XFalse;
 	try
 	{
 #if TEX_DEBUG1
@@ -2283,8 +2997,8 @@ _XBool _XTexture::createTexture(int w,int h,_XColorMode mode)
 _XBool _XTexture::createWithTexture(int w,int h,_XColorMode mode,unsigned int tex)
 {
 	if(m_isLoaded) return XTrue;	//如果资源已经载入了，则不能重复载入
-	if(w <= 0) return XFalse;
-	if(h <= 0) return XFalse;
+	if(w <= 0 ||
+		h <= 0) return XFalse;
 	try
 	{
 #if TEX_DEBUG1
@@ -2337,7 +3051,7 @@ _XBool _XTexture::load(const char *filename,_XResourcePosition resoursePosition)
 		m_texture = tempResTex->m_texID;
 		m_w = tempResTex->m_width;
 		m_h = tempResTex->m_height;
-	//if(TextureLoadEx(m_texture,filename,&m_w,&m_h,resoursePosition) != 0)
+	//if(TextureLoadEx(m_texture,filename,&m_w,&m_h,resoursePosition))
 	//{
 	//	printf("%d\n",m_texture);
 #if TEX_DEBUG
@@ -2352,6 +3066,35 @@ _XBool _XTexture::load(const char *filename,_XResourcePosition resoursePosition)
 	m_isLoaded = XFalse;
 	return XFalse;
 }
+_XBool _XTexture::reset()
+{
+	int sum = m_w * m_h;
+	switch(m_mode)
+	{
+	case COLOR_RGBA:
+	case COLOR_BGRA:
+		sum = (sum << 2);
+		break;
+	case COLOR_RGB:
+	case COLOR_BGR:
+		sum = sum * 3;
+		break;
+	case COLOR_GRAY:
+		break;
+	case COLOR_RGBA_F:
+		sum = (sum << 4);
+		break;
+	case COLOR_GRAY_F:
+		sum = (sum << 2);
+		break;
+	}
+	unsigned char *pData = createArrayMem<unsigned char>(sum);
+	if(pData == NULL) return XFalse;
+	memset(pData,0,sum);
+	updateTexture(pData);
+	XDELETE_ARRAY(pData);
+	return XTrue;
+}
 void _XTexture::release()	//释放图片资源
 {
 	if(!m_isLoaded) return;
@@ -2364,7 +3107,7 @@ void _XTexture::release()	//释放图片资源
 	{
 		if(glIsTexture(m_texture)) 
 		{
-			printf("delete texture:%d\n",m_texture);
+			LogNull("delete texture:%d",m_texture);
 			glDeleteTextures(1, &m_texture);
 		}
 	}else
@@ -2383,7 +3126,7 @@ _XTexture::_XTexture(const _XTexture& temp)	//拷贝构造函数
 	m_h = temp.m_h;
 	m_isLoaded = temp.m_isLoaded;
 	m_cp = temp.m_cp;
-//		m_fileName = temp.m_fileName;
+//	m_fileName = temp.m_fileName;
 
 	m_resInfo = _XResourceMng.copyResource(temp.m_resInfo);
 	return;	
@@ -2408,6 +3151,7 @@ _XTexture& _XTexture::operator = (const _XTexture &temp)
 	m_isLoaded = temp.m_isLoaded;
 	m_cp = temp.m_cp;
 //	m_fileName = temp.m_fileName;
+	if(m_resInfo != NULL) -- m_resInfo->m_counter;
 	m_resInfo = _XResourceMng.copyResource(temp.m_resInfo);
 	return *this;	
 }

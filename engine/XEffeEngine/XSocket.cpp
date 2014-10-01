@@ -230,7 +230,7 @@ void _XSocket::addAClient(int clientSocket)
         {//查找到空间之后作相应的处理
             //++++++++++++++++++++++++++++
             addLogText(this,"开始等待标记！\n","Waiting for flag.\n");
-            while(1)
+            while(true)
             {
                 if(m_flagClientThreadID < 0) break;
                 mySleep(1);
@@ -269,27 +269,27 @@ DWORD WINAPI _XSocket::acceptThread(void * pParam)
 void *_XSocket::acceptThread(void * pParam)
 #endif
 {
-    _XSocket *pPar = (_XSocket *) pParam;
+    _XSocket &pPar = *(_XSocket *) pParam;
     int clientSocket;
 
     addLogText(pPar,"Accept线程开启\n","Start Accept thread.\n");
 
-    while(1)
+    while(true)
     {
-        if((*pPar).m_clientSum < MAX_CLIENT)                                    //连接成功之后做相应的处理
+        if(pPar.m_clientSum < MAX_CLIENT)                                    //连接成功之后做相应的处理
         {
-            clientSocket = accept((*pPar).m_serverSocket, NULL, NULL);
+            clientSocket = accept(pPar.m_serverSocket, NULL, NULL);
             addLogText(pPar,"有新的客户端加入\n","A new client join!\n");
             if(clientSocket < 0)
             {//接收客户端失败
                 addLogText(pPar,"客户端加入失败\n","Client join fail.\n");
-                (*pPar).m_WrongFlag = ERROR_TYPE_ACCEPT_CLIENT;
+                pPar.m_WrongFlag = ERROR_TYPE_ACCEPT_CLIENT;
             }else
             {//接收客户端成功之后开启一个接收线程
-                (*pPar).addAClient(clientSocket);
+                pPar.addAClient(clientSocket);
             }
         }
-        if((*pPar).m_serverExitFlag !=0)
+        if(pPar.m_serverExitFlag !=0)
         {
             break;
         }
@@ -309,13 +309,13 @@ DWORD WINAPI _XSocket::broadcastThread(void * pParam)
 void *_XSocket::broadcastThread(void * pParam)
 #endif
 {
-    _XSocket *pPar = (_XSocket *) pParam;
+    _XSocket &pPar = *(_XSocket *) pParam;
     int test_error;
     addLogText(pPar,"Broadcast线程开始\n","Start Broadcast thread.\n");
    
     int bBroadcast = 1;
     int hSocket = socket(PF_INET, SOCK_DGRAM, 0);
-    if(hSocket >= 0) (*pPar).resetSocketAddr(hSocket);
+    if(hSocket >= 0) pPar.resetSocketAddr(hSocket);
     _XSocketData BCServerInfoData;
     BCServerInfoData.dataType = BROADCAST_DATA_TYPE_SERVER_INFO;
     BCServerInfoData.sourceSocket = 0;
@@ -329,8 +329,8 @@ void *_XSocket::broadcastThread(void * pParam)
     if(broadcastServerInfo == NULL) return 0;
 
     memcpy(broadcastServerInfo,&BCServerInfoData,DATA_HEAD_SIZE);                                    //拷贝数据头
-    memcpy(broadcastServerInfo + DATA_HEAD_SIZE,&(*pPar).m_serverPort,sizeof(int));                    //拷贝数据体
-    memcpy(broadcastServerInfo + DATA_HEAD_SIZE + sizeof(int),(*pPar).m_netFlags,MAX_NET_FLAGS);    //拷贝数据体
+    memcpy(broadcastServerInfo + DATA_HEAD_SIZE,&pPar.m_serverPort,sizeof(int));                    //拷贝数据体
+    memcpy(broadcastServerInfo + DATA_HEAD_SIZE + sizeof(int),pPar.m_netFlags,MAX_NET_FLAGS);    //拷贝数据体
     char *broadcastUserData = NULL;	//这里用于广播玩家的数据
 
     if(hSocket >= 0 && setsockopt(hSocket, SOL_SOCKET, SO_BROADCAST, (char *) &bBroadcast, sizeof(bBroadcast)) <=0)
@@ -348,25 +348,25 @@ void *_XSocket::broadcastThread(void * pParam)
         //    addrUDP.sin_addr.s_addr = inet_addr("192.168.1.255");        //在OMAP3下,这里需要如此设置
 
             int time_temp = 100;
-            while(1)
+            while(true)
             {
-                if((*pPar).m_broadCastWay == BROADCAST_WAY_UDP)
+                if(pPar.m_broadCastWay == BROADCAST_WAY_UDP)
                 {//使用UDP广播的形式
-                    pthread_mutex_lock((*pPar).m_mutex);
-                    if((*pPar).m_broadcastOldPoint != (*pPar).m_broadcastNewPoint)	//需要等到广播队列为空才广播客户端连接的信息，这样实际上是不安全的
+                    pthread_mutex_lock(pPar.m_mutex);
+                    if(pPar.m_broadcastOldPoint != pPar.m_broadcastNewPoint)	//需要等到广播队列为空才广播客户端连接的信息，这样实际上是不安全的
                     {//队列为空，无需发送
-                        ++ (*pPar).m_broadcastOldPoint;
-                        if((*pPar).m_broadcastOldPoint >= BC_BUFF_DEEP) (*pPar).m_broadcastOldPoint = 0;
-						broadcastUserData = createArrayMem<char>(DATA_HEAD_SIZE + (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataLength);
+                        ++ pPar.m_broadcastOldPoint;
+                        if(pPar.m_broadcastOldPoint >= BC_BUFF_DEEP) pPar.m_broadcastOldPoint = 0;
+						broadcastUserData = createArrayMem<char>(DATA_HEAD_SIZE + pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataLength);
 						if(broadcastUserData == NULL) return 0;
 			
-                        memcpy(broadcastUserData,&((*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint]),DATA_HEAD_SIZE);                                    //拷贝数据头
-                        memcpy(broadcastUserData + DATA_HEAD_SIZE,(*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].pData,
-                            (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataLength);    //拷贝数据体
+                        memcpy(broadcastUserData,&(pPar.m_broadcastBuff[pPar.m_broadcastOldPoint]),DATA_HEAD_SIZE);                                    //拷贝数据头
+                        memcpy(broadcastUserData + DATA_HEAD_SIZE,pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].pData,
+                            pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataLength);    //拷贝数据体
                         //然后开始发送
                         test_error = sendto(hSocket,broadcastUserData,
-                            (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataLength + DATA_HEAD_SIZE,0,(sockaddr *) &addrUDP,sizeof(addrUDP));
-                        if(test_error < (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataLength + DATA_HEAD_SIZE)
+                            pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataLength + DATA_HEAD_SIZE,0,(sockaddr *) &addrUDP,sizeof(addrUDP));
+                        if(test_error < pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataLength + DATA_HEAD_SIZE)
                         {
                             addLogText(pPar,"服务器数据广播失败!\n","Server send data turn error.\n");
                             //    if(test_error == -1)
@@ -375,14 +375,14 @@ void *_XSocket::broadcastThread(void * pParam)
                             //    }
                         }
                         //发送完成之后释放数据
-                        XDELETE_ARRAY((*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].pData);
-                        pthread_mutex_unlock((*pPar).m_mutex);
+                        XDELETE_ARRAY(pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].pData);
+                        pthread_mutex_unlock(pPar.m_mutex);
 
 						XDELETE_ARRAY(broadcastUserData);
                         mySleep(1);
                     }else
                     {   
-                        pthread_mutex_unlock((*pPar).m_mutex);
+                        pthread_mutex_unlock(pPar.m_mutex);
                         if(time_temp > 25)        //0.25s 广播一次消息
                         {
                             time_temp = 0;
@@ -417,7 +417,7 @@ void *_XSocket::broadcastThread(void * pParam)
                     mySleep(10000);
                     ++ time_temp;
                 }
-                if((*pPar).m_serverExitFlag !=0)
+                if(pPar.m_serverExitFlag !=0)
                 {
                     closesocket(hSocket);
                     break;
@@ -609,7 +609,7 @@ DWORD WINAPI _XSocket::searchNetThread(void * pParam)
 void *_XSocket::searchNetThread(void * pParam)
 #endif
 {
-    _XSocket *pPar = (_XSocket *) pParam;
+    _XSocket &pPar = *(_XSocket *) pParam;
     addLogText(pPar,"开启搜索网络线程\n","Start netsearch thread.\n");
    
     sockaddr_in addrUDP;
@@ -623,7 +623,7 @@ void *_XSocket::searchNetThread(void * pParam)
     addrUDP.sin_addr.s_addr = htonl(INADDR_ANY);
    
     int hSocket = socket(AF_INET, SOCK_DGRAM, 0);
-    if(hSocket >= 0) (*pPar).resetSocketAddr(hSocket);
+    if(hSocket >= 0) pPar.resetSocketAddr(hSocket);
     if(hSocket >= 0 && bind(hSocket, (sockaddr*) &addrUDP, sizeof(addrUDP)) >= 0)
     {
     /*  int nTimeout = 100; // 设置超时一秒
@@ -644,9 +644,9 @@ void *_XSocket::searchNetThread(void * pParam)
 		memset(szRecvBuffer,0,BC_DATA_SIZE);
 
         //int time_temp = 0;
-        while(1)
+        while(true)
         {
-            if((* pPar).m_myConnectState == 0)
+            if(pPar.m_myConnectState == 0)
             {//如果没有连接到网络,则这里接受网络广播
                 addLogText(pPar,"flag X\n","flag X\n");
                 //mySleep(1);
@@ -666,58 +666,58 @@ void *_XSocket::searchNetThread(void * pParam)
                 memcpy(&tempBroadCastData,szRecvBuffer,DATA_HEAD_SIZE);
                 memcpy(tempBroadCastData.pData,szRecvBuffer + DATA_HEAD_SIZE,tempBroadCastData.dataLength);
                 //-------------------------------------------
-                if((* pPar).m_myConnectState == 0)    //如果客户端没有连接到服务器，或者第一次获得服务器信息，这里都要进行相应的连接
+                if(pPar.m_myConnectState == 0)    //如果客户端没有连接到服务器，或者第一次获得服务器信息，这里都要进行相应的连接
                 {//尚未连接网络
                     if(tempBroadCastData .dataType == BROADCAST_DATA_TYPE_SERVER_INFO)
                     {
-                        memcpy(&(* pPar).m_serverPort,tempBroadCastData.pData,sizeof((* pPar).m_serverPort));    //获得服务器连接端口号
+                        memcpy(&pPar.m_serverPort,tempBroadCastData.pData,sizeof(pPar.m_serverPort));    //获得服务器连接端口号
                        
-                        if(strcmp(tempBroadCastData.pData + sizeof(int),(* pPar).m_netFlags) == 0)
+                        if(strcmp(tempBroadCastData.pData + sizeof(int),pPar.m_netFlags) == 0)
                         {//如果标志位检测正确，这里就连接网络
 
-                            if((* pPar).connectToServer(addrPeer) == 1)
+                            if(pPar.connectToServer(addrPeer) == 1)
                             {
-                                (* pPar).m_myConnectState = 1;
+                                pPar.m_myConnectState = 1;
                                
                                 //注意网络连接成功之后，并没有结束这个线程，目的在于网络服务器掉线之后再次连接时能重新连接服务器
                                 //这个功能还有代测试
                             }else
                             {
-                                (* pPar).m_myConnectState = 0;
+                                pPar.m_myConnectState = 0;
                             }
                         }
                     }//否则直接抛弃数据
                 }else
                 {//已经连接网络
-                    if(tempBroadCastData .dataType == DATA_TYPE_BOARDCAST_DATA && (*pPar).m_broadCastWay == BROADCAST_WAY_UDP)
+                    if(tempBroadCastData .dataType == DATA_TYPE_BOARDCAST_DATA && pPar.m_broadCastWay == BROADCAST_WAY_UDP)
                     {//收到服务器端的广播信号
-                        pthread_mutex_lock((*pPar).m_mutex);
-                        //(*pPar).test_data ++;
+                        pthread_mutex_lock(pPar.m_mutex);
+                        //pPar.test_data ++;
                         addLogText(pPar,"客户端收到服务器转发数据!\n","Client get server turn data.\n");
 
-                        ++ (*pPar).m_getDataNewP;
-                        if((*pPar).m_getDataNewP >= MAX_DATABUFF_DEEP) (*pPar).m_getDataNewP = 0;
-                        if((*pPar).m_getDataNewP == (*pPar).m_getDataOldP)
+                        ++ pPar.m_getDataNewP;
+                        if(pPar.m_getDataNewP >= MAX_DATABUFF_DEEP) pPar.m_getDataNewP = 0;
+                        if(pPar.m_getDataNewP == pPar.m_getDataOldP)
                         {//如果发生数据拥堵,这里删除最后一个没有处理的数据
-                            ++ (*pPar).m_getDataOldP;
-                            if((*pPar).m_getDataOldP >= MAX_DATABUFF_DEEP) (*pPar).m_getDataOldP = 0;
+                            ++ pPar.m_getDataOldP;
+                            if(pPar.m_getDataOldP >= MAX_DATABUFF_DEEP) pPar.m_getDataOldP = 0;
                         }
-                        XDELETE_ARRAY((*pPar).m_getDataBuff[(*pPar).m_getDataNewP].pData);
+                        XDELETE_ARRAY(pPar.m_getDataBuff[pPar.m_getDataNewP].pData);
                         //拷贝数据头
-                        memcpy(&((*pPar).m_getDataBuff[(*pPar).m_getDataNewP]),&tempBroadCastData,DATA_HEAD_SIZE);
+                        memcpy(&(pPar.m_getDataBuff[pPar.m_getDataNewP]),&tempBroadCastData,DATA_HEAD_SIZE);
                         //拷贝数据体
-                        (*pPar).m_getDataBuff[(*pPar).m_getDataNewP].pData = createArrayMem<char>(tempBroadCastData.dataLength *sizeof(char));
-                        if((*pPar).m_getDataBuff[(*pPar).m_getDataNewP].pData == 0) return 0;
+                        pPar.m_getDataBuff[pPar.m_getDataNewP].pData = createArrayMem<char>(tempBroadCastData.dataLength *sizeof(char));
+                        if(pPar.m_getDataBuff[pPar.m_getDataNewP].pData == 0) return 0;
 
-                        memcpy((*pPar).m_getDataBuff[(*pPar).m_getDataNewP].pData,tempBroadCastData.pData,tempBroadCastData.dataLength); 
+                        memcpy(pPar.m_getDataBuff[pPar.m_getDataNewP].pData,tempBroadCastData.pData,tempBroadCastData.dataLength); 
 
-                        pthread_mutex_unlock((*pPar).m_mutex);
+                        pthread_mutex_unlock(pPar.m_mutex);
                     }//否则直接抛弃数据
                 }
-#ifdef DEBUG_MODE
+#if WITH_LOG
                 {
                     char tempLogTextData[256];
-                    sprintf(tempLogTextData,"我的连接状态:%d,dataType:%d\n",(* pPar).m_myConnectState,tempBroadCastData .dataType);
+                    sprintf(tempLogTextData,"我的连接状态:%d,dataType:%d\n",pPar.m_myConnectState,tempBroadCastData .dataType);
                     addLogText(pPar,tempLogTextData,tempLogTextData);
                 }
 #endif
@@ -726,7 +726,7 @@ void *_XSocket::searchNetThread(void * pParam)
             {
                 addLogText(pPar,"没有接收到服务器的广播数据\n","No server broadcast data.\n");
             }
-            if((*pPar).m_clientExitFlag != 0 || (*pPar).m_isServer == NET_STATE_SERVER)
+            if(pPar.m_clientExitFlag != 0 || pPar.m_isServer == NET_STATE_SERVER)
             {//如果是服务器,则直接退出这个网络搜索线程
                 closesocket(hSocket);
                 break;
@@ -748,7 +748,7 @@ DWORD WINAPI _XSocket::mutualThread(void * pParam)
 void *_XSocket::mutualThread(void * pParam)
 #endif                       
 {
-   _XSocket *pPar = (_XSocket *) pParam;
+   _XSocket &pPar = *(_XSocket *) pParam;
     int test_error;
     int i;
     addLogText(pPar,"Mutual线程开启!\n","Start Mutual thread.\n");
@@ -757,51 +757,51 @@ void *_XSocket::mutualThread(void * pParam)
     temp_data.pData = createArrayMem<char>(4*sizeof(char));
     if(temp_data.pData == NULL) return 0;
 
-    if((*pPar).m_isServer == NET_STATE_SERVER)
+    if(pPar.m_isServer == NET_STATE_SERVER)
     {//服务器，向所有有效的客户端发送握手信号
     //  char tempMutualData[4];
-        while(1)
+        while(true)
         {
-            if(!pPar->m_needMutual) break;    //如果设置为不需要握手信息则直接退出这个线程
+            if(!pPar.m_needMutual) break;    //如果设置为不需要握手信息则直接退出这个线程
             mySleep(1000000);
-            if((*pPar).m_clientSum > 0)
+            if(pPar.m_clientSum > 0)
             {
-                //for(int i = 0;i < (*pPar).m_clientSum;i ++)
+                //for(int i = 0;i < pPar.m_clientSum;i ++)
                 for(i = 0;i < MAX_CLIENT;++ i)
                 {
                     if(i < 0) i =0;
-                    if((*pPar).m_clientConnectState[i] != 0)
+                    if(pPar.m_clientConnectState[i] != 0)
                     {
-                    //    if((*pPar).m_clientDelayTimes[i] < (int)(MAX_DELAY_TIMES / 2.0))
+                    //    if(pPar.m_clientDelayTimes[i] < (int)(MAX_DELAY_TIMES / 2.0))
                         {//如果延迟时间延允许范围内,则不发送延迟数据,只做延迟计算
-                            ++ (*pPar).m_clientDelayTimes[i];
+                            ++ pPar.m_clientDelayTimes[i];
                             //下面为超时处理
-                            if((*pPar).m_clientDelayTimes[i] >= MAX_DELAY_TIMES)
+                            if(pPar.m_clientDelayTimes[i] >= MAX_DELAY_TIMES)
                             {//有客户端掉线
-                                pthread_mutex_lock((*pPar).m_mutex);
-                                (*pPar).dropNetProc(i);
-                                pthread_mutex_unlock((*pPar).m_mutex);
+                                pthread_mutex_lock(pPar.m_mutex);
+                                pPar.dropNetProc(i);
+                                pthread_mutex_unlock(pPar.m_mutex);
                           
                                 -- i;
                             }
                     //        continue;
                         }
                         temp_data.dataType = DATA_TYPE_MUTUAL;
-                        temp_data.sourceSocket = (*pPar).m_mySocket;
-                        temp_data.targetSocket = (*pPar).m_clientSocket[i];
+                        temp_data.sourceSocket = pPar.m_mySocket;
+                        temp_data.targetSocket = pPar.m_clientSocket[i];
                         temp_data.dataLength = sizeof(XSocketMutualData); 
                         memcpy(temp_data.pData,XSocketMutualData,sizeof(XSocketMutualData));
 
-                        (*pPar).dataBale(&temp_data);
+                        pPar.dataBale(&temp_data);
                    
                     //  addLogText(pPar,"服务器发送握手数据!\n","Server send mutual data.\n");
-                        test_error = (*pPar).sendDataFunction((*pPar).m_clientSocket[i],temp_data,temp_data.dataLength + DATA_HEAD_SIZE);
+                        test_error = pPar.sendDataFunction(pPar.m_clientSocket[i],temp_data,temp_data.dataLength + DATA_HEAD_SIZE);
                         if(test_error < temp_data.dataLength + DATA_HEAD_SIZE)
                         {
-#ifdef DEBUG_MODE
+#if WITH_LOG
                             {
                                 char tempLogTextData[256];
-                                sprintf(tempLogTextData,"握手信号发送失败!%d：%d\n",(*pPar).m_clientSocket[i],i);
+                                sprintf(tempLogTextData,"握手信号发送失败!%d：%d\n",pPar.m_clientSocket[i],i);
                                 addLogText(pPar,tempLogTextData,tempLogTextData);
                             }
 #endif                         
@@ -811,57 +811,57 @@ void *_XSocket::mutualThread(void * pParam)
                         //    {
                                 addLogText(pPar,"服务器发送握手数据错误!\n","Server send mutual error!\n");
 
-                                pthread_mutex_lock((*pPar).m_mutex);
-                                (*pPar).dropNetProc(i);
-                                pthread_mutex_unlock((*pPar).m_mutex);
+                                pthread_mutex_lock(pPar.m_mutex);
+                                pPar.dropNetProc(i);
+                                pthread_mutex_unlock(pPar.m_mutex);
                            
                                 -- i;
                         //    }
                         }else
                         {
-#ifdef DEBUG_MODE
+#if WITH_LOG
                             {
                                 char tempLogTextData[256];
-                                sprintf(tempLogTextData,"Server send mutual succes!%d,%d\n",i,(*pPar).m_clientDelayTimes[i]);
+                                sprintf(tempLogTextData,"Server send mutual succes!%d,%d\n",i,pPar.m_clientDelayTimes[i]);
                                 addLogText(pPar,tempLogTextData,tempLogTextData);
                             }
 #endif                       
-                            pthread_mutex_lock((*pPar).m_mutex);
-                            ++ (*pPar).m_clientDelayTimes[i];
+                            pthread_mutex_lock(pPar.m_mutex);
+                            ++ pPar.m_clientDelayTimes[i];
                             //下面为超时处理
-                            if((*pPar).m_clientDelayTimes[i] >= MAX_DELAY_TIMES)
+                            if(pPar.m_clientDelayTimes[i] >= MAX_DELAY_TIMES)
                             {//有客户端掉线
-                                (*pPar).dropNetProc(i);
+                                pPar.dropNetProc(i);
                                 -- i;
                             }
-                            pthread_mutex_unlock((*pPar).m_mutex);
+                            pthread_mutex_unlock(pPar.m_mutex);
                             addLogText(pPar,"操作完成!\n","Opareator over!\n");
                         }
                     }
                 }
             }
-            if((*pPar).m_serverExitFlag != 0)
+            if(pPar.m_serverExitFlag != 0)
             {
                 break;
             }
         }
     }else
-    if((*pPar).m_isServer == NET_STATE_CLIENT)
+    if(pPar.m_isServer == NET_STATE_CLIENT)
     {//客户端
-        while(1)
+        while(true)
         {
-            if(!pPar->m_needMutual) break;    //如果设置为不需要握手信息则直接退出这个线程
+            if(!pPar.m_needMutual) break;    //如果设置为不需要握手信息则直接退出这个线程
             mySleep(1000000);
             temp_data.dataType = DATA_TYPE_MUTUAL;
-            temp_data.sourceSocket = (*pPar).m_mySocket;
-            temp_data.targetSocket = (*pPar).m_serverSocket;
+            temp_data.sourceSocket = pPar.m_mySocket;
+            temp_data.targetSocket = pPar.m_serverSocket;
             temp_data.dataLength = sizeof(XSocketMutualData); 
             memcpy(temp_data.pData,XSocketMutualData,sizeof(XSocketMutualData));
-            (*pPar).dataBale(&temp_data);
+            pPar.dataBale(&temp_data);
 
             addLogText(pPar,"客户端发送握手数据!\n","Client send mutual data.\n");
        
-            test_error = (*pPar).sendDataFunction((*pPar).m_serverSocket,temp_data,temp_data.dataLength + DATA_HEAD_SIZE);
+            test_error = pPar.sendDataFunction(pPar.m_serverSocket,temp_data,temp_data.dataLength + DATA_HEAD_SIZE);
 
             if(test_error < temp_data.dataLength + DATA_HEAD_SIZE)
             {
@@ -871,25 +871,25 @@ void *_XSocket::mutualThread(void * pParam)
             //  {//对方网络主动断开
                     addLogText(pPar,"客户端发送握手信号错误!\n","Client send mutual error!\n");
 
-                    (*pPar).dropNetProc();
+                    pPar.dropNetProc();
                     break;
             //  }
             }else
             {
                 addLogText(pPar,"客户端发送握手信号成功!\n","Client send mutual succes!\n");
 
-                ++ (*pPar).m_myDelayTimes;
+                ++ pPar.m_myDelayTimes;
        
                 //下面为超时处理
-                if((*pPar).m_myDelayTimes >= MAX_DELAY_TIMES)
+                if(pPar.m_myDelayTimes >= MAX_DELAY_TIMES)
                 {//如果是客户端超时，则客户端全部卸载，等待重新连接
-                    pthread_mutex_lock((*pPar).m_mutex);
-                    (*pPar).dropNetProc();
-                    pthread_mutex_unlock((*pPar).m_mutex);
+                    pthread_mutex_lock(pPar.m_mutex);
+                    pPar.dropNetProc();
+                    pthread_mutex_unlock(pPar.m_mutex);
                     break;
                 }
             }           
-            if((*pPar).m_clientExitFlag != 0)
+            if(pPar.m_clientExitFlag != 0)
             {
                 break;
             }
@@ -971,23 +971,23 @@ void *_XSocket::getDataThreadOnClient(void * pParam)
 {
     _XSocketData temp_data;
     //_XSocketData temp_BC_data;
-    _XSocket *pPar = (_XSocket *) pParam;
+    _XSocket &pPar = *(_XSocket *) pParam;
     int test_error;
     addLogText(pPar,"开启数据接收线程!\n","Start data recv thread.\n");
 
-    if((*pPar).m_isServer != NET_STATE_CLIENT) return 0;    //只有客户端能使用这个线程
+    if(pPar.m_isServer != NET_STATE_CLIENT) return 0;    //只有客户端能使用这个线程
 
-    while(1)
+    while(true)
     {
         mySleep(10);
 
         temp_data.pData = NULL;
-        test_error = (*pPar).recvDataProc((*pPar).m_serverSocket,&temp_data);
+        test_error = pPar.recvDataProc(pPar.m_serverSocket,&temp_data);
 
         if(test_error > 0)    //接受数据
         {//接受到数据，这里处理数据
             addLogText(pPar,"客户端接受到数据\n","Client get data.\n");
-            if((*pPar).getAMessageClient(temp_data) == 0) return 0;
+            if(pPar.getAMessageClient(temp_data) == 0) return 0;
         }else
         if(test_error == -1)
         {
@@ -995,7 +995,7 @@ void *_XSocket::getDataThreadOnClient(void * pParam)
         }
         XDELETE_ARRAY(temp_data.pData);
         
-        if((*pPar).m_clientExitFlag != 0)
+        if(pPar.m_clientExitFlag != 0)
         {
             break;
         }
@@ -1104,7 +1104,7 @@ int _XSocket::getAMessageServer(_XSocketData tempData,int clientID)
             {
                 m_clientDelayTimes[clientID] = 0;    //收到握手数据之后清除延迟记录
                 addLogText(this,"收到握手数据,ID:","Server get mutual data,ID:");
-#ifdef DEBUG_MODE
+#if WITH_LOG
                 {
                     char tempLogTextData[256];
                     sprintf(tempLogTextData,"%d.\n",clientID);
@@ -1166,63 +1166,63 @@ void *_XSocket::getDataThreadOnServer(void * pParam)
 {
     _XSocketData tempData;
     _XSocketData tempBCData;
-    _XSocket *pPar = (_XSocket *) pParam;
+    _XSocket &pPar = *(_XSocket *) pParam;
     int test_error = 0;
     int myClientID = 0;
     addLogText(pPar,"开启单数据接收线程!\n","Start single data recv thread.\n");
    
-    pthread_mutex_lock((*pPar).m_mutex);
-    if((*pPar).m_flagClientThreadID < 0 || (*pPar).m_flagClientThreadID >= MAX_CLIENT)
+    pthread_mutex_lock(pPar.m_mutex);
+    if(pPar.m_flagClientThreadID < 0 || pPar.m_flagClientThreadID >= MAX_CLIENT)
     {
         addLogText(pPar,"单客户接受线程参数数据错误!\n","Client data recv thread param error.\n");
     }
-    myClientID = (*pPar).m_flagClientThreadID;
-    (*pPar).m_flagClientThreadID = -1;    //去除标记
-    pthread_mutex_unlock((*pPar).m_mutex);
+    myClientID = pPar.m_flagClientThreadID;
+    pPar.m_flagClientThreadID = -1;    //去除标记
+    pthread_mutex_unlock(pPar.m_mutex);
 
     //DSHOW("开启接受数据线程:%d\n",myClientID);
 
-    if((*pPar).m_isServer != NET_STATE_SERVER) return 0;//只有服务器才能使用这个线程
-    while(1)
+    if(pPar.m_isServer != NET_STATE_SERVER) return 0;//只有服务器才能使用这个线程
+    while(true)
     {
         mySleep(10);
         tempData.pData = NULL;
         if(myClientID >= 0 && myClientID < MAX_CLIENT)
         {
-            test_error = (*pPar).recvDataProc((*pPar).m_clientSocket[myClientID],&tempData);
+            test_error = pPar.recvDataProc(pPar.m_clientSocket[myClientID],&tempData);
             if(test_error > 0)    //接受数据
             {//接受到数据，这里处理数据
-                if((*pPar).getAMessageServer(tempData,myClientID) == 0) return 0;
+                if(pPar.getAMessageServer(tempData,myClientID) == 0) return 0;
             }else
             if(test_error == 0)
             {//如果没有接受到数据
-                if((*pPar).m_broadCastWay == BROADCAST_WAY_TCPIP)
+                if(pPar.m_broadCastWay == BROADCAST_WAY_TCPIP)
                 {//使用TCPIP方式进行广播
-                    pthread_mutex_lock((*pPar).m_mutex);
-                    if((*pPar).m_broadcastOldPoint != (*pPar).m_broadcastNewPoint)
+                    pthread_mutex_lock(pPar.m_mutex);
+                    if(pPar.m_broadcastOldPoint != pPar.m_broadcastNewPoint)
                     {//队列为空，无需发送
-                        ++ (*pPar).m_broadcastOldPoint;
-                        if((*pPar).m_broadcastOldPoint >= BC_BUFF_DEEP) (*pPar).m_broadcastOldPoint = 0;
-                    /*    temp_BC_data.dataType = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataType;
-                        temp_BC_data.checkKey = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].checkKey;
-                        temp_BC_data.lockKey = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].lockKey;
-                        temp_BC_data.sourceSocket = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].sourceSocket;
-                        temp_BC_data.targetSocket = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].targetSocket;
-                        temp_BC_data.dataLength = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].dataLength;
-                        temp_BC_data.pData = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].pData;
+                        ++ pPar.m_broadcastOldPoint;
+                        if(pPar.m_broadcastOldPoint >= BC_BUFF_DEEP) pPar.m_broadcastOldPoint = 0;
+                    /*    temp_BC_data.dataType = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataType;
+                        temp_BC_data.checkKey = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].checkKey;
+                        temp_BC_data.lockKey = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].lockKey;
+                        temp_BC_data.sourceSocket = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].sourceSocket;
+                        temp_BC_data.targetSocket = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].targetSocket;
+                        temp_BC_data.dataLength = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].dataLength;
+                        temp_BC_data.pData = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].pData;
                         */
-                        tempBCData = (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint]; //这里使用默认赋值操作符，由于有指针所以这里要特别小心
-                        (*pPar).m_broadcastBuff[(*pPar).m_broadcastOldPoint].pData = NULL;
-                        pthread_mutex_unlock((*pPar).m_mutex);
+                        tempBCData = pPar.m_broadcastBuff[pPar.m_broadcastOldPoint]; //这里使用默认赋值操作符，由于有指针所以这里要特别小心
+                        pPar.m_broadcastBuff[pPar.m_broadcastOldPoint].pData = NULL;
+                        pthread_mutex_unlock(pPar.m_mutex);
 
                         //向所有广播玩家发送数据
-                        (*pPar).broadcastDataByTcpIP(tempBCData);
+                        pPar.broadcastDataByTcpIP(tempBCData);
 
                         //发送完成之后释放数据
                         XDELETE_ARRAY(tempBCData.pData);
                     }else
                     {
-                        pthread_mutex_unlock((*pPar).m_mutex);
+                        pthread_mutex_unlock(pPar.m_mutex);
                     }
                 }
             }else
@@ -1236,19 +1236,19 @@ void *_XSocket::getDataThreadOnServer(void * pParam)
         //+++++++++++++++++++++++++++++++++
         //如果这个客户端退出,则它的线程也需要退出
         //---------------------------------
-        if((*pPar).m_clientConnectState[myClientID] == 0)
+        if(pPar.m_clientConnectState[myClientID] == 0)
         {
             break;
         }
 
-        if((*pPar).m_serverExitFlag != 0)
+        if(pPar.m_serverExitFlag != 0)
         {
             break;
         }
     }
 
     addLogText(pPar,"单数据接受线程结束:","Single data recv thread exit.\n");
-#ifdef DEBUG_MODE
+#if WITH_LOG
     {
         char tempLogTextData[256];
         sprintf(tempLogTextData,"%d.\n",myClientID);
@@ -1298,7 +1298,7 @@ int _XSocket::sendDataToNet(int clientOrder,char *p,int length)
 			{//数据发送失败
 				addLogText(this,"服务器发送数据错误!\n","server send data error!");
 				dropNetProc(clientOrder);
-#ifdef DEBUG_MODE
+#if WITH_LOG
 				{
 					char tempLogTextData[256];
 					sprintf(tempLogTextData,"Server data send error!%d：%d\n",m_clientSocket[clientOrder],clientOrder);
@@ -1365,7 +1365,7 @@ int _XSocket::sendDataToNet(int clientOrder,char *p,int length)
         {
             addLogText(this,"客户端发送数据失败!\n","Client send data error!\n");
             dropNetProc();
-#ifdef DEBUG_MODE
+#if WITH_LOG
             {
                 char tempLogTextData[256];
                 sprintf(tempLogTextData,"客户端用户数据发送失败!%d：%d\n",tempData.targetSocket,clientOrder);
@@ -1442,7 +1442,7 @@ int _XSocket::getDataFromNet(int *clientOrder,int *clientID,char **p,int *length
                         return 1;
                     }
                 }
-#ifdef DEBUG_MODE
+#if WITH_LOG
                 {//如果在客户端掉线之前，对应的接受数据没有处理完，这里就会出现这个错误。这里的处理方法是直接将数据丢弃
                     char tempLogTextData[256];
                     sprintf(tempLogTextData,"-->从缓存中读取数据失败!%d,%d,%d\n",m_clientSocket[0],tempData.sourceSocket,m_getDataOldP);
@@ -1654,7 +1654,7 @@ void _XSocket::sendServerState()
         if(m_clientConnectState[i] != 0)
         {
         /*
-#ifdef DEBUG_MODE
+#if WITH_LOG
             {//如果在客户端掉线之前，对应的接受数据没有处理完，这里就会出现这个错误。这里的处理方法是直接将数据丢弃
                 char tempLogTextData[256];
                 sprintf(tempLogTextData,"服务器向客户端 %d 发送服务器状态信息!\n",i);
@@ -1701,7 +1701,7 @@ void _XSocket::sendServerState()
 void _XSocket::dropNetProc(int clientID)
 {
     addLogText(this,"网络成员退出,ID:","Connect member exit.ID:");
-#ifdef DEBUG_MODE
+#if WITH_LOG
     {
         char tempLogTextData[256];
         sprintf(tempLogTextData,"%d\n",clientID);
@@ -1800,7 +1800,7 @@ int _XSocket::recvDataProc(int sock,_XSocketData *temp_data)
     //  addLogText(this,"收到不完整包头!\n","Get a part of head data.\n");
         int test_getSum;
         char test_data[DATA_HEAD_SIZE];
-        while(1)
+        while(true)
         {
             test_getSum = recvDataFunction(sock,test_data,DATA_HEAD_SIZE - test_error);
             if(test_getSum == -1)
@@ -1820,7 +1820,7 @@ int _XSocket::recvDataProc(int sock,_XSocketData *temp_data)
     if(test_error >= DATA_HEAD_SIZE)
     {//读取完整包头之后,读取完整的数据部分
         /*
-#ifdef DEBUG_MODE
+#if WITH_LOG
         {
             char tempLogTextData[256];
             sprintf(tempLogTextData,"接受到完整包头,%d\n",temp_data->dataLength);
@@ -1838,7 +1838,7 @@ int _XSocket::recvDataProc(int sock,_XSocketData *temp_data)
             if(test_data == NULL) return 0;
 
             int test_getSum;
-            while(1)
+            while(true)
             {
                 test_getSum = recvDataFunction(sock,test_data, temp_data->dataLength - test_error);
                 if(test_getSum == -1)
@@ -1863,7 +1863,7 @@ int _XSocket::recvDataProc(int sock,_XSocketData *temp_data)
         if(test_error >= temp_data->dataLength)
         {//数据读取完成lockKey
             /*
-#ifdef DEBUG_MODE
+#if WITH_LOG
             {
                 char tempLogTextData[256];
                 sprintf(tempLogTextData,"一个数据包收取完成,数据类型为:%d,数据长度为:%d,%d,%d\n",temp_data->dataType,temp_data->dataLength,temp_data->lockKey,temp_data->checkKey);

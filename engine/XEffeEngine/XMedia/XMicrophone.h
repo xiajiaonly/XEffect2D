@@ -17,8 +17,8 @@ enum _XCaptureState
 	CAPTURE_STATE_START,		//录音设备开始工作
 };
 
-#pragma comment(lib, "../lib/Alut/alut.lib")
-#pragma comment(lib, "../lib/OpenAL/Win32/OpenAL32.lib")
+#pragma comment(lib, "../../engine/lib/Alut/alut.lib")
+#pragma comment(lib, "../../engine/lib/OpenAL/Win32/OpenAL32.lib")
 class _XMicrophone
 {
 private:
@@ -65,12 +65,8 @@ public:
 		,m_isInited(XFalse)
 		,m_captureData(NULL)
 		,m_byteRate(1)
-	{
-	}
-	~_XMicrophone()
-	{
-		release();
-	}
+	{}
+	~_XMicrophone(){release();}
 };
 
 #endif

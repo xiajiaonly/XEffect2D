@@ -37,25 +37,36 @@ public:
 		const _XVector2& position,	//菜单的位置
 		const _XRect& Area,	//菜单按键的响应范围
 		const _XMouseRightButtonMenuTexture &tex,	//菜单的贴图
-		const _XFontUnicode &font,float captionSize, const _XVector2& textPosition);		//菜单的字体
-	_XBool initEx(int menuSum,	//菜单中的物件数量
-		const _XVector2& position,	//菜单的位置
-		const _XMouseRightButtonMenuTexture &tex,	//菜单的贴图
-		const _XFontUnicode &font,float captionSize);		//菜单的字体
+		const _XFontUnicode &font,float captionSize,const _XVector2& textPosition);		//菜单的字体
+	_XBool initEx(int menuSum,	//对上面接口的简化
+		const _XVector2& position,	
+		const _XMouseRightButtonMenuTexture &tex,	
+		const _XFontUnicode &font,float captionSize = 1.0f);
 	_XBool initPlus(const char * path,int menuSum,	//菜单中的物件数量
-		const _XFontUnicode &font,float captionSize,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);		//菜单的字体
+		const _XFontUnicode &font,float captionSize = 1.0f,
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(int menuSum,const _XRect& area,
 		const _XFontUnicode &font,float captionSize, const _XVector2& textPosition);
+	_XBool initWithoutTex(int menuSum,const _XRect& area,const _XVector2& textPosition)
+	{
+		return initWithoutTex(menuSum,area,XEE::systemFont,1.0f,textPosition);
+	}
+	_XBool initWithoutTex(int menuSum,const _XVector2& pixelSize,const _XVector2& textPosition)
+	{
+		return initWithoutTex(menuSum,_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			XEE::systemFont,1.0f,textPosition);
+	}
 protected:
-	void draw();												//描绘菜单
-	void drawUp(){};						//do nothing
+	void draw();//描绘菜单
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);		//键盘时间的相应可以使用鼠标上下键选择menu项
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
+	_XBool canLostFocus(float,float){return XTrue;}
 public:
-	void setNowChoose(int temp){;}								//设置当前选择的菜单项
+	void setNowChoose(int){;}								//设置当前选择的菜单项
 	_XBool setACopy(const _XMouseRightButtonMenu &temp);		//建立一个与目标实体共用资源的实体
 public:
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
@@ -65,7 +76,7 @@ public:
 	void setSize(float x,float y);
 
 	_XMouseRightButtonMenu();
-	~_XMouseRightButtonMenu();
+	~_XMouseRightButtonMenu(){release();}
 	//下面是是内联函数
 	int getLastChoose() const;										//返回最终选择的值
 	void setCallbackFun(void (* funChooseChange)(void *,int),
@@ -81,43 +92,14 @@ public:
 
 	//下面的接口尚未实现
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a){updateChildColor();}
-	void setAlpha(float a){updateChildAlpha();}
+	void setColor(float r,float g,float b,float a);
+	void setAlpha(float a);
 
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 private:	//下面为了防止意外调用发生的错误，而重载赋值构造函数和赋值操作符
 	_XMouseRightButtonMenu(const _XMouseRightButtonMenu &temp);
 	_XMouseRightButtonMenu& operator = (const _XMouseRightButtonMenu& temp);
 };
-
-inline int _XMouseRightButtonMenu::getLastChoose() const										//返回最终选择的值
-{
-	return m_lastChoose;
-}
-inline void _XMouseRightButtonMenu::setCallbackFun(void (* funChooseChange)(void *,int),void (* funChooseOver)(void *,int),void *pClass)	//设置菜单的回调函数
-{
-	if(funChooseChange != NULL) m_funChooseChange = funChooseChange;
-	if(funChooseOver != NULL) m_funChooseOver = funChooseOver;
-	if(pClass != NULL) m_pClass = pClass;
-	else m_pClass = this;
-}
-inline void _XMouseRightButtonMenu::setHotKey(int hotKey,int order)							//设置菜单中某一项的热键
-{
-	if(!m_isInited) return;	//如果没有初始化直接退出
-	if(order < 0 || order >= m_menuSum) return;
-	m_menu[order].setHotKey(hotKey);
-}
-inline void _XMouseRightButtonMenu::setText(const char *temp,int order)								//改变菜单中某一项的值
-{
-	if(!m_isInited) return;	//如果没有初始化直接退出
-	if(order < 0 || order >= m_menuSum) return;
-	m_menu[order].setCaptionText(temp);
-}
-inline void _XMouseRightButtonMenu::setTexture(const _XMouseRightButtonMenuTexture &tex,int order)	//改变菜单中某一项的贴图
-{
-	if(!m_isInited) return;	//如果没有初始化直接退出
-	if(order < 0 || order >= m_menuSum) return;
-	m_menu[order].setTexture(tex);
-}
+#include "XMouseRightButtonMenu.inl"
 
 #endif

@@ -12,6 +12,7 @@
 #include "XBasicFun.h"
 #include "XBasicClass.h"
 //#include <winsock2.h>
+#include "..\XLogBook.h"
 
 #define RECV_BUFF_SIZE (4096)
 #define FTP_SOCKET_PORT (21)
@@ -48,6 +49,13 @@ extern char defaultUserPassword[];	//默认的密码
 extern char anonyUserName[];		//匿名用户名
 extern char anonyUserPassword[];	//匿名的密码
 
-extern _XBool analyseFTPString(const char * str,char * IP,char * path);	//从ftp字符串中解析出相关数据 例子：FTP://192.168.1.110/folder
+extern _XBool analyseFTPString(const char * str,char * IP,char * path,int &port);	//从ftp字符串中解析出相关数据 例子：FTP://192.168.1.110:21/folder
+//下面使用sscanf的方法分析字符串，需要保证url字符串符合URL标准
+extern _XBool analyseFTPStrEx(const char * str,std::string &protocol,	//协议：http、ftp等，输出为大写
+							  std::string &name,		//用户名
+							  std::string &password,	//密码
+							  std::string &IP,			//IP地址
+							  int &port,				//端口号
+							  std::string &path);		//路径
 
 #endif

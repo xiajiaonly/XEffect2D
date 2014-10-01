@@ -313,10 +313,10 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 		if((fp = fopen(filename,"r")) == NULL) return XFalse;	//文件打开失败
 		int tempSize;
 		
-		fscanf(fp,"ID:%d,\n",&m_ID);	//写入动作ID;
-		fscanf(fp,"Name:%s\n",m_actionName);//写入动作名称;
+		if(fscanf(fp,"ID:%d,\n",&m_ID) != 1) {fclose(fp);return XFalse;}	//写入动作ID;
+		if(fscanf(fp,"Name:%s\n",m_actionName) != 1) {fclose(fp);return XFalse;}//写入动作名称;
 		//fscanf(fp,"OBJ:%d,\n",&tempSize);//物件的名称/ID;(有待确认)，暂时不保存物件信息
-		fscanf(fp,"%d:\n",&tempSize);
+		if(fscanf(fp,"%d:\n",&tempSize) != 1) {fclose(fp);return XFalse;}
 		if(tempSize != 0)
 		{//存在物件（曾经考虑在这里利用物件管理器来做到物件重用，但是由于物件可能同时被使用，所以这里不能被重用，由于属性冲突）
 			_XActionObjectDescription *temp = createMem<_XActionObjectDescription>();
@@ -330,18 +330,18 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 		{//不存在物件
 			m_object = NULL;
 		}
-		fscanf(fp,"Time:%f,%f\n",&m_startTime,&m_endTime);	
+		if(fscanf(fp,"Time:%f,%f\n",&m_startTime,&m_endTime) != 2) {fclose(fp);return XFalse;}	
 		m_otherAction.clear();
 		m_actionCore.clear();
 		m_otherActionID.clear();
 
-		fscanf(fp,"OAD Sum:%d,\n",&tempSize);//附属动作数量;
+		if(fscanf(fp,"OAD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//附属动作数量;
 		if(tempSize > 0)//附属动作的ID和名称
 		{
 			for(int i = 0;i < tempSize;++ i)
 			{//这个数据读取没有意义,需要有管理器之后才有意义
-				fscanf(fp,"%d,\n",&tempSize);	//写入动作ID;
-				fscanf(fp,"%s\n",tempStr);		//写入动作名称;
+				if(fscanf(fp,"%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}	//写入动作ID;
+				if(fscanf(fp,"%s\n",tempStr) != 1) {fclose(fp);return XFalse;}		//写入动作名称;
 				//尚未完成，尚无AD管理器
 				m_otherActionID.push_back(tempSize);
 				//由于先后顺序的问题，这里一遍读取未必能直接读取到所有动作，所以这里需要考虑两遍读取
@@ -353,7 +353,7 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 			//	}
 			}
 		}
-		fscanf(fp,"AC Sum:%d,\n",&tempSize);//元动作的数量
+		if(fscanf(fp,"AC Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//元动作的数量
 		if(tempSize > 0)
 		{
 			_XActionCore *temp;
@@ -367,9 +367,9 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 			_XActionState tempState;
 			for(int i = 0;i < tempSize;++ i)
 			{
-				fscanf(fp,"AC Type:%d,\n",&type);	//元动作的类型
-				fscanf(fp,"Time:%f,%f,\n",&startTime,&endTime);	//元动作的类型
-				fscanf(fp,"MD Sum:%d,\n",&mdSum);
+				if(fscanf(fp,"AC Type:%d,\n",&type) != 1) {fclose(fp);return XFalse;}	//元动作的类型
+				if(fscanf(fp,"Time:%f,%f,\n",&startTime,&endTime) != 2) {fclose(fp);return XFalse;}	//元动作的类型
+				if(fscanf(fp,"MD Sum:%d,\n",&mdSum) != 1) {fclose(fp);return XFalse;}
 				tempMD = NULL;
 				if(mdSum > 0)
 				{
@@ -379,19 +379,19 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 						for(int j = 0;j < mdSum;++ j)
 						{
 							//m_actionCore[i]->m_moveData[j]->getParamStr(tempStr);	//注意格式对应问题
-							fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop);	//元动作的参数
+							if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//元动作的参数
 							tempMD[j].set(startData,endData,speed,(_XMoveDataMode)(mode),isLoop);
 						}
 					}else 
 					{
 						tempMD = createMem<_XMoveData>();
-						fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop);	//元动作的参数
+						if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//元动作的参数
 						tempMD->set(startData,endData,speed,(_XMoveDataMode)(mode),isLoop);
 					}
 				}
-				fscanf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",&tempState.position.x,&tempState.position.y,
+				if(fscanf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",&tempState.position.x,&tempState.position.y,
 					&tempState.angle,&tempState.size.x,&tempState.size.y,
-					&tempState.color.fR,&tempState.color.fG,&tempState.color.fB,&tempState.color.fA);
+					&tempState.color.fR,&tempState.color.fG,&tempState.color.fB,&tempState.color.fA) != 9) {fclose(fp);return XFalse;}
 				temp = createMem<_XActionCore>();
 				temp->set(startTime,endTime,(_XActionType)(type),tempMD,&tempState);
 				if(!pushAActionCore(temp))
@@ -402,7 +402,7 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 			}
 		}
 		//ASD的读取
-		fscanf(fp,"ASD Sum:%d,\n",&tempSize);//元动作的数量
+		if(fscanf(fp,"ASD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//元动作的数量
 		if(tempSize > 0)
 		{//下面依次读取ASD的数据
 			_XActionStateDescription * tempASD = NULL;
@@ -412,40 +412,40 @@ _XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition 
 			{
 				tempASD = createMem<_XActionStateDescription>();
 				if(tempASD == NULL) return XFalse;
-				fscanf(fp,"time:%d,\n",&tempASD->time);
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"time:%d,\n",&tempASD->time) != 1) {fclose(fp);return XFalse;}
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidPosX = XTrue;
 				else tempASD->isValidPosX = XFalse;
 				tempASD->position.x = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidPosY = XTrue;
 				else tempASD->isValidPosY = XFalse;
 				tempASD->position.y = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidColorR = XTrue;
 				else tempASD->isValidColorR = XFalse;
 				tempASD->color.fR = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidColorG = XTrue;
 				else tempASD->isValidColorG = XFalse;
 				tempASD->color.fG = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidColorB = XTrue;
 				else tempASD->isValidColorB = XFalse;
 				tempASD->color.fB = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidColorA = XTrue;
 				else tempASD->isValidColorA = XFalse;
 				tempASD->color.fA = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidAngle = XTrue;
 				else tempASD->isValidAngle = XFalse;
 				tempASD->angle = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidSizeX = XTrue;
 				else tempASD->isValidSizeX = XFalse;
 				tempASD->size.x = tempValue;
-				fscanf(fp,"%d,%f,\n",&tempBool,&tempValue);
+				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 				if(tempBool == 1) tempASD->isValidSizeY = XTrue;
 				else tempASD->isValidSizeY = XFalse;
 				tempASD->size.y = tempValue;
@@ -574,7 +574,7 @@ _XActionDescription::_XActionDescription()
 ,m_maxTime(-1)
 {
 	static int myID = 0;
-	while(1)
+	while(true)
 	{//这里需要ID的唯一性
 		++ myID;
 		if(_XActionMananger::GetInstance().getActionDes(myID) == NULL) break;

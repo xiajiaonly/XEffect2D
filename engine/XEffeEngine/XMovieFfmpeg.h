@@ -14,7 +14,7 @@
 //改进意见：提供支持播放纯声音文件
 
 //#define SDL_AUDIO_BUFFER_SIZE 1024
-#define BUFF_TIMER (1.0f)		//缓存的时间
+#define BUFF_TIMER (10.0f)		//缓存的时间
 
 //#pragma comment(lib, "SDL.lib")
 
@@ -23,6 +23,11 @@ struct _XVideoFrameData
 	AVPicture *pict;		//当前帧的规制后的像素数据
 	unsigned char *data;	//当前帧的像素数据
 	struct _XVideoFrameData *next;	//下一帧
+	_XVideoFrameData()
+		:pict(NULL)
+		,data(NULL)
+		,next(NULL)
+	{}
 };
 struct _XVideoQueue
 {
@@ -30,6 +35,11 @@ struct _XVideoQueue
 	_XVideoFrameData *last_pict;	//最后一帧
 	int nb_pict;			//序列中总的帧的数量
 	SDL_mutex *mutex;		//线程锁
+	_XVideoQueue()
+		:first_pict(NULL)
+		,last_pict(NULL)
+		,mutex(NULL)
+	{}
 };
 struct _XAudioQueue
 {
@@ -39,10 +49,14 @@ struct _XAudioQueue
 	int size;				//总的音频数据的尺寸
 	SDL_mutex *mutex;		//线程锁
 	SDL_cond *cond;			//用于同步
+	_XAudioQueue()
+		:first_pkt(NULL)
+		,last_pkt(NULL)
+		,mutex(NULL)
+		,cond(NULL)
+	{}
 };
-
-#define MAX_BUFF_DEEP 32	//缓存的深度
-
+#define MAX_BUFF_DEEP (32)	//缓存的深度
 class _XMovieFfmpeg:public _XMovieCore
 {
 private:
@@ -51,9 +65,8 @@ private:
 public:
 	_XMovieFfmpeg();
 	~_XMovieFfmpeg(){closeClip();}
-
 	//打开影片，ffmpeg库等
-	_XBool load(const char *filename);		//载入影片文件并作相关的初始化
+	_XBool load(const char *filename,_XColorMode mode = COLOR_RGB,bool withVoice = true);		//载入影片文件并作相关的初始化
 	//void waitingForBuffOver();			//等待影片缓冲满
 
 	int getClipWide() const {return m_videoWidth;}		//获取影片的实际宽度
@@ -63,7 +76,10 @@ public:
 	double getCurrentPlayingTime() const	//获取影片当前播放时间(单位：毫秒)
 	{
 		return m_nowFrameNumber*(1000.0/m_nowFrameRate);
-	}		
+	}
+	int getNowFrameIndex() const {return m_nowFrameNumber;}
+	int getNowPlayTime() const {return m_nowPlayedTime;}	//返回毫秒级的播放进度
+	int getAllFrameSum() const {return m_allFrameSum;}
 	int getAllTime(void) const				//获取影片总时间(单位：毫秒)
 	{
 		return ((double)pFormatCtx->duration * 0.001f);
@@ -75,10 +91,26 @@ public:
 		else return XFalse;
 	}
 
-	_XBool getIsEnd() {return m_isEnd;}
-	void setPauseOrPlay(void) {m_isStop = !m_isStop;}		//暂停或继续播放影片
+	_XBool getIsEnd() const {return m_isEnd;}
+	_XBool getIsLoop() const {return m_isLoop;}	//获取是否循环
+	//void setPauseOrPlay(void) {m_isStop = !m_isStop;}		//暂停或继续播放影片
+	void pause() {if(!m_isEnd) m_isStop = true;}
+	void play()
+	{
+		if(!m_isEnd) m_isStop = false;
+		else replay();
+	}
+	_XBool isPlaying() const {return !m_isStop && !m_isEnd;}
 	void closeClip(void);			//关闭视频播放，并释放相关的资源
-	void gotoFrame(float temp);		//跳到当前视频的某一帧(0 - 1的百分比)
+	void gotoFrame(float temp);		//跳到当前视频的某一帧(0 - 1的百分比)	//控制视频流跳转，
+	void gotoFrameIndex(int index);	//跳转到某一帧，快进到某一帧
+	void gotoTime(int t)	//跳转到毫秒级的位置
+	{
+		m_gotoMutex1.Lock();
+		m_nowPlayedTime = t;	//重新设置时间
+		m_gotoMutex1.Unlock();
+	}
+	void setAutoTime(bool flag) {m_autoTimer = flag;}	//设置是否自动计时，如果是自动计时，则线程自己推进播放进度，否则由外部控制播放进度。
 	//GLuint * getTexture();			//获取贴图的编号
 private:
 	unsigned char *m_nowFrameData;		//影片当前播放的frame
@@ -87,12 +119,18 @@ private:
 	AVPicture m_framePic[MAX_BUFF_DEEP];
 	int m_nowBuffPoint;
 	_XBool m_needVoice;				//影片是否需要声音
+	_XBool m_autoTimer;				//自动计时，如果是自动计时，则线程自己推进播放进度，否则由外部控制播放进度。
 	//GLuint m_texture;
 	//2014-3-20修改
 	_XTexture *m_movieTex;	//贴图
+	bool m_isTexInit;	//贴图是否已经初始化
 	bool m_isNewFrame;
 	_XCritical m_mutex;
+	_XColorMode m_outColorMode;	//输出的颜色方式（2014-7-17尚未完成）
+	_XCritical m_gotoMutex;	//用于跳转的锁
+	_XCritical m_gotoMutex1;	//用于跳转的锁
 public:
+	_XColorMode getColorMode()const{return m_outColorMode;}
 	_XSprite *m_movieSprite;	//用于绘图的精灵
 	_XBool upDateFrame()
 	{
@@ -104,6 +142,7 @@ public:
 				m_mutex.Lock();
 				m_movieTex->updateTexture(m_nowFrameData);
 				m_mutex.Unlock();
+				if(!m_isTexInit) m_isTexInit = true;
 			}
 			return XTrue;
 		}
@@ -115,7 +154,15 @@ public:
 	void getData(unsigned char * p)
 	{
 		m_mutex.Lock();
-		memcpy(p,m_nowFrameData,m_videoWidth * m_videoHeight * 3);
+		switch(m_outColorMode)
+		{
+		case COLOR_RGB:
+			memcpy(p,m_nowFrameData,m_videoWidth * m_videoHeight * 3);
+			break;
+		case COLOR_RGBA:
+			memcpy(p,m_nowFrameData,m_videoWidth * (m_videoHeight << 2));
+			break;
+		}
 		m_mutex.Unlock();
 	}
 	void updateTex(_XTexture &tex)
@@ -127,7 +174,7 @@ public:
 	void draw()
 	{
 		if(!m_isLoaded) return;
-		if(m_movieSprite != NULL && m_movieTex != NULL) 
+		if(m_movieSprite != NULL && m_movieTex != NULL && m_isTexInit) 
 			m_movieSprite->draw(&m_movieTex->m_texture);
 	}
 	unsigned int * getTexture() {return (unsigned int *)&m_movieTex->m_texture;}
@@ -141,6 +188,10 @@ private:
             0,src_height, dst->data, dst->linesize); 
 	}
 	//用于音频数据个是转换
+	//注意：优化 2014年7月30日
+	//可以通过直接设置解码需要的格式和采样率来使得解码的数据直接符合要求，而不必再进行一次转换
+	//aCodeCtx 的 request_channel_layout、request_sample_fmt和request_channels
+	//目前尚未实现
 	SwrContext *m_pSwrContext;
 private:
 	_XVideoQueue m_videoQueue;		//视频帧序列
@@ -198,5 +249,19 @@ private:
 	uint8_t m_audioBuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2]; 
 	unsigned int m_audioBufSize; 
 	unsigned int m_audioBufIndex; 
+
+	//结束之后设置重播
+public:
+	void replay()
+	{
+		//这里需要清空序列
+		printf("All times:%d\n",m_nowPlayedTime);
+		m_nowFrameNumber = 0;
+		m_nowPlayedTime = 0;
+		printf("Loop!\n");
+		gotoFrame(0.0f);
+		m_isDecodeOver = XFalse;
+		m_isEnd = XFalse;
+	}
 };
 #endif

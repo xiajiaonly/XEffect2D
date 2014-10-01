@@ -26,9 +26,9 @@ public:
 	_XBool init(const char *filename,	//字体图片的文件名
 		const _XVector2& size,		//字体的像素大小
 		const _XVector2& layout,		//字体图片的布局
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);		
-	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//精简接口,从资源中读取数据
-	_XBool initFromTTF(const char * filename,int fontSize,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//从TTF文件中初始化(尚未实现)
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse);		
+	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse);	//精简接口,从资源中读取数据
+	_XBool initFromTTF(const char * filename,int fontSize,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse);	//从TTF文件中初始化(尚未实现)
 
 	_XFont& operator = (const _XFont& temp);
 	_XBool setACopy(const _XFont &temp);
@@ -51,7 +51,7 @@ public:
 		m_textPosition = createArrayMem<_XVector2>(m_maxStringLen);
 		m_textRect = createArrayMem<_XRect>(m_maxStringLen);
 
-		m_needUpdateData = 1;
+		m_needUpdateData = XTrue;
 	}
 };
 

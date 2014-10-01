@@ -475,8 +475,8 @@ inline int _XSocket::getClientID(int order) const
 }
 inline int _XSocket::getIsOnline() const
 {
-    if(m_isServer == NET_STATE_SERVER && m_serverExitFlag== 1) return 0;
-    if(m_isServer == NET_STATE_CLIENT && m_clientExitFlag== 1) return 0;
+    if(m_isServer == NET_STATE_SERVER && m_serverExitFlag == 1) return 0;
+    if(m_isServer == NET_STATE_CLIENT && m_clientExitFlag == 1) return 0;
     return 1;
 }
 inline void _XSocket::resetSocketAddr(int socket)                             //设置socket可以被重用

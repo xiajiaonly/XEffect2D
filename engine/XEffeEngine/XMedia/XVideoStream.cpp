@@ -10,6 +10,7 @@ _XBool _XVideoEncode::open(int w,int h,int rate)
 {
 	if(m_isOpen) return XFalse;
 	av_register_all();
+	avcodec_register_all();  
 	AVCodec *codec = avcodec_find_encoder(VEDIO_STREAM_FORMAT);
 	if(codec == NULL) return XFalse;
 	m_videoCodec = avcodec_alloc_context3(codec);
@@ -68,7 +69,7 @@ _XBool _XVideoEncode::open(int w,int h,int rate)
     m_pFrameYUV->width  = c->width;
     m_pFrameYUV->height = c->height;
 	if(av_image_alloc(m_pFrameYUV->data,m_pFrameYUV->linesize,c->width,c->height,
-		c->pix_fmt,32) < 0) return 0;
+		c->pix_fmt,32) < 0) return XFalse;
 
 	av_init_packet(&m_packet);
 	m_packet.data = NULL;
@@ -142,12 +143,23 @@ _XBool _XVideoDecode::open(int w,int h)
 	if(m_isOpen) return XFalse;
 	//根据视频流信息寻找释放的解码器
 	av_register_all();
+	avcodec_register_all();  
+	//av_dict_set(&opts, "b", "2.5M", 0);
 	AVCodec *pCodec = avcodec_find_decoder(VEDIO_STREAM_FORMAT);
 	if(pCodec == NULL) return XFalse;
 	m_videoCodec = avcodec_alloc_context3(pCodec);
+	if(m_videoCodec == NULL) return XFalse;
+	//m_videoCodec->bit_rate = 3000000;
 	m_videoCodec->width = w;
 	m_videoCodec->height = h;
-	if(m_videoCodec == NULL) return 0;
+	//AVRational rate;  
+	//rate.num = 1;  
+	//rate.den = 25;  
+	//m_videoCodec->time_base= rate;//(AVRational){1,25};  
+	//m_videoCodec->gop_size = 10; // emit one intra frame every ten frames   
+	//m_videoCodec->max_b_frames=1;  
+	//m_videoCodec->thread_count = 1;  
+	//m_videoCodec->pix_fmt = PIX_FMT_YUV420P;//PIX_FMT_RGB24;  
 	if(pCodec->capabilities & CODEC_CAP_TRUNCATED) m_videoCodec->flags|= CODEC_FLAG_TRUNCATED;
 	if(avcodec_open2(m_videoCodec,pCodec,NULL) < 0) return XFalse;
 	//分配零时数据
@@ -160,6 +172,7 @@ _XBool _XVideoDecode::open(int w,int h)
 									w,h,PIX_FMT_RGB24, 
 									SWS_POINT,NULL,NULL,NULL);//SWS_BICUBIC
 	if(m_pSwsContext == NULL) return XFalse;
+	av_init_packet(&m_packet);
 	m_isOpen = XTrue;
 	return XTrue;
 }
@@ -170,10 +183,11 @@ _XBool _XVideoDecode::decodeData(void * data,int len)
 	m_packet.data = (uint8_t *)data;
 	m_packet.size = len;
 	_XBool flag = XFalse;
-	while(1)
+	int isFinished = 0;
+	int ret;
+	while(true)
 	{
-		int isFinished = 0;
-		int ret = avcodec_decode_video2(m_videoCodec,m_pFrame,&isFinished,&m_packet);
+		ret = avcodec_decode_video2(m_videoCodec,m_pFrame,&isFinished,&m_packet);
 		if(ret < 0) return XFalse;	//解码失败
 		if(isFinished != 0)
 		{//解码完成

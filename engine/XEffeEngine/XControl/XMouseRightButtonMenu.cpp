@@ -18,18 +18,15 @@ _XMouseRightButtonMenu::_XMouseRightButtonMenu()
 ,m_funChooseOver(NULL)		//×îÖÕÈ·¶¨Ñ¡ÖµÊ±µ÷ÓÃ
 ,m_resInfo(NULL)
 {
-}
-_XMouseRightButtonMenu::~_XMouseRightButtonMenu()
-{
-	release();
+	m_ctrlType = CTRL_OBJ_MOUSERIGHTBUTTONMENU;
 }
 inline void _XMouseRightButtonMenu::release()	//ÊÍ·Å×ÊÔ´
 {
 	if(!m_isInited) return;
 	XDELETE_ARRAY(m_menu);
-	_XControlManager::GetInstance().decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼ş
+	_XCtrlManger.decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	m_isInited = XFalse;
 	if(m_resInfo != NULL)
@@ -64,133 +61,28 @@ _XBool _XMouseRightButtonMenu::init(int menuSum,	//²Ëµ¥ÖĞµÄÎï¼şÊıÁ¿
 
 	for(int i = 0;i < m_menuSum;++ i)
 	{
-		if(m_menu[i].init(_XVector2(m_position.x,m_position.y + m_mouseRect.getHeight() * i * m_size.y),m_mouseRect,tex," ",font,captionSize,textPosition) == 0)
+		if(!m_menu[i].init(_XVector2(m_position.x,m_position.y + m_mouseRect.getHeight() * i * m_size.y),m_mouseRect,tex," ",font,captionSize,textPosition))
 		{
 			XDELETE_ARRAY(m_menu);
 			return XFalse;
 		}
 		m_menu[i].setSize(m_size);
 	//½«ÕâĞ©Îï¼ş´ÓÎï¼ş¹ÜÀíÆ÷ÖĞ×¢Ïúµô
-		_XControlManager::GetInstance().decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
+		_XCtrlManger.decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_menu[i]);
+		_XObjManger.decreaseAObject(&m_menu[i]);
 #endif
 	}
 	m_nowChoose = -1;
 	m_lastChoose = -1;		//×îÖÕÑ¡ÔñµÄÖµ
 
-	m_isVisiable = XFalse;
+	m_isVisible = XFalse;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MOUSERIGHTBUTTONMENU);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-	m_isInited = XTrue;
-	return XTrue;
-}
-_XBool _XMouseRightButtonMenu::initEx(int menuSum,	//²Ëµ¥ÖĞµÄÎï¼şÊıÁ¿
-	const _XVector2& position,	//²Ëµ¥µÄÎ»ÖÃ
-	const _XMouseRightButtonMenuTexture &tex,	//²Ëµ¥µÄÌùÍ¼
-	const _XFontUnicode &font,float captionSize)		//²Ëµ¥µÄ×ÖÌå
-{
-	if(m_isInited) return XFalse;
-	if(tex.m_mouseRect.getHeight() <= 0 || tex.m_mouseRect.getWidth() <= 0) return XFalse;	//¿Õ¼ä±ØĞëÒªÓĞÒ»¸öÏìÓ¦Çø¼ä£¬²»È»»á³öÏÖ³ıÁã´íÎó
-	if(tex.buttonNormal == NULL || tex.buttonOn == NULL) return XFalse;//Õâ¼¸¸öÌùÍ¼ÊÇ±ØĞëÒªÓĞµÄ
-	if(menuSum <= 0) return XFalse;	//Ã»ÓĞ²Ëµ¥ÏîµÄ³õÊ¼»¯ÊÇÊ§°ÜµÄ
-	m_position = position;
-	m_mouseRect = tex.m_mouseRect;
-
-	m_size.set(1.0f,1.0f);
-	m_menuSum = menuSum;
-	m_allArea.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + (m_mouseRect.top + m_mouseRect.getHeight() * m_menuSum) * m_size.y);
-	m_upMousePoint.set(m_position.x + (m_mouseRect.left + m_mouseRect.getWidth() * 0.5f) * m_size.x,
-		m_position.y + (m_mouseRect.top + m_mouseRect.getHeight() * 0.5f) * m_size.y);	//Ä¬ÈÏ³õÊ¼Î»ÖÃÎªµÚÒ»¸ö°´Å¥µÄÕıÖĞ¼ä
-
-	//ÉèÖÃ¸÷¸ö²Ëµ¥Ïî
-	m_menu = createArrayMem<_XButton>(m_menuSum);
-	if(m_menu == NULL) return XFalse;	//ÄÚ´æ·ÖÅäÊ§°ÜÔòÖ±½Ó·µ»ØÊ§°Ü
-
-	for(int i = 0;i < m_menuSum;++ i)
-	{
-		if(m_menu[i].initEx(_XVector2(m_position.x,m_position.y + m_mouseRect.getHeight() * i * m_size.y),tex," ",font,captionSize) == 0)
-		{
-			XDELETE_ARRAY(m_menu);
-			return XFalse;
-		}
-		m_menu[i].setSize(m_size);
-	//½«ÕâĞ©Îï¼ş´ÓÎï¼ş¹ÜÀíÆ÷ÖĞ×¢Ïúµô
-		_XControlManager::GetInstance().decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_menu[i]);
-#endif
-	}
-	m_nowChoose = -1;
-	m_lastChoose = -1;		//×îÖÕÑ¡ÔñµÄÖµ
-
-	m_isVisiable = XFalse;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MOUSERIGHTBUTTONMENU);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-	m_isInited = XTrue;
-	return XTrue;
-}
-_XBool _XMouseRightButtonMenu::initPlus(const char * path,int menuSum,	//²Ëµ¥ÖĞµÄÎï¼şÊıÁ¿
-	const _XFontUnicode &font,float captionSize,_XResourcePosition resoursePosition)		//²Ëµ¥µÄ×ÖÌå
-{
-	if(m_isInited) return XFalse;
-	if(path == NULL) return XFalse;
-	m_resInfo = _XResourceManager::GetInstance().loadResource(path,RESOURCE_TYPE_XBUTTON_TEX,resoursePosition);
-	if(m_resInfo == NULL) return XFalse;
-	_XButtonTexture * tex = (_XButtonTexture *)m_resInfo->m_pointer;
-
-	if(tex->m_mouseRect.getHeight() <= 0 || tex->m_mouseRect.getWidth() <= 0) return XFalse;	//¿Õ¼ä±ØĞëÒªÓĞÒ»¸öÏìÓ¦Çø¼ä£¬²»È»»á³öÏÖ³ıÁã´íÎó
-	if(tex->buttonNormal == NULL || tex->buttonOn == NULL) return XFalse;//Õâ¼¸¸öÌùÍ¼ÊÇ±ØĞëÒªÓĞµÄ
-	if(menuSum <= 0) return XFalse;	//Ã»ÓĞ²Ëµ¥ÏîµÄ³õÊ¼»¯ÊÇÊ§°ÜµÄ
-	m_position.set(0.0f,0.0f);
-	m_mouseRect = tex->m_mouseRect;
-
-	m_size.set(1.0f,1.0f);
-	m_menuSum = menuSum;
-	m_allArea.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + (m_mouseRect.top + m_mouseRect.getHeight() * m_menuSum) * m_size.y);
-	m_upMousePoint.set(m_position.x + (m_mouseRect.left + m_mouseRect.getWidth() * 0.5f) * m_size.x,
-		m_position.y + (m_mouseRect.top + m_mouseRect.getHeight() * 0.5f) * m_size.y);	//Ä¬ÈÏ³õÊ¼Î»ÖÃÎªµÚÒ»¸ö°´Å¥µÄÕıÖĞ¼ä
-
-	//ÉèÖÃ¸÷¸ö²Ëµ¥Ïî
-	m_menu = createArrayMem<_XButton>(m_menuSum);
-	if(m_menu == NULL) return XFalse;	//ÄÚ´æ·ÖÅäÊ§°ÜÔòÖ±½Ó·µ»ØÊ§°Ü
-
-	for(int i = 0;i < m_menuSum;++ i)
-	{
-		if(!m_menu[i].initEx(_XVector2(m_position.x,m_position.y + m_mouseRect.getHeight() * i * m_size.y),(*tex)," ",font,captionSize))
-		{
-			XDELETE_ARRAY(m_menu);
-			return XFalse;
-		}
-		m_menu[i].setSize(m_size);
-	//½«ÕâĞ©Îï¼ş´ÓÎï¼ş¹ÜÀíÆ÷ÖĞ×¢Ïúµô
-		_XControlManager::GetInstance().decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_menu[i]);
-#endif
-	}
-	m_nowChoose = -1;
-	m_lastChoose = -1;		//×îÖÕÑ¡ÔñµÄÖµ
-
-	m_isVisiable = XFalse;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MOUSERIGHTBUTTONMENU);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
@@ -198,8 +90,8 @@ _XBool _XMouseRightButtonMenu::initPlus(const char * path,int menuSum,	//²Ëµ¥ÖĞµ
 _XBool _XMouseRightButtonMenu::initWithoutTex(int menuSum,const _XRect& area,
 	const _XFontUnicode &font,float captionSize, const _XVector2& textPosition)
 {
-	if(m_isInited) return XFalse;
-	if(menuSum <= 0) return XFalse;	//Ã»ÓĞ²Ëµ¥ÏîµÄ³õÊ¼»¯ÊÇÊ§°ÜµÄ
+	if(m_isInited ||
+		menuSum <= 0) return XFalse;	//Ã»ÓĞ²Ëµ¥ÏîµÄ³õÊ¼»¯ÊÇÊ§°ÜµÄ
 	m_position.set(0.0f,0.0f);
 	m_mouseRect = area;
 
@@ -216,40 +108,31 @@ _XBool _XMouseRightButtonMenu::initWithoutTex(int menuSum,const _XRect& area,
 
 	for(int i = 0;i < m_menuSum;++ i)
 	{
-		if(m_menu[i].initWithoutTex(" ",font,captionSize,m_mouseRect,textPosition) == 0)
+		if(!m_menu[i].initWithoutTex(" ",font,captionSize,m_mouseRect,textPosition))
 		{
 			XDELETE_ARRAY(m_menu);
 			return XFalse;
 		}
 		m_menu[i].setSize(m_size);
 	//½«ÕâĞ©Îï¼ş´ÓÎï¼ş¹ÜÀíÆ÷ÖĞ×¢Ïúµô
-		_XControlManager::GetInstance().decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
+		_XCtrlManger.decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_menu[i]);
+		_XObjManger.decreaseAObject(&m_menu[i]);
 #endif
 	}
 	m_nowChoose = -1;
 	m_lastChoose = -1;		//×îÖÕÑ¡ÔñµÄÖµ
 
-	m_isVisiable = XFalse;
+	m_isVisible = XFalse;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MOUSERIGHTBUTTONMENU);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
-}
-void _XMouseRightButtonMenu::draw()
-{
-	if(!m_isInited) return;		//Ã»ÓĞ³õÊ¼»¯Ê±²»ÏÔÊ¾
-	if(!m_isVisiable) return;	//²»¿É¼ûÊ±²»ÏÔÊ¾
-	for(int i = 0;i < m_menuSum;++ i)
-	{
-		m_menu[i].draw();
-	}
 }
 void _XMouseRightButtonMenu::setPosition(float x,float y)
 {
@@ -267,7 +150,7 @@ void _XMouseRightButtonMenu::setPosition(float x,float y)
 }
 void _XMouseRightButtonMenu::setSize(float x,float y)
 {
-	if(x <= 0 && y <= 0) return;
+	if(x <= 0 || y <= 0) return;
 	m_size.set(x,y);
 	m_allArea.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
 		m_position.x + m_mouseRect.right * m_size.x,m_position.y + (m_mouseRect.top + m_mouseRect.getHeight() * m_menuSum) * m_size.y);
@@ -281,24 +164,16 @@ void _XMouseRightButtonMenu::setSize(float x,float y)
 	m_nowChoose = -1;
 	updateChildSize();
 }
-_XBool _XMouseRightButtonMenu::canGetFocus(float x,float y)
-{
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isActive) return XFalse;		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
-	if(!m_isVisiable) return XFalse;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
-	return isInRect(x,y);
-}
 _XBool _XMouseRightButtonMenu::mouseProc(float x,float y,_XMouseState mouseState)
 {
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
+	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 
-	if(!m_isVisiable)
+	if(!m_isVisible)
 	{//Ã»ÓĞÏÔÊ¾µÄÊ±ºòĞèÒªÍ¨¹ı¼ì²éÊó±êÓÒ¼üÀ´¼ì²éÊÇ·ñµ¯³ö²Ëµ¥
 		if(mouseState == MOUSE_RIGHT_BUTTON_UP)
 		{//ÓÒ¼üµ¯Æğ£¬ÔòÏÔÊ¾²Ëµ¥
-			m_isVisiable = XTrue;
+			m_isVisible = XTrue;
 			setPosition(x,y);
 		}
 	}else
@@ -309,7 +184,7 @@ _XBool _XMouseRightButtonMenu::mouseProc(float x,float y,_XMouseState mouseState
 		}
 		if(m_allArea.isInRect(x,y))
 		{
-			if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_RIGHT_BUTTON_DOWN)
+			if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK || mouseState == MOUSE_RIGHT_BUTTON_DOWN)
 			{
 				m_lastChoose = (y - m_position.y - m_mouseRect.top * m_size.y) / (m_mouseRect.getHeight() * m_size.y);
 				if(m_funChooseOver != NULL) m_funChooseOver(m_pClass,m_objectID);
@@ -318,17 +193,17 @@ _XBool _XMouseRightButtonMenu::mouseProc(float x,float y,_XMouseState mouseState
 				{
 					m_menu[i].setState(BUTTON_STATE_NORMAL);
 				}
-				m_isVisiable = XFalse;
+				m_isVisible = XFalse;
 			}
 		//	m_upMousePoint.set(x,y);
 			//m_upMousePoint.y = (int)((y - m_objRect.top) / m_objRect.getHeight() * m_size.y) * m_objRect.getHeight() * m_size.y + m_objRect.getHeight() * m_size.y * 0.5;
 		}else
 		{//ÇøÓòÍâµÄ²Ù×÷
-			if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_RIGHT_BUTTON_DOWN)
+			if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK || mouseState == MOUSE_RIGHT_BUTTON_DOWN)
 			{
 				m_lastChoose = -1;
 				if(m_funChooseOver != NULL) m_funChooseOver(m_pClass,m_objectID);
-				m_isVisiable = XFalse;
+				m_isVisible = XFalse;
 			}
 		}
 	}
@@ -336,9 +211,9 @@ _XBool _XMouseRightButtonMenu::mouseProc(float x,float y,_XMouseState mouseState
 }
 _XBool _XMouseRightButtonMenu::keyboardProc(int keyOrder,_XKeyState keyState)
 {
-	if(!m_isInited) return XFalse;		//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
-	if(!m_isVisiable) return XFalse;	//¼üÅÌ²Ù×÷Ö»ÓĞÔÚÏÔÊ¾µÄÇé¿öÏÂ²ÅÄÜÏÔÊ¾
+	if(!m_isInited ||		//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isEnable ||		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
+		!m_isVisible) return XFalse;	//¼üÅÌ²Ù×÷Ö»ÓĞÔÚÏÔÊ¾µÄÇé¿öÏÂ²ÅÄÜÏÔÊ¾
 	if(keyState == KEY_STATE_UP)
 	{
 		if(keyOrder == XKEY_UP)
@@ -375,7 +250,7 @@ _XBool _XMouseRightButtonMenu::keyboardProc(int keyOrder,_XKeyState keyState)
 				{
 					m_lastChoose = i;
 					if(m_funChooseOver != NULL) m_funChooseOver(m_pClass,m_objectID);
-					m_isVisiable = XFalse;
+					m_isVisible = XFalse;
 					return XTrue;
 				}
 			}
@@ -387,7 +262,7 @@ _XBool _XMouseRightButtonMenu::keyboardProc(int keyOrder,_XKeyState keyState)
 				{//Èç¹û°´¼üÓë²Ëµ¥µÄ¿ì½İ¼üÏàÍ¬£¬¶øÇÒ²Ëµ¥µÄ×´Ì¬²»ÊÇÎŞĞ§
 					m_lastChoose = i;
 					if(m_funChooseOver != NULL) m_funChooseOver(m_pClass,m_objectID);
-					m_isVisiable = XFalse;
+					m_isVisible = XFalse;
 					return XTrue;
 				}
 			}
@@ -403,9 +278,9 @@ _XBool _XMouseRightButtonMenu::setACopy(const _XMouseRightButtonMenu &temp)
 	if(!_XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MOUSERIGHTBUTTONMENU);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+		_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+		_XObjManger.addAObject(this);
 #endif
 	}
 	m_isInited = temp.m_isInited;
@@ -421,9 +296,9 @@ _XBool _XMouseRightButtonMenu::setACopy(const _XMouseRightButtonMenu &temp)
 	{
 		if(!m_menu[i].setACopy(temp.m_menu[i])) return XFalse;
 		//½«ÕâĞ©¿Ø¼ş´Ó¿Ø¼ş¹ÜÀíÆ÷ÖĞ×¢Ïúµô
-		_XControlManager::GetInstance().decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
+		_XCtrlManger.decreaseAObject(&(m_menu[i]));	//×¢ÏúÕâ¸öÎï¼ş
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_menu[i]);
+		_XObjManger.decreaseAObject(&m_menu[i]);
 #endif
 	}
 
@@ -437,20 +312,4 @@ _XBool _XMouseRightButtonMenu::setACopy(const _XMouseRightButtonMenu &temp)
 	m_upMousePoint = temp.m_upMousePoint;	//ÉÏ´Î¼ÇÂ¼µÄÊó±êÔÚ·¶Î§ÄÚµÄÎ»ÖÃ
 
 	return XTrue;
-}
-_XBool _XMouseRightButtonMenu::isInRect(float x,float y)
-{
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-_XVector2 _XMouseRightButtonMenu::getBox(int order)
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(m_isInited == 0) return ret;
-	if(order == 0) ret.set(m_allArea.left,m_allArea.top);else
-	if(order == 1) ret.set(m_allArea.right,m_allArea.top);else
-	if(order == 2) ret.set(m_allArea.right,m_allArea.bottom);else
-	if(order == 3) ret.set(m_allArea.left,m_allArea.bottom);
-	return ret;
 }

@@ -57,9 +57,8 @@ private:
 
 	_XThreadState m_isEnd;	//是否结束
 	
-	_XDataBasic(const _XDataBasic &temp)	//重载拷贝构造函数为私有防止不必要的错误
-	{
-	}
+	_XDataBasic(const _XDataBasic &)	//重载拷贝构造函数为私有防止不必要的错误
+	{}
 public:
     _XDataBasic();
     ~_XDataBasic();

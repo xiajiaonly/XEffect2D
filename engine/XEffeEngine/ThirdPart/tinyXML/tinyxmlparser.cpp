@@ -1181,8 +1181,11 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 	TiXmlDocument* document = GetDocument();
 
 	// Read in text and elements in any order.
+	/*// remove by xiajia
 	const char* pWithWhiteSpace = p;
 	p = SkipWhiteSpace( p, encoding );
+	*/
+	if (TiXmlBase::IsWhiteSpaceCondensed()) p = SkipWhiteSpace( p, encoding ); 
 
 	while ( p && *p )
 	{
@@ -1196,16 +1199,21 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 			    return 0;
 			}
 
-			if ( TiXmlBase::IsWhiteSpaceCondensed() )
-			{
-				p = textNode->Parse( p, data, encoding );
-			}
-			else
-			{
-				// Special case: we want to keep the white space
-				// so that leading spaces aren't removed.
-				p = textNode->Parse( pWithWhiteSpace, data, encoding );
-			}
+			/* 
+            remove by xiajia 
+            if ( TiXmlBase::IsWhiteSpaceCondensed() ) 
+            {*/  
+                p = textNode->Parse( p, data, encoding );  
+            /* 
+            remove by xiajia 
+            } 
+            else 
+            { 
+                // Special case: we want to keep the white space 
+                // so that leading spaces aren't removed. 
+                p = textNode->Parse( pWithWhiteSpace, data, encoding ); 
+            } 
+            */ 
 
 			if ( !textNode->Blank() )
 				LinkEndChild( textNode );
@@ -1235,8 +1243,12 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 				}
 			}
 		}
-		pWithWhiteSpace = p;
-		p = SkipWhiteSpace( p, encoding );
+        /*
+		// remove by xiajia 
+        pWithWhiteSpace = p; 
+        p = SkipWhiteSpace( p, encoding ); 
+		*/  
+		if (TiXmlBase::IsWhiteSpaceCondensed()) p = SkipWhiteSpace( p, encoding ); // add by xiajia 
 	}
 
 	if ( !p )
@@ -1630,6 +1642,7 @@ const char* TiXmlDeclaration::Parse( const char* p, TiXmlParsingData* data, TiXm
 
 bool TiXmlText::Blank() const
 {
+	if (!TiXmlBase::IsWhiteSpaceCondensed()) return (value.length() == 0); // add by xiajia
 	for ( unsigned i=0; i<value.length(); i++ )
 		if ( !IsWhiteSpace( value[i] ) )
 			return false;

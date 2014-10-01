@@ -126,7 +126,7 @@ void _XDataBasic::release()
 	if(m_isSaveAsynchronous)
 	{//ÉèÖÃÏß³Ì½áÊø
 		m_isEnd = STATE_SET_TO_END;
-		while(1)
+		while(true)
 		{//µÈ´ýÏß³Ì½áÊø
 			if(m_isEnd == STATE_END) break;
 			Sleep(1);
@@ -509,32 +509,32 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 #if DEBUG_XDB
 		printf("write:%s - %d\n",m_fileName,m_versionsOrder);
 #endif
-		if(WriteFile(tempFile,&m_versionsOrder,sizeof(int),&tempWriteLength,NULL) == FALSE)
+		if(!WriteFile(tempFile,&m_versionsOrder,sizeof(int),&tempWriteLength,NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-		if(WriteFile(tempFile,&m_ID,sizeof(int),&tempWriteLength,NULL) == FALSE)
+		if(!WriteFile(tempFile,&m_ID,sizeof(int),&tempWriteLength,NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
 		if(m_dataLength < 0) m_dataLength = 0;
-		if(WriteFile(tempFile,&m_dataLength,sizeof(int),&tempWriteLength,NULL) == FALSE)
+		if(!WriteFile(tempFile,&m_dataLength,sizeof(int),&tempWriteLength,NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
 		if(m_pData != NULL && m_dataLength > 0)
 		{
-			if(WriteFile(tempFile,m_pData,m_dataLength,&tempWriteLength,NULL) == FALSE)
+			if(!WriteFile(tempFile,m_pData,m_dataLength,&tempWriteLength,NULL))
 			{
 				CloseHandle(tempFile);
 				return XFalse;
 			}
 		}
 		if(m_secretKeyLength < 0) m_secretKeyLength = 0;
-		if(WriteFile(tempFile,&m_secretKeyLength,sizeof(int),&tempWriteLength,NULL) == FALSE)
+		if(!WriteFile(tempFile,&m_secretKeyLength,sizeof(int),&tempWriteLength,NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
@@ -542,14 +542,14 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 
 		if(m_secretKey != NULL && m_secretKeyLength > 0)
 		{
-			if(WriteFile(tempFile,m_secretKey,m_secretKeyLength,&tempWriteLength,NULL) == FALSE)
+			if(!WriteFile(tempFile,m_secretKey,m_secretKeyLength,&tempWriteLength,NULL))
 			{
 				CloseHandle(tempFile);
 				return XFalse;
 			}
 		}
 		m_checkData = getCheckData();    //¼ÆËãÐ£ÑéÊý¾Ý
-		if(WriteFile(tempFile,&m_checkData,sizeof(unsigned char),&tempWriteLength,NULL) == FALSE)
+		if(!WriteFile(tempFile,&m_checkData,sizeof(unsigned char),&tempWriteLength,NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
@@ -709,18 +709,18 @@ _XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼
 //ÓÃÓÚÒì²½Êý¾Ý±£´æµÄº¯Êý
 DWORD WINAPI _XDataBasic::saveDataThread(void * pParam)
 {
-	_XDataBasic *pPar = (_XDataBasic *) pParam;
-	(*pPar).m_isEnd = STATE_START;
+	_XDataBasic &pPar = *(_XDataBasic *) pParam;
+	pPar.m_isEnd = STATE_START;
 	
-	while(1)
+	while(true)
 	{
-		if((*pPar).m_needSave)
+		if(pPar.m_needSave)
 		{//ÏÂÃæ½øÐÐÊý¾Ý±£´æ
-			(*pPar).analyzingData((*pPar).m_fileName);
+			pPar.analyzingData(pPar.m_fileName);
 		}
-		if((*pPar).m_isEnd == STATE_SET_TO_END) break;
+		if(pPar.m_isEnd == STATE_SET_TO_END) break;
 		mySleep(1);
 	}
-	(*pPar).m_isEnd = STATE_END;
+	pPar.m_isEnd = STATE_END;
 	return 1;
 }

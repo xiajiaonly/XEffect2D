@@ -19,9 +19,6 @@
 //鼠标拖动行的移动		x
 
 #include "XSlider.h"
-#include "XControlBasic.h"
-#include "../XFontUnicode.h"
-#include "../XSprite.h"
 #include "XMouseRightButtonMenu.h"
 //slider目录名为:/SliderH和/SliderV
 //下面是多列列表控件的贴图
@@ -41,7 +38,7 @@ public:
 	_XRect m_mouseRect;			//鼠标的响应范围
 
 	_XMultiListTexture();
-	~_XMultiListTexture();
+	~_XMultiListTexture(){release();}
 	_XBool init(const char *normal,const char *disable,const char *select,const char *move,
 		const char *title,const char *titleEnd,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
@@ -62,8 +59,7 @@ struct _XMultiListOneBox
 	_XMultiListOneBox()
 		:string(NULL)
 		,nextBox(NULL)
-	{
-	}
+	{}
 };
 
 //表中的一列
@@ -89,8 +85,7 @@ struct _XMultiListOneRow
 	_XMultiListOneRow()
 		:title(NULL)
 		,nextRow(NULL)
-	{
-	}
+	{}
 };
 
 #define MUTILIST_MIN_WIDTH (80)		//多列列表的最小宽度
@@ -106,6 +101,13 @@ struct _XMultiListOneRow
 #define DEFAULT_END_WIDTH (8.0f)
 #endif	//DEFAULT_END_WIDTH
 
+enum _XMultiListActionType
+{//多行列表的动作分类
+	MLTLST_ACTION_TYPE_IN,		//选项出现
+	MLTLST_ACTION_TYPE_MOVE,	//选项移动
+	MLTLST_ACTION_TYPE_DCLICK,	//双击
+	MLTLST_ACTION_TYPE_OUT,		//取消选择
+};
 class _XMultiList:public _XControlBasic
 {
 private:
@@ -157,26 +159,24 @@ private:
 	int m_oldLineOrder;		//鼠标按下所在的行，用于计算需要如何移动
 
 public:
-	void setTileStr(const char *str,int order);		//设置某个标题的文字
+	int getLineSum() const {return m_tableLineSum;}
+	int getRowSum() const {return m_tableRowSum;}
+	void setTitleStr(const char *str);	//每项使用;分开
+	std::string getTitleStr();	//获取标题的整个字符串
+	std::string getTitleStr(int order);	//获取指定标题的字符串
+	void setTitleStr(const char *str,int order);		//设置某个标题的文字
 	void setBoxStr(const char *str,int line,int row);	//设置某一个单元格的文字
 	char *getBoxStr(int line,int row);		//获取某个单元格中的文字
 	_XBool setRowWidth(int temp,int order);		//设置其中一行的宽度
-	int getSelectIndex()
-	{
-		if(!m_haveSelect) return -1;
-		return m_selectLineOrder;
-	}
+	int getSelectIndex();
 private:
 	void (*m_funSelectFun)(void *,int ID);
+	void (*m_funDClick)(void *,int ID);	//鼠标双击时间响应的函数
 	void * m_pClass;
 	_XBool m_withMouseDrag;	//是否支持鼠标拖动
 public:
-	void setSelectFun(void (* funSelectFun)(void *,int),void * pClass)
-	{
-		m_funSelectFun = funSelectFun;
-		if(pClass != NULL) m_pClass = pClass;
-		else m_pClass = this;
-	}
+	void setSelectFun(void (* funSelectFun)(void *,int),void * pClass);
+	void setDClickFun(void (* funDClick)(void *,int),void * pClass);
 	void setWithMouseDrag(_XBool flag) {m_withMouseDrag = flag;}
 private:
 	void updateShowChange();					//根据列表框的变化信息更新列表框中的表格的显示情况
@@ -206,35 +206,50 @@ public:
 		//const _XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
 		const _XSlider &vSlider,	//垂直滑动条
 		const _XSlider &hSlider);	//水平滑动条
-	_XBool initEx(const _XVector2& position,		//空间所在的位置
-		const _XMultiListTexture &tex,		//控件的贴图
-		const _XFontUnicode &font,			//控件中使用的字体
-		float strSize,						//字体的缩放大小
-		int rowSum,					//控件中的列数
-		int lineSum,				//控件中的行数
+	_XBool initEx(const _XVector2& position,		//对上面接口的简化
+		const _XMultiListTexture &tex,		
+		const _XFontUnicode &font,			
+		float strSize,						
+		int rowSum,					
+		int lineSum,				
 		//const _XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
-		const _XSlider &vSlider,	//垂直滑动条
-		const _XSlider &hSlider);	//水平滑动条
+		const _XSlider &vSlider,	
+		const _XSlider &hSlider);
 	_XBool initPlus(const char * path,		//控件的贴图
 		const _XFontUnicode &font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum,				//控件中的行数
 		//const _XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//水平滑动条
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(const _XRect& area,
 		const _XFontUnicode &font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum);
+	_XBool initWithoutTex(const _XRect& area,
+		int rowSum,					//控件中的列数
+		int lineSum)
+	{
+		return initWithoutTex(area,XEE::systemFont,1.0f,rowSum,lineSum);
+	}
+	_XBool initWithoutTex(const _XVector2& pixelSize,
+		int rowSum,					//控件中的列数
+		int lineSum)
+	{
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			XEE::systemFont,1.0f,rowSum,lineSum);
+	}
 protected:
 	void draw();					//描绘函数
-	void drawUp(){};						//do nothing
+	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);					//对于鼠标动作的响应函数
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState){return XTrue;};	//do nothing
-	void insertChar(const char *ch,int len){;}
+	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y) {return XTrue;}
+	_XBool canLostFocus(float x,float y);
+	void setLostFocus();
 public:
 	_XBool exportData(const char *fileName = NULL);			//数据导出
 	_XBool importData(const char *fileName = NULL);			//数据导入
@@ -253,42 +268,15 @@ public:
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);			//设置尺寸
 
-	void setTextColor(const _XFColor& color) 
-	{
-		if(!m_isInited) return;
-		m_textColor = color;
-		m_caption.setColor(m_textColor);
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		if(!m_isInited) return;
-		m_color.setColor(r,g,b,a);
-		if(!m_withoutTex)
-		{
-			m_spriteBackGround.setColor(m_color);
-			m_spriteSelect.setColor(m_color);
-			m_spriteMove.setColor(m_color);
-		}
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		if(!m_isInited) return;
-		m_color.setA(a);
-		if(!m_withoutTex)
-		{
-			m_spriteBackGround.setColor(m_color);
-			m_spriteSelect.setColor(m_color);
-			m_spriteMove.setColor(m_color);
-		}
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 
 	_XMultiList();
-	~_XMultiList();
+	~_XMultiList(){release();}
 	void release();
 private:
 	void releaseTempMemory();	//释放不完整的内存空间
@@ -303,32 +291,19 @@ public:
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XMultiList(const _XMultiList &temp);
 	_XMultiList& operator = (const _XMultiList& temp);
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是对控件动态支持而定义的相关属性和方法
+private:
+	_XMultiListActionType m_actionType;
+	_XMoveData m_actionMD;
+	int m_actionPosition;	//当前动作的位置
+	void setAction(_XMultiListActionType type,int index);
+	//---------------------------------------------------------
 };
-inline _XBool _XMultiList::addALine()					//在末尾加入一行
-{
-	return setLineSum(m_tableLineSum + 1);
-}
-inline _XBool _XMultiList::addARow()					//在末尾加入一列
-{
-	return setRowSum(m_tableRowSum + 1);
-}
-inline _XBool _XMultiList::deleteSelectLine()			//删除选取的一行
-{
-	if(!m_isInited) return XFalse;
-	if(!m_haveSelect) return XFalse;
-	return deleteLine(m_selectLineOrder);
-}
-inline _XBool _XMultiList::moveUpLine(int order)		//将order行上移
-{
-	return moveDownLine(order - 1);
-}
-inline _XBool _XMultiList::moveLeftRow(int order)		//将order列左移
-{
-	return moveRightRow(order - 1);
-}
+#include "XMultiList.inl"
 
 #endif

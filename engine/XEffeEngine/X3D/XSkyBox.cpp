@@ -15,17 +15,17 @@ int _XSkyBox::init(const char *filename,_XResourcePosition resourcePosition)
 	strcpy(fileType,filename + strlen(filename) - 4);
 	//下面载入图片资源
 	sprintf(tempFilename + strlen(filename) - 7,"top%s",fileType);
-	if(m_texture[0].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[0].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"bottom%s",fileType);
-	if(m_texture[1].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[1].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"left%s",fileType);
-	if(m_texture[2].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[2].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"right%s",fileType);
-	if(m_texture[3].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[3].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"front%s",fileType);
-	if(m_texture[4].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[4].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"back%s",fileType);
-	if(m_texture[5].load(tempFilename,resourcePosition) == 0) return 0;
+	if(!m_texture[5].load(tempFilename,resourcePosition)) return 0;
 	m_isInited = 1;
 	return 1;
 }

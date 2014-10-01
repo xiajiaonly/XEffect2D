@@ -19,4 +19,11 @@ public:
 	virtual void update() = 0;
 	virtual int mapKey(int key) = 0;
 };
+//下面是关于多重采样的设置，方法来自于NEHE的例子
+#include "windows.h"
+extern bool	arbMultisampleSupported;
+extern int arbMultisampleFormat;
+//to check for our sampling
+extern bool initMultisample(HDC hdc);
+
 #endif

@@ -46,7 +46,7 @@ enum _XConfigDataType
 	CFG_DATA_TYPE_NULL,		//无效的配置项
 };
 
-#define CFG_MANAGER_W_SPACE (10.0f)
+#define CFG_MANAGER_W_SPACE (5.0f)
 #define CFG_MANAGER_H_SPACE (5.0f)
 #define CFG_MNG_H_FONT	(32.0f)
 #define CFG_MNG_H_SLD	(24.0f)
@@ -63,10 +63,9 @@ union _XConfigValue
 #define CFG_DEFAULT_GROUPNAME ("Default")
 //用户自定义控件的基类
 //如果用户需要自定义可被配置管理其管理的类，那么必须基于这个基类并实现相关接口
-class _XCFGItemBasic:public _XObjectBasic
+class _XCFGItemBasic:public _XObjectBasic,public _XBasicOprate
 {
 public:
-
 	virtual bool save(FILE *fp) = 0;	//保存当前数据
 	virtual bool load(FILE *fp) = 0;	//读取当前设置
 	virtual bool update() = 0;			//使得内部数据能体现在UI界面上
@@ -110,10 +109,7 @@ public:
 		static int ID = 0;
 		m_ID = ID ++;
 	}
-	~_XConfigItem()
-	{
-		XDELETE(m_pCtrl);
-	}
+	~_XConfigItem(){XDELETE(m_pCtrl);}
 	int getID()const {return m_ID;}
 	void setID(int ID){m_ID = ID;}
 };
@@ -153,8 +149,7 @@ public:
 		,m_name(CFG_DEFAULT_GROUPNAME)
 		,m_position(0.0f,0.0f)
 		,m_size(1.0f,1.0f)
-	{
-	}
+	{}
 };
 enum _XConfigMode
 {
@@ -180,6 +175,10 @@ protected:
 		,m_width(256.0f)
 		,m_nowInsertPos(0.0f,0.0f)
 		,m_configMode(CFG_MODE_NORMAL)
+//		,m_minuteIndex(-1)
+	//	,m_operateIndex(-1)	//没有动作
+		,m_textColor(0.0f,0.0f,0.0f,1.0f)
+		,m_isMouseDown(false)
 	{}
 	_XConfigManager(const _XConfigManager&);
 	_XConfigManager &operator= (const _XConfigManager&);
@@ -197,17 +196,20 @@ private:
 	std::vector<_XConfigGroup *> m_pGroups;	//组的列表
 
 	friend void callbackProc(void *pClass,int ID);	//回调函数
-	friend void callbackProcMD(void *pClass,int ID);	//鼠标按下事件的回调函数
+	//friend void callbackProcMD(void *pClass,int ID);	//鼠标按下事件的回调函数
 
 	_XVector2 m_position;
 	_XVector2 m_size;
 	float m_maxHeight;	//高度，这里只限制高度
 	float m_width;		//配置项的宽度
 	_XVector2 m_nowInsertPos;	//目前插入所在的位置
+	_XFColor m_textColor;	//字体的颜色
 
 	_XButton m_saveBtn;
 	_XButton m_loadBtn;
 	_XButton m_defaultBtn;
+	_XButton m_undoBtn;
+	_XButton m_redoBtn;
 	_XButton m_netUpdateBtn;	//从服务器同步配置信息
 	_XButton m_netInjectBtn;	//向服务器注入配置数据
 
@@ -239,15 +241,6 @@ private:
 	//从字符串中建立一个Item,返回这个item的指针和这个item原来的ID
 	bool createAItemFromStr(const unsigned char * str,int &offset,unsigned char *groupName,
 		std::vector<_XConfigItem *> *itemsList,std::vector<int> *itemsIDListD);
-//-----------------------------------------------------
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++
-//下面是关于微调按钮的实现
-	_XButton m_minuteBtn;	//微调按钮
-	int m_minuteTimer;		//微调按钮消失的计时器
-	int m_minuteIndex;		//微调按钮当前的位置
-	_XSlider m_minuteSld;	//微调进度条
-	_XBool m_minuteNeedRemove;	//是否需要移除微调
-	void updateMinuteSld();
 //-----------------------------------------------------
 private:
 	float m_maxRowWidth;					//当前的最大列宽
@@ -284,10 +277,10 @@ public:
 	{
 		if(!m_isInited) return;
 		m_size.set(x,y);
-		m_minuteBtn.setSize(x,y);
-		m_minuteSld.setSize(x,y);
 		relayout();	//重新布局
 	}
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
+	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 	void setMaxHeight(float h)
 	{
 		if(h < 1) h = 1;
@@ -324,7 +317,42 @@ public:
 	bool load(const char *filename = NULL){return loadEx(filename);}
 	bool loadEx(const char *filename = NULL);	//加强版的读取，如果出现文件错误依然最大限度的读取数据
 	void setDefault();	//恢复默认值
-
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是为了实现鼠标拖动而定义的变量
+private:
+	bool m_isMouseDown;		//是否鼠标按下
+	_XVector2 m_mousePos;	//鼠标按下的位置
+public:
+	_XBool mouseProc(float x,float y,_XMouseState mouseState)		//对于鼠标动作的响应函数
+	{//尚未完成
+		_XRect tmpRect(m_position.x,m_position.y,
+			m_position.x + 32.0f * m_size.x,m_position.y + 32.0f * m_size.y);
+		switch(mouseState)
+		{
+		case MOUSE_MOVE:
+			if(m_isMouseDown)
+			{//发生鼠标拖拽事件
+				_XVector2 tmp = _XVector2(x,y) - m_mousePos;
+				setPosition(m_position.x + tmp.x,m_position.y + tmp.y);
+				m_mousePos.set(x,y);
+				//if(!tmpRect.isInRect(x,y)) m_isMouseDown = false;
+			}
+			break;
+		case MOUSE_LEFT_BUTTON_DOWN:
+		case MOUSE_LEFT_BUTTON_DCLICK:
+			if(tmpRect.isInRect(x,y))
+			{
+				m_isMouseDown = true;
+				m_mousePos.set(x,y);
+			}
+			break;
+		case MOUSE_LEFT_BUTTON_UP:
+			m_isMouseDown = false;
+			break;
+		}
+		return XFalse;
+	}
+	//------------------------------------------------------------
 	_XConfigItem *getItemByID(int ID);			//通过ID获取配置项的指针
 	_XConfigItem *getItemByVariable(void *p);	//通过变量指针获得配置项的指针
 	_XConfigItem *getItemByName(const char *name,int start = 0);	//通过配置项的名称查找配置项，如果存在同名的配置项，则返回第一个
@@ -376,11 +404,13 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		pItem->m_rangeMin.valueI = (int)min;
 		pItem->m_rangeMax.valueI = (int)max;
 		{
-			_XSlider *pCtrl = createMem<_XSlider>();
+			_XSliderEx *pCtrl = createMem<_XSliderEx>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			pCtrl->initWithoutTex(_XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
 				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,_XVector2(0.0,16.0f));
 			pCtrl->setSize(m_size);
+			pCtrl->setTextColor(m_textColor);
 			if(name == NULL) pCtrl->setFontEx("%%.0f",XEE::systemFont,1.0f);
 			else
 			{
@@ -388,8 +418,9 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 				pCtrl->setFontEx(tempStr,XEE::systemFont,1.0f);
 			}
 
-			pCtrl->setCallbackFun(NULL,NULL,NULL,callbackProcMD,NULL,callbackProc,callbackProc,this);
+			pCtrl->setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,callbackProc,this);
 			pCtrl->setNowValue(* (int *)p);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -399,11 +430,13 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		pItem->m_rangeMin.valueI = (char)min;
 		pItem->m_rangeMax.valueI = (char)max;
 		{
-			_XSlider *pCtrl = createMem<_XSlider>();
+			_XSliderEx *pCtrl = createMem<_XSliderEx>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			pCtrl->initWithoutTex(_XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
 				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,_XVector2(0.0,16.0f));
 			pCtrl->setSize(m_size);
+			pCtrl->setTextColor(m_textColor);
 			if(name == NULL) pCtrl->setFontEx("%%.0f",XEE::systemFont,1.0f);
 			else
 			{
@@ -411,8 +444,9 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 				pCtrl->setFontEx(tempStr,XEE::systemFont,1.0f);
 			}
 
-			pCtrl->setCallbackFun(NULL,NULL,NULL,callbackProcMD,NULL,callbackProc,callbackProc,this);
+			pCtrl->setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,callbackProc,this);
 			pCtrl->setNowValue(* (char *)p);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -422,11 +456,13 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		pItem->m_rangeMin.valueI = (unsigned char)min;
 		pItem->m_rangeMax.valueI = (unsigned char)max;
 		{
-			_XSlider *pCtrl = createMem<_XSlider>();
+			_XSliderEx *pCtrl = createMem<_XSliderEx>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			pCtrl->initWithoutTex(_XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
 				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,_XVector2(0.0,16.0f));
 			pCtrl->setSize(m_size);
+			pCtrl->setTextColor(m_textColor);
 			if(name == NULL) pCtrl->setFontEx("%%.0f",XEE::systemFont,1.0f);
 			else
 			{
@@ -434,8 +470,9 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 				pCtrl->setFontEx(tempStr,XEE::systemFont,1.0f);
 			}
 
-			pCtrl->setCallbackFun(NULL,NULL,NULL,callbackProcMD,NULL,callbackProc,callbackProc,this);
+			pCtrl->setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,callbackProc,this);
 			pCtrl->setNowValue(* (unsigned char *)p);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -445,11 +482,13 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		pItem->m_rangeMin.valueF = (float)min;
 		pItem->m_rangeMax.valueF = (float)max;
 		{
-			_XSlider *pCtrl = createMem<_XSlider>();
+			_XSliderEx *pCtrl = createMem<_XSliderEx>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			pCtrl->initWithoutTex(_XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
 				pItem->m_rangeMax.valueF,pItem->m_rangeMin.valueF,SLIDER_TYPE_HORIZONTAL,_XVector2(0.0,16.0f));
 			pCtrl->setSize(m_size);
+			pCtrl->setTextColor(m_textColor);
 			if(name == NULL) pCtrl->setFontEx("%%.4f",XEE::systemFont,1.0f);
 			else
 			{
@@ -457,9 +496,11 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 				pCtrl->setFontEx(tempStr,XEE::systemFont,1.0f);
 			}
 
-			pCtrl->setCallbackFun(NULL,NULL,NULL,callbackProcMD,NULL,callbackProc,callbackProc,this);
-			pCtrl->setConnectVar((float *)p);
+			pCtrl->setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,callbackProc,this);
+			//这里不能连接数据，如果连接数据的话将会造成数据变化的时候调用回调函数的时候数据已经改变而不会执行回调函数中的相关代码
+			//pCtrl->setConnectVar((float *)p);
 			pCtrl->setNowValue(* (float *)p);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -471,6 +512,7 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		{
 			_XCheck *pCtrl = createMem<_XCheck>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			if(name == NULL) pCtrl->initWithoutTex(" ",XEE::systemFont,1.0f,_XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
 				_XVector2(CFG_MNG_H_FONT,CFG_MNG_H_FONT * 0.5f));
 			else pCtrl->initWithoutTex(name,XEE::systemFont,1.0f,_XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
@@ -478,8 +520,10 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 			pCtrl->setSize(m_size);
 			pCtrl->setCallbackFun(NULL,NULL,NULL,NULL,NULL,callbackProc,this);
 			pCtrl->setConnectVar((_XBool *)p);
+			pCtrl->setTextColor(m_textColor);
 			if(*(_XBool *)p) pCtrl->setState(XTrue);
 			else pCtrl->setState(XFalse);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -491,12 +535,15 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		{
 			_XRadios *pCtrl = createMem<_XRadios>();
 			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
 			pCtrl->initWithoutTex(1,_XVector2(0.0f,CFG_MNG_H_FONT + 2.0f),_XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),XEE::systemFont,1.0f,
 				_XVector2(CFG_MNG_H_FONT + 2.0f,CFG_MNG_H_FONT * 0.5f));
 			pCtrl->setRadiosText(name);
 			pCtrl->setSize(m_size);
+			pCtrl->setTextColor(m_textColor);
 			pCtrl->setCallbackFun(callbackProc,this);
 			pCtrl->setChoosed(*(int *)p);
+			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
@@ -512,7 +559,7 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 		if(pItem->m_pCtrl != NULL) 
 		{
 			gp->m_group.pushChild(pItem->m_pCtrl);
-			if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_pCtrl->disVisiable();
+			if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_pCtrl->disVisible();
 		}
 		relayout();
 	}else
@@ -524,7 +571,7 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 			if(pItem->m_pCtrl != NULL) 
 			{
 				gp->m_group.pushChild(pItem->m_pCtrl);
-				if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_pCtrl->disVisiable();
+				if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_pCtrl->disVisible();
 			}
 			relayout();
 		}
@@ -532,4 +579,5 @@ int _XConfigManager::addAItem(T *p,_XConfigDataType type,const char * name,
 	return pItem->getID();
 }
 
+#define _XCFGManager _XConfigManager::GetInstance()
 #endif

@@ -5,7 +5,7 @@
 //--------------------------------
 #include "XMatrix3x3.h"
 #include "XMatrix2x2.h"
-
+const _XMatrix3x3 _XMatrix3x3::identity(1.0f,0.0f,0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,1.0f);	//µ•Œªæÿ’Û
 _XMatrix3x3 _XMatrix3x3::inverse()
 {
 	_XMatrix3x3 ret;

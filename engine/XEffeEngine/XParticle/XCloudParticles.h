@@ -53,9 +53,9 @@ inline void _XCloudParticles::release()
 
 inline void _XCloudParticles::setEnd()
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
-	if(m_isSetEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0 ||
+		m_isSetEnd != 0) return;
 	m_isSetEnd = 1;
 }
 

@@ -30,6 +30,7 @@ public:
 	void getHsb(float& hue, float& saturation, float& brightness) const;
 	float getHue() const;
 	float limit() const {return 255.0f;}
+	_XCColor anti(){return _XCColor(255 - r,255 - g,255 - b,a);}
 	static const _XCColor white, gray, black, red, green, blue, cyan, magenta,
         yellow,aliceBlue,antiqueWhite,aqua,aquamarine,azure,beige,bisque,blanchedAlmond,
         blueViolet,brown,burlyWood,cadetBlue,chartreuse,chocolate,coral,cornflowerBlue,cornsilk,

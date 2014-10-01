@@ -6,86 +6,84 @@
 #include "XMultiList.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-#include "XResourcePack.h"
-#include "XResourceManager.h"
 
-void funMutiListValueChangeV(void *pClass,int objectID)
+void funMutiListValueChangeV(void *pClass,int)
 {
-	_XMultiList *pPar = (_XMultiList *)pClass;
-	int temp = pPar->m_verticalSlider.getNowValue();
-	if(temp != pPar->m_showStartLine)
+	_XMultiList &pPar = *(_XMultiList *)pClass;
+	int temp = pPar.m_verticalSlider.getNowValue();
+	if(temp != pPar.m_showStartLine)
 	{
-		pPar->m_showStartLine = temp;
-		pPar->updateSelectLine();
-		pPar->updateShowChange();
-		pPar->m_verticalSlider.setNowValue(temp);
+		pPar.m_showStartLine = temp;
+		pPar.updateSelectLine();
+		pPar.updateShowChange();
+		pPar.m_verticalSlider.setNowValue(temp);
 	}else
 	{//Î¢Á¿ÒÆ¶¯Ê±ºòµÄ´¦Àí
-		if(pPar->m_verticalSlider.getNowValue() > pPar->m_showStartLine)
+		if(pPar.m_verticalSlider.getNowValue() > pPar.m_showStartLine)
 		{
-			temp += 1;
-			pPar->m_showStartLine = temp;
-			pPar->updateSelectLine();
-			pPar->updateShowChange();
-			pPar->m_verticalSlider.setNowValue(temp);
+			++ temp;
+			pPar.m_showStartLine = temp;
+			pPar.updateSelectLine();
+			pPar.updateShowChange();
+			pPar.m_verticalSlider.setNowValue(temp);
 		}else
-		if(pPar->m_verticalSlider.getNowValue() < pPar->m_showStartLine)
+		if(pPar.m_verticalSlider.getNowValue() < pPar.m_showStartLine)
 		{
-			temp -= 1;
-			pPar->m_showStartLine = temp;
-			pPar->updateSelectLine();
-			pPar->updateShowChange();
-			pPar->m_verticalSlider.setNowValue(temp);
+			-- temp;
+			pPar.m_showStartLine = temp;
+			pPar.updateSelectLine();
+			pPar.updateShowChange();
+			pPar.m_verticalSlider.setNowValue(temp);
 		}
 	}
 }
-void funMutiListValueChangeMoveV(void *pClass,int objectID)
+void funMutiListValueChangeMoveV(void *pClass,int)
 {
-	_XMultiList *pPar = (_XMultiList *)pClass;
-	int temp = pPar->m_verticalSlider.getNowValue();
-	if(temp != pPar->m_showStartLine)
+	_XMultiList &pPar = *(_XMultiList *)pClass;
+	int temp = pPar.m_verticalSlider.getNowValue();
+	if(temp != pPar.m_showStartLine)
 	{
 		//ĞèÒª¸üĞÂ´¹Ö±Æ¬Ñ¡µÄÇé¿ö
-		pPar->m_showStartLine = temp;
-		pPar->updateSelectLine();
-		pPar->updateShowChange();
+		pPar.m_showStartLine = temp;
+		pPar.updateSelectLine();
+		pPar.updateShowChange();
 	}
 }
-void funMutiListValueChangeH(void *pClass,int objectID)
+void funMutiListValueChangeH(void *pClass,int)
 {
-	_XMultiList *pPar = (_XMultiList *)pClass;
-	int temp = pPar->m_horizontalSlider.getNowValue();
-	if(temp != pPar->m_showStartRow)
+	_XMultiList &pPar = *(_XMultiList *)pClass;
+	int temp = pPar.m_horizontalSlider.getNowValue();
+	if(temp != pPar.m_showStartRow)
 	{
-		pPar->m_showStartRow = temp;
-		pPar->updateShowChange();
-		pPar->m_horizontalSlider.setNowValue(temp);
+		pPar.m_showStartRow = temp;
+		pPar.updateShowChange();
+		pPar.m_horizontalSlider.setNowValue(temp);
 	}else
 	{
-		if(pPar->m_horizontalSlider.getNowValue() > pPar->m_showStartRow)
+		if(pPar.m_horizontalSlider.getNowValue() > pPar.m_showStartRow)
 		{
-			temp += 1;
-			pPar->m_showStartRow = temp;
-			pPar->updateShowChange();
-			pPar->m_horizontalSlider.setNowValue(temp);
+			++ temp;
+			pPar.m_showStartRow = temp;
+			pPar.updateShowChange();
+			pPar.m_horizontalSlider.setNowValue(temp);
 		}else
-		if(pPar->m_horizontalSlider.getNowValue() < pPar->m_showStartRow)
+		if(pPar.m_horizontalSlider.getNowValue() < pPar.m_showStartRow)
 		{
-			temp -= 1;
-			pPar->m_showStartRow = temp;
-			pPar->updateShowChange();
-			pPar->m_horizontalSlider.setNowValue(temp);
+			-- temp;
+			pPar.m_showStartRow = temp;
+			pPar.updateShowChange();
+			pPar.m_horizontalSlider.setNowValue(temp);
 		}
 	}
 }
-void funMutiListValueChangeMoveH(void *pClass,int objectID)
+void funMutiListValueChangeMoveH(void *pClass,int)
 {
-	_XMultiList *pPar = (_XMultiList *)pClass;
-	int temp = pPar->m_horizontalSlider.getNowValue();
-	if(temp != pPar->m_showStartRow)
+	_XMultiList &pPar = *(_XMultiList *)pClass;
+	int temp = pPar.m_horizontalSlider.getNowValue();
+	if(temp != pPar.m_showStartRow)
 	{
-		pPar->m_showStartRow = temp;
-		pPar->updateShowChange();
+		pPar.m_showStartRow = temp;
+		pPar.updateShowChange();
 	}
 }
 _XMultiListTexture::_XMultiListTexture()
@@ -96,12 +94,7 @@ _XMultiListTexture::_XMultiListTexture()
 ,mutiListMove(NULL)			//ÒÆ¶¯±êÌâÊ±µÄ¶ÔÆë±êÇ©
 ,mutiListTitle(NULL)			//¶àÁĞÁĞ±íµÄ±êÌâ±³¾°
 ,mutiListTitleEnd(NULL)		//¶àÁĞÁĞ±íµÄ±êÌâ·Ö¸ô·û
-{
-}
-_XMultiListTexture::~_XMultiListTexture()
-{
-	release();
-}
+{}
 _XBool _XMultiListTexture::init(const char *normal,const char *disable,const char *select,const char *move,
 							const char *title,const char *titleEnd,_XResourcePosition resoursePosition)
 {
@@ -126,32 +119,17 @@ _XBool _XMultiListTexture::init(const char *normal,const char *disable,const cha
 
 	if(ret == 0)
 	{
-		XDELETE(mutiListNormal);
-		XDELETE(mutiListDisable);
-		XDELETE(mutiListSelect);
-		XDELETE(mutiListMove);
-		XDELETE(mutiListTitle);
-		XDELETE(mutiListTitleEnd);
+		releaseTex();
 		return XFalse;
 	}
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XMultiListTexture::releaseTex()
-{
-	XDELETE(mutiListNormal);
-	XDELETE(mutiListDisable);
-	XDELETE(mutiListSelect);
-	XDELETE(mutiListMove);
-	XDELETE(mutiListTitle);
-	XDELETE(mutiListTitleEnd);
-}
 #define MULTILIST_CONFIG_FILENAME ("MultiList.txt")
 _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resoursePosition)
 {
-	if(m_isInited) return XFalse;
-	if(filename == NULL) return XFalse;
+	if(m_isInited || filename == NULL) return XFalse;
 	char tempFilename[MAX_FILE_NAME_LENGTH];
 	sprintf(tempFilename,"%s/%s",filename,MULTILIST_CONFIG_FILENAME);
 	//ÏÈ´ò¿ªÅäÖÃÎÄ¼ş
@@ -159,18 +137,18 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
 	{//Íâ²¿×ÊÔ´
 		FILE *fp = NULL;
-		if((fp = fopen(tempFilename,"r")) == 0) return XFalse; //ĞÅÏ¢ÎÄ¼ş¶ÁÈ¡Ê§°Ü
+		if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //ĞÅÏ¢ÎÄ¼ş¶ÁÈ¡Ê§°Ü
 		//ÏÂÃæ¿ªÊ¼ÒÀ´Î¶ÁÈ¡Êı¾İ
 		int flag = 0;
 		char resFilename[MAX_FILE_NAME_LENGTH] = "";
 		//normal
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListNormal = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -178,14 +156,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//down
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			releaseTex();
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListDisable = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -194,14 +172,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//on
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			releaseTex();
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListSelect = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -210,14 +188,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			releaseTex();
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListMove = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -226,14 +204,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			releaseTex();
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListTitle = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -242,14 +220,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		fscanf(fp,"%d:",&flag);
+		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			releaseTex();
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%s",resFilename);
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListTitleEnd = createATextureData(tempFilename,resoursePosition)) == NULL)
 		{//×ÊÔ´¶ÁÈ¡Ê§°Ü
@@ -259,7 +237,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 		}
 		//¶ÁÈ¡Á½×éÊı¾İ
 		int l,t,r,b;
-		fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b);
+		if(fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {fclose(fp);return XFalse;}
 		m_mouseRect.set(l,t,r,b);
 		//ËùÓĞÊı¾İ¶ÁÈ¡Íê³É
 		fclose(fp);
@@ -272,14 +250,14 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 		char resFilename[MAX_FILE_NAME_LENGTH] = "";
 		int offset = 0;
 		//normal
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListNormal = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -288,7 +266,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//down
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
@@ -296,7 +274,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListDisable = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -306,7 +284,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//on
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
@@ -314,7 +292,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListSelect = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -324,7 +302,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
@@ -332,7 +310,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListMove = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -342,7 +320,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
@@ -350,7 +328,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListTitle = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -360,7 +338,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			return XFalse;
 		}
 		//disable
-		sscanf((char *)(p + offset),"%d:",&flag);
+		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(flag == 0)
 		{//Ã»ÓĞÆÕÍ¨×´Ì¬ÊÇ²»ĞĞµÄ
@@ -368,7 +346,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%s",resFilename);
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		sprintf(tempFilename,"%s/%s",filename,resFilename);
 		if((mutiListTitleEnd = createATextureData(tempFilename,resoursePosition)) == NULL)
@@ -379,7 +357,7 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 		}
 		//¶ÁÈ¡Á½×éÊı¾İ
 		int l,t,r,b;
-		sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b);
+		if(sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),'\n') + 1;
 		m_mouseRect.set(l,t,r,b);
 		//ËùÓĞÊı¾İ¶ÁÈ¡Íê³É
@@ -387,17 +365,6 @@ _XBool _XMultiListTexture::initEx(const char *filename,_XResourcePosition resour
 	}
 	m_isInited = XTrue;
 	return XTrue;
-}
-void _XMultiListTexture::release()
-{
-	if(!m_isInited) return;
-	XDELETE(mutiListNormal);
-	XDELETE(mutiListDisable);
-	XDELETE(mutiListSelect);
-	XDELETE(mutiListMove);
-	XDELETE(mutiListTitle);
-	XDELETE(mutiListTitleEnd);
-	m_isInited = XFalse;
 }
 _XMultiList::_XMultiList()
 :m_isInited(XFalse)					//ÊÇ·ñ³õÊ¼»¯
@@ -419,11 +386,9 @@ _XMultiList::_XMultiList()
 ,m_withoutTex(XFalse)
 ,m_funSelectFun(NULL)
 ,m_withMouseDrag(XTrue)
+,m_funDClick(NULL)
 {
-}
-_XMultiList::~_XMultiList()
-{
-	release();
+	m_ctrlType = CTRL_OBJ_MUTILIST;
 }
 void _XMultiList::releaseTempMemory()
 {
@@ -467,9 +432,9 @@ void _XMultiList::release()
 	if(!m_isInited) return;
 	releaseTempMemory();
 
-	_XControlManager::GetInstance().decreaseAObject(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 	if(m_resInfo != NULL)
 	{
@@ -517,7 +482,7 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 	m_size.set(1.0f,1.0f);
 	m_caption.setACopy(font);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+	_XObjManger.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
@@ -530,7 +495,7 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 
 	m_spriteBackGround.init(m_mutiListNormal->texture.m_w,m_mutiListNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
+	_XObjManger.decreaseAObject(&m_spriteBackGround);
 #endif
 	m_spriteBackGround.setPosition(m_position);
 	m_spriteBackGround.setSize(m_size);
@@ -538,14 +503,14 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 
 	m_spriteSelect.init(m_mutiListSelect->texture.m_w,m_mutiListSelect->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteSelect);
+	_XObjManger.decreaseAObject(&m_spriteSelect);
 #endif
 	m_spriteSelect.setSize(m_size);
 	m_spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
 
 	m_spriteMove.init(m_mutiListMove->texture.m_w,m_mutiListMove->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
+	_XObjManger.decreaseAObject(&m_spriteMove);
 #endif
 	m_spriteMove.setSize(m_size);
 	m_spriteMove.setIsTransformCenter(POINT_LEFT_TOP);
@@ -558,25 +523,27 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 
 	m_needShowVSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 	m_verticalSlider.setACopy(vSlider);		//´¹Ö±»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 
 	m_needShowHSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 	m_horizontalSlider.setACopy(hSlider);	//Ë®Æ½»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 
 	m_tableRowSum = rowSum;		//±í¸ñÖĞµÄÁĞÊı
 	//ÎªÁĞµÄÁ´±í·ÖÅäÄÚ´æ¿Õ¼ä
@@ -586,14 +553,15 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 	}else
 	{
 		m_tableRow = createMem<_XMultiListOneRow>();
-		if(m_tableRow == NULL) return 0;
+		if(m_tableRow == NULL) return XFalse;
 
 		m_tableRow->isEnable = XTrue;
 
 		m_tableRow->order = 0;
 		m_tableRow->text.setACopy(m_caption);
+		m_tableRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->text));
+		_XObjManger.decreaseAObject(&(m_tableRow->text));
 #endif
 		m_tableRow->text.setSize(m_size * m_fontSize);
 		m_tableRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -602,14 +570,14 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 		m_tableRow->text.setPosition(m_tableRow->position.x,m_tableRow->position.y);
 		m_tableRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitle));
+		_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitle));
 #endif
 		m_tableRow->m_spriteTitle.setPosition(m_tableRow->position);
 		m_tableRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 		m_tableRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 		m_tableRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
+		_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
 #endif
 		m_tableRow->m_spriteTitleEnd.setPosition(m_tableRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 			m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
@@ -620,7 +588,7 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 
 		m_tableRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 		m_tableRow->title = NULL;
-		setTileStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+		setTitleStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 		m_tableRow->isShow = 1;
 
 		m_tableRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
@@ -634,13 +602,14 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 			if(tempRow->nextRow == NULL) 
 			{
 				releaseTempMemory();
-				return 0;
+				return XFalse;
 			}
 			tempRow->nextRow->isEnable = XTrue;
 			tempRow->nextRow->order = i;
 			tempRow->nextRow->text.setACopy(m_caption);
+			tempRow->nextRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->text));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->text));
 #endif
 			tempRow->nextRow->text.setSize(m_size * m_fontSize);
 			tempRow->nextRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -649,14 +618,14 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 			tempRow->nextRow->text.setPosition(tempRow->nextRow->position.x,tempRow->nextRow->position.y);
 			tempRow->nextRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitle));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->m_spriteTitle));
 #endif
 			tempRow->nextRow->m_spriteTitle.setPosition(tempRow->nextRow->position);
 			tempRow->nextRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 			tempRow->nextRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 			tempRow->nextRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitleEnd));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->m_spriteTitleEnd));
 #endif
 			tempRow->nextRow->m_spriteTitleEnd.setPosition(tempRow->nextRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 				m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
@@ -667,7 +636,7 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 
 			tempRow->nextRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 			tempRow->nextRow->title = NULL;
-			setTileStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+			setTitleStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 			tempRow->nextRow->isShow = 1;
 			tempRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
 			tempRow->left = 0;						//×ó±ßµÄÇĞ¸îÎ»ÖÃ
@@ -697,14 +666,15 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 		if(m_tableBox == NULL)
 		{
 			releaseTempMemory();
-			return 0;
+			return XFalse;
 		}
 		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
+		m_tableBox->isShow = XTrue;
 		m_tableBox->order.set(0,0);
 		m_tableBox->text.setACopy(m_caption);
+		m_tableBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
+		_XObjManger.decreaseAObject(&(m_tableBox->text));
 #endif
 		m_tableBox->text.setSize(m_size * m_fontSize);
 		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
@@ -734,11 +704,12 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 				tempBox = tempBox->nextBox;
 				tempBox->isEnable = XTrue;
 				
-				tempBox->isShow = 1;
+				tempBox->isShow = XTrue;
 				tempBox->order.set(j,i);
 				tempBox->text.setACopy(m_caption);
+				tempBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().decreaseAObject(&(tempBox->text));
+				_XObjManger.decreaseAObject(&(tempBox->text));
 #endif
 				tempBox->text.setSize(m_size * m_fontSize);
 				tempBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -754,301 +725,13 @@ _XBool _XMultiList::init(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
 	m_mouseLeftButtonDown = XFalse;
 	m_mouseMoveDown = XFalse;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTILIST);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
-#endif
-	m_isInited = XTrue;
-	updateShowChange();
-	updateSliderState();
-	return XTrue;
-}
-_XBool _XMultiList::initEx(const _XVector2& position,		//¿Õ¼äËùÔÚµÄÎ»ÖÃ
-	const _XMultiListTexture &tex,		//¿Ø¼şµÄÌùÍ¼
-	const _XFontUnicode &font,			//¿Ø¼şÖĞÊ¹ÓÃµÄ×ÖÌå
-	float strSize,						//×ÖÌåµÄËõ·Å´óĞ¡
-	int rowSum,					//¿Ø¼şÖĞµÄÁĞÊı
-	int lineSum,				//¿Ø¼şÖĞµÄĞĞÊı
-	//const _XMouseRightButtonMenu& mouseMenu,	//¿Ø¼şÖĞÊ¹ÓÃµÄÓÒ¼ü²Ëµ¥(Ä¿Ç°ÎŞĞ§)
-	const _XSlider &vSlider,	//´¹Ö±»¬¶¯Ìõ
-	const _XSlider &hSlider)	//Ë®Æ½»¬¶¯Ìõ
-{
-	if(m_isInited) return XFalse;	//ÖØ¸´³õÊ¼»¯
-	//ÏÂÃæÊÇ²ÎÊı¼ì²é
-	if(tex.m_mouseRect.getWidth() <= 0 || tex.m_mouseRect.getHeight() <= 0) return XFalse;	//ÊäÈë·¶Î§²»ÄÜÎª¿Õ
-	if(tex.mutiListDisable == NULL || tex.mutiListMove == NULL || tex.mutiListNormal == NULL
-		|| tex.mutiListSelect == NULL || tex.mutiListTitle == NULL || tex.mutiListTitleEnd == NULL)
-	{//ĞèÒªµÄÌùÍ¼²»ÍêÕû
-		return XFalse;
-	}
-	if(rowSum < 0 || lineSum < 0 || (rowSum == 0 && lineSum > 0))
-	{//²»ÄÜÎª¸ºÊı
-		return XFalse;
-	}
-	if(rowSum > MUTILIST_MAX_ROW_SUM) return XFalse;
-	//ÏÂÃæ¿ªÊ¼¸³Öµ
-	m_position = position;
-	m_mouseRect = tex.m_mouseRect;
-	m_withoutTex = XFalse;
-
-	m_mutiListNormal = tex.mutiListNormal;			//¶àÁĞÁĞ±íµÄÆÕÍ¨×´Ì¬
-	m_mutiListDisable = tex.mutiListDisable;			//¶àÁĞÁĞ±íµÄÎŞĞ§×´Ì¬
-	m_mutiListSelect = tex.mutiListSelect;			//¶àÁĞÁĞ±íÖĞ±»Ñ¡ÖĞĞĞµÄ±³¾°
-	m_mutiListMove = tex.mutiListMove;			//ÒÆ¶¯±êÌâÊ±µÄ¶ÔÆë±êÇ©
-	m_mutiListTitle = tex.mutiListTitle;			//¶àÁĞÁĞ±íµÄ±êÌâ±³¾°
-	m_mutiListTitleEnd = tex.mutiListTitleEnd;		//¶àÁĞÁĞ±íµÄ±êÌâ·Ö¸ô·û
-
-	m_size.set(1.0f,1.0f);
-	m_caption.setACopy(font);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
-#endif
-	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
-	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
-	m_caption.setColor(m_textColor);
-	m_fontSize.set(strSize,strSize);
-	m_caption.setSize(m_fontSize);
-	m_nowTextWidth = m_caption.getTextSize().x * m_caption.getSize().x * 0.5f;
-	m_nowTextHeight = m_caption.getTextSize().y * m_caption.getSize().y;
-
-	m_spriteBackGround.init(m_mutiListNormal->texture.m_w,m_mutiListNormal->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
-#endif
-	m_spriteBackGround.setPosition(m_position);
-	m_spriteBackGround.setSize(m_size);
-	m_spriteBackGround.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_spriteSelect.init(m_mutiListSelect->texture.m_w,m_mutiListSelect->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteSelect);
-#endif
-	m_spriteSelect.setSize(m_size);
-	m_spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_spriteMove.init(m_mutiListMove->texture.m_w,m_mutiListMove->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
-#endif
-	m_spriteMove.setSize(m_size);
-	m_spriteMove.setIsTransformCenter(POINT_LEFT_TOP);
-
-	m_haveSelect = XFalse;		//ÊÇ·ñÓĞÑ¡Ôñ
-	m_selectLineOrder = -1;	//Ñ¡ÔñµÄÊÇÄÄÒ»ĞĞ
-	m_showStartLine = 0;	//ÏÔÊ¾µÄÊÇ´ÓµÚ¼¸ĞĞ¿ªÊ¼µÄ
-	m_showStartRow = 0;		//ÏÔÊ¾´ÓµÚ¼¸ÁĞ¿ªÊ¼µÄ
-	m_needShowMove = XFalse;		//ÊÇ·ñĞèÒªÏÔÊ¾ÒÆ¶¯¶ÔÆëÌõ
-
-	m_needShowVSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
-	m_verticalSlider.setACopy(vSlider);		//´¹Ö±»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
-#endif
-	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-		m_position.y + m_mouseRect.top * m_size.y);
-	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
-
-	m_needShowHSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
-	m_horizontalSlider.setACopy(hSlider);	//Ë®Æ½»¬¶¯Ìõ
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
-#endif
-	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
-	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
-
-	m_tableRowSum = rowSum;		//±í¸ñÖĞµÄÁĞÊı
-	//ÎªÁĞµÄÁ´±í·ÖÅäÄÚ´æ¿Õ¼ä
-	if(m_tableRowSum == 0)
-	{
-		m_tableRow = NULL;
-	}else
-	{
-		m_tableRow = createMem<_XMultiListOneRow>();
-		if(m_tableRow == NULL) return 0;
-
-		m_tableRow->isEnable = XTrue;
-
-		m_tableRow->order = 0;
-		m_tableRow->text.setACopy(m_caption);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->text));
-#endif
-		m_tableRow->text.setSize(m_size * m_fontSize);
-		m_tableRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
-		m_tableRow->position.set(m_position.x + (m_mouseRect.left + MUTILIST_MIN_WIDTH * 0) * m_size.x,
-			m_position.y + m_mouseRect.top * m_size.y);
-		m_tableRow->text.setPosition(m_tableRow->position.x,m_tableRow->position.y);
-		m_tableRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitle));
-#endif
-		m_tableRow->m_spriteTitle.setPosition(m_tableRow->position);
-		m_tableRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
-		m_tableRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
-		m_tableRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
-#endif
-		m_tableRow->m_spriteTitleEnd.setPosition(m_tableRow->position.x + m_tableRow->pixSize.x * m_size.x - 
-			m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
-			m_tableRow->position.y);
-		m_tableRow->m_spriteTitleEnd.setSize(m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
-			m_tableRow->pixSize.y * m_size.y/m_mutiListTitle->textureSize.y);
-		m_tableRow->m_spriteTitleEnd.setIsTransformCenter(POINT_LEFT_TOP);
-
-		m_tableRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
-		m_tableRow->title = NULL;
-		setTileStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
-		m_tableRow->isShow = 1;
-
-		m_tableRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
-		m_tableRow->left = 0;						//×ó±ßµÄÇĞ¸îÎ»ÖÃ
-		m_tableRow->right = 0;					//ÓÒ±ßµÄÇĞ¸îÎ»ÖÃ
-
-		_XMultiListOneRow *tempRow = m_tableRow;
-		for(int i = 1;i < m_tableRowSum;++ i)
-		{
-			tempRow->nextRow = createMem<_XMultiListOneRow>();
-			if(tempRow->nextRow == NULL) 
-			{
-				releaseTempMemory();
-				return 0;
-			}
-			tempRow->nextRow->isEnable = XTrue;
-			tempRow->nextRow->order = i;
-			tempRow->nextRow->text.setACopy(m_caption);
-#if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->text));
-#endif
-			tempRow->nextRow->text.setSize(m_size * m_fontSize);
-			tempRow->nextRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
-			tempRow->nextRow->position.set(tempRow->position.x + tempRow->pixSize.x * m_size.x,
-				m_position.y + m_mouseRect.top * m_size.y);
-			tempRow->nextRow->text.setPosition(tempRow->nextRow->position.x,tempRow->nextRow->position.y);
-			tempRow->nextRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
-#if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitle));
-#endif
-			tempRow->nextRow->m_spriteTitle.setPosition(tempRow->nextRow->position);
-			tempRow->nextRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
-			tempRow->nextRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
-			tempRow->nextRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
-#if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitleEnd));
-#endif
-			tempRow->nextRow->m_spriteTitleEnd.setPosition(tempRow->nextRow->position.x + m_tableRow->pixSize.x * m_size.x - 
-				m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
-				m_tableRow->position.y);
-			tempRow->nextRow->m_spriteTitleEnd.setSize(m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
-				m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y);
-			tempRow->nextRow->m_spriteTitleEnd.setIsTransformCenter(POINT_LEFT_TOP);
-
-			tempRow->nextRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
-			tempRow->nextRow->title = NULL;
-			setTileStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
-			tempRow->nextRow->isShow = 1;
-			tempRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
-			tempRow->left = 0;						//×ó±ßµÄÇĞ¸îÎ»ÖÃ
-			tempRow->right = 0;					//ÓÒ±ßµÄÇĞ¸îÎ»ÖÃ
-
-			tempRow = tempRow->nextRow;
-			//×¢ÒâÕâÀïÃ»ÓĞ¼ì²éÄÚ´æ·ÖÅäÊ§°Ü
-		}
-		tempRow->nextRow = NULL;	//×îºóÒ»¸ö½áÎ²
-	}
-	m_tableLineSum = lineSum;		//±í¸ñÖĞµÄĞĞÊı
-	//¼ÆËã¿Ø¼şÖĞÄÜÏÔÊ¾µÄĞĞÊı
-	m_showPixWidth = (m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x;
-	m_showPixHight = (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight() - m_mutiListTitle->textureSize.y) * m_size.y;
-	m_canShowLineSum = m_showPixHight / m_nowTextHeight;
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
-	m_spriteSelect.setSize((float)m_showPixWidth / m_mutiListSelect->textureSize.x,m_nowTextHeight / m_mutiListSelect->textureSize.y);
-	//ÎªÔªËØ·ÖÅäÄÚ´æ¿Õ¼ä
-	if(m_tableLineSum == 0)
-	{
-		m_tableBox = NULL;
-	}else
-	{
-		m_tableBox = createMem<_XMultiListOneBox>();
-		if(m_tableBox == NULL)
-		{
-			releaseTempMemory();
-			return 0;
-		}
-		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
-		m_tableBox->order.set(0,0);
-		m_tableBox->text.setACopy(m_caption);
-#if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
-#endif
-		m_tableBox->text.setSize(m_size * m_fontSize);
-		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
-		m_tableBox->string = NULL;
-		setBoxStr("Line",0,0);
-
-		_XMultiListOneBox *tempBox = m_tableBox;
-		int i,j;
-		_XMultiListOneRow *tempRow;
-		for(i = 0;i < m_tableLineSum;++ i)
-		{
-			tempRow = m_tableRow;
-			for(j = 0;j < m_tableRowSum;++ j)
-			{
-				if(j == 0 && i == 0) 
-				{
-					tempRow = tempRow->nextRow;
-					//tempBox = tempBox->nextBox;
-					continue;
-				}
-				tempBox->nextBox = createMem<_XMultiListOneBox>();
-				if(tempBox->nextBox == NULL) 
-				{
-					releaseTempMemory();
-					return 0;
-				}
-				tempBox = tempBox->nextBox;
-				tempBox->isEnable = XTrue;
-				
-				tempBox->isShow = 1;
-				tempBox->order.set(j,i);
-				tempBox->text.setACopy(m_caption);
-#if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().decreaseAObject(&(tempBox->text));
-#endif
-				tempBox->text.setSize(m_size * m_fontSize);
-				tempBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
-				tempBox->string = NULL;
-				setBoxStr("Line",i,j);
-				
-				tempRow = tempRow->nextRow;
-				//×¢ÒâÕâÀïÃ»ÓĞ¼ì²éÄÚ´æ·ÖÅäÊ§°Ü
-			}
-		}
-		tempBox->nextBox = NULL;	//×îºóÒ»¸ö½áÎ²
-	}
-	m_mouseLeftButtonDown = XFalse;
-	m_mouseMoveDown = XFalse;
-
-	m_isVisiable = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTILIST);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	updateShowChange();
@@ -1092,7 +775,7 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 	m_size.set(1.0f,1.0f);
 	m_caption.setACopy(font);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+	_XObjManger.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
@@ -1105,7 +788,7 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 
 	m_spriteBackGround.init(m_mutiListNormal->texture.m_w,m_mutiListNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteBackGround);
+	_XObjManger.decreaseAObject(&m_spriteBackGround);
 #endif
 	m_spriteBackGround.setPosition(m_position);
 	m_spriteBackGround.setSize(m_size);
@@ -1113,14 +796,14 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 
 	m_spriteSelect.init(m_mutiListSelect->texture.m_w,m_mutiListSelect->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteSelect);
+	_XObjManger.decreaseAObject(&m_spriteSelect);
 #endif
 	m_spriteSelect.setSize(m_size);
 	m_spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
 
 	m_spriteMove.init(m_mutiListMove->texture.m_w,m_mutiListMove->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_spriteMove);
+	_XObjManger.decreaseAObject(&m_spriteMove);
 #endif
 	m_spriteMove.setSize(m_size);
 	m_spriteMove.setIsTransformCenter(POINT_LEFT_TOP);
@@ -1136,27 +819,29 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 	char tempPath[MAX_FILE_NAME_LENGTH];
 	sprintf(tempPath,"%s/SliderV",path);
 	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resoursePosition);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 
 	m_needShowHSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 	//m_horizontalSlider.setACopy(hSlider);	//Ë®Æ½»¬¶¯Ìõ
 	sprintf(tempPath,"%s/SliderH",path);
 	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resoursePosition);
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 
 	m_tableRowSum = rowSum;		//±í¸ñÖĞµÄÁĞÊı
 	//ÎªÁĞµÄÁ´±í·ÖÅäÄÚ´æ¿Õ¼ä
@@ -1166,14 +851,15 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 	}else
 	{
 		m_tableRow = createMem<_XMultiListOneRow>();
-		if(m_tableRow == NULL) return 0;
+		if(m_tableRow == NULL) return XFalse;
 
 		m_tableRow->isEnable = XTrue;
 
 		m_tableRow->order = 0;
 		m_tableRow->text.setACopy(m_caption);
+		m_tableRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->text));
+		_XObjManger.decreaseAObject(&(m_tableRow->text));
 #endif
 		m_tableRow->text.setSize(m_size * m_fontSize);
 		m_tableRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -1182,14 +868,14 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 		m_tableRow->text.setPosition(m_tableRow->position.x,m_tableRow->position.y);
 		m_tableRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitle));
+		_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitle));
 #endif
 		m_tableRow->m_spriteTitle.setPosition(m_tableRow->position);
 		m_tableRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 		m_tableRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 		m_tableRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
+		_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
 #endif
 		m_tableRow->m_spriteTitleEnd.setPosition(m_tableRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 			m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
@@ -1200,7 +886,7 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 
 		m_tableRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 		m_tableRow->title = NULL;
-		setTileStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+		setTitleStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 		m_tableRow->isShow = 1;
 
 		m_tableRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
@@ -1214,13 +900,14 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 			if(tempRow->nextRow == NULL) 
 			{
 				releaseTempMemory();
-				return 0;
+				return XFalse;
 			}
 			tempRow->nextRow->isEnable = XTrue;
 			tempRow->nextRow->order = i;
 			tempRow->nextRow->text.setACopy(m_caption);
+			tempRow->nextRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->text));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->text));
 #endif
 			tempRow->nextRow->text.setSize(m_size * m_fontSize);
 			tempRow->nextRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -1229,14 +916,14 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 			tempRow->nextRow->text.setPosition(tempRow->nextRow->position.x,tempRow->nextRow->position.y);
 			tempRow->nextRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitle));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->m_spriteTitle));
 #endif
 			tempRow->nextRow->m_spriteTitle.setPosition(tempRow->nextRow->position);
 			tempRow->nextRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 			tempRow->nextRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 			tempRow->nextRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->m_spriteTitleEnd));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->m_spriteTitleEnd));
 #endif
 			tempRow->nextRow->m_spriteTitleEnd.setPosition(tempRow->nextRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 				m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
@@ -1247,7 +934,7 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 
 			tempRow->nextRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 			tempRow->nextRow->title = NULL;
-			setTileStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+			setTitleStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 			tempRow->nextRow->isShow = 1;
 			tempRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
 			tempRow->left = 0;						//×ó±ßµÄÇĞ¸îÎ»ÖÃ
@@ -1277,14 +964,15 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 		if(m_tableBox == NULL)
 		{
 			releaseTempMemory();
-			return 0;
+			return XFalse;
 		}
 		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
+		m_tableBox->isShow = XTrue;
 		m_tableBox->order.set(0,0);
 		m_tableBox->text.setACopy(m_caption);
+		m_tableBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
+		_XObjManger.decreaseAObject(&(m_tableBox->text));
 #endif
 		m_tableBox->text.setSize(m_size * m_fontSize);
 		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
@@ -1309,16 +997,17 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 				if(tempBox->nextBox == NULL) 
 				{
 					releaseTempMemory();
-					return 0;
+					return XFalse;
 				}
 				tempBox = tempBox->nextBox;
 				tempBox->isEnable = XTrue;
 				
-				tempBox->isShow = 1;
+				tempBox->isShow = XTrue;
 				tempBox->order.set(j,i);
 				tempBox->text.setACopy(m_caption);
+				tempBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().decreaseAObject(&(tempBox->text));
+				_XObjManger.decreaseAObject(&(tempBox->text));
 #endif
 				tempBox->text.setSize(m_size * m_fontSize);
 				tempBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -1334,13 +1023,13 @@ _XBool _XMultiList::initPlus(const char * path,		//¿Ø¼şµÄÌùÍ¼
 	m_mouseLeftButtonDown = XFalse;
 	m_mouseMoveDown = XFalse;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTILIST);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	updateShowChange();
@@ -1365,7 +1054,7 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 	m_size.set(1.0f,1.0f);
 	m_caption.setACopy(font);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+	_XObjManger.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //ÉèÖÃ×ÖÌå×ó¶ÔÆë
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //ÉèÖÃ×ÖÌåÉÏ¶ÔÆë
@@ -1383,28 +1072,30 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 	m_needShowMove = XFalse;		//ÊÇ·ñĞèÒªÏÔÊ¾ÒÆ¶¯¶ÔÆëÌõ
 
 	m_needShowVSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
-//	m_verticalSlider.initWithoutTex(_XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),_XRect(0.0f,0.0f,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,_XVector2(0.0f,0.0f));
+//	m_verticalSlider.initWithoutTex(_XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),_XRect(0.0f,0.0f,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,_XVector2::zero);
 	m_verticalSlider.initWithoutTex(_XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),100.0f,0.0f,SLIDER_TYPE_VERTICAL);
-	_XControlManager::GetInstance().decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_verticalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_verticalSlider);
+	_XObjManger.decreaseAObject(&m_verticalSlider);
 #endif
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
-	m_verticalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setDataChangeCB(funMutiListValueChangeV,funMutiListValueChangeMoveV,this);
+	m_verticalSlider.setWithAction(XFalse);
 
 	m_needShowHSlider = XFalse;			//ÊÇ·ñĞèÒªÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
-//	m_horizontalSlider.initWithoutTex(_XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),_XRect(0.0f,0.0f,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,_XVector2(0.0f,0.0f));
+//	m_horizontalSlider.initWithoutTex(_XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),_XRect(0.0f,0.0f,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,_XVector2::zero);
 	m_horizontalSlider.initWithoutTex(_XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH));
-	_XControlManager::GetInstance().decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.decreaseAObject(&m_horizontalSlider);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_horizontalSlider);
+	_XObjManger.decreaseAObject(&m_horizontalSlider);
 #endif
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
 		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y);
 	m_horizontalSlider.setSize(m_size);
-	m_horizontalSlider.setCallbackFun(NULL,NULL,NULL,NULL,NULL,funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setDataChangeCB(funMutiListValueChangeH,funMutiListValueChangeMoveH,this);
+	m_horizontalSlider.setWithAction(XFalse);
 
 	m_tableRowSum = rowSum;		//±í¸ñÖĞµÄÁĞÊı
 	//ÎªÁĞµÄÁ´±í·ÖÅäÄÚ´æ¿Õ¼ä
@@ -1414,14 +1105,15 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 	}else
 	{
 		m_tableRow = createMem<_XMultiListOneRow>();
-		if(m_tableRow == NULL) return 0;
+		if(m_tableRow == NULL) return XFalse;
 
 		m_tableRow->isEnable = XTrue;
 
 		m_tableRow->order = 0;
 		m_tableRow->text.setACopy(m_caption);
+		m_tableRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->text));
+		_XObjManger.decreaseAObject(&(m_tableRow->text));
 #endif
 		m_tableRow->text.setSize(m_size * m_fontSize);
 		m_tableRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -1431,7 +1123,7 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 
 		m_tableRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 		m_tableRow->title = NULL;
-		setTileStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+		setTitleStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 		m_tableRow->isShow = 1;
 
 		m_tableRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
@@ -1445,13 +1137,14 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 			if(tempRow->nextRow == NULL) 
 			{
 				releaseTempMemory();
-				return 0;
+				return XFalse;
 			}
 			tempRow->nextRow->isEnable = XTrue;
 			tempRow->nextRow->order = i;
 			tempRow->nextRow->text.setACopy(m_caption);
+			tempRow->nextRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempRow->nextRow->text));
+			_XObjManger.decreaseAObject(&(tempRow->nextRow->text));
 #endif
 			tempRow->nextRow->text.setSize(m_size * m_fontSize);
 			tempRow->nextRow->pixSize.set(MUTILIST_MIN_WIDTH,m_nowTextHeight);
@@ -1461,7 +1154,7 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 
 			tempRow->nextRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 			tempRow->nextRow->title = NULL;
-			setTileStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+			setTitleStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 			tempRow->nextRow->isShow = 1;
 			tempRow->needChip = 0;					//ÊÇ·ñĞèÒªÇĞ¸î
 			tempRow->left = 0;						//×ó±ßµÄÇĞ¸îÎ»ÖÃ
@@ -1492,14 +1185,15 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 		if(m_tableBox == NULL)
 		{
 			releaseTempMemory();
-			return 0;
+			return XFalse;
 		}
 		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
+		m_tableBox->isShow = XTrue;
 		m_tableBox->order.set(0,0);
 		m_tableBox->text.setACopy(m_caption);
+		m_tableBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
+		_XObjManger.decreaseAObject(&(m_tableBox->text));
 #endif
 		m_tableBox->text.setSize(m_size * m_fontSize);
 		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
@@ -1524,16 +1218,17 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 				if(tempBox->nextBox == NULL) 
 				{
 					releaseTempMemory();
-					return 0;
+					return XFalse;
 				}
 				tempBox = tempBox->nextBox;
 				tempBox->isEnable = XTrue;
 				
-				tempBox->isShow = 1;
+				tempBox->isShow = XTrue;
 				tempBox->order.set(j,i);
 				tempBox->text.setACopy(m_caption);
+				tempBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-				_XObjectManager::GetInstance().decreaseAObject(&(tempBox->text));
+				_XObjManger.decreaseAObject(&(tempBox->text));
 #endif
 				tempBox->text.setSize(m_size * m_fontSize);
 				tempBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -1549,13 +1244,13 @@ _XBool _XMultiList::initWithoutTex(const _XRect& area,
 	m_mouseLeftButtonDown = XFalse;
 	m_mouseMoveDown = XFalse;
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_MUTILIST);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
+	_XCtrlManger.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	updateShowChange();
@@ -1594,7 +1289,7 @@ void _XMultiList::updateSliderState()				//¸ù¾İ±í¸ñµÄÇé¿ö£¬¸úĞÂ»¬¶¯ÌõµÄ×´Ì¬
 	/*	//·½°¸2:ĞèÒª³¬³öÏÔÊ¾·¶Î§²ÅÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 		_XMultiListOneRow *tempRow = m_tableRow;
 		int i = 0;
-		while(1)
+		while(true)
 		{
 			rowWidth[i] = tempRow->pixSize.x * m_size.x;
 			if(tempRow->nextRow == NULL)
@@ -1623,7 +1318,7 @@ void _XMultiList::updateSliderState()				//¸ù¾İ±í¸ñµÄÇé¿ö£¬¸úĞÂ»¬¶¯ÌõµÄ×´Ì¬
 		//	m_horizontalSlider.setRange(m_tableRowSum - 1,0);
 		}else
 		{
-			if(m_needShowHSlider != 0)
+			if(m_needShowHSlider)
 			{//´ÓÔ½½çµ½²»Ô½½ç£¬ĞèÒªÖØĞÂ³õÊ¼»¯Æ«ÒÆÁ¿
 				m_rowDx = 0;
 			}
@@ -1634,7 +1329,7 @@ void _XMultiList::updateSliderState()				//¸ù¾İ±í¸ñµÄÇé¿ö£¬¸úĞÂ»¬¶¯ÌõµÄ×´Ì¬
 		//·½°¸2:ĞèÒª³¬³öÏÔÊ¾·¶Î§²ÅÏÔÊ¾Ë®Æ½»¬¶¯Ìõ
 		_XMultiListOneRow *tempRow = m_tableRow;
 		int i = 0;
-		while(1)
+		while(true)
 		{
 			rowWidth[i] = tempRow->pixSize.x * m_size.x;
 			if(tempRow->nextRow == NULL) break;
@@ -1658,7 +1353,7 @@ void _XMultiList::updateSliderState()				//¸ù¾İ±í¸ñµÄÇé¿ö£¬¸úĞÂ»¬¶¯ÌõµÄ×´Ì¬
 			m_horizontalSlider.setRange(width - m_showPixWidth + MUTILIST_TITLE_EXPAND_LENGTH * m_size.x,0);	//×¢ÒâÕâÀïµÄ56ÊÇÓÃÓÚÀ©Õ¹µÄ
 		}else
 		{
-		//	if(m_needShowHSlider != 0)
+		//	if(m_needShowHSlider)
 		//	{//´ÓÔ½½çµ½²»Ô½½ç£¬ĞèÒªÖØĞÂ³õÊ¼»¯Æ«ÒÆÁ¿
 		//		m_rowDx = 0;
 		//	}
@@ -1668,7 +1363,72 @@ void _XMultiList::updateSliderState()				//¸ù¾İ±í¸ñµÄÇé¿ö£¬¸úĞÂ»¬¶¯ÌõµÄ×´Ì¬
 		}
 	}
 }
-void _XMultiList::setTileStr(const char *str,int order)
+void _XMultiList::setTitleStr(const char *str)
+{//Î´¾­¹ı²âÊÔ
+	if(str == NULL) return;
+	int index = 0;
+	int offset;
+	char *tmp = createArrayMem<char>(strlen(str) + 1);
+	strcpy(tmp,str);
+	for(int i = 0;i < m_tableRowSum;++ i)
+	{
+		if(index == 0) offset = getCharPosition(tmp + index,';');
+		else offset = getCharPosition(tmp + index + 1,';');
+		if(offset > 0)
+		{
+			if(index == 0)
+			{
+				tmp[index + offset] = '\0';
+				setTitleStr(tmp + index,i);
+				index += offset;
+			}else
+			{
+				tmp[index + offset + 1] = '\0';
+				setTitleStr(tmp + index + 1,i);
+				index += offset + 1;
+			}
+		}else
+		{
+			if(tmp[index + 1] == '\0') break;
+			else
+			{
+				setTitleStr(tmp + index + 1,i);
+				break;
+			}
+		}
+	}
+	XDELETE_ARRAY(tmp);
+}
+std::string _XMultiList::getTitleStr()
+{
+	if(m_tableRowSum == 0) return "";
+	std::string ret = m_tableRow->title;
+	_XMultiListOneRow *tempRow = m_tableRow;
+	for(int i = 1;i < m_tableRowSum;++ i)
+	{
+		tempRow = tempRow->nextRow;
+		ret += ";" + std::string(tempRow->title);
+	}
+	return ret + ";";
+}
+std::string _XMultiList::getTitleStr(int order)
+{
+	if(order < 0 || order >= m_tableRowSum) return "";
+	_XMultiListOneRow *tempRow;
+	if(order == 0)
+	{
+		tempRow = m_tableRow;
+	}else
+	{
+		tempRow = m_tableRow;
+		for(int i = 1;i <= order;++ i)
+		{
+			tempRow = tempRow->nextRow;
+		}
+	}
+	return tempRow->title;
+}
+void _XMultiList::setTitleStr(const char *str,int order)
 {
 	if(str == NULL) return;
 	if(order < 0 || order >= m_tableRowSum) return;
@@ -1696,9 +1456,18 @@ void _XMultiList::setTileStr(const char *str,int order)
 	{//Èç¹û³¬³öÏÔÊ¾³¤¶È
 		if(tempRow->stringShowWidth >= 2)
 		{//´óÓÚ3¸ö×Ö·û¿ÉÒÔÏÔÊ¾...·ñÔòÏÔÊ¾..
-			tempRow->title[tempRow->stringShowWidth] = '\0';
-			tempRow->title[tempRow->stringShowWidth - 1] = '.';
-			tempRow->title[tempRow->stringShowWidth - 2] = '.';
+			if(isAtUnicodeEnd(tempRow->title,tempRow->stringShowWidth - 2))
+			{
+				tempRow->title[tempRow->stringShowWidth] = '\0';
+				tempRow->title[tempRow->stringShowWidth - 1] = '.';
+				tempRow->title[tempRow->stringShowWidth - 2] = '.';
+			}else
+			{
+				tempRow->title[tempRow->stringShowWidth] = '\0';
+				tempRow->title[tempRow->stringShowWidth - 1] = '.';
+				tempRow->title[tempRow->stringShowWidth - 2] = '.';
+				tempRow->title[tempRow->stringShowWidth - 3] = '.';
+			}
 		}else
 		{
 			tempRow->title[tempRow->stringShowWidth] = '\0';
@@ -1739,9 +1508,18 @@ void _XMultiList::setBoxStr(const char *str,int line,int row)	//ÉèÖÃÄ³Ò»¸öµ¥Ôª¸ñ
 	{//Èç¹û³¬³öÏÔÊ¾³¤¶È
 		if(tempRow->stringShowWidth >= 2)
 		{//´óÓÚ3¸ö×Ö·û¿ÉÒÔÏÔÊ¾...·ñÔòÏÔÊ¾..
-			tempBox->string[tempRow->stringShowWidth] = '\0';
-			tempBox->string[tempRow->stringShowWidth - 1] = '.';
-			tempBox->string[tempRow->stringShowWidth - 2] = '.';
+			if(isAtUnicodeEnd(tempBox->string,tempRow->stringShowWidth - 2))
+			{
+				tempBox->string[tempRow->stringShowWidth] = '\0';
+				tempBox->string[tempRow->stringShowWidth - 1] = '.';
+				tempBox->string[tempRow->stringShowWidth - 2] = '.';
+			}else
+			{
+				tempBox->string[tempRow->stringShowWidth] = '\0';
+				tempBox->string[tempRow->stringShowWidth - 1] = '.';
+				tempBox->string[tempRow->stringShowWidth - 2] = '.';
+				tempBox->string[tempRow->stringShowWidth - 3] = '.';
+			}
 		}else
 		{
 			tempBox->string[tempRow->stringShowWidth] = '\0';
@@ -1781,7 +1559,7 @@ void _XMultiList::updateShowChange()				//¸ù¾İÁĞ±í¿òµÄ±ä»¯ĞÅÏ¢¸üĞÂÁĞ±í¿òÖĞµÄ±í¸ñ
 	int row = 0;
 	int showMaxRow = 0;
 //	int showDx = m_showStartRow; //ÏÔÊ¾µÄÊı¾İ±í¸ñµÄË®Æ½Æ«ÒÆ	m_showStartRow(Ë®Æ½Æ«ÒÆÁ¿)
-	while(1)
+	while(true)
 	{
 		if(nowWidthPix + tempRow->pixSize.x * m_size.x > m_showStartRow && nowWidthPix - m_showStartRow <= m_showPixWidth)
 		{
@@ -1932,24 +1710,24 @@ void _XMultiList::updateShowChange()				//¸ù¾İÁĞ±í¿òµÄ±ä»¯ĞÅÏ¢¸üĞÂÁĞ±í¿òÖĞµÄ±í¸ñ
 	if(tempRow == NULL) return;
 	row = 0;
 	int line = 0;
-	while(1)
+	while(true)
 	{
 		if(line >= m_showStartLine && line < m_showStartLine + m_canShowLineSum)
 		{
 			//if(row >= m_showStartRow && row <= showMaxRow)
 			if(tempRow->isShow != 0)
 			{
-				tempBox->isShow = 1;
+				tempBox->isShow = XTrue;
 				tempBox->text.setPosition(tempRow->position.x - m_showStartRow,tempRow->position.y + m_nowTextHeight * (line - m_showStartLine + 1));
 				if(tempRow->needChip != 0) tempBox->text.setClipRect(tempRow->left,0.0f,tempRow->right,tempBox->text.getTextSize().y);
 				else tempBox->text.disClip();
 			}else
 			{
-				tempBox->isShow = 0;
+				tempBox->isShow = XFalse;
 			}
 		}else
 		{
-			tempBox->isShow = 0;
+			tempBox->isShow = XFalse;
 		}
 		if(tempBox->nextBox == NULL) break;
 		else tempBox = tempBox->nextBox;
@@ -1997,9 +1775,18 @@ _XBool _XMultiList::setRowWidth(int temp,int order)	//ÉèÖÃÆäÖĞÒ»ĞĞµÄ¿í¶È
 	{//Èç¹û³¬³öÏÔÊ¾³¤¶È
 		if(tempRow->stringShowWidth >= 2)
 		{//´óÓÚ3¸ö×Ö·û¿ÉÒÔÏÔÊ¾...·ñÔòÏÔÊ¾..
-			tempRow->title[tempRow->stringShowWidth] = '\0';
-			tempRow->title[tempRow->stringShowWidth - 1] = '.';
-			tempRow->title[tempRow->stringShowWidth - 2] = '.';
+			if(isAtUnicodeEnd(tempRow->title,tempRow->stringShowWidth - 2))
+			{
+				tempRow->title[tempRow->stringShowWidth] = '\0';
+				tempRow->title[tempRow->stringShowWidth - 1] = '.';
+				tempRow->title[tempRow->stringShowWidth - 2] = '.';
+			}else
+			{
+				tempRow->title[tempRow->stringShowWidth] = '\0';
+				tempRow->title[tempRow->stringShowWidth - 1] = '.';
+				tempRow->title[tempRow->stringShowWidth - 2] = '.';
+				tempRow->title[tempRow->stringShowWidth - 3] = '.';
+			}
 		}else
 		{
 			tempRow->title[tempRow->stringShowWidth] = '\0';
@@ -2012,7 +1799,7 @@ _XBool _XMultiList::setRowWidth(int temp,int order)	//ÉèÖÃÆäÖĞÒ»ĞĞµÄ¿í¶È
 	}
 	XDELETE_ARRAY(str);
 	//ĞŞ¸ÄºóÃæµÄËùÓĞÁĞµÄÎ»ÖÃ
-	while(1)
+	while(true)
 	{
 		if(tempRow->nextRow == NULL)
 		{
@@ -2049,9 +1836,18 @@ _XBool _XMultiList::setRowWidth(int temp,int order)	//ÉèÖÃÆäÖĞÒ»ĞĞµÄ¿í¶È
 				{//Èç¹û³¬³öÏÔÊ¾³¤¶È
 					if(tempRow->stringShowWidth >= 2)
 					{//´óÓÚ3¸ö×Ö·û¿ÉÒÔÏÔÊ¾...·ñÔòÏÔÊ¾..
-						tempBox->string[tempRow->stringShowWidth] = '\0';
-						tempBox->string[tempRow->stringShowWidth - 1] = '.';
-						tempBox->string[tempRow->stringShowWidth - 2] = '.';
+						if(isAtUnicodeEnd(tempBox->string,tempRow->stringShowWidth - 2))
+						{
+							tempBox->string[tempRow->stringShowWidth] = '\0';
+							tempBox->string[tempRow->stringShowWidth - 1] = '.';
+							tempBox->string[tempRow->stringShowWidth - 2] = '.';
+						}else
+						{
+							tempBox->string[tempRow->stringShowWidth] = '\0';
+							tempBox->string[tempRow->stringShowWidth - 1] = '.';
+							tempBox->string[tempRow->stringShowWidth - 2] = '.';
+							tempBox->string[tempRow->stringShowWidth - 3] = '.';
+						}
 					}else
 					{
 						tempBox->string[tempRow->stringShowWidth] = '\0';
@@ -2080,69 +1876,127 @@ _XBool _XMultiList::setRowWidth(int temp,int order)	//ÉèÖÃÆäÖĞÒ»ĞĞµÄ¿í¶È
 }
 void _XMultiList::draw()	//Ãè»æº¯Êı
 {
-	if(!m_isInited) return;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isVisiable) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 
 	if(m_withoutTex)
 	{
+		//ÕâÀïÃè»æ´ó±³¾°
 		if(!m_isEnable) 
 		{
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			drawFillBoxA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
 				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.6f,0.6f,0.6f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_mouseRect.top * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.5f,0.5f,0.5f);
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.5f,0.5f,0.5f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.25f,0.25f,0.25f);
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.6f * m_color.fR,0.6f * m_color.fG,0.6f * m_color.fB,m_color.fA,true);
 		}else
 		{
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
+			drawFillBoxA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
 				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.75f,0.75f,0.75f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_mouseRect.top * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.65f,0.65f,0.65f);
-			drawFillBoxEx(m_position + _XVector2(m_mouseRect.left * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.65f,0.65f,0.65f);
-			drawFillBoxEx(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
-				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
-				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.45f,0.45f,0.45f);
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.75f * m_color.fR,0.75f * m_color.fG,0.75f * m_color.fB,m_color.fA,true);
 		}
-		if(m_haveSelect && m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
+		if(m_actionMD.getIsEnd())
 		{
-			drawFillBoxEx(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
-				m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + 
-				(m_selectLineOrder - m_showStartLine) * m_nowTextHeight),
-				_XVector2(m_showPixWidth,m_nowTextHeight),0.85f,0.85f,0.85f);
-			//m_spriteSelect.draw(m_mutiListSelect);
+			if(m_haveSelect && m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
+			{//ÏÔÊ¾Ñ¡ÖĞÌõ
+				drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+					m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + 
+					(m_selectLineOrder - m_showStartLine) * m_nowTextHeight),
+					_XVector2(m_showPixWidth,m_nowTextHeight),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+				//m_spriteSelect.draw(m_mutiListSelect);
+			}
+		}else
+		{
+			switch(m_actionType)
+			{
+			case MLTLST_ACTION_TYPE_IN:		//Ñ¡Ïî³öÏÖ
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + 
+						(m_actionPosition - m_showStartLine) * m_nowTextHeight + m_nowTextHeight * (1.0f - m_actionMD.getNowData()) * 0.5f),
+						_XVector2(m_showPixWidth,m_nowTextHeight * m_actionMD.getNowData()),
+						0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+				}
+				break;
+			case MLTLST_ACTION_TYPE_MOVE:	//Ñ¡ÏîÒÆ¶¯
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{//Õı³£Çé¿ö
+					float pos = lineSlerp<float>((m_actionPosition - m_showStartLine) * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + pos),
+						_XVector2(m_showPixWidth,m_nowTextHeight),
+						0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+				}else
+				if(m_actionPosition < m_showStartLine)
+				{//ÉÏ±ßÔ½½ç
+					float pos = lineSlerp<float>(-1.0f * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					float h = m_nowTextHeight;
+					if(pos < 0.0f)
+					{
+						h += pos;
+						pos = 0.0f;
+					}
+					if(h > 0.0f)
+					{
+						drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+							m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + pos),
+							_XVector2(m_showPixWidth,h),
+							0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+					}
+				}else
+				if(m_actionPosition >= m_showStartLine + m_canShowLineSum)
+				{//ÏÂ±ßÔ½½ç
+					float pos = lineSlerp<float>(m_canShowLineSum * m_nowTextHeight,
+						(m_selectLineOrder - m_showStartLine) * m_nowTextHeight,m_actionMD.getNowData());
+					float h = m_nowTextHeight;
+					if(pos + h > m_canShowLineSum * m_nowTextHeight)
+					{
+						h += (m_canShowLineSum * m_nowTextHeight - pos - h);
+					}
+					if(h > 0.0f)
+					{
+						drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+							m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + pos),
+							_XVector2(m_showPixWidth,h),
+							0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+					}
+				}
+				break;
+			case MLTLST_ACTION_TYPE_DCLICK:	//Ë«»÷
+			case MLTLST_ACTION_TYPE_OUT:	//È¡ÏûÑ¡Ôñ
+				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
+				{
+					drawFillBoxExA(_XVector2(m_position.x + m_mouseRect.left * m_size.x,
+						m_position.y + (m_mouseRect.top + DEFAULT_TITLE_HEIGHT) * m_size.y + 
+						(m_actionPosition - m_showStartLine) * m_nowTextHeight + m_nowTextHeight * (1.0f - m_actionMD.getNowData()) * 0.5f),
+						_XVector2(m_showPixWidth,m_nowTextHeight * m_actionMD.getNowData()),
+						0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+				}
+				break;
+			}
 		}
 		//ÕâÀïÏÔÊ¾ÁĞ±íµÄÎÄ×Ö
 		if(m_tableRowSum > 0)
 		{
 			_XMultiListOneRow *tempRow = m_tableRow;
-			while(1)
+			while(true)
 			{
 				if(tempRow->isEnable && tempRow->isShow != 0)
 				{
-					drawFillBoxEx(_XVector2(tempRow->posX,tempRow->position.y),_XVector2(tempRow->pixLen,DEFAULT_TITLE_HEIGHT * m_size.y),0.8f,0.8f,0.8f);
+					drawFillBoxExA(_XVector2(tempRow->posX,tempRow->position.y),
+						_XVector2(tempRow->pixLen,DEFAULT_TITLE_HEIGHT * m_size.y),0.8f * m_color.fR,0.8f * m_color.fG,0.8f * m_color.fB,m_color.fA);
 				//	tempRow->m_spriteTitle.draw(m_mutiListTitle);	//ÏÔÊ¾±êÌâ±³¾°
 					tempRow->text.draw();//ÏÔÊ¾±êÌâÎÄ×Ö
 					if(tempRow->isShow == 1)
 					{//¿ÉÄÜ»áÔ½½ç
 						int x = tempRow->position.x - m_showStartRow + tempRow->pixSize.x * m_size.x - DEFAULT_END_WIDTH * tempRow->pixSize.y * m_size.y / DEFAULT_TITLE_HEIGHT;
-						drawLine(x,m_tableRow->position.y,x,m_tableRow->position.y + DEFAULT_TITLE_HEIGHT * m_size.y,1,0.4f,0.4f,0.4f);
+						drawLine(x,m_tableRow->position.y,x,m_tableRow->position.y + DEFAULT_TITLE_HEIGHT * m_size.y,1,
+							0.4f * m_color.fR,0.4f * m_color.fG,0.4f * m_color.fB,m_color.fA);
+						//Ãè»æÁĞ·Ö½çÏß
+						drawLine(x,m_tableRow->position.y + DEFAULT_TITLE_HEIGHT * m_size.y,x,
+							m_tableRow->position.y + (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y,1,
+							0.7f * m_color.fR,0.7f * m_color.fG,0.7f * m_color.fB,m_color.fA);
 						//tempRow->m_spriteTitleEnd.draw(m_mutiListTitleEnd);	//ÏÔÊ¾±êÌâ½áÊø·û
 					}
 				}
@@ -2152,9 +2006,9 @@ void _XMultiList::draw()	//Ãè»æº¯Êı
 			if(m_tableLineSum > 0)
 			{
 				_XMultiListOneBox *tempBox = m_tableBox;
-				while(1)
+				while(true)
 				{
-					if(tempBox->isEnable && tempBox->isShow != 0) tempBox->text.draw();//ÏÔÊ¾±êÌâÎÄ×Ö
+					if(tempBox->isEnable && tempBox->isShow) tempBox->text.draw();//ÏÔÊ¾±êÌâÎÄ×Ö
 					if(tempBox->nextBox == NULL) break;
 					else tempBox = tempBox->nextBox;
 				}
@@ -2164,7 +2018,8 @@ void _XMultiList::draw()	//Ãè»æº¯Êı
 		{
 			int x = m_changeRow->position.x - m_showStartRow + m_changeRow->pixSize.x * m_size.x - 
 								DEFAULT_END_WIDTH * m_tableRow->pixSize.y * m_size.y / DEFAULT_TITLE_HEIGHT;
-			drawLine(x,m_changeRow->position.y,x,m_changeRow->position.y + (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y,1,0.25f,0.25f,0.25f);
+			drawLine(x,m_changeRow->position.y,x,m_changeRow->position.y + (m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y,1,
+				0.25f * m_color.fR,0.25f * m_color.fG,0.25f * m_color.fB,m_color.fA);
 			//m_spriteMove.draw(m_mutiListMove);
 		}
 	}else
@@ -2172,14 +2027,14 @@ void _XMultiList::draw()	//Ãè»æº¯Êı
 		if(!m_isEnable) m_spriteBackGround.draw(m_mutiListDisable);
 		else m_spriteBackGround.draw(m_mutiListNormal);
 		if(m_haveSelect && m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
-		{
+		{//ÕâÀïĞèÒª½øĞĞÑ¡Ôñ¶¯»­µÄ¶¯×÷(ÉĞÎ´½øĞĞ)
 			m_spriteSelect.draw(m_mutiListSelect);
 		}
 		//ÕâÀïÏÔÊ¾ÁĞ±íµÄÎÄ×Ö
 		if(m_tableRowSum > 0)
 		{
 			_XMultiListOneRow *tempRow = m_tableRow;
-			while(1)
+			while(true)
 			{
 				if(tempRow->isEnable && tempRow->isShow != 0)
 				{
@@ -2193,9 +2048,9 @@ void _XMultiList::draw()	//Ãè»æº¯Êı
 			if(m_tableLineSum > 0)
 			{
 				_XMultiListOneBox *tempBox = m_tableBox;
-				while(1)
+				while(true)
 				{
-					if(tempBox->isEnable && tempBox->isShow != 0) tempBox->text.draw();//ÏÔÊ¾±êÌâÎÄ×Ö
+					if(tempBox->isEnable && tempBox->isShow) tempBox->text.draw();//ÏÔÊ¾±êÌâÎÄ×Ö
 					if(tempBox->nextBox == NULL) break;
 					else tempBox = tempBox->nextBox;
 				}
@@ -2203,36 +2058,83 @@ void _XMultiList::draw()	//Ãè»æº¯Êı
 		}
 		if(m_needShowMove) m_spriteMove.draw(m_mutiListMove);
 	}
+	if(m_withoutTex)
+	{//ÕâÀïÃè»æÁ½¸ö½ø¶ÈÌõµÄ¿ÕÎ»
+		if(!m_isEnable) 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_mouseRect.top * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);
+			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);
+		}else
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_mouseRect.top * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_size.y),0.65f * m_color.fR,0.65f * m_color.fG,0.65f * m_color.fB,m_color.fA,true);
+			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.65f * m_color.fR,0.65f * m_color.fG,0.65f * m_color.fB,m_color.fA,true);
+		}
+	}
 	if(m_needShowVSlider) m_verticalSlider.draw();
 	if(m_needShowHSlider) m_horizontalSlider.draw();
-}
-_XBool _XMultiList::canGetFocus(float x,float y)
-{
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isActive) return XFalse;		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
-	if(!m_isVisiable) return XFalse;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
-	return isInRect(x,y);
+	if(m_withoutTex)
+	{//ÕâÀïÃè»æÓÒÏÂ½ÇµÄ¿ÕÎ»
+		if(!m_isEnable) 
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.25f * m_color.fR,0.25f * m_color.fG,0.25f * m_color.fB,m_color.fA,true);
+		}else
+		{
+			drawFillBoxExA(m_position + _XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
+				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_size.y),
+				_XVector2(m_verticalSlider.getMouseRectWidth() * m_size.x,
+				m_horizontalSlider.getMouseRectHeight() * m_size.y),0.45f * m_color.fR,0.45f * m_color.fG,0.45f * m_color.fB,m_color.fA,true);
+		}
+	}
 }
 _XBool _XMultiList::mouseProc(float x,float y,_XMouseState mouseState)					//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êı
 {
-	if(!m_isInited) return XFalse;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_isActive) return XFalse;		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
-	if(!m_isVisiable) return XFalse;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
+	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
+		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 
-	if(m_needShowVSlider != 0) m_verticalSlider.mouseProc(x,y,mouseState);
-	if(m_needShowHSlider != 0) m_horizontalSlider.mouseProc(x,y,mouseState);
+	if(m_needShowVSlider)
+	{
+		m_verticalSlider.mouseProc(x,y,mouseState);
+		if(isInRect(x,y))
+		{//ÕâÀïÏìÓ¦¹öÂÖÊÂ¼ş
+			switch(mouseState)
+			{
+			case MOUSE_WHEEL_UP_DOWN:
+				m_verticalSlider.setNowValue(m_verticalSlider.getNowValue() - 1.0f);
+				break;
+			case MOUSE_WHEEL_DOWN_DOWN:
+				m_verticalSlider.setNowValue(m_verticalSlider.getNowValue() + 1.0f);
+				break;
+			}
+		}
+	}
+	if(m_needShowHSlider) m_horizontalSlider.mouseProc(x,y,mouseState);
 	//ÏÂÃæÅĞ¶ÏÊó±êĞŞ¸Ä±êÌâÀ¸¿í¶ÈÅĞ¶Ï
 	if(m_tableRowSum > 0)
 	{
-		if(mouseState == MOUSE_LEFT_BUTTON_DOWN)
+		if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
 		{//×ó¼ü°´ÏÂ
 			_XRect tempRect;
 			_XMultiListOneRow *tempRow = m_tableRow;
 			int order = 0;
 		//	int showDx = m_showStartRow;	//Õâ¸öĞèÒª¼ÆËãÁĞÏà¶ÔÓÚ¿ªÊ¼ÏÔÊ¾µÄÄÇÒ»ÁĞµÄÆ«ÒÆÁ¿£¬ÒòÎªÁĞµÄÎ»ÖÃÊÇÏÈ¶ÔÓÚµÚÒ»ÁĞµÄ¾ø¶ÔÎ»ÖÃ£¬ËùÒÔĞèÒª¸ü¾ßÊµ¼ÊµÄÏÔÊ¾¼ÆËãÏà¶ÔµÄÏÔÊ¾Î»ÖÃ
-			while(1)
+			while(true)
 			{
 				if(tempRow->isShow != 0)
 				{//ÏÔÊ¾³öÀ´µÄ²ÅÄÜĞŞ¸Ä
@@ -2275,7 +2177,7 @@ _XBool _XMultiList::mouseProc(float x,float y,_XMouseState mouseState)					//¶ÔÓ
 			//	}
 				if(tempRow->nextRow == NULL) break;
 				else tempRow = tempRow->nextRow;
-				order ++;
+				++ order;
 			}
 		}
 		if(mouseState == MOUSE_MOVE && m_mouseLeftButtonDown)
@@ -2310,15 +2212,20 @@ _XBool _XMultiList::mouseProc(float x,float y,_XMouseState mouseState)					//¶ÔÓ
 			}
 		}
 	}
-	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_mouseLeftButtonDown)
-	{//×ó¼üÌ¸ÆğÔòÈ¥´¦½¹µã
-		m_needShowMove = XFalse;			//È¡ÏûÒÆ¶¯Í¼±êµÄÏÔÊ¾
-		m_mouseLeftButtonDown = XFalse;
+	if(mouseState == MOUSE_LEFT_BUTTON_UP)
+	{//×ó¼üµ¯ÆğÔòÈ¥³ı½¹µã
+		if(m_mouseLeftButtonDown)
+		{
+			m_needShowMove = XFalse;			//È¡ÏûÒÆ¶¯Í¼±êµÄÏÔÊ¾
+			m_mouseLeftButtonDown = XFalse;
+		}
+		if(isInRect(x,y)) m_isBeChoose = XTrue;
 	}
 	//ÏÂÃæÅĞ¶ÏĞĞÑ¡
 	if(m_tableLineSum > 0)
 	{
-		if(mouseState == MOUSE_LEFT_BUTTON_DOWN)
+		if(mouseState == MOUSE_LEFT_BUTTON_DOWN
+			|| mouseState == MOUSE_LEFT_BUTTON_DCLICK)
 		{//×ó¼ü°´ÏÂ
 			//¼ÆËãµãÑ¡·¶Î§
 			_XRect tempRect;
@@ -2340,13 +2247,22 @@ _XBool _XMultiList::mouseProc(float x,float y,_XMouseState mouseState)					//¶ÔÓ
 				int DLine = (y - tempRect.top) / m_nowTextHeight;
 				if(DLine + m_showStartLine < m_tableLineSum)
 				{//µãÑ¡ÓĞĞ§
+					bool isSameChoose = (m_selectLineOrder == DLine + m_showStartLine);
+					if(!m_haveSelect) setAction(MLTLST_ACTION_TYPE_IN,DLine + m_showStartLine); else
+					if(!isSameChoose) setAction(MLTLST_ACTION_TYPE_MOVE,m_selectLineOrder);
 					m_haveSelect = XTrue;
 					m_selectLineOrder = DLine + m_showStartLine;
 					updateSelectLine();
 					//±ê¼ÇÊó±ê°´ÏÂÓĞĞ§
 					m_mouseMoveDown = XTrue;
 					m_oldLineOrder = m_selectLineOrder;
-					if(m_funSelectFun != NULL) (*m_funSelectFun)(m_pClass,m_objectID);
+					if(m_funSelectFun != NULL) m_funSelectFun(m_pClass,m_objectID);
+					if(mouseState == MOUSE_LEFT_BUTTON_DCLICK &&
+						m_funDClick != NULL)
+					{
+						m_funDClick(m_pClass,m_objectID);
+						if(isSameChoose) setAction(MLTLST_ACTION_TYPE_DCLICK,m_selectLineOrder);
+					}
 				}
 			}
 		}
@@ -2415,17 +2331,6 @@ _XBool _XMultiList::mouseProc(float x,float y,_XMouseState mouseState)					//¶ÔÓ
 		m_oldLineOrder = m_selectLineOrder;
 	}
 	return XTrue;
-}
-void _XMultiList::updateSelectLine()
-{
-	if(!m_isInited) return;		//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-	if(!m_haveSelect) return;
-	if(m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum && !m_withoutTex)
-	{//ÉèÖÃÑ¡ÔñµÄÎ»ÖÃ
-		m_spriteSelect.setPosition(m_position.x + m_mouseRect.left * m_size.x,
-			m_position.y + (m_mouseRect.top + m_mutiListTitle->textureSize.y) * m_size.y + 
-			(m_selectLineOrder - m_showStartLine) * m_nowTextHeight);
-	}
 }
 //ÎÄ¼şµÄÃüÃû¸ñÊ½ÎªXMultiList_ID.dat
 _XBool _XMultiList::exportData(const char *fileName)	//Êı¾İµ¼³ö
@@ -2519,7 +2424,7 @@ _XBool _XMultiList::importData(const char *fileName)	//Êı¾İµ¼Èë
 		str = createArrayMem<char>(strLength + 1);
 		if(str == NULL) return XFalse;
 		fread(str,strLength + 1,1,fp);
-		setTileStr(str,i);
+		setTitleStr(str,i);
 		XDELETE_ARRAY(str);
 	}
 	//¶ÁÈ¡±í¸ñĞÅÏ¢
@@ -2548,8 +2453,9 @@ void _XMultiList::initANewRowData(_XMultiListOneRow * upRow,int i)
 
 		m_tableRow->order = 0;
 		m_tableRow->text.setACopy(m_caption);
+		m_tableRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->text));
+		_XObjManger.decreaseAObject(&(m_tableRow->text));
 #endif
 		m_tableRow->text.setSize(m_size * m_fontSize);
 		m_tableRow->pixSize.set(MUTILIST_MIN_WIDTH,m_caption.getTextSize().y * m_caption.getSize().x);
@@ -2560,14 +2466,14 @@ void _XMultiList::initANewRowData(_XMultiListOneRow * upRow,int i)
 		{
 			m_tableRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitle));
+			_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitle));
 #endif
 			m_tableRow->m_spriteTitle.setPosition(m_tableRow->position);
 			m_tableRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 			m_tableRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 			m_tableRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
+			_XObjManger.decreaseAObject(&(m_tableRow->m_spriteTitleEnd));
 #endif
 			m_tableRow->m_spriteTitleEnd.setPosition(m_tableRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 				m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,m_tableRow->position.y);
@@ -2578,15 +2484,16 @@ void _XMultiList::initANewRowData(_XMultiListOneRow * upRow,int i)
 
 		m_tableRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 		m_tableRow->title = NULL;
-		setTileStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+		setTitleStr("Title",0);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 		m_tableRow->isShow = XTrue;
 	}else
 	{
 		upRow->nextRow->isEnable = XTrue;
 		upRow->nextRow->order = i;
 		upRow->nextRow->text.setACopy(m_caption);
+		upRow->nextRow->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(upRow->nextRow->text));
+		_XObjManger.decreaseAObject(&(upRow->nextRow->text));
 #endif
 		upRow->nextRow->text.setSize(m_size * m_fontSize);
 		upRow->nextRow->pixSize.set(MUTILIST_MIN_WIDTH,m_caption.getTextSize().y * m_caption.getSize().x);
@@ -2597,14 +2504,14 @@ void _XMultiList::initANewRowData(_XMultiListOneRow * upRow,int i)
 		{
 			upRow->nextRow->m_spriteTitle.init(m_mutiListTitle->texture.m_w,m_mutiListTitle->texture.m_h,1);	//ÉèÖÃ±êÌâ±³¾°µÄ¾«Áé
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(upRow->nextRow->m_spriteTitle));
+			_XObjManger.decreaseAObject(&(upRow->nextRow->m_spriteTitle));
 #endif
 			upRow->nextRow->m_spriteTitle.setPosition(upRow->nextRow->position);
 			upRow->nextRow->m_spriteTitle.setSize(m_tableRow->pixSize.x * m_size.x / m_mutiListTitle->textureSize.x,m_size.y);
 			upRow->nextRow->m_spriteTitle.setIsTransformCenter(POINT_LEFT_TOP);	//ÉèÖÃ±³¾°¾«ÁéµÄËõ·ÅÎª×óÉÏ½Ç¶ÔÆë
 			upRow->nextRow->m_spriteTitleEnd.init(m_mutiListTitleEnd->texture.m_w,m_mutiListTitleEnd->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(upRow->nextRow->m_spriteTitleEnd));
+			_XObjManger.decreaseAObject(&(upRow->nextRow->m_spriteTitleEnd));
 #endif
 			upRow->nextRow->m_spriteTitleEnd.setPosition(upRow->nextRow->position.x + m_tableRow->pixSize.x * m_size.x - 
 				m_mutiListTitleEnd->textureSize.x * m_tableRow->pixSize.y * m_size.y / m_mutiListTitle->textureSize.y,
@@ -2616,7 +2523,7 @@ void _XMultiList::initANewRowData(_XMultiListOneRow * upRow,int i)
 
 		upRow->nextRow->stringShowWidth = m_tableRow->pixSize.x * m_size.x / m_nowTextWidth;
 		upRow->nextRow->title = NULL;
-		setTileStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
+		setTitleStr("Title",i);	//ÉèÖÃÄ¬ÈÏÏÔÊ¾
 		upRow->nextRow->isShow = XTrue;
 	}
 }
@@ -2662,7 +2569,7 @@ _XBool _XMultiList::setRowSum(int rowSum)		//ÉèÖÃÁĞÊı£¬³¬³ö²¿·ÖÌî¿Õ°×£¬»òÕßÉ¾³ı
 				if(i >= oldRowSum)
 				{//²åÈëĞÂµÄÁĞ
 					temp->nextRow = createMem<_XMultiListOneRow>();
-					if(temp->nextRow == NULL) return 0;
+					if(temp->nextRow == NULL) return XFalse;
 
 					initANewRowData(temp,i);
 
@@ -2691,19 +2598,21 @@ _XBool _XMultiList::setRowSum(int rowSum)		//ÉèÖÃÁĞÊı£¬³¬³ö²¿·ÖÌî¿Õ°×£¬»òÕßÉ¾³ı
 					tempRow = m_tableRow;
 					for(j = 0;j < m_tableRowSum;++ j)
 					{
-						if(j >= oldRowSum)
+						if(j >= oldRowSum)	
 						{
+							//if(temp1 == NULL) return XFalse;//ÓÉÓÚoldRowSum > 0ËùÒÔtemp1²»»áNULL
 							temp1->nextBox = createMem<_XMultiListOneBox>();
-							if(temp1->nextBox == NULL) return 0;
+							if(temp1->nextBox == NULL) return XFalse;
 
 							temp1 = temp1->nextBox;
-							temp1->isEnable = 1;
+							temp1->isEnable = XTrue;
 
-							temp1->isShow = 1;
+							temp1->isShow = XTrue;
 							temp1->order.set(j,i);
 							temp1->text.setACopy(m_caption);
+							temp1->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-							_XObjectManager::GetInstance().decreaseAObject(&(temp1->text));
+							_XObjManger.decreaseAObject(&(temp1->text));
 #endif
 							temp1->text.setSize(m_size * m_fontSize);
 							temp1->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -2810,8 +2719,9 @@ void _XMultiList::initANewBoxData(_XMultiListOneBox * nowBox,_XMultiListOneRow *
 	nowBox->isShow = XTrue;
 	nowBox->order.set(j,i);
 	nowBox->text.setACopy(m_caption);
+	nowBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&(nowBox->text));
+	_XObjManger.decreaseAObject(&(nowBox->text));
 #endif
 	nowBox->text.setSize(m_size * m_fontSize);
 	nowBox->text.setPosition(nowRow->position.x,nowRow->position.y + m_nowTextHeight * (i + 1));
@@ -2825,7 +2735,11 @@ _XBool _XMultiList::setLineSum(int lineSum)	//ÉèÖÃĞĞÊı£¬³¬³öµÄ²¿·ÖÌî¿Õ°×£¬»òÕßÉ¾
 	if(m_tableRowSum <= 0) return XFalse;	//·Ç·¨Êı¾İÖ±½Ó·¶Î§Ê§°Ü
 	if(lineSum == m_tableLineSum) return XTrue;	//Èç¹ûÊı¾İÃ»ÓĞ¸Ä±äÕâÀïÖ±½Ó·µ»Ø³É¹¦
 	int i,j;
-	if(m_haveSelect != 0 && m_selectLineOrder >= lineSum) m_haveSelect = XFalse;
+	if(m_haveSelect && m_selectLineOrder >= lineSum) 
+	{
+		if(m_haveSelect) setAction(MLTLST_ACTION_TYPE_OUT,m_selectLineOrder);
+		m_haveSelect = XFalse;
+	}
 	//ÏÂÃæ¸ù¾İÊµ¼ÊÇé¿öĞŞ¸Ä¿Ø¼şÖĞµÄÊı¾İ
 	if(lineSum > m_tableLineSum)
 	{//Ìí¼Ó
@@ -2836,7 +2750,7 @@ _XBool _XMultiList::setLineSum(int lineSum)	//ÉèÖÃĞĞÊı£¬³¬³öµÄ²¿·ÖÌî¿Õ°×£¬»òÕßÉ¾
 		if(oldLine == 0)
 		{//È«ĞÂÌí¼Ó
 			m_tableBox = createMem<_XMultiListOneBox>();
-			if(m_tableBox == NULL) return 0;
+			if(m_tableBox == NULL) return XFalse;
 
 			initANewBoxData(m_tableBox,m_tableRow,0,0);
 
@@ -2881,11 +2795,12 @@ _XBool _XMultiList::setLineSum(int lineSum)	//ÉèÖÃĞĞÊı£¬³¬³öµÄ²¿·ÖÌî¿Õ°×£¬»òÕßÉ¾
 						tempBox = tempBox->nextBox;
 						tempBox->isEnable = XTrue;
 
-						tempBox->isShow = 1;
+						tempBox->isShow = XTrue;
 						tempBox->order.set(j,i);
 						tempBox->text.setACopy(m_caption);
+						tempBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-						_XObjectManager::GetInstance().decreaseAObject(&(tempBox->text));
+						_XObjManger.decreaseAObject(&(tempBox->text));
 #endif
 						tempBox->text.setSize(m_size * m_fontSize);
 						tempBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -3029,11 +2944,12 @@ _XBool _XMultiList::deleteLine(int order)		//É¾³ıÄ³Ò»ĞĞ
 		}
 	}
 	m_tableLineSum --;
-	if(m_haveSelect != 0)
+	if(m_haveSelect)
 	{//´æÔÚÑ¡Ôñ
 		if(m_selectLineOrder == order)
 		{//ÕıºÃÉ¾µôµÄÊÇÑ¡ÔñµÄÄÇÒ»ĞĞ£¬ÔòÈ¡ÏûÑ¡Ôñ
-			m_haveSelect = 0;
+			if(m_haveSelect) setAction(MLTLST_ACTION_TYPE_OUT,m_selectLineOrder);
+			m_haveSelect = XFalse;
 			updateSelectLine();
 		}else
 		if(m_selectLineOrder > order)
@@ -3253,11 +3169,12 @@ _XBool _XMultiList::insertALine(int order)		//ÔÚorder´¦²åÈëÒ»ĞĞ
 		if(m_tableBox == NULL) return XFalse;
 
 		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
+		m_tableBox->isShow = XTrue;
 		m_tableBox->order.set(0,0);
 		m_tableBox->text.setACopy(m_caption);
+		m_tableBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
+		_XObjManger.decreaseAObject(&(m_tableBox->text));
 #endif
 		m_tableBox->text.setSize(m_size * m_fontSize);
 		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
@@ -3270,11 +3187,12 @@ _XBool _XMultiList::insertALine(int order)		//ÔÚorder´¦²åÈëÒ»ĞĞ
 			if(tempBox->nextBox == NULL) return XFalse;
 
 			tempBox->nextBox->isEnable = XTrue;
-			tempBox->nextBox->isShow = 1;
+			tempBox->nextBox->isShow = XTrue;
 			tempBox->nextBox->order.set(i,0);
 			tempBox->nextBox->text.setACopy(m_caption);
+			tempBox->nextBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-			_XObjectManager::GetInstance().decreaseAObject(&(tempBox->nextBox->text));
+			_XObjManger.decreaseAObject(&(tempBox->nextBox->text));
 #endif
 			tempBox->nextBox->text.setSize(m_size * m_fontSize);
 			tempBox->nextBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * 1);
@@ -3328,14 +3246,15 @@ _XBool _XMultiList::insertALine(int order)		//ÔÚorder´¦²åÈëÒ»ĞĞ
 				if(i == order)
 				{
 					temp1->nextBox = createMem<_XMultiListOneBox>();
-					if(temp1->nextBox == NULL) return 0;
+					if(temp1->nextBox == NULL) return XFalse;
 
-					temp1->nextBox->isEnable = 1;
-					temp1->nextBox->isShow = 1;
+					temp1->nextBox->isEnable = XTrue;
+					temp1->nextBox->isShow = XTrue;
 					temp1->nextBox->order.set(j,i);
 					temp1->nextBox->text.setACopy(m_caption);
+					temp1->nextBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-					_XObjectManager::GetInstance().decreaseAObject(&(temp1->nextBox->text));
+					_XObjManger.decreaseAObject(&(temp1->nextBox->text));
 #endif
 					temp1->nextBox->text.setSize(m_size * m_fontSize);
 					temp1->nextBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -3396,7 +3315,7 @@ _XBool _XMultiList::insertARow(int order)		//ÔÚorder´¦²åÈëÒ»ÁĞ
 		//¸Ä±ä±êÌâÀ¸
 		tempRow = m_tableRow;
 		m_tableRow = createMem<_XMultiListOneRow>();
-		if(m_tableRow == NULL) return 0;
+		if(m_tableRow == NULL) return XFalse;
 
 		initANewRowData(NULL,0);
 /*		m_tableRow->isEnable = 1;
@@ -3444,14 +3363,15 @@ _XBool _XMultiList::insertARow(int order)		//ÔÚorder´¦²åÈëÒ»ÁĞ
 		//²åÈëµÚÒ»¸öÔªËØ
 		tempBox = m_tableBox;
 		m_tableBox = createMem<_XMultiListOneBox>();
-		if(m_tableBox == NULL) return 0;
+		if(m_tableBox == NULL) return XFalse;
 
 		m_tableBox->isEnable = XTrue;
-		m_tableBox->isShow = 1;
+		m_tableBox->isShow = XTrue;
 		m_tableBox->order.set(0,0);
 		m_tableBox->text.setACopy(m_caption);
+		m_tableBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&(m_tableBox->text));
+		_XObjManger.decreaseAObject(&(m_tableBox->text));
 #endif
 		m_tableBox->text.setSize(m_size * m_fontSize);
 		m_tableBox->text.setPosition(m_tableRow->position.x,m_tableRow->position.y + m_nowTextHeight * 1);
@@ -3473,14 +3393,15 @@ _XBool _XMultiList::insertARow(int order)		//ÔÚorder´¦²åÈëÒ»ÁĞ
 				if(j == order)
 				{//²åÈë
 					temp1->nextBox = createMem<_XMultiListOneBox>();
-					if(temp1->nextBox == NULL) return 0;
+					if(temp1->nextBox == NULL) return XFalse;
 
 					temp1->nextBox->isEnable = XTrue;
-					temp1->nextBox->isShow = 1;
+					temp1->nextBox->isShow = XTrue;
 					temp1->nextBox->order.set(j,i);
 					temp1->nextBox->text.setACopy(m_caption);
+					temp1->nextBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-					_XObjectManager::GetInstance().decreaseAObject(&(temp1->nextBox->text));
+					_XObjManger.decreaseAObject(&(temp1->nextBox->text));
 #endif
 					temp1->nextBox->text.setSize(m_size * m_fontSize);
 					temp1->nextBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -3514,7 +3435,7 @@ _XBool _XMultiList::insertARow(int order)		//ÔÚorder´¦²åÈëÒ»ÁĞ
 			if(i == order)
 			{//²åÈë
 				temp->nextRow = createMem<_XMultiListOneRow>();
-				if(temp->nextRow == NULL) return 0;
+				if(temp->nextRow == NULL) return XFalse;
 
 				initANewRowData(temp,i);
 			/*	temp->nextRow->isEnable = 1;
@@ -3580,14 +3501,15 @@ _XBool _XMultiList::insertARow(int order)		//ÔÚorder´¦²åÈëÒ»ÁĞ
 				if(j == order)
 				{//²åÈë
 					temp1->nextBox = createMem<_XMultiListOneBox>();
-					if(temp1->nextBox == NULL) return 0;
+					if(temp1->nextBox == NULL) return XFalse;
 
 					temp1->nextBox->isEnable = XTrue;
-					temp1->nextBox->isShow = 1;
+					temp1->nextBox->isShow = XTrue;
 					temp1->nextBox->order.set(j,i);
 					temp1->nextBox->text.setACopy(m_caption);
+					temp1->nextBox->text.setAlpha(m_color.fA);
 #if WITH_OBJECT_MANAGER
-					_XObjectManager::GetInstance().decreaseAObject(&(temp1->nextBox->text));
+					_XObjManger.decreaseAObject(&(temp1->nextBox->text));
 #endif
 					temp1->nextBox->text.setSize(m_size * m_fontSize);
 					temp1->nextBox->text.setPosition(tempRow->position.x,tempRow->position.y + m_nowTextHeight * (i + 1));
@@ -3938,6 +3860,8 @@ void _XMultiList::setPosition(float x,float y)
 	if(!m_isInited) return;
 	m_position.set(x,y);
 	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position);
+	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
+		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_size.x,
@@ -4000,8 +3924,8 @@ void _XMultiList::setPosition(float x,float y)
 }
 void _XMultiList::setSize(float x,float y)	//ÉèÖÃ³ß´ç
 {
-	if(!m_isInited) return;
-	if(x <= 0 && y <= 0) return;
+	if(!m_isInited ||
+		x <= 0 || y <= 0) return;
 	m_size.set(x,y);
 	if(!m_withoutTex)
 	{
@@ -4009,6 +3933,8 @@ void _XMultiList::setSize(float x,float y)	//ÉèÖÃ³ß´ç
 		m_spriteBackGround.setSize(m_size);
 		m_spriteMove.setSize(m_size);
 	}
+	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
+		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
 	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_size.x,
 		m_position.y + m_mouseRect.top * m_size.y);
 	m_verticalSlider.setSize(m_size);
@@ -4094,20 +4020,84 @@ void _XMultiList::setSize(float x,float y)	//ÉèÖÃ³ß´ç
 	updateShowChange();
 	updateSliderState();
 }
-_XBool _XMultiList::isInRect(float x,float y)
+_XBool _XMultiList::keyboardProc(int keyOrder,_XKeyState keyState)
 {
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-_XVector2 _XMultiList::getBox(int order)
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(!m_isInited) return ret;
-	if(order == 0) ret.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y); else
-	if(order == 1) ret.set(m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.top * m_size.y); else
-	if(order == 2) ret.set(m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y); else
-	if(order == 3) ret.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y); 
-
-	return ret;
+	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
+		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+		!m_isEnable ||
+		!m_isBeChoose) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
+	if(keyState == KEY_STATE_UP)
+	{
+		switch(keyOrder)
+		{
+		case XKEY_UP:
+			if(m_haveSelect)
+			{//Èç¹ûÒÑ¾­Ñ¡Ôñ
+				if(m_selectLineOrder > 0)
+					-- m_selectLineOrder;
+			}else
+			{//Èç¹ûÉĞÎ´Ñ¡Ôñ
+				if(!m_haveSelect) setAction(MLTLST_ACTION_TYPE_IN,0); else 
+				if(m_selectLineOrder != 0) setAction(MLTLST_ACTION_TYPE_MOVE,m_selectLineOrder);
+				m_selectLineOrder = 0;
+				m_haveSelect = XTrue;
+			}
+			//¼ì²éÑ¡ÔñÊÇ·ñÔÚÏÔÊ¾·¶Î§ÄÚ(ÉĞÎ´Íê³É)
+			if(m_selectLineOrder < m_showStartLine || 
+				m_selectLineOrder >= m_showStartLine + m_canShowLineSum)
+			{//ÔÚÏÔÊ¾·¶Î§Íâ
+				if(m_selectLineOrder <= m_tableLineSum - m_canShowLineSum)
+					m_verticalSlider.setNowValue(m_selectLineOrder);
+				else m_verticalSlider.setNowValue(m_tableLineSum - m_canShowLineSum);
+			}
+			updateSelectLine();
+			updateShowChange();
+			updateSliderState();
+			if(m_funSelectFun != NULL) m_funSelectFun(m_pClass,m_objectID);
+			break;
+		case XKEY_DOWN:
+			if(m_haveSelect)
+			{
+				if(m_selectLineOrder < m_tableLineSum - 1)
+					++ m_selectLineOrder;
+			}else
+			{
+				if(!m_haveSelect) setAction(MLTLST_ACTION_TYPE_IN,0); else
+				if(m_selectLineOrder != 0) setAction(MLTLST_ACTION_TYPE_MOVE,m_selectLineOrder);
+				m_selectLineOrder = 0;
+				m_haveSelect = XTrue;
+			}
+			//¼ì²éÑ¡ÔñÊÇ·ñÔÚÏÔÊ¾·¶Î§ÄÚ(ÉĞÎ´Íê³É)
+			if(m_selectLineOrder < m_showStartLine || 
+				m_selectLineOrder >= m_showStartLine + m_canShowLineSum)
+			{//ÔÚÏÔÊ¾·¶Î§Íâ
+				if(m_selectLineOrder - m_canShowLineSum <= m_tableLineSum - m_canShowLineSum)
+					m_verticalSlider.setNowValue(m_selectLineOrder - m_canShowLineSum + 1);
+				else m_verticalSlider.setNowValue(m_tableLineSum - m_canShowLineSum);
+			}
+			updateSelectLine();
+			updateShowChange();
+			updateSliderState();
+			if(m_funSelectFun != NULL) m_funSelectFun(m_pClass,m_objectID);
+			break;
+		case XKEY_LEFT:		//×óÓÒÑ¡Ôñ(ÉĞÎ´Íê³É)
+			if(m_needShowHSlider) 
+			{
+				m_horizontalSlider.m_isBeChoose = XTrue;
+				m_horizontalSlider.keyboardProc(XKEY_LEFT,KEY_STATE_UP);
+				m_horizontalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		case XKEY_RIGHT:	//×óÓÒÑ¡Ôñ(ÉĞÎ´Íê³É)
+			if(m_needShowHSlider) 
+			{
+				m_horizontalSlider.m_isBeChoose = XTrue;
+				m_horizontalSlider.keyboardProc(XKEY_RIGHT,KEY_STATE_UP);
+				m_horizontalSlider.m_isBeChoose = XFalse;
+			}
+			break;
+		}
+	}
+	return XTrue;
 }

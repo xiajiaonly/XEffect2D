@@ -51,8 +51,8 @@ int _XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSi
 
 void _XCloudParticles::reset()
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd == 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd == 0) return;
 	m_nowCenterPoint = random(1000) * 0.001f * (m_maxCenterPoint - m_minCenterPoint) + m_minCenterPoint; 
 	m_nowSize = random(1000) * 0.001f * (m_maxSize - m_minSize) + m_minSize;
 	for(int i = 0;i < m_maxAtomSum;++ i)
@@ -65,8 +65,8 @@ void _XCloudParticles::reset()
 
 void _XCloudParticles::move(int timeDelay)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)
@@ -142,8 +142,8 @@ void _XCloudParticles::move(int timeDelay)
 
 void _XCloudParticles::draw() const
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)

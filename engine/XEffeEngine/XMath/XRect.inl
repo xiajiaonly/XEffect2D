@@ -6,26 +6,22 @@ inline void _XRect::set(const _XVector2& leftTop,const _XVector2& rightBottom)
 inline _XBool _XRect::setLeft(float xl)
 {
     left = xl;
-    if(xl <= right) return XTrue;
-    else return XFalse;
+    return (xl <= right);
 }
 inline _XBool _XRect::setRight(float xr)
 {
     right = xr;
-    if(xr >= left) return XTrue;
-    else return XFalse;
+    return (xr >= left);
 }
 inline _XBool _XRect::setTop(float yt)
 {
     top = yt;
-    if(yt <= bottom) return XTrue;
-    else return XFalse;
+    return (yt <= bottom);
 }
 inline _XBool _XRect::setBottom(float yb)
 {
     bottom = yb;
-    if(yb >= top) return XTrue;
-    else return XFalse;
+    return (yb >= top);
 }
 inline float _XRect::getLeft() const
 {
@@ -52,8 +48,7 @@ inline _XBool _XRect::isCrash(const _XRect& R0) const
 //		|| (((R0.top >= top && R0.top < bottom) || (R0.bottom <= bottom && R0.bottom > top))))) return XTrue;
 //	return XFalse;
 	//与上面的结果一致，优化了一下
-	if(right <= R0.left || left >= R0.right || bottom <= R0.top || top >= R0.bottom) return XFalse;
-	return XTrue;
+	return !(right <= R0.left || left >= R0.right || bottom <= R0.top || top >= R0.bottom);
 }
 inline _XBool _XRect::isCrash(const _XVector2& leftTop,const _XVector2& rightBottom) const
 {
@@ -67,14 +62,12 @@ inline _XBool _XRect::isCrash(float xl,float yt,float xr,float yb) const
 }
 inline _XBool _XRect::isInRect(const _XVector2& p0) const
 {
-    if(p0.x >= left && p0.x <= right && p0.y >= top && p0.y <= bottom) return XTrue;
-    else return XFalse;
+    return (p0.x >= left && p0.x <= right && p0.y >= top && p0.y <= bottom);
 }
 inline _XBool _XRect::isInRect(float x,float y) const
 {
 //    if(x >= left && x <= right && y >= top && y <= bottom)
-    if(x > left && x < right && y > top && y < bottom) return XTrue;
-    else return XFalse;
+    return (x > left && x < right && y > top && y < bottom);
 }
 inline float _XRect::getArea() const
 {
@@ -91,15 +84,17 @@ inline _XVector2 _XRect::getCenter() const
 }
 inline float _XRect::getWidth() const
 {
-    float temp = right - left;
-    if(temp < 0) return -temp;
-    else return temp;
+	return abs(right - left);
+	//float temp = right - left;
+	//if(temp < 0) return -temp;
+	//else return temp;
 }
 inline float _XRect::getHeight() const
 {
-    float temp = bottom - top;
-    if(temp < 0) return -temp;
-    else return temp;
+	return abs(bottom - top);
+	//float temp = bottom - top;
+	//if(temp < 0) return -temp;
+	//else return temp;
 }
 inline void _XRect::setCenter(float x,float y)
 {

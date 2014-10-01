@@ -704,7 +704,7 @@ _XBool _XRigidBalls::crashInsideProc(double timeDelay,double upTime)
 		return XTrue;	//完成计算
 	}
 }
-_XBool _XRigidBalls::addOneBall(const _XVector2& position,float radius,float mass,_XVector2 speed,float airResistance,float adhereRate,float adhereRadius)	//增加一个例子，返回增加是否成功
+_XBool _XRigidBalls::addOneBall(const _XVector2& position,float radius,float mass,const _XVector2 &speed,float airResistance,float adhereRate,float adhereRadius)	//增加一个例子，返回增加是否成功
 {
 	if(!m_isInited &&
 		!m_isEnable) return XFalse;
@@ -720,7 +720,7 @@ _XBool _XRigidBalls::addOneBall(const _XVector2& position,float radius,float mas
 	}
 	return XFalse;
 }
-_XBool _XRigidBalls::addOneLine(const _XVector2& startPosition,_XVector2 endPosition)
+_XBool _XRigidBalls::addOneLine(const _XVector2& startPosition,const _XVector2 &endPosition)
 {
 	if(!m_isInited &&
 		!m_isEnable) return XFalse;

@@ -60,13 +60,13 @@ int _XActionObjectDescription::getDataFromStr(const char * str)
 	if(str == NULL) return 0;
 	//下面开始打印数据
 	int offset = 0;
-	sscanf(str + offset,"ID:%d,\n",&m_objectID);
+	if(sscanf(str + offset,"ID:%d,\n",&m_objectID) != 1) return offset;
 	offset += getCharPosition(str + offset,',') + 1;
 	if(m_objectFilename == NULL) m_objectFilename = createArrayMem<char>(MAX_FILE_NAME_LENGTH);
 	if(m_objectFilename == NULL) return 0;
-	sscanf(str + offset,"Name:%s\n",m_objectFilename);	//文件名中不能使用','号
+	if(sscanf(str + offset,"Name:%s\n",m_objectFilename) != 1) return offset;	//文件名中不能使用','号
 	offset += getCharPosition(str + offset,',') + 1;	//存在问题！！！！！@@@@@@@@@@@@@@@
-	sscanf(str + offset,"Type:%d,\n",&m_objectType);
+	if(sscanf(str + offset,"Type:%d,\n",&m_objectType) != 1) return offset;
 	offset += getCharPosition(str + offset,',') + 1;
 	switch(m_objectType)
 	{
@@ -109,11 +109,11 @@ _XBool _XActionObjectDescription::getDataFromFile(FILE *fp)
 {
 	if(m_isEnable) return XFalse;
 	if(fp == NULL) return XFalse;
-	fscanf(fp,"ID:%d,\n",&m_objectID);
+	if(fscanf(fp,"ID:%d,\n",&m_objectID) != 1) return XFalse;
 	if(m_objectFilename == NULL) m_objectFilename = createArrayMem<char>(MAX_FILE_NAME_LENGTH);
-	if(m_objectFilename == NULL) return 0;
-	fscanf(fp,"Name:%s\n",m_objectFilename);
-	fscanf(fp,"Type:%d,\n",&m_objectType);
+	if(m_objectFilename == NULL) return XFalse;
+	if(fscanf(fp,"Name:%s\n",m_objectFilename) != 1) return XFalse;
+	if(fscanf(fp,"Type:%d,\n",&m_objectType) != 1) return XFalse;
 	switch(m_objectType)
 	{
 	case OBJ_NULL:
@@ -159,7 +159,7 @@ _XObjectBasic * _XActionObjectDescription::createAObject()
 			if(temp == NULL) return NULL;
 			if(m_paramData == NULL) return NULL;
 			_XSpriteParamData * tempParamData = (_XSpriteParamData *) m_paramData;
-			if(temp->init(m_objectFilename,tempParamData->resourcePosition,tempParamData->changePoint) == 0)
+			if(!temp->init(m_objectFilename,tempParamData->resourcePosition,tempParamData->changePoint))
 			{
 				XDELETE(temp);
 				return NULL;
@@ -175,7 +175,7 @@ _XObjectBasic * _XActionObjectDescription::createAObject()
 			if(temp == NULL) return NULL;
 			if(m_paramData == NULL) return NULL;
 			_XFrameExParamData * tempParamData = (_XFrameExParamData *) m_paramData;
-			if(temp->init(m_objectFilename,tempParamData->resourcePosition) == 0)
+			if(!temp->init(m_objectFilename,tempParamData->resourcePosition))
 			{
 				XDELETE(temp);
 				return NULL;

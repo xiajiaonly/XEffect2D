@@ -42,7 +42,7 @@ distribution.
 #if defined( _DEBUG ) && !defined( DEBUG )
 #define DEBUG
 #endif
-#define TIXML_USE_STL	//addby:xiajia
+#define TIXML_USE_STL	//add by xiajia
 #ifdef TIXML_USE_STL
 	#include <string>
  	#include <iostream>
@@ -326,12 +326,13 @@ protected:
 	// The length can be from 0 to 4 bytes.
 	inline static const char* GetChar( const char* p, char* _value, int* length, TiXmlEncoding encoding )
 	{
-		if(p == NULL) return 0;
+		assert( p );
 		if ( encoding == TIXML_ENCODING_UTF8 )
 		{
 			*length = utf8ByteTable[ *((const unsigned char*)p) ];
 			assert( *length >= 0 && *length < 5 );
-		}else
+		}
+		else
 		{
 			*length = 1;
 		}

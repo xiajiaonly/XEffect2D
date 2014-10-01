@@ -35,7 +35,7 @@ _XBool _XDirectory::init(const char *directoryName)
 	if(directoryName == NULL) return XFalse;
 
 	m_nowDirectory.level = 0;
-	if(!enumerationFiles(directoryName,&m_nowDirectory)) return 0;
+	if(!enumerationFiles(directoryName,&m_nowDirectory)) return XFalse;
 
 	m_isInited = XTrue;
 	return XTrue;
@@ -46,7 +46,7 @@ _XBool _XDirectory::initEx(const char *directoryName)
 	if(directoryName == NULL) return XFalse;
 
 	m_nowDirectory.level = 0;
-	if(!enumerationFilesEx(directoryName,&m_nowDirectory)) return 0;
+	if(!enumerationFilesEx(directoryName,&m_nowDirectory)) return XFalse;
 
 	m_isInited = XTrue;
 	return XTrue;
@@ -104,7 +104,7 @@ _XBool enumerationFiles(const char *path,_XDir * dir)
 		}
 	}
 	//下面开始遍历整个文件夹
-	while(1)
+	while(true)
 	{
 		if(!FindNextFile(fileHandle,&fileInfo)) break;
 		if(strcmp(fileInfo.cFileName,".") != 0 && strcmp(fileInfo.cFileName,"..") != 0)
@@ -184,7 +184,7 @@ _XBool enumerationFilesEx(const char *path,_XDir * dir)	//使用相对路径
 		}
 	}
 	//下面开始遍历整个文件夹
-	while(1)
+	while(true)
 	{
 		if(!FindNextFile(fileHandle,&fileInfo)) break;
 		if(strcmp(fileInfo.cFileName,".") != 0 && strcmp(fileInfo.cFileName,"..") != 0)

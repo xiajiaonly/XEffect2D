@@ -56,14 +56,14 @@ void _XLight::calculate()
 {
 	if(m_needCalculate) m_needCalculate = XFalse;
 	else return;
-	m_lookAtPosition.z = m_position.z + m_len * cos(m_angle.x * ANGLE_TO_RADIAN) * cos(m_angle.y * ANGLE_TO_RADIAN);
-	m_lookAtPosition.y = m_position.y + m_len * sin(m_angle.x * ANGLE_TO_RADIAN);
-	m_lookAtPosition.x = m_position.x + m_len * cos(m_angle.x * ANGLE_TO_RADIAN) * sin(m_angle.y * ANGLE_TO_RADIAN);
-	m_direction.z = -sin(m_angle.x * ANGLE_TO_RADIAN) * cos(m_angle.y * ANGLE_TO_RADIAN);
-	m_direction.y = cos(m_angle.x * ANGLE_TO_RADIAN);
-	m_direction.x = -sin(m_angle.x * ANGLE_TO_RADIAN) * sin(m_angle.y * ANGLE_TO_RADIAN);
+	m_lookAtPosition.z = m_position.z + m_len * cos(m_angle.x * DEGREE2RADIAN) * cos(m_angle.y * DEGREE2RADIAN);
+	m_lookAtPosition.y = m_position.y + m_len * sin(m_angle.x * DEGREE2RADIAN);
+	m_lookAtPosition.x = m_position.x + m_len * cos(m_angle.x * DEGREE2RADIAN) * sin(m_angle.y * DEGREE2RADIAN);
+	m_direction.z = -sin(m_angle.x * DEGREE2RADIAN) * cos(m_angle.y * DEGREE2RADIAN);
+	m_direction.y = cos(m_angle.x * DEGREE2RADIAN);
+	m_direction.x = -sin(m_angle.x * DEGREE2RADIAN) * sin(m_angle.y * DEGREE2RADIAN);
 	//这里计算灯的世界矩阵和观察矩阵
-	m_projectMatrix = calPerspectiveMatrix(XEE::viewAngle3D,1.0f,200.0f,1500.0f);
+	m_projectMatrix = calPerspectiveMatrix(XEE::viewAngle3D,1.0f,1000.0f,2000.0f);
 	m_viewMatrix = calLookAtMatrix(_XVector3(m_position.x,m_position.y,m_position.z),m_lookAtPosition,m_direction);
 
 	//glMatrixMode(GL_MODELVIEW);

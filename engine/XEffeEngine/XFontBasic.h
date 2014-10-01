@@ -41,6 +41,12 @@ protected:
 
 	_XFontAlignmentModeX m_alignmentModeX;	//字体的水平对齐方式
 	_XFontAlignmentModeY m_alignmentModeY;	//字体的垂直对齐方式
+
+	//为了提速这里定义相关FBO的东西
+	_XBool m_withFBO;		//是否使用FBO
+	_XBool m_needUpdateFBO;	//是否需要更新FBO
+	_XFBO *m_pFbo;			//使用的FBO
+	_XSprite m_fboSprite;	//贴图
 public:
 	using _XObjectBasic::setColor;
 	void setColor(float r,float g,float b,float a)
@@ -55,26 +61,26 @@ public:
 	}
 	_XFColor getColor() const {return m_sprite.getColor();}
 protected:
-	_XBool m_isVisiable;
+	_XBool m_isVisible;
 public:
-	void setVisiable() 
+	void setVisible() 
 	{
-		m_isVisiable = XTrue;
-		updateChildVisiable();
+		m_isVisible = XTrue;
+		updateChildVisible();
 	}					//设置物件可见
-	void disVisiable() 
+	void disVisible() 
 	{
-		m_isVisiable = XFalse;
-		updateChildVisiable();
+		m_isVisible = XFalse;
+		updateChildVisible();
 	}					//设置物件不可见
-	_XBool getVisiable() const {return m_isVisiable;}			//获取物件是否可见的状态 
+	_XBool getVisible() const {return m_isVisible;}			//获取物件是否可见的状态 
 protected:
 	//+++++++++++++++++++++++++++
 	//给字体增加裁减功能
 	_XRect m_clipRect;	//字体裁减的矩型是相对于字体坐上角的一个相对矩形
 	_XBool m_isCliped;
 public:
-	void setClipRect(_XRect temp){setClipRect(temp.left,temp.top,temp.right,temp.bottom);}
+	void setClipRect(const _XRect &temp){setClipRect(temp.left,temp.top,temp.right,temp.bottom);}
 	void setClipRect(float left,float top,float right,float bottom)
 	{
 		m_clipRect.set(left,top,right,bottom);
@@ -93,19 +99,15 @@ public:
 
 	void setAlignmentModeX(_XFontAlignmentModeX mode)
 	{
-		if(mode != m_alignmentModeX)
-		{
-			m_alignmentModeX = mode;
-			m_needUpdateData = XTrue;
-		}
+		if(mode == m_alignmentModeX) return;
+		m_alignmentModeX = mode;
+		m_needUpdateData = XTrue;
 	}
 	void setAlignmentModeY(_XFontAlignmentModeY mode)
 	{
-		if(mode != m_alignmentModeY)
-		{
-			m_alignmentModeY = mode;
-			m_needUpdateData = XTrue;
-		}
+		if(mode == m_alignmentModeY) return;
+		m_alignmentModeY = mode;
+		m_needUpdateData = XTrue;
 	}
 protected:
 	float m_angle;			//字体的角度
@@ -127,6 +129,7 @@ public:
 	void setDistance(float x,float y);			//设置字与字之间的距离
 	void setAngle(float angle);	//设置字体显示的角度
 	float getAngle() const {return m_angle;}
+	virtual const char * getString() const {return m_string;}
 
 	using _XObjectBasic::setSize;
 	void setSize(float x,float y);			//设置字体的显示大小
@@ -135,15 +138,7 @@ public:
 	void setRotateBasePoint(float x,float y);
 
 	_XVector2 getTextSize() const {return m_size;}
-//	_XVector2 getShowSize() const
-//	{
-//		return m_showSize;
-//	}
 	_XVector2 getSize() const {return m_showSize;}
-//	_XVector2I getPosition() const
-//	{
-//		return m_position;
-//	}
 	_XVector2 getPosition() const {	return _XVector2(m_position.x,m_position.y);}
 protected:
 	//不裁剪的前提下的像素范围
@@ -206,10 +201,14 @@ protected:
 		,m_maxPixelHeight(0)
 		,m_lineSum(0)
 		,m_needShowTextSum(0)
-		,m_isVisiable(XTrue)
+		,m_isVisible(XTrue)
 		,m_isCliped(XFalse)
 		,m_clipRect(0,0,0,0)
 		,m_isPassword(XFalse)
+		,m_withFBO(XFalse)
+		//,m_withFBO(XTrue)
+		,m_needUpdateFBO(XFalse)
+		,m_pFbo(NULL)
 	{
 		if(maxStrLen < 2) m_maxStringLen = 2;
 		else m_maxStringLen = maxStrLen;
@@ -217,7 +216,7 @@ protected:
 		m_string[0] = '\0';
 	}
 	_XFontBasic()
-		:m_needUpdateData(0)
+		:m_needUpdateData(XFalse)
 		,m_alignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT)
 		,m_alignmentModeY(FONT_ALIGNMENT_MODE_Y_UP)
 		,m_distance(0.0f)
@@ -234,10 +233,14 @@ protected:
 		,m_maxPixelHeight(0)
 		,m_lineSum(0)
 		,m_needShowTextSum(0)
-		,m_isVisiable(XTrue)
+		,m_isVisible(XTrue)
 		,m_isCliped(XFalse)
 		,m_clipRect(0,0,0,0)
 		,m_isPassword(XFalse)
+		,m_withFBO(XFalse)
+		//,m_withFBO(XTrue)
+		,m_needUpdateFBO(XFalse)
+		,m_pFbo(NULL)
 	{
 		m_maxStringLen = STRING_MAX_SIZE;
 		m_string = createArrayMem<char>(m_maxStringLen);
@@ -251,21 +254,45 @@ public:
 	virtual ~_XFontBasic()	//定义成虚函数是为了防止通过基类指针删除派生类对象时造成的内存泄露
 	{
 		XDELETE_ARRAY(m_string);
+		if(m_pFbo != NULL) XDELETE(m_pFbo);
 	}
 	virtual void draw() = 0;
-	virtual _XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE) = 0;	
+	virtual _XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,_XBool withFBO = XFalse) = 0;	
 	_XBool isInRect(float x,float y);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);	//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	virtual void setMaxStrLen(int maxStrLen) = 0;
 
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 };
+inline _XBool _XFontBasic::isInRect(float x,float y)
+{
+	if(!m_isInited) return XFalse;
+	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+}
 inline _XBool _XFontBasic::setString(const char *p)	//设置显示的字符串
 {
-	if(p == NULL) return 0;
-	if(strlen(p) >= m_maxStringLen) return XFalse;
-	strcpy(m_string,p);
-	m_needUpdateData = 1;
+	if(p == NULL) return XFalse;
+	if(strcmp(p,m_string) == 0) return XTrue;	//如果是相同的字符串则不设置
+	if(strlen(p) < m_maxStringLen)
+	{
+		strcpy(m_string,p);
+	}else
+	{
+		memcpy(m_string,p,m_maxStringLen);
+		if(isAtUnicodeEnd(m_string,m_maxStringLen - 3))
+		{
+			m_string[m_maxStringLen - 3] = '.';
+			m_string[m_maxStringLen - 2] = '.';
+			m_string[m_maxStringLen - 1] = '\0';
+		}else
+		{
+			m_string[m_maxStringLen - 4] = '.';
+			m_string[m_maxStringLen - 3] = '.';
+			m_string[m_maxStringLen - 2] = '\0';
+		}
+		//strlen(p) >= m_maxStringLen
+	}
+	m_needUpdateData = XTrue;
 	return XTrue;
 }
 inline void _XFontBasic::setPosition(float x,float y)			//设置字体显示的位置
@@ -279,26 +306,26 @@ inline void _XFontBasic::setPosition(float x,float y)			//设置字体显示的位置
 		+ m_rotateBasicPoint.y * m_angleCos);
 	m_position.set((int)(tempPosition.x),(int)(tempPosition.y));
 
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XFontBasic::setDistance(float distance)			//设置字与字之间的距离
 {
 	m_distance = distance;
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XFontBasic::setDistance(float x,float y)
 {
 	m_distance = x;
 	m_distanceY = y;
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XFontBasic::setAngle(float angle)	//设置字体显示的角度
 {
 	m_angle = angle;
 	updateChildAngle();
 	m_sprite.setAngle(angle);
-	m_angleSin = sin(angle * ANGLE_TO_RADIAN);
-	m_angleCos = cos(angle * ANGLE_TO_RADIAN);
+	m_angleSin = sin(angle * DEGREE2RADIAN);
+	m_angleCos = cos(angle * DEGREE2RADIAN);
 	_XVector2 tempPosition;
 	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos
 		- m_rotateBasicPoint.y * m_angleSin);
@@ -306,14 +333,14 @@ inline void _XFontBasic::setAngle(float angle)	//设置字体显示的角度
 		+ m_rotateBasicPoint.y * m_angleCos);
 	m_position.set((int)(tempPosition.x),(int)(tempPosition.y));
 
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XFontBasic::setSize(float x,float y)	//设置字体的显示大小
 {
 	m_showSize.set(x,y);
 	updateChildSize();
 	m_sprite.setSize(x,y);
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XFontBasic::setRotateBasePoint(float x,float y)
 {

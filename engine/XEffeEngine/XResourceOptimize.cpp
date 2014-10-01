@@ -173,7 +173,9 @@ int getRight(SDL_Surface *temp,int maxPixelsOffset)
 int pictureProc(_XPicProcData *result,int maxPixelsOffset)
 {
 	//读取图片
-	result->pPic = IMG_Load(result->fileName);
+	char * tmp = ANSIToUTF8(result->fileName);
+	result->pPic = IMG_Load(tmp);
+	XDELETE_ARRAY(tmp);
 	if(result->pPic == NULL) return 0;
 	//寻找矩形
 	int top = getTop(result->pPic,maxPixelsOffset);
@@ -393,7 +395,7 @@ int PNGProc(_XPicProcData * picData,int picSum)
 /*	int tryTimer = 0;
 	int needBoxSumTemp[MAX_BASICBOXSUM];
 	int finishedFlag = 0;
-	while(1)
+	while(true)
 	{
 		//初始化所有盒子的信息
 		tempPacker.m_basicBox = createArrayMem<_XBasicBox>(MAX_BASICBOXSUM);	//定义100个盒子
@@ -953,9 +955,9 @@ _XBool ResourceOptimize()
 				tempFileName1[j] = '\0';
 			}
 		}
-		//if(fileNameCompare(tempFileName1,"pictureResource") == 1) continue;		//pictureResouce内部的资源不会被处理
-		//if(fileNameCompare(tempFileName1,"normalResource") == 1) continue;		//normalResource内部的资源不会被处理
-		if(fileNameCompare(tempFileName1,"pic") == 0) continue;		//只有pic文件夹下面的文件才会经过优化处理
+		//if(fileNameCompare(tempFileName1,"pictureResource")) continue;		//pictureResouce内部的资源不会被处理
+		//if(fileNameCompare(tempFileName1,"normalResource")) continue;		//normalResource内部的资源不会被处理
+		if(!fileNameCompare(tempFileName1,"pic")) continue;		//只有pic文件夹下面的文件才会经过优化处理
 		if(strcmp(tempFileName,"!!BasePath.png") != 0)
 		{
 			strcpy(picData[needProcFileSum].fileName,tempFileName);

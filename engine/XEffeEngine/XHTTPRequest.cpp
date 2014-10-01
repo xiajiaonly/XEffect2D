@@ -78,6 +78,16 @@ void strupr(char *p)
 //解析URL，从中解析出协议，端口，主机地址，请求
 void _XHTTPRequest::parseURL(char *url,char *protocol,char *host,char *request,int *port)
 {//使用多个指针对同一个字符串进行解析，这个思路很不错。
+	//这个方法碉堡了
+	//char tmpStr[] = "ftp://username:password@192.168.1.1:21/folder";
+	//char proto[128];
+	//char userName[128];
+	//char password[128];
+	//char ip[100];
+	//int port = 80;
+	//char page[100];
+	////sscanf(text, "http://%99[^:]:%99d/%99[^\n]", ip, &port, page);
+	//sscanf(tmpStr, "%99[^:]://%99[^:]:%99[^@]@%99[^:]:%99d/%99[^\n]",proto,userName,password,ip,&port,page);
 	char *work = NULL;	//分析字符串时用于临时暂存字符串，下同
 	char *ptr = NULL;	
 	char *ptr2 = NULL;
@@ -319,17 +329,16 @@ int _XHTTPRequest::sendHTTP(char *url,char * headerReceive,unsigned char *post,i
 //返回值：			1、成功 0、失
 int _XHTTPRequest::sendRequest(_XBool IsPost,char *url,_XHTTPRequestStruct &req)
 {
-	int i,rtn;
-	char* buffer;
+	int rtn;
 
-	if(req.headerReceive != NULL) free(req.headerSend);
+	if(req.headerReceive != NULL) free(req.headerReceive);
 	if(req.message != NULL) free(req.message);
 	req.messageLength = 0;
 
 	if(IsPost)
 	{//发送 
-		i = strlen(req.headerSend);
-		buffer = (char*) malloc(i+1);
+		int i = strlen(req.headerSend);
+		char *buffer = (char*) malloc(i+1);
 		if(buffer != NULL) strcpy(buffer, req.headerSend);
 		//释放内存空间
 		free(req.headerSend);

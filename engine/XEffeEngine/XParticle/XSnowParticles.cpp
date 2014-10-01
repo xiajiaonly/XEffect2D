@@ -11,9 +11,7 @@ _XSnowParticles::_XSnowParticles()
 ,m_isSetEnd(0)				//是否设置结束
 ,m_atom(NULL)
 ,m_texture(NULL)
-{
-}
-
+{}
 int _XSnowParticles::init(const _XVector2& productArea,const _XRect& liveArea,const _XVector2& flySpeed,
 						  int maxAtomSum,float snowDensity,const _XTexture *texture)
 {
@@ -39,11 +37,10 @@ int _XSnowParticles::init(const _XVector2& productArea,const _XRect& liveArea,co
 	m_isSetEnd = 0;				
 	return 1;
 }
-
 void _XSnowParticles::reset()
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd == 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd == 0) return;
 
 	m_isEnd = 0;				
 	m_isSetEnd = 0;				
@@ -53,11 +50,10 @@ void _XSnowParticles::reset()
 		m_atom[i].m_stage = STAGE_SLEEP;
 	}
 }
-
 void _XSnowParticles::move(int timeDelay)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)
@@ -105,11 +101,10 @@ void _XSnowParticles::move(int timeDelay)
 		m_isEnd = 1;
 	}
 }
-
 void _XSnowParticles::draw() const
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)
@@ -117,20 +112,4 @@ void _XSnowParticles::draw() const
 			m_atom[i].draw();
 	//	}
 	}
-}
-
-void _XSnowParticles::release()
-{
-	if(m_isInited == 0) return;
-	XDELETE_ARRAY(m_atom);
-	m_isInited = 0;		//防止release之后调用其它成员函数而造成错误
-}
-
-void _XSnowParticles::setEnd()
-{
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
-	if(m_isSetEnd != 0) return;
-
-	m_isSetEnd = 1;
 }

@@ -9,7 +9,7 @@
 
 _XBool _XPointCtrl::init(const _XVector2& position,const _XFontUnicode *font)
 {
-	if(m_isInited) return false;
+	if(m_isInited) return XFalse;
 	m_position = position;
 	if(font == NULL)
 	{
@@ -21,26 +21,26 @@ _XBool _XPointCtrl::init(const _XVector2& position,const _XFontUnicode *font)
 		m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 		m_font.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_font);
+		_XObjManger.decreaseAObject(&m_font);
 #endif
 	}
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_POINTCTRL);
+	_XCtrlManger.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 	updateData();
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	m_isInited = true;
-	return true;
+	m_isInited = XTrue;
+	return XTrue;
 }
 void _XPointCtrl::draw()
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return;	//如果不可见直接退出
+	if(!m_isInited ||
+		!m_isVisible) return;	//如果不可见直接退出
 
 	switch(m_ctrlMode)
 	{
@@ -52,8 +52,10 @@ void _XPointCtrl::draw()
 			float h = m_range.getHeight() / XPOINT_CTRL_LINE_SUM;
 			for(int i = 1;i < XPOINT_CTRL_LINE_SUM;++ i)
 			{
-				drawLine(m_range.left + w * i,m_range.top + 12.0f,m_range.left + w * i,m_range.bottom - 12.0f,1,1.0f,1.0f,1.0f,0.5f,1);
-				drawLine(m_range.left + 12.0f,m_range.top + h * i,m_range.right - 12.0f,m_range.top + h * i,1,1.0f,1.0f,1.0f,0.5f,1);
+				drawLine(m_range.left + w * i,m_range.top + 12.0f,m_range.left + w * i,m_range.bottom - 12.0f,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,0.5f * m_color.fA,1);
+				drawLine(m_range.left + 12.0f,m_range.top + h * i,m_range.right - 12.0f,m_range.top + h * i,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,0.5f * m_color.fA,1);
 			}
 		}
 	case CTRL_MODE_NORMAL:
@@ -65,10 +67,14 @@ void _XPointCtrl::draw()
 			float h = m_range.getHeight() / XPOINT_CTRL_LINE_SUM;
 			for(int i = 1;i < XPOINT_CTRL_LINE_SUM;++ i)
 			{
-				drawLine(m_range.left + w * i,m_range.top,m_range.left + w * i,m_range.top + 10.0f);
-				drawLine(m_range.left + w * i,m_range.bottom,m_range.left + w * i,m_range.bottom - 10.0f);
-				drawLine(m_range.left,m_range.top + h * i,m_range.left + 10.0f,m_range.top + h * i);
-				drawLine(m_range.right,m_range.top + h * i,m_range.right - 10.0f,m_range.top + h * i);
+				drawLine(m_range.left + w * i,m_range.top,m_range.left + w * i,m_range.top + 10.0f,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				drawLine(m_range.left + w * i,m_range.bottom,m_range.left + w * i,m_range.bottom - 10.0f,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				drawLine(m_range.left,m_range.top + h * i,m_range.left + 10.0f,m_range.top + h * i,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				drawLine(m_range.right,m_range.top + h * i,m_range.right - 10.0f,m_range.top + h * i,1.0f,
+					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
 			}
 		}
 	case CTRL_MODE_SIMPLE:
@@ -77,21 +83,25 @@ void _XPointCtrl::draw()
 	//描绘点原的位置
 	if(m_isDown)
 	{
-		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,2,1.0f,0.0f,0.0f);
-		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,2,1.0f,0.0f,0.0f);
+		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,2,
+			m_color.fR,0.0f,0.0f,m_color.fA);
+		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,2,
+			m_color.fR,0.0f,0.0f,m_color.fA);
 	}else
 	{
-		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,1,1.0f,1.0f,1.0f);
-		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,1,1.0f,1.0f,1.0f);
+		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,1,
+			m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,1,
+			m_color.fR,m_color.fG,m_color.fB,m_color.fA);
 	}
 	if(m_withFont) m_font.draw();	//显示文字提示
 }
 _XBool _XPointCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 {
-	if(!m_isInited) return XFalse;	//如果没有初始化直接退出
-	if(!m_isActive) return XFalse;		//没有激活的控件不接收控制
-	if(!m_isVisiable) return XFalse;	//如果不可见直接退出
-	if(!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(!m_isInited ||	//如果没有初始化直接退出
+		!m_isActive ||		//没有激活的控件不接收控制
+		!m_isVisible ||	//如果不可见直接退出
+		!m_isEnable) return XFalse;		//如果无效则直接退出
 	switch(mouseState)
 	{
 	case MOUSE_MOVE:
@@ -102,8 +112,13 @@ _XBool _XPointCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 		}
 		break;
 	case MOUSE_LEFT_BUTTON_DOWN:
+	case MOUSE_LEFT_BUTTON_DCLICK:
 		//鼠标按下
-		if(_XVector2(x,y).getLengthSqure(m_position) < 100.0f) m_isDown = true;
+		if(_XVector2(x,y).getLengthSqure(m_position) < 100.0f)
+		{
+			m_isDown = true;
+			m_isBeChoose = XTrue;
+		}
 		break;
 	case MOUSE_LEFT_BUTTON_UP:
 		if(m_isDown) m_isDown = false;
@@ -118,9 +133,9 @@ _XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
 	if(!_XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_POINTCTRL);	//在物件管理器中注册当前物件
+		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+		_XObjManger.addAObject(this);
 #endif
 	}
 
@@ -131,7 +146,7 @@ _XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
 	m_truePixelSize = temp.m_truePixelSize;	//真实的像素尺寸
 	if(!m_font.setACopy(temp.m_font))	 return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_font);
+	_XObjManger.decreaseAObject(&m_font);
 #endif
 	memcpy(m_textStr,temp.m_textStr,64);		//显示的字符串
 
@@ -152,7 +167,7 @@ _XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
 	{
 		m_font.setACopy(temp.m_font);
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().decreaseAObject(&m_font);
+		_XObjManger.decreaseAObject(&m_font);
 #endif
 	}
 
@@ -160,9 +175,9 @@ _XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
 }
 void _XPointCtrl::release()
 {
-	_XControlManager::GetInstance().decreaseAObject(this);	//注销这个物件
+	_XCtrlManger.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 }
 void _XPointCtrl::updateData()

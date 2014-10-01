@@ -6,14 +6,12 @@
 #include "XGroup.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-#include "XResourcePack.h"
-#include "XResourceManager.h"
 
-void funXGroupStateBtn(void *pClass,int objectID)
+void funXGroupStateBtn(void *pClass,int)
 {
-	_XGroup * pPar = (_XGroup *)pClass;
-	if(pPar->m_state == STATE_NORMAL) pPar->setState(STATE_MINISIZE);
-	else pPar->setState(STATE_NORMAL);
+	_XGroup & pPar = *(_XGroup *)pClass;
+	if(pPar.m_state == STATE_NORMAL) pPar.setState(STATE_MINISIZE);
+	else pPar.setState(STATE_NORMAL);
 }
 
 _XBool _XGroup::init(const _XVector2& position,
@@ -34,21 +32,22 @@ _XBool _XGroup::init(const _XVector2& position,
 
 	m_state = STATE_NORMAL;
 	if(!m_stateBotton.initWithoutTex("-",font,captionSize,_XRect(0.0f,0.0f,XGROUP_STATE_BTN_SIZE,XGROUP_STATE_BTN_SIZE),
-		_XVector2(XGROUP_STATE_BTN_SIZE * 0.5f,XGROUP_STATE_BTN_SIZE * 0.5f))) return false;
-	m_stateBotton.setCallbackFun(NULL,NULL,NULL,funXGroupStateBtn,NULL,this);
+		_XVector2(XGROUP_STATE_BTN_SIZE * 0.5f,XGROUP_STATE_BTN_SIZE * 0.5f))) return XFalse;
+	m_stateBotton.setMouseDownCB(funXGroupStateBtn,this);
 	updateData();
 
+	//_XCtrlManger.decreaseAObject(&m_stateBotton);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
-	_XObjectManager::GetInstance().decreaseAObject(&m_stateBotton);
+	_XObjManger.decreaseAObject(&m_caption);
+	_XObjManger.decreaseAObject(&m_stateBotton);
 #endif
-	//_XControlManager::GetInstance().decreaseAObject(&m_stateBotton);
-	_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_GROUP);
+	//_XCtrlManger.decreaseAObject(&m_stateBotton);
+	_XCtrlManger.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+	_XObjManger.addAObject(this);
 #endif
 
-	m_isVisiable = XTrue;
+	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
@@ -57,63 +56,31 @@ _XBool _XGroup::init(const _XVector2& position,
 }
 void _XGroup::draw()
 {
-	if(!m_isInited) return;
-	if(!m_isVisiable) return ;	//如果没有初始化直接退出
+	if(!m_isInited ||
+		!m_isVisible) return ;	//如果没有初始化直接退出
 
 	if(m_state == STATE_NORMAL)
 	{
 		int h = m_caption.getMaxPixelHeight();
 		int w = m_caption.getMaxPixelWidth();
 
-		drawLine(m_drawRect.left,m_drawRect.top + (h >> 1),m_drawRect.left,m_drawRect.bottom,1);
-		drawLine(m_drawRect.right,m_drawRect.top + (h >> 1),m_drawRect.right,m_drawRect.bottom,1);
-		drawLine(m_drawRect.left,m_drawRect.bottom,m_drawRect.right,m_drawRect.bottom,1);
+		drawLine(m_drawRect.left,m_drawRect.top + (h >> 1),m_drawRect.left,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_drawRect.right,m_drawRect.top + (h >> 1),m_drawRect.right,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_drawRect.left,m_drawRect.bottom,m_drawRect.right,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
 
 		//drawLine(m_drawRect.left,m_drawRect.top + (h >> 1),m_drawRect.left + 20.0f * m_size.x ,m_drawRect.top + (h >> 1),1);
 		if(m_drawRect.getWidth() > w + XGROUP_STATE_BTN_SIZE + 10.0f)
-			drawLine(m_drawRect.left + (XGROUP_STATE_BTN_SIZE + 10.0f) * m_size.x + w,m_drawRect.top + (h >> 1),m_drawRect.right,m_drawRect.top + (h >> 1),1);
+			drawLine(m_drawRect.left + (XGROUP_STATE_BTN_SIZE + 10.0f) * m_size.x + w,m_drawRect.top + (h >> 1),
+			m_drawRect.right,m_drawRect.top + (h >> 1),1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
 	}else
 	{
-		drawLine(m_drawRect.left,m_drawRect.top,m_drawRect.left,m_drawRect.bottom,1);
-		drawLine(m_drawRect.right,m_drawRect.top,m_drawRect.right,m_drawRect.bottom,1);
-		drawLine(m_drawRect.left,m_drawRect.bottom,m_drawRect.right,m_drawRect.bottom,1);
-		drawLine(m_drawRect.left,m_drawRect.top,m_drawRect.right,m_drawRect.top,1);
+		drawLine(m_drawRect.left,m_drawRect.top,m_drawRect.left,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_drawRect.right,m_drawRect.top,m_drawRect.right,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_drawRect.left,m_drawRect.bottom,m_drawRect.right,m_drawRect.bottom,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		drawLine(m_drawRect.left,m_drawRect.top,m_drawRect.right,m_drawRect.top,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
 	}
 	m_caption.draw();
-	m_stateBotton.draw();
-}
-_XBool _XGroup::isInRect(float x,float y)
-{
-	if(!m_isInited) return XFalse;
-	return getIsInRect(_XVector2(x,y),getBox(0),getBox(1),getBox(2),getBox(3));
-}
-_XVector2 _XGroup::getBox(int order)
-{
-	_XVector2 ret;
-	ret.set(0.0f,0.0f);
-	if(m_isInited == 0) return ret;
-	if(m_state == STATE_NORMAL)
-	{
-		if(order == 0) ret.set(m_drawRect.left,m_drawRect.top);else
-		if(order == 1) ret.set(m_drawRect.right,m_drawRect.top);else
-		if(order == 2) ret.set(m_drawRect.right,m_drawRect.bottom);else
-		if(order == 3) ret.set(m_drawRect.left,m_drawRect.bottom);
-	}else
-	{
-		if(order == 0) ret.set(m_drawRect.left,m_drawRect.top);else
-		if(order == 1) ret.set(m_drawRect.right,m_drawRect.top);else
-		if(order == 2) ret.set(m_drawRect.right,m_drawRect.bottom);else
-		if(order == 3) ret.set(m_drawRect.left,m_drawRect.bottom);
-	}
-
-	return ret;
-}
-void _XGroup::release()
-{
-	_XControlManager::GetInstance().decreaseAObject(this);	//注销这个物件
-#if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(this);
-#endif
+//	m_stateBotton.draw();
 }
 _XBool _XGroup::setACopy(const _XGroup & temp)
 {
@@ -122,9 +89,9 @@ _XBool _XGroup::setACopy(const _XGroup & temp)
 	if(!_XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XControlManager::GetInstance().addAObject(this,CTRL_OBJ_GROUP);	//在物件管理器中注册当前物件
+		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjectManager::GetInstance().addAObject(this,OBJ_CONTROL);
+		_XObjManger.addAObject(this);
 #endif
 	}
 
@@ -137,9 +104,16 @@ _XBool _XGroup::setACopy(const _XGroup & temp)
 
 	m_caption.setACopy(temp.m_caption);
 #if WITH_OBJECT_MANAGER
-	_XObjectManager::GetInstance().decreaseAObject(&m_caption);
+	_XObjManger.decreaseAObject(&m_caption);
 #endif
 	m_textSize = temp.m_textSize;
 
 	return XTrue;
+}
+void _XGroup::release()
+{
+	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+#if WITH_OBJECT_MANAGER
+	_XObjManger.decreaseAObject(this);
+#endif
 }

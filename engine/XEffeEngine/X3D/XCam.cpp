@@ -11,12 +11,12 @@ _XBool _XCamRoam::calculate()
 {
 	if(m_needCalculate) m_needCalculate = XFalse;
 	else return XFalse;
-	float sinX = sin(m_angle.x * ANGLE_TO_RADIAN);
-	float cosX = cos(m_angle.x * ANGLE_TO_RADIAN);
-	float sinY = sin(m_angle.y * ANGLE_TO_RADIAN);
-	float cosY = cos(m_angle.y * ANGLE_TO_RADIAN);
-	float sinZ = sin(m_angle.z * ANGLE_TO_RADIAN);
-	float cosZ = cos(m_angle.z * ANGLE_TO_RADIAN);
+	float sinX = sin(m_angle.x * DEGREE2RADIAN);
+	float cosX = cos(m_angle.x * DEGREE2RADIAN);
+	float sinY = sin(m_angle.y * DEGREE2RADIAN);
+	float cosY = cos(m_angle.y * DEGREE2RADIAN);
+	float sinZ = sin(m_angle.z * DEGREE2RADIAN);
+	float cosZ = cos(m_angle.z * DEGREE2RADIAN);
 	//不考虑z角度的影响
 	//m_lookAtPosition.z = m_position.z + m_len * cosX * cosY;
 	//m_lookAtPosition.y = m_position.y + m_len * sinX;
@@ -48,7 +48,7 @@ _XBool _XCamRoam::calculate()
 	//	m_direction.x,m_direction.y,m_direction.z);
 	//glGetFloatv(GL_MODELVIEW_MATRIX,m_viewMatrix);		//获取摄像头的观察矩阵
 	//glPopMatrix();
-	m_neadCalProjXView = true;
+	m_neadCalProjXView = XTrue;
 	return XTrue;
 }
 void _XCamRoam::calculateFrustumPlanes() //计算视锥体
@@ -61,13 +61,13 @@ void _XCamRoam::calculateFrustumPlanes() //计算视锥体
 	m_face[4] = normalize(tempM.getRow(3) - tempM.getRow(2));	//far
 	m_face[5] = normalize(tempM.getRow(3) + tempM.getRow(2));	//near
 //	m_face[4] = normalize(tempM.getRow(2) - tempM.getRow(3));	//far
-//	m_face[5] = normalize(_XVector4(0.0f,0.0f,0.0f,0.0f) - tempM.getRow(2) - tempM.getRow(3));	//near
+//	m_face[5] = normalize(_XVector4::zero - tempM.getRow(2) - tempM.getRow(3));	//near
 }
 bool _XCamRoam::isInFrustum(float x,float y,float z)  
 {//判断点是否在视锥体内部  
 	if(m_neadCalFrustum)
 	{
-		m_neadCalFrustum = false;
+		m_neadCalFrustum = XFalse;
 		calculate();
 		calculateFrustumPlanes();
 		calculateFrustumPoint();
@@ -96,7 +96,7 @@ void _XCamRoam::drawFrustum()	//描绘视锥体
 {
 	if(m_neadCalFrustum)
 	{
-		m_neadCalFrustum = false;
+		m_neadCalFrustum = XFalse;
 		calculate();
 		calculateFrustumPlanes();
 		calculateFrustumPoint();

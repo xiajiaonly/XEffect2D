@@ -43,10 +43,8 @@ struct _XHTTPRequestStruct
 		,headerReceive(NULL)
 		,message(NULL)
 		,messageLength(0)
-	{
-	}
+	{}
 };
-
 //缓存结构体
 struct _XMemBuffer
 {
@@ -57,10 +55,8 @@ struct _XMemBuffer
 		:buffer(NULL)
 		,position(NULL)
 		,size(0)
-	{
-	}
+	{}
 };
-
 class _XHTTPRequest
 {
 public:
@@ -84,12 +80,10 @@ inline int _XHTTPRequest::sendString(int sock,char *str)
 {
 	return send(sock,str,strlen(str),0);
 }
-
 //检查字符串是否符合主机名的特点：i.e. A-Z or 0-9 or -.:
 inline int _XHTTPRequest::validHostChar(char ch)
 {
 	//return (isalpha(ch) || isdigit(ch) || ch == '-' || ch == '.' || ch == ':');
 	return (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) || ch == '-' || ch == '.' || ch == ':');
 }
-
 #endif

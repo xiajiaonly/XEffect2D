@@ -49,9 +49,7 @@ private:
 	pthread_mutex_t m_mutex;  
     int m_mode;            //拥堵处理模式：0：拥堵抛弃最老的数据 1：拥堵等待
 private:
-	_XCircleGroup(const _XCircleGroup & temp)	//重载拷贝构造函数防止不必要的错误
-	{
-	}
+	_XCircleGroup(const _XCircleGroup & temp){}	//重载拷贝构造函数防止不必要的错误
 public:
     _XCircleGroup()        //构造函数
     :m_isInited(XFalse)
@@ -60,8 +58,7 @@ public:
     ,m_buffSize(0)        //整个buff的大小
     ,m_pElement(NULL)    //元素队列的指针
     ,m_mode(0)
-    {
-    }
+    {}
 	_XBool init(int buffsize,int mode = 0)    //初始化，并分配内存空间
 	{
 		if(m_isInited) return XFalse;    //如果已经初始化，则不能重复初始化
@@ -84,7 +81,7 @@ public:
 	}
 	int insertOneElement(Type &element)    //插入一个元素
 	{
-		if(!m_isInited) return XFalse;
+		if(!m_isInited) return 0;
 		pthread_mutex_lock(m_mutex);
 		if(!m_pElement[m_insertPoint].isEnable)
 		{//有数据可以取出，则取出数据，并作相应的处理
@@ -171,7 +168,7 @@ DWORD WINAPI thread_d(LPVOID hParameter)
 {
     int data = 0;
     _data tempData;
-    while(1)
+    while(true)
     {
         //data = rand();
         //if(data < 0) data = -data;
@@ -192,7 +189,7 @@ DWORD WINAPI thread_e(LPVOID hParameter)
 {
     int data = 0;
     _data tempData;
-    while(1)
+    while(true)
     {
         //data = rand();
         //if(data < 0) data = -data;
@@ -213,7 +210,7 @@ DWORD WINAPI thread_f(LPVOID hParameter)
 {
     int data = 0;
     _data tempData;
-    while(1)
+    while(true)
     {
         //data = rand();
         //if(data < 0) data = -data;
@@ -242,7 +239,7 @@ int main(int avg,char* arg)
     temp = CreateThread(NULL,NULL,thread_f,NULL,0,&dw);
     _data data;
     int oldData = 0;
-    while(1)
+    while(true)
     {
         if(tempBuff.popOneElement(&data) == 1)
         {

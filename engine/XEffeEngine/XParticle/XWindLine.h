@@ -41,6 +41,10 @@ public:
 	virtual void move(int stepTime);	//ÉúÃüË¥¼õ
 	virtual void clear() 
 	{
+		for(int i = 0;i < m_points.size();++ i)
+		{
+			XDELETE(m_points[i]);
+		}
 		m_points.clear();
 		m_pointsLife.clear();
 	}

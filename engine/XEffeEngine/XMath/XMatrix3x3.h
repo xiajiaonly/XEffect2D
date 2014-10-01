@@ -15,6 +15,7 @@ class _XMatrix3x3
 {
 public:
 	float data[9];
+	static const _XMatrix3x3 identity;	//µ¥Î»¾ØÕó
 	operator float* () const {return (float*) this;}
 	operator const float* () const {return (const float*) this;}
 
@@ -81,8 +82,8 @@ inline _XMatrix3x3 getMatrix3D(float size,const _XVector3 &v)		//Í¨¹ýÐý×ªµÄ½Ç¶Èº
 //ÈÆvÖáÐý×ªangleµÄÐý×ª¾ØÕó
 inline _XMatrix3x3 getRotate3D(float angle,_XVector3 v)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	float tCosA = 1 - cosA;
 	v = normalize(v);
 	return _XMatrix3x3( tCosA * v.x * v.x + cosA,		tCosA * v.x * v.y + v.z * sinA, tCosA * v.x * v.z - sinA * v.y,
@@ -92,8 +93,8 @@ inline _XMatrix3x3 getRotate3D(float angle,_XVector3 v)
 //ÈÆxÖáÐý×ªangle
 inline _XMatrix3x3 getRotate3DX(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix3x3(	1,	0,		0,
 						0,	cosA,	sinA,
 						0,	-sinA,	cosA);
@@ -101,8 +102,8 @@ inline _XMatrix3x3 getRotate3DX(float angle)
 //ÈÆyÖáÐý×ªangle
 inline _XMatrix3x3 getRotate3DY(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix3x3(	cosA,0,-sinA,
 						0,1,0,
 						sinA,0,cosA);
@@ -110,8 +111,8 @@ inline _XMatrix3x3 getRotate3DY(float angle)
 //ÈÆzÖáÐý×ªangle
 inline _XMatrix3x3 getRotate3DZ(float angle)
 {
-	float sinA = sin(angle * ANGLE_TO_RADIAN);
-	float cosA = cos(angle * ANGLE_TO_RADIAN);
+	float sinA = sin(angle * DEGREE2RADIAN);
+	float cosA = cos(angle * DEGREE2RADIAN);
 	return _XMatrix3x3(	cosA,sinA,0,
 						-sinA,cosA,0,
 						0,0,1);
@@ -128,12 +129,12 @@ inline _XMatrix3x3 getRotate3D(const _XVector3 &a)
 inline _XMatrix3x3 getRotateMatrix(const _XVector3 &a)
 {//Í¨¹ýÑéÖ¤
 	float sh,ch, sp,cp, sb,cb;
-	sp = sin(a.x * ANGLE_TO_RADIAN);
-	cp = cos(a.x * ANGLE_TO_RADIAN);
-	sh = sin(a.y * ANGLE_TO_RADIAN);
-	ch = cos(a.y * ANGLE_TO_RADIAN);
-	sb = sin(a.z * ANGLE_TO_RADIAN);
-	cb = cos(a.z * ANGLE_TO_RADIAN);
+	sp = sin(a.x * DEGREE2RADIAN);
+	cp = cos(a.x * DEGREE2RADIAN);
+	sh = sin(a.y * DEGREE2RADIAN);
+	ch = cos(a.y * DEGREE2RADIAN);
+	sb = sin(a.z * DEGREE2RADIAN);
+	cb = cos(a.z * DEGREE2RADIAN);
 
 	_XMatrix3x3 ret;
 

@@ -4,7 +4,6 @@
 //Date:		See the header file
 //--------------------------------
 #include "XCColor.h"
-
 const _XCColor _XCColor::gray(255.0f / 2, 255.0f / 2, 255.0f / 2);
 const _XCColor _XCColor::white(255.0f, 255.0f, 255.0f);
 const _XCColor _XCColor::red(255.0f, 0, 0);

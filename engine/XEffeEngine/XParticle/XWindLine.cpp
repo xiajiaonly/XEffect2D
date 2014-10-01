@@ -6,13 +6,29 @@ void _XWindLine::draw()
 	if(!m_isInited) return;
 	if(m_points.size() < 2) return;
 	float rate = 0;
-	for(int i = 0;i < m_points.size() - 1;++ i)
+	//for(int i = 0;i < m_points.size() - 1;++ i)
+	//{
+	//	rate = m_pointsLife[i] / m_maxLife * m_points[i + 1]->m_percentage;
+	//	if(rate > 0.666f) rate = (1.0f - rate) * 3.0f;
+	//	else rate = rate * 1.5f;
+	//	drawLine(m_points[i]->m_position,m_points[i + 1]->m_position,rate * m_wRate,1.0f,1.0f,1.0f,rate * m_aRate);
+	//}
+
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glLineWidth(2);
+	glBegin(GL_LINE_STRIP);
+	for(int i = 0;i < m_points.size();++ i)
 	{
-		rate = m_pointsLife[i] / m_maxLife * m_points[i + 1]->m_percentage;
+		rate = m_pointsLife[i] / m_maxLife * m_points[i]->m_percentage;
 		if(rate > 0.666f) rate = (1.0f - rate) * 3.0f;
 		else rate = rate * 1.5f;
-		drawLine(m_points[i]->m_position,m_points[i + 1]->m_position,rate * m_wRate,1.0f,1.0f,1.0f,rate * m_aRate);
+		glColor4f(0.6f,0.6f,1.0f,rate * m_aRate);
+		glVertex2fv(m_points[i]->m_position);
 	}
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
 }
 void _XWindLine::move(int stepTime)	//生命衰减
 {
@@ -24,9 +40,11 @@ void _XWindLine::move(int stepTime)	//生命衰减
 	}
 	if(sum > 0)
 	{
+	//	_XSmoothPoint *tmp = NULL;
 		for(int i = 0;i < sum;++ i)
 		{
 			m_pointsLife.pop_front();
+			XDELETE(m_points[0]);
 			m_points.pop_front();
 		}
 		updateData();	//更新点的状态

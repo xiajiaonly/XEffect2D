@@ -9,8 +9,9 @@
 //这是一个用于进度条的类，进度条使用三层贴图的解构，就是背景层，移动层和遮罩或者光反射层，其中移动层是必须要有的。
 
 #include "XControlBasic.h"
+#include "XResourcePack.h"
+#include "XResourceManager.h"
 #include "../XNumber.h"
-#include "../XSprite.h"
 
 class _XProgressTexture
 {
@@ -25,7 +26,7 @@ public:
 	_XVector2 m_fontPosition;	//放置文字的位置
 
 	_XProgressTexture();
-	~_XProgressTexture();
+	~_XProgressTexture(){release();}
 	_XBool init(const char *backgound,const char *move,const char *upon,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
@@ -65,16 +66,23 @@ public:
 		const _XProgressTexture &tex,	//控件的贴图
 		_XNumber* font,float captionSize,const _XVector2& textPosition,	//控件的文字
 		int mode = 0);
-	_XBool initEx(const _XVector2& position,//控件所在的位置
-		const _XProgressTexture &tex,	//控件的贴图
-		_XNumber* font,float captionSize,	//控件的文字
+	_XBool initEx(const _XVector2& position,//对上面接口的简化
+		const _XProgressTexture &tex,	
+		_XNumber* font,float captionSize = 1.0f,
 		int mode = 0);
 	_XBool initPlus(const char * path,
-		_XNumber* font,float captionSize,	//控件的文字
+		_XNumber* font,float captionSize = 1.0f,	//控件的文字
 		int mode = 0,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	_XBool initWithoutTex(const _XRect &area,
-		_XNumber* font,float captionSize,	//控件的文字
-		const _XVector2& textPosition,int mode = 0);
+		_XNumber* font = NULL,float captionSize = 1.0f,	//控件的文字
+		const _XVector2& textPosition = _XVector2(0.0f,0.0f),int mode = 0);
+	_XBool initWithoutTex(const _XVector2 &pixelSize,
+		_XNumber* font = NULL,float captionSize = 1.0f,	//控件的文字
+		const _XVector2& textPosition = _XVector2(0.0f,0.0f),int mode = 0)
+	{
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			font,captionSize,textPosition,mode);
+	}
 
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
@@ -82,46 +90,28 @@ public:
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);
 
-	void setTextColor(const _XFColor& color) 
-	{
-		m_textColor = color;
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		m_color.setColor(r,g,b,a);
-		m_spriteBackground.setColor(m_color);
-		m_spriteMove.setColor(m_color);
-		m_spriteUpon.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		m_color.setA(a);
-		m_spriteBackground.setColor(m_color);
-		m_spriteMove.setColor(m_color);
-		m_spriteUpon.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a);//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 
 protected:
 	void draw();
 	void drawUp(){};						//do nothing
-	_XBool mouseProc(float x,float y,_XMouseState mouseState){return XTrue;}	//do nothing
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState){return XTrue;}	//do nothing
-	void insertChar(const char *ch,int len){;}
-	_XBool canGetFocus(float x,float y){return XFalse;}	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
+	_XBool mouseProc(float,float,_XMouseState){return XTrue;}	//do nothing
+	_XBool keyboardProc(int,_XKeyState){return XTrue;}	//do nothing
+	void insertChar(const char *,int){;}
+	_XBool canGetFocus(float,float){return XFalse;}	//用于判断当前物件是否可以获得焦点
+	_XBool canLostFocus(float,float){return XTrue;}
 public:
 	void setValue(float temp);
 	float getValue() const;
 
 	_XBool setACopy(const _XProgress &temp);		//建立一个副本
 	_XProgress();
-	~_XProgress();
+	~_XProgress(){release();}
 	void release();
 	//下面是内联函数
 	void enable();
@@ -133,19 +123,8 @@ private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XProgress(const _XProgress &temp);
 	_XProgress& operator = (const _XProgress& temp);
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 };
-inline float _XProgress::getValue() const
-{
-	return m_nowValue;
-}
-inline void _XProgress::enable()
-{
-	m_isEnable = XTrue;
-}
-inline void _XProgress::disable()
-{
-	m_isEnable = XFalse;
-}
+#include "XProgress.inl"
 
 #endif

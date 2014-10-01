@@ -16,7 +16,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 {
 	if(m_isInited) 
 	{
-		AddLogInfoStr("The action have initted!\n");
+		LogStr("The action have initted!");
 		return XTrue;
 	}
 	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
@@ -74,7 +74,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 	int nameLength = strlen(m_frameName);
 	if(nameLength < 7)
 	{
-		AddLogInfoStr("Action file path error!\n");
+		LogStr("Action file path error!");
 		//exit(1);
 		return XFalse;
 	}
@@ -110,7 +110,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 			if(ResourceTemp.checkCheckData() == 0)
 			{//严重的错误，这里定掉游戏
 				DebugShow("Resource Data Error!\n");
-				while(1)
+				while(true)
 				{
 					Sleep(100);
 				}
@@ -121,25 +121,25 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		if(p == NULL) return XFalse;
 
 		int offset = 0;
-		sscanf((char *)(p + offset),"%d:",&m_allKeyFramesSum);
+		if(sscanf((char *)(p + offset),"%d:",&m_allKeyFramesSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(m_allKeyFramesSum <= 0 || m_allKeyFramesSum >= MAX_FRAME_SUM)
 		{
-			AddLogInfoNull("Action text file data error:%s!\n",tempFrameName);
+			LogNull("Action text file data error:%s!\n",tempFrameName);
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
-		sscanf((char *)(p + offset),"%d:",&m_allFramesSum);
+		if(sscanf((char *)(p + offset),"%d:",&m_allFramesSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
 		offset += getCharPosition((char *)(p + offset),':') + 1;
 		if(m_allFramesSum <= 0 || m_allFramesSum >= MAX_FRAME_SUM)
 		{
-			AddLogInfoNull("Action text file data error:%s!\n",tempFrameName);
+			LogNull("Action text file data error:%s!\n",tempFrameName);
 			XDELETE_ARRAY(p);
 			return XFalse;
 		}
 		{//读取标记符	D：default, M：menutrue
 			char tempFlag = ' ';
-			sscanf((char *)(p + offset),"%c:",&tempFlag);
+			if(sscanf((char *)(p + offset),"%c:",&tempFlag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 			offset += getCharPosition((char *)(p + offset),':') + 1;
 			if(tempFlag == 'D' || tempFlag == 'd')
 			{
@@ -151,11 +151,11 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 			{	
 				for(int i =0;i < m_allFramesSum;++ i)
 				{
-					sscanf((char *)(p + offset),"%d,",&m_keyFrameArray[i]);
+					if(sscanf((char *)(p + offset),"%d,",&m_keyFrameArray[i]) != 1) {XDELETE_ARRAY(p);return XFalse;}
 					offset += getCharPosition((char *)(p + offset),',') + 1;
 					if(m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
 					{
-						AddLogInfoNull("Action text file data error:%s -> %d!\n",tempFrameName,i);
+						LogNull("Action text file data error:%s -> %d!\n",tempFrameName,i);
 						XDELETE_ARRAY(p);
 						return XFalse;
 					}
@@ -164,7 +164,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		}
 		{//读取标记符	D：default, M：menutrue
 			char tempFlag = ' ';
-			sscanf((char *)(p + offset),"%c:",&tempFlag);
+			if(sscanf((char *)(p + offset),"%c:",&tempFlag) != 1) {XDELETE_ARRAY(p);return XFalse;}
 			offset += getCharPosition((char *)(p + offset),':') + 1;
 			if(tempFlag == 'D' || tempFlag == 'd')
 			{
@@ -179,7 +179,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 				int temp_z;
 				for(int i =0;i < m_allFramesSum;++ i)
 				{
-					sscanf((char *)(p + offset),"(%d,%d,%d),",&temp_z,&temp_x,&temp_y);
+					if(sscanf((char *)(p + offset),"(%d,%d,%d),",&temp_z,&temp_x,&temp_y) != 3) {XDELETE_ARRAY(p);return XFalse;}
 					offset += getCharPosition((char *)(p + offset),',') + 1;
 					offset += getCharPosition((char *)(p + offset),',') + 1;
 					offset += getCharPosition((char *)(p + offset),',') + 1;
@@ -194,26 +194,26 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		FILE *fp = NULL;
 		if((fp = fopen(tempFrameName,"rb")) == NULL)
 		{
-			AddLogInfoStr("Action text file error!\n");
-			return 0;
+			LogStr("Action text file error!");
+			return XFalse;
 		}
-		fscanf(fp,"%d:",&m_allKeyFramesSum);
+		if(fscanf(fp,"%d:",&m_allKeyFramesSum) != 1) {fclose(fp);return XFalse;}
 		if(m_allKeyFramesSum <= 0 || m_allKeyFramesSum >= MAX_FRAME_SUM)
 		{
-			AddLogInfoNull("Action text file data error:%s!\n",tempFrameName);
+			LogNull("Action text file data error:%s!\n",tempFrameName);
 			fclose(fp);
 			return XFalse;
 		}
-		fscanf(fp,"%d:",&m_allFramesSum);
+		if(fscanf(fp,"%d:",&m_allFramesSum) != 1) {fclose(fp);return XFalse;}
 		if(m_allFramesSum <= 0 || m_allFramesSum >= MAX_FRAME_SUM)
 		{
-			AddLogInfoNull("Action text file data error:%s!\n",tempFrameName);
+			LogNull("Action text file data error:%s!\n",tempFrameName);
 			fclose(fp);
 			return XFalse;
 		}
 		{//读取标记符	D：default, M：menutrue
 			char tempFlag = ' ';
-			fscanf(fp,"%c:",&tempFlag);
+			if(fscanf(fp,"%c:",&tempFlag) != 1) {fclose(fp);return XFalse;}
 			if(tempFlag == 'D' || tempFlag == 'd')
 			{
 				for(int i =0;i < m_allFramesSum;++ i)
@@ -224,10 +224,10 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 			{	
 				for(int i =0;i < m_allFramesSum;++ i)
 				{
-					fscanf(fp,"%d,",&m_keyFrameArray[i]);
+					if(fscanf(fp,"%d,",&m_keyFrameArray[i]) != 1) {fclose(fp);return XFalse;}
 					if(m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
 					{
-						AddLogInfoNull("Action text file data error:%s -> %d!\n",tempFrameName,i);
+						LogNull("Action text file data error:%s -> %d!\n",tempFrameName,i);
 						fclose(fp);
 						return XFalse;
 					}
@@ -236,7 +236,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		}
 		{//读取标记符	D：default, M：menutrue
 			char tempFlag = ' ';
-			fscanf(fp,"%c:",&tempFlag);
+			if(fscanf(fp,"%c:",&tempFlag) != 1) {fclose(fp);return XFalse;}
 			if(tempFlag == 'D' || tempFlag == 'd')
 			{
 				for(int i =0;i < m_allFramesSum;++ i)
@@ -250,7 +250,7 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 				int temp_z;
 				for(int i =0;i < m_allFramesSum;++ i)
 				{
-					fscanf(fp,"(%d,%d,%d),",&temp_z,&temp_x,&temp_y);
+					if(fscanf(fp,"(%d,%d,%d),",&temp_z,&temp_x,&temp_y) != 3) {fclose(fp);return XFalse;}
 					m_keyFramePosition[i].set(temp_x,temp_y);
 				}
 			}
@@ -268,9 +268,9 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		tempFrameName[nameLength - 6] = numble[1];
 		tempFrameName[nameLength - 7] = numble[2];
 
-		if(m_texnum[i].load(tempFrameName,m_resoursePosition) == 0)
+		if(!m_texnum[i].load(tempFrameName,m_resoursePosition))
 		{
-			AddLogInfoStr("The action pictrue load error!\n");
+			LogStr("The action pictrue load error!");
 			return XFalse;
 		}else
 		{
@@ -299,9 +299,9 @@ _XBool _XFrame::init(const char *filename,_XResourcePosition resoursePosition)
 		m_centerDH[i] = m_centerY - (m_texnum[i].m_h * 0.5f + m_keyFramePosition[i].y);
 	}
 
-	m_isInited = 1;
-	m_isEnd = 0;
-	m_isSetEnd = 0;
+	m_isInited = XTrue;
+	m_isEnd = XFalse;
+	m_isSetEnd = XFalse;
 	return XTrue;
 }
 _XBool _XFrame::releaseMem()
@@ -335,7 +335,7 @@ _XBool _XFrame::releaseMem()
 }
 void _XFrame::draw(const GLuint *pTexnum) const
 {//序列帧精灵
-	if(!m_isVisiable) return;
+	if(!m_isVisible) return;
 	if(m_isDisappearAtEnd && m_isEnd) return;	//播放完成之后消失
 
 	int temp_Frame = m_keyFrameArray[(int)(m_nowFramesNumble)];
@@ -354,7 +354,7 @@ void _XFrame::draw(const GLuint *pTexnum) const
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
 	glLoadIdentity();
-	glOrtho(0, 2*wre[temp_Frame], 0, 2*hre[temp_Frame], -1, 1);
+	glOrtho(0, wre[temp_Frame] << 1, 0, hre[temp_Frame] << 1, -1, 1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -401,30 +401,30 @@ void _XFrame::draw(const GLuint *pTexnum) const
 #endif
 	if(!m_isOverturn)
 	{
-		glTexCoord2d(xpa[temp_Frame], ypa[temp_Frame]);
-		glVertex2d(-halfW, -halfH);
+		glTexCoord2f(xpa[temp_Frame], ypa[temp_Frame]);
+		glVertex2f(-halfW, -halfH);
 
-		glTexCoord2d(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame]);
-		glVertex2d(halfW, -halfH);
+		glTexCoord2f(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame]);
+		glVertex2f(halfW, -halfH);
 
-		glTexCoord2d(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
-		glVertex2d(halfW, halfH);
+		glTexCoord2f(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
+		glVertex2f(halfW, halfH);
 
-		glTexCoord2d(xpa[temp_Frame], ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
-		glVertex2d(-halfW, halfH);
+		glTexCoord2f(xpa[temp_Frame], ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
+		glVertex2f(-halfW, halfH);
 	}else
 	{
-		glTexCoord2d(xpa[temp_Frame], ypa[temp_Frame]);
-		glVertex2d(halfW, -halfH);
+		glTexCoord2f(xpa[temp_Frame], ypa[temp_Frame]);
+		glVertex2f(halfW, -halfH);
 
-		glTexCoord2d(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame]);
-		glVertex2d(-halfW, -halfH);
+		glTexCoord2f(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame]);
+		glVertex2f(-halfW, -halfH);
 
-		glTexCoord2d(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
-		glVertex2d(-halfW, halfH);
+		glTexCoord2f(xpa[temp_Frame] + m_texnum[temp_Frame].m_w, ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
+		glVertex2f(-halfW, halfH);
 
-		glTexCoord2d(xpa[temp_Frame], ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
-		glVertex2d(halfW, halfH);
+		glTexCoord2f(xpa[temp_Frame], ypa[temp_Frame] + m_texnum[temp_Frame].m_h);
+		glVertex2f(halfW, halfH);
 	}
 	glEnd();
 	//if(m_pShaderProc != NULL) glUseProgram(0);				//停止使用shader
@@ -461,10 +461,7 @@ void _XFrame::move(int timeDelay)
 	{//如果是倒序播放的话，这里判断是否播放完成(以及进行完成处理)
 		m_nowFramesNumble = m_allFramesSum - 0.05f;		//note this 0.05!!
 
-		if(!m_isEndImmediately)
-		{
-			if(m_isSetEnd) m_isEnd = XTrue;
-		}
+		if(!m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;
 		if(!m_isLoop) m_isEnd = XTrue;
 	}
 }
@@ -516,7 +513,7 @@ _XFrame::_XFrame()
 ,colorGreen(1.0f)
 ,colorBlue(1.0f)
 ,m_isOverturn(XFalse)	//默认情况下不翻转
-,m_isVisiable(XTrue)
+,m_isVisible(XTrue)
 ,m_allFramesSum(0)							//序列帧动画中总帧数
 ,m_allKeyFramesSum(0)						//序列帧动画中关键帧的数量
 ,m_nowFramesNumble(0.0f)					//当前播放到第几帧
@@ -571,7 +568,7 @@ _XFrame::_XFrame()
 //,colorGreen(1.0f)
 //,colorBlue(1.0f)
 //,m_isOverturn(0)	//默认情况下不翻转
-//,m_isVisiable(1)
+//,m_isVisible(1)
 //,m_allFramesSum(0)							//序列帧动画中总帧数
 //,m_allKeyFramesSum(0)						//序列帧动画中关键帧的数量
 //,m_nowFramesNumble(0.0f)					//当前播放到第几帧
@@ -631,7 +628,7 @@ _XFrame& _XFrame::operator = (const _XFrame& temp)
 	}
 	m_cp = temp.m_cp;
 
-	m_isVisiable = temp.m_isVisiable;					//精灵的角度
+	m_isVisible = temp.m_isVisible;					//精灵的角度
 	angle = temp.angle;					//精灵的角度
 	angleRadian = temp.angleRadian;		//弧度标志的角度
 	sinAngle = temp.sinAngle;
@@ -679,7 +676,7 @@ _XFrame& _XFrame::operator = (const _XFrame& temp)
 	memcpy(m_keyFramePosition,temp.m_keyFramePosition,sizeof(_XVector2) * MAX_FRAME_SUM);
 
 	m_isInited = temp.m_isInited;
-	m_isACopy = 1;
+	m_isACopy = XTrue;
 	return *this;
 }
 void _XFrame::setACopy(const _XFrame& temp)
@@ -700,7 +697,7 @@ void _XFrame::setACopy(const _XFrame& temp)
 	}
 	m_cp = temp.m_cp;
 
-	m_isVisiable = temp.m_isVisiable;					//精灵的角度
+	m_isVisible = temp.m_isVisible;					//精灵的角度
 	angle = temp.angle;					//精灵的角度
 	angleRadian = temp.angleRadian;		//弧度标志的角度
 	sinAngle = temp.sinAngle;

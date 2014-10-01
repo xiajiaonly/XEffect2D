@@ -53,8 +53,8 @@ void removeRedundantSpace(char *p)	//删除连续的或者行尾的空格符
 }
 _XBool _XModelObj::save(const char *filename)
 {
-	if(!m_isInited) return XFalse;
-	if(filename == NULL) return XFalse;
+	if(!m_isInited ||
+		filename == NULL) return XFalse;
 	FILE *fp = NULL;
 	if((fp = fopen(filename,"w")) == NULL) return XFalse;	//文件打开失败
 	fprintf(fp,"# xiajia_1981@163.com\n");
@@ -128,10 +128,30 @@ _XBool _XModelObj::save(const char *filename)
 	fclose(fp);
 	return XTrue;
 }
+std::string getObjInfo0FromStr(const char * p)
+{
+	if(p == NULL) return "";
+	static char tempLineData[1024];	//注意这里的1024的最大限制
+	std::string tmp;
+	int len = strlen(p);
+	if(isUTF8(p,len)) tmp = UTF82ANSI(p);
+	else tmp = p;
+	int s,e,b;
+	if(!getFirtCanShowString(tmp.c_str(),s,e))
+	{
+		printf("错误的数据:%s\n",tmp.c_str());
+	}else
+	{
+		b = getCharPosition(tmp.c_str() + s,' ');
+		memcpy(tempLineData,tmp.c_str() + s + b + 1,e - s - b);
+		tempLineData[e - s - b] = '\0';
+	}
+	return tempLineData;
+}
 _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 {
-	if(m_isInited) return XFalse;	//防止重复初始化
-	if(filename == NULL) return XFalse;
+	if(m_isInited ||
+		filename == NULL) return XFalse;
 	FILE *fp = NULL;
 	if((fp = fopen(filename,"r")) == NULL) return XFalse;	//文件打开失败
 	char lineData[256];
@@ -142,10 +162,10 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 	_XFaceInfo tempFaceInfo;
 	_XGroupInfo *tempGroupInfo = NULL;
 	int len = 0;
-	while(1)
+	while(true)
 	{
 		if(fgets(lineData,256,fp) == NULL) break;
-		while(1)
+		while(true)
 		{
 			len = strlen(lineData);
 			if(len > 2 && lineData[len - 2] == '\\' && lineData[len - 1] == '\n')
@@ -217,8 +237,8 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 		if(lineData[0] == 'g' && lineData[1] == ' ')
 		{//组
 			//读取组名
-			sscanf(lineData,"g %s",tempLineData);
-			tempGroupInfo = getGroup(tempLineData);
+			std::string tmp = getObjInfo0FromStr(lineData);
+			tempGroupInfo = getGroup(tmp.c_str());
 			if(tempGroupInfo == NULL)
 			{
 				tempGroupInfo = createMem<_XGroupInfo>();
@@ -228,7 +248,7 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 					return XFalse;
 				}
 				m_group.push_back(tempGroupInfo);
-				tempGroupInfo->groupName = tempLineData;
+				tempGroupInfo->groupName = tmp;
 			}
 		}else
 		{
@@ -250,25 +270,24 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 						m_group.push_back(tempGroupInfo);
 					}
 					//读取材质名
-					sscanf(lineData,"usemtl %s",tempLineData);
-					tempGroupInfo->materialName = tempLineData;
+					tempGroupInfo->materialName = getObjInfo0FromStr(lineData);
 				}else
 				if(strcmp(tempLineData,"mtllib") == 0)
 				{//mtllib材质文件
-					sscanf(lineData,"mtllib %s",tempLineData);
-					m_materialFilename.push_back(tempLineData);
-					strcpy(lineData,filename);
-					len = getPathDeepByChar(lineData);
-					if(len > 0) lineData[len + 1] = '\0';
-					if(len == 0) strcpy(lineData,tempLineData);
-					else
-						strcat(lineData,tempLineData);
-					if(loadMaterial(lineData))
+					std::string tmp = getObjInfo0FromStr(lineData);
+					if(tmp == "")
+					{
+						printf("错误的数据:%s\n",lineData);
+						continue;
+					}
+					m_materialFilename.push_back(tmp);
+					tmp = mergeFilename(filename,tmp);
+					if(loadMaterial(tmp.c_str()))
 					{
 						m_materialIndex.push_back(m_material.size());
 					}else
 					{
-						printf("材质文件丢失！\n");
+						printf("材质文件丢失:%s\n",tmp.c_str());
 					}
 				}
 			}
@@ -277,7 +296,55 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 	}
 
 	fclose(fp);
-	if(!checkData()) return 0;
+	if(!checkData()) return XFalse;
+	//下面计算物体的碰撞盒子(尚未完成)
+	bool first = true;
+	float xMin = 0.0f,xMax = 0.0f,yMin = 0.0f,yMax = 0.0f,zMin = 0.0f,zMax = 0.0f;
+	_XVector3 tmpV;
+	for(int i = 0;i < m_group.size();++ i)
+	{
+		for(int j = 0;j < m_group[i]->face.size();++ j)
+		{
+			tmpV = m_point[m_group[i]->face[j].vIndex.x - 1];
+			if(first)
+			{
+				xMin = tmpV.x;xMax = tmpV.x;
+				yMin = tmpV.y;yMax = tmpV.y;
+				zMin = tmpV.z;zMax = tmpV.z;
+				first = false;
+			}else
+			{
+				if(tmpV.x < xMin) xMin = tmpV.x;
+				if(tmpV.x > xMax) xMax = tmpV.x;
+				if(tmpV.y < yMin) yMin = tmpV.y;
+				if(tmpV.y > yMax) yMax = tmpV.y;
+				if(tmpV.z < zMin) zMin = tmpV.z;
+				if(tmpV.z > zMax) zMax = tmpV.z;
+			}
+			tmpV = m_point[m_group[i]->face[j].vIndex.y - 1];
+			if(tmpV.x < xMin) xMin = tmpV.x;
+			if(tmpV.x > xMax) xMax = tmpV.x;
+			if(tmpV.y < yMin) yMin = tmpV.y;
+			if(tmpV.y > yMax) yMax = tmpV.y;
+			if(tmpV.z < zMin) zMin = tmpV.z;
+			if(tmpV.z > zMax) zMax = tmpV.z;
+			tmpV = m_point[m_group[i]->face[j].vIndex.z - 1];
+			if(tmpV.x < xMin) xMin = tmpV.x;
+			if(tmpV.x > xMax) xMax = tmpV.x;
+			if(tmpV.y < yMin) yMin = tmpV.y;
+			if(tmpV.y > yMax) yMax = tmpV.y;
+			if(tmpV.z < zMin) zMin = tmpV.z;
+			if(tmpV.z > zMax) zMax = tmpV.z;
+		}
+	}
+	m_bandBox[0].set(xMin,yMin,zMin);
+	m_bandBox[1].set(xMax,yMin,zMin);
+	m_bandBox[2].set(xMax,yMax,zMin);
+	m_bandBox[3].set(xMin,yMax,zMin);
+	m_bandBox[4].set(xMin,yMin,zMax);
+	m_bandBox[5].set(xMax,yMin,zMax);
+	m_bandBox[6].set(xMax,yMax,zMax);
+	m_bandBox[7].set(xMin,yMax,zMax);
 	m_isInited = XTrue;
 	return XTrue;
 }
@@ -415,9 +482,8 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 	char tempLineData[256];
 	int startIndex = 0;
 	int endIndex = 0;
-	int len;
 	_XMaterialInfo * tempMaterialInfo = NULL;
-	while(1)
+	while(true)
 	{
 		if(fgets(lineData,256,fp) == NULL) break;
 		if(lineData[0] == '#') continue;	//注释
@@ -432,37 +498,51 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 				fclose(fp);
 				return XFalse;
 			}
-			sscanf(lineData,"newmtl %s",tempLineData);
-			tempMaterialInfo->matetialName = tempLineData;
+			//sscanf(lineData,"newmtl %s",tempLineData);
+			tempMaterialInfo->matetialName = getObjInfo0FromStr(lineData);
 			m_material.push_back(tempMaterialInfo);
 		}else
 		if(strcmp(tempLineData,"map_Kd") == 0)
 		{//普通贴图
 			if(tempMaterialInfo == NULL) return XFalse;
 			//下面读取资源
-			sscanf(lineData + endIndex + 1," %s",tempLineData);
-			tempMaterialInfo->mapKdName = tempLineData;
-			strcpy(lineData,filename);
-			len = getPathDeepByChar(lineData);
-			if(len > 0) lineData[len + 1] = '\0';
-			if(len == 0) strcpy(lineData,tempLineData);
-			else strcat(lineData,tempLineData);
-			if(!tempMaterialInfo->textureData.load(lineData)) return XFalse;
-			tempMaterialInfo->withTexture = XTrue;
+			std::string tmp = getObjInfo0FromStr(lineData);
+			if(tmp == "")
+			{
+				printf("错误的数据:%s\n",lineData);
+				tempMaterialInfo->withTexture = XFalse;
+				continue;
+			}
+			tempMaterialInfo->mapKdName = tmp;
+			//路径整合
+			tmp = mergeFilename(filename,tmp);
+			if(!tempMaterialInfo->textureData.load(tmp.c_str()))
+			{
+				printf("贴图文件读取失败:%s\n",tmp.c_str());
+				tempMaterialInfo->withTexture = XFalse;
+			}else
+				tempMaterialInfo->withTexture = XTrue;
 		}else
 		if(strcmp(tempLineData,"map_bump") == 0)
 		{//法线贴图
 			if(tempMaterialInfo == NULL) return XFalse;
 			//下面读取资源
-			sscanf(lineData + endIndex + 1," %s",tempLineData);
-			tempMaterialInfo->mapDumpName = tempLineData;
-			strcpy(lineData,filename);
-			len = getPathDeepByChar(lineData);
-			if(len > 0) lineData[len + 1] = '\0';
-			if(len == 0) strcpy(lineData,tempLineData);
-			else strcat(lineData,tempLineData);
-			if(!tempMaterialInfo->dumpTexData.load(lineData)) return XFalse;
-			tempMaterialInfo->withDumpTex = XTrue;
+			std::string tmp = getObjInfo0FromStr(lineData);
+			if(tmp == "")
+			{
+				printf("错误的数据:%s\n",lineData);
+				tempMaterialInfo->withDumpTex = XFalse;
+				continue;
+			}
+			tempMaterialInfo->mapDumpName = tmp;
+			//路径整合
+			tmp = mergeFilename(filename,tmp);
+			if(!tempMaterialInfo->dumpTexData.load(tmp.c_str()))
+			{
+				printf("贴图文件读取失败:%s\n",tmp.c_str());
+				tempMaterialInfo->withDumpTex = XFalse;
+			}else
+				tempMaterialInfo->withDumpTex = XTrue;
 			//连接shader
 		//	if(tempMaterialInfo->normalShader == NULL)
 		//	{
@@ -476,65 +556,64 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 		if(strcmp(tempLineData,"illum") == 0)
 		{//illum(尚未实现)
 			if(tempMaterialInfo == NULL) return XFalse;
-			int tempIllum = 0;
-			sscanf(lineData + endIndex + 1," %d",&tempIllum);
-			tempMaterialInfo->illum = tempIllum;
+			if(sscanf(lineData + endIndex + 1," %d",&tempMaterialInfo->illum) != 1) return XFalse;
 		}else
 		if(tempLineData[0] == 'K' && tempLineData[1] == 'a')
 		{//ka
 			if(tempMaterialInfo == NULL) return XFalse;
-			sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ka.x,&tempMaterialInfo->ka.y,&tempMaterialInfo->ka.z);
+			if(sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ka.x,
+				&tempMaterialInfo->ka.y,&tempMaterialInfo->ka.z) != 3) return XFalse;
 			tempMaterialInfo->ka.w = 1.0f;
 		}else
 		if(tempLineData[0] == 'K' && tempLineData[1] == 'd')
 		{//kd
 			if(tempMaterialInfo == NULL) return XFalse;
-			sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->kd.x,&tempMaterialInfo->kd.y,&tempMaterialInfo->kd.z);
+			if(sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->kd.x,
+				&tempMaterialInfo->kd.y,&tempMaterialInfo->kd.z) != 3) return XFalse;
 			tempMaterialInfo->kd.w = 1.0f;
 		}else
 		if(tempLineData[0] == 'K' && tempLineData[1] == 's')
 		{//ks
 			if(tempMaterialInfo == NULL) return XFalse;
-			sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ks.x,&tempMaterialInfo->ks.y,&tempMaterialInfo->ks.z);
+			if(sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ks.x,
+				&tempMaterialInfo->ks.y,&tempMaterialInfo->ks.z) != 3) return XFalse;
 			tempMaterialInfo->ks.w = 1.0f;
 		}else
 		if(tempLineData[0] == 'K' && tempLineData[1] == 'e')
 		{//ke
 			if(tempMaterialInfo == NULL) return XFalse;
-			sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ke.x,&tempMaterialInfo->ke.y,&tempMaterialInfo->ke.z);
+			if(sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->ke.x,
+				&tempMaterialInfo->ke.y,&tempMaterialInfo->ke.z) != 3) return XFalse;
 			tempMaterialInfo->ke.w = 0.0f;
 		}else
 		if(tempLineData[0] == 'N' && tempLineData[1] == 'i')
 		{//Ni(尚未方式)
 			if(tempMaterialInfo == NULL) return XFalse;
-			float tempNi = 0;
-			sscanf(lineData + endIndex + 1," %f",&tempNi);
-			tempMaterialInfo->Ni = tempNi;
+			if(sscanf(lineData + endIndex + 1," %f",&tempMaterialInfo->Ni) != 1) return XFalse;
 		}else
 		if(tempLineData[0] == 'N' && tempLineData[1] == 's')
 		{//Ns
 			if(tempMaterialInfo == NULL) return XFalse;
 			float tempNs = 0;
-			sscanf(lineData + endIndex + 1," %f",&tempNs);
+			if(sscanf(lineData + endIndex + 1," %f",&tempNs) != 1) return XFalse;
 			tempMaterialInfo->shininess = tempNs * 0.001f * 128.0f;
 		}else
 		if(tempLineData[0] == 'T' && tempLineData[1] == 'r')
 		{//Tr
 			if(tempMaterialInfo == NULL) return XFalse;
 			float tempAlpha = 0;
-			sscanf(lineData + endIndex + 1," %f",&tempAlpha);
+			if(sscanf(lineData + endIndex + 1," %f",&tempAlpha) != 1) return XFalse;
 			tempMaterialInfo->alpha = 1.0f - tempAlpha;
 		}else
 		if(tempLineData[0] == 'T' && tempLineData[1] == 'f')
 		{//Tf(尚未实现)
-			sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->Tf.x,&tempMaterialInfo->Tf.y,&tempMaterialInfo->Tf.z);
+			if(sscanf(lineData + endIndex + 1," %f %f %f",&tempMaterialInfo->Tf.x,
+				&tempMaterialInfo->Tf.y,&tempMaterialInfo->Tf.z) != 3) return XFalse;
 		}else
 		if(tempLineData[0] == 'd')
 		{//d
 			if(tempMaterialInfo == NULL) return XFalse;
-			float tempAlpha = 0;
-			sscanf(lineData + endIndex + 1," %f",&tempAlpha);
-			tempMaterialInfo->alpha = tempAlpha;
+			if(sscanf(lineData + endIndex + 1," %f",&tempMaterialInfo->alpha) != 1) return XFalse;
 		}
 		if(feof(fp)) break;	//文件读取完成之后直接退出
 	}
@@ -545,8 +624,8 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 _XBool _XModelObj::saveMaterial()
 {
 	int sum = m_materialFilename.size();
-	int mSum = m_material.size();
 	if(sum == 0) return XTrue;	//如果没有材质文件直接返回
+	int mSum = m_material.size();
 	FILE * fp = NULL;
 	for(int i = 0;i < sum;++ i)
 	{
@@ -610,7 +689,7 @@ _XBool _XModelObj::checkData()
 			tempGroup->materialIndex = getMaterialIndex(tempGroup->materialName);
 			if(tempGroup->materialIndex == -1)
 			{
-				printf("贴图文件丢失!\n");
+				printf("缺失材质说明：%s\n",tempGroup->groupName.c_str());
 				tempGroup->withTexInfo = 0;
 			}
 		}
@@ -716,7 +795,7 @@ int _XModelObj::getMaterialIndex(const string &str)
 	}
 	return -1;
 }
-void _XModelObj::draw(_XBool withTex)
+void _XModelObj::draw(_XBool withTex,const _XBasic3DObject *base)
 {
 	if(!m_isInited) return;
 	updateMatrix();
@@ -724,14 +803,15 @@ void _XModelObj::draw(_XBool withTex)
 	glPushMatrix();
 //	glLoadIdentity();
 
+	if(base != NULL) glMultMatrixf(base->getMatrix());
 	glMultMatrixf(m_matrix);
 	//glTranslatef(m_position.x,m_position.y,m_position.z);
 	//glRotatef(m_angle.x,1,0,0);
 	//glRotatef(m_angle.y,0,1,0);
 	//glRotatef(m_angle.z,0,0,1);
 	//glScalef(m_size.x,m_size.y,m_size.z);
-	drawOrigin();
-	glColor4fv(_XFColor::white);
+	//drawOrigin();
+	glColor4f(1.0f,1.0f,1.0f,1.0f);
 
 	_XGroupInfo * tempGroup = NULL;
 	for(int i = 0;i < m_group.size();++ i)
@@ -755,19 +835,17 @@ void _XModelObj::draw(_XBool withTex)
 				//glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA * m_material[tempGroup->materialIndex]->alpha);
 			}else
 			{//有材质无贴图
-				glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				glColor4fv(m_color);
 				_X3DWorld::GetInstance().useShadow(needTexture,SHADER_SHADOW);
 			}
 		}else
 		{//如果不存在贴图
 			_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
-			glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+			glColor4fv(m_color);
 			_X3DWorld::GetInstance().useShadow(needTexture,SHADER_SHADOW);
 		}
 
-		tempGroup->vbo.use(withTex);
-		glDrawArrays(GL_TRIANGLES,0,tempGroup->vbo.getSize()); 
-		tempGroup->vbo.disuse();
+		tempGroup->vbo.drawByArray(GL_TRIANGLES,withTex);
 
 		_X3DWorld::GetInstance().removeShadow();
 		

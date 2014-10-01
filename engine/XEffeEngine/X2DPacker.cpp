@@ -9,7 +9,7 @@ void _X2DPacker::orderObjectByWidth()
 {//高度排序
 	_XObjectBox temp;
 	_XBool flag = XFalse;
-	while(1)
+	while(true)
 	{
 		flag = XFalse;
 		for(int i = 0;i < m_objectBoxSum - 1;++ i)
@@ -22,7 +22,7 @@ void _X2DPacker::orderObjectByWidth()
 				flag = XTrue;
 			}
 		}
-		if(flag == XFalse) break;	//排序完成
+		if(!flag) break;	//排序完成
 	}
 }
 //按照面积排序
@@ -30,7 +30,7 @@ void _X2DPacker::orderObjectByArea()
 {
 	_XObjectBox temp;
 	_XBool flag = XFalse;
-	while(1)
+	while(true)
 	{
 		flag = XFalse;
 		for(int i = 0;i < m_objectBoxSum - 1;++ i)
@@ -43,7 +43,7 @@ void _X2DPacker::orderObjectByArea()
 				flag = XTrue;
 			}
 		}
-		if(flag == XFalse) break;
+		if(!flag) break;
 	}
 }
 //按照最大边排序，然后再按面积排序
@@ -52,7 +52,7 @@ void _X2DPacker::orderObjectByBigEdgeAndArea()
 	orderObjectByArea();	//首先按面积排序
 	_XObjectBox temp;
 	_XBool flag = XFalse;
-	while(1)
+	while(true)
 	{
 		flag = XFalse;
 		for(int i = 0;i < m_objectBoxSum - 1;++ i)
@@ -65,7 +65,7 @@ void _X2DPacker::orderObjectByBigEdgeAndArea()
 				flag = XTrue;
 			}
 		}
-		if(flag == XFalse) break;
+		if(!flag) break;
 	}
 }
 
@@ -88,7 +88,7 @@ int _X2DPacker::findResult(int orderMode)
 	int checkFlag = 0;
 	//1、物件的最大尺寸不能大于箱子的尺寸
 	//for(int i = 0;i < m_objectBoxSum - 1;++ i)
-	if(m_canRotate == XFalse)
+	if(!m_canRotate)
 	{//不能旋转的装箱问题
 		for(int i = 0;i < m_objectBoxSum;++ i)
 		{
@@ -144,7 +144,7 @@ int _X2DPacker::putInABox(_XObjectBox &objectBox)
 void _X2DPacker::updatePutOperate(_XObjectBox &objectBox,_XBasicBox &basicBox,_XBool needRotate,float positionX,float positionY)
 {
 	_XVector2 tempSize(0.0f,0.0f);
-	if(needRotate == XFalse) tempSize.set(objectBox.m_size.x,objectBox.m_size.y);
+	if(!needRotate) tempSize.set(objectBox.m_size.x,objectBox.m_size.y);
 	else tempSize.set(objectBox.m_size.y,objectBox.m_size.x);
 
 	objectBox.m_basicBoxOrder = basicBox.m_order;
@@ -186,7 +186,7 @@ void _X2DPacker::updateNewXY(_XBasicBox &basicBox,int x,int y)
 			break;
 		}
 	}
-	if(isInsert == XFalse)
+	if(!isInsert)
 	{//插入失败
 		basicBox.m_mayPositionX[basicBox.m_mayPositionXSum] = x;
 		basicBox.m_mayPositionXSum ++;
@@ -211,7 +211,7 @@ void _X2DPacker::updateNewXY(_XBasicBox &basicBox,int x,int y)
 			break;
 		}
 	}
-	if(isInsert == XFalse)
+	if(!isInsert)
 	{//插入失败
 		basicBox.m_mayPositionY[basicBox.m_mayPositionYSum] = y;
 		basicBox.m_mayPositionYSum ++;
@@ -230,7 +230,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 			else updateNewXY(basicBox,objectBox.m_size.x,objectBox.m_size.y);
 			return 1;
 		}
-		if(m_canRotate == XTrue && basicBox.m_size.x >= objectBox.m_size.y && basicBox.m_size.y >= objectBox.m_size.x)
+		if(m_canRotate && basicBox.m_size.x >= objectBox.m_size.y && basicBox.m_size.y >= objectBox.m_size.x)
 		{//考虑旋转放入
 			updatePutOperate(objectBox,basicBox,XTrue,0,0);
 			if(m_optimizeLevel == 0) updateNewPoint(basicBox,objectBox.m_size.y,objectBox.m_size.x,0);
@@ -250,13 +250,13 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 			{
 				tempPy = (float)(basicBox.m_mayPositionY[k]);
 				//这里是为了优化速度，对于不需要判断的点直接放弃
-				if((m_canRotate == XFalse && tempPy + objectBox.m_size.y > basicBox.m_size.y)
-					|| (m_canRotate == XTrue && tempPy + objectBox.m_size.x > basicBox.m_size.y && tempPy + objectBox.m_size.y > basicBox.m_size.y)) continue;
+				if((!m_canRotate && tempPy + objectBox.m_size.y > basicBox.m_size.y)
+					|| (m_canRotate && tempPy + objectBox.m_size.x > basicBox.m_size.y && tempPy + objectBox.m_size.y > basicBox.m_size.y)) continue;
 				for(int i = 0;i < basicBox.m_mayPositionXSum;++ i)
 				{
 					tempPx = (float)(basicBox.m_mayPositionX[i]);
-					if((m_canRotate == XFalse && tempPx + objectBox.m_size.x > basicBox.m_size.x)
-						|| (m_canRotate == XTrue && tempPx + objectBox.m_size.y > basicBox.m_size.x && tempPx + objectBox.m_size.x > basicBox.m_size.x)) break;
+					if((!m_canRotate && tempPx + objectBox.m_size.x > basicBox.m_size.x)
+						|| (m_canRotate && tempPx + objectBox.m_size.y > basicBox.m_size.x && tempPx + objectBox.m_size.x > basicBox.m_size.x)) break;
 
 					pointOK = 0;
 					if(tempPx + objectBox.m_size.x <= basicBox.m_size.x
@@ -268,7 +268,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 						pointOK = 1;
 						for(int j = 0;j < basicBox.m_beUsed;++ j)
 						{
-							if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB) != 0)
+							if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB))
 							{
 								pointOK = 0;
 								break;
@@ -282,7 +282,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 						updateNewXY(basicBox,tempPx + objectBox.m_size.x,tempPy + objectBox.m_size.y);
 						return 1;
 					}else
-					if(m_canRotate == XTrue)
+					if(m_canRotate)
 					{//当前组合不符合要求，考虑旋转
 						pointOK = 0;
 						if(tempPx + objectBox.m_size.y <= basicBox.m_size.x
@@ -294,7 +294,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 							pointOK = 1;
 							for(int j = 0;j < basicBox.m_beUsed;++ j)
 							{
-								if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB) != 0)
+								if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB))
 								{
 									pointOK = 0;
 									break;
@@ -331,7 +331,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 						basicBox.m_mayPosition[i].x + objectBox.m_size.x,basicBox.m_mayPosition[i].y + objectBox.m_size.y);
 					for(int j = 0;j < basicBox.m_beUsed;++ j)
 					{
-						if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB) != 0)
+						if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB))
 						{
 							pointOK = 0;
 							break;
@@ -345,7 +345,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 					return 1;
 				}else
 				{//这个点不行，则考虑旋转
-					if(m_canRotate == XTrue)
+					if(m_canRotate)
 					{//允许旋转
 						pointOK = 0;
 						if(basicBox.m_mayPosition[i].x + objectBox.m_size.y <= basicBox.m_size.x
@@ -358,7 +358,7 @@ int _X2DPacker::canPutIn(_XObjectBox &objectBox,_XBasicBox &basicBox)
 							pointOK = 1;
 							for(int j = 0;j < basicBox.m_beUsed;++ j)
 							{
-								if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB) != 0)
+								if(objRect1.isCrash(m_objectBox[basicBox.m_objectBoxesOrder[j]].m_AABB))
 								{
 									pointOK = 0;
 									break;

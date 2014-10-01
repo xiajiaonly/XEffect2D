@@ -28,7 +28,7 @@ _XFontUnicode::_XFontUnicode()
 	m_textPosition = createArrayMem<_XVector2>(m_maxStringLen);
 	m_textRect = createArrayMem<_XRect>(m_maxStringLen);
 	m_textPageOrder = createArrayMem<int>(m_maxStringLen);
-
+	m_objType = OBJ_FONTUNICODE;
 //	testE ++;
 //	printf("%d\n",testE);
 }
@@ -71,16 +71,17 @@ _XFontUnicode::~_XFontUnicode()
 	XDELETE_ARRAY(m_textPageOrder);
 
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(this);
+	_XObjManger.decreaseAObject(this);
 #endif
 
 	release();
 }
-_XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layout,int pageSum,_XResourcePosition resoursePosition)
+_XBool _XFontUnicode::init(const char *filenameIn,const _XVector2 &size,const _XVector2 &layout,int pageSum,
+						   _XResourcePosition resoursePosition,_XBool withFBO)
 {
 	if(m_isInited) 
 	{
-		AddLogInfoStr("The font have initted!\n");
+		LogStr("The font have initted!");
 		return XTrue;
 	}
 	try
@@ -91,6 +92,7 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 	{
 		return XFalse;
 	}
+	m_withFBO = withFBO;
 
 	if(pageSum <= 0 || pageSum >= UNICODE_FONT_PAGE_SUM || pageSum >= 100) return XFalse;
 	m_pageSum = pageSum;
@@ -141,10 +143,10 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 			return XFalse;
 		}
 
-	//	if(TextureLoad(&m_texture[i],filename,1,&m_pageW,&m_pageH,m_resoursePosition) == 0)
-		if(m_texture[i].load(filename,m_resoursePosition) == 0)
+	//	if(!TextureLoad(&m_texture[i],filename,1,&m_pageW,&m_pageH,m_resoursePosition))
+		if(!m_texture[i].load(filename,m_resoursePosition))
 		{
-			AddLogInfoNull("pic:%s load error!\n",filename);
+			LogNull("pic:%s load error!\n",filename);
 			XDELETE_ARRAY(m_texture);
 			XDELETE_ARRAY(m_fontPageText);
 			XDELETE_ARRAY(filename);
@@ -166,9 +168,14 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
+	m_sprite.setBlendMode(BLEND_FOUR_DATA);
+	m_sprite.setBlendType(4,5,1,5);
+	m_fboSprite.setACopy(m_sprite);
+	m_fboSprite.setBlendType(1,5);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 	//读取字体库对应的文本
 	FILE *fp = NULL;
@@ -202,7 +209,7 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 			}else
 			{//非ASCII
 				m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum] = fileReadChar;
-				if(fread(&fileReadChar,1,1,fp) == 0) return 0;
+				if(fread(&fileReadChar,1,1,fp) == 0) return XFalse;
 				m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum + 1] = fileReadChar;
 				m_libFontSum ++;
 			}
@@ -226,7 +233,7 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 			if(ResourceTemp.checkCheckData() == 0)
 			{//严重的错误，这里定掉游戏
 				DebugShow("Resource Data Error!\n");
-				while(1)
+				while(true)
 				{
 					Sleep(100);
 				}
@@ -303,11 +310,11 @@ _XBool _XFontUnicode::init(const char *filenameIn,_XVector2 size,_XVector2 layou
 	m_isCliped = XFalse;
 	return XTrue;
 }
-_XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resoursePosition)
+_XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resoursePosition,_XBool withFBO)
 {
 	if(m_isInited) 
 	{
-		AddLogInfoStr("The font have initted!\n");
+		LogStr("The font have initted!");
 		return XTrue;
 	}
 	try
@@ -318,6 +325,7 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 	{
 		return XFalse;
 	}
+	m_withFBO = withFBO;
 
 	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
 	m_resoursePosition = resoursePosition;
@@ -420,10 +428,10 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 			return XFalse;
 		}
 
-	//	if(TextureLoad(&m_texture[i],filename,1,&m_pageW,&m_pageH,m_resoursePosition) == 0)
-		if(m_texture[i].load(filename,m_resoursePosition) == 0)
+	//	if(!TextureLoad(&m_texture[i],filename,1,&m_pageW,&m_pageH,m_resoursePosition))
+		if(!m_texture[i].load(filename,m_resoursePosition))
 		{
-			AddLogInfoNull("pic:%s load error!\n",filename);
+			LogNull("pic:%s load error!\n",filename);
 			XDELETE_ARRAY(m_texture);
 			XDELETE_ARRAY(m_fontPageText);
 			XDELETE_ARRAY(filename);
@@ -445,9 +453,14 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
+	m_sprite.setBlendMode(BLEND_FOUR_DATA);
+	m_sprite.setBlendType(4,5,1,5);
+	m_fboSprite.setACopy(m_sprite);
+	m_fboSprite.setBlendType(1,5);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 	//读取字体库对应的文本
 	filename[fileNameLength - 5] = '0';
@@ -480,7 +493,7 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 			}else
 			{//非ASCII
 				m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum] = fileReadChar;
-				if(fread(&fileReadChar,1,1,fp) == 0) return 0;
+				if(fread(&fileReadChar,1,1,fp) == 0) return XFalse;
 				m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum + 1] = fileReadChar;
 				m_libFontSum ++;
 			}
@@ -504,7 +517,7 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 //			if(ResourceTemp.checkCheckData() == 0)
 //			{//严重的错误，这里定掉游戏
 //				DebugShow("Resource Data Error!\n");
-//				while(1)
+//				while(true)
 //				{
 //					Sleep(100);
 //				}
@@ -582,11 +595,12 @@ _XBool _XFontUnicode::initEx(const char *filenameIn,_XResourcePosition resourseP
 	m_isCliped = XFalse;
 	return XTrue;
 }
-_XBool _XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,_XResourcePosition resoursePosition,bool withOutLine)
+_XBool _XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,_XResourcePosition resoursePosition,
+								  bool withOutLine,_XBool withFBO)
 {
 	if(m_isInited) 
 	{
-		AddLogInfoStr("The font have initted!\n");
+		LogStr("The font have initted!");
 		return XTrue;
 	}
 	try
@@ -597,7 +611,7 @@ _XBool _XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,_XResource
 	{
 		return XFalse;
 	}
-
+	m_withFBO = withFBO;
 	m_resoursePosition = resoursePosition;
 	//下面读取相关格式数据
 	char *filename = NULL;
@@ -610,12 +624,16 @@ _XBool _XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,_XResource
 	int fileNameLength = strlen(filename);
 
 	int fontOrder = _XFontTTF::GetInstance().loadTTFFile(filename,fontSize,m_resoursePosition);
-	if(fontOrder < 0) return XFalse;
+	if(fontOrder < 0)
+	{
+		XDELETE(m_cp);
+		return XFalse;
+	}
 	//_XFontTTF::GetInstance().setOutline(fontOrder,1);	//效果非常不理想
 	unsigned int tex[128];
 	int pageSum = 0;
 	_XVector2 layout;
-	if(_XFontTTF::GetInstance().getTextureFontUnicode(fontOrder,tex,pageSum,layout,withOutLine) == 0) return 0;
+	if(!_XFontTTF::GetInstance().getTextureFontUnicode(fontOrder,tex,pageSum,layout,withOutLine)) return XFalse;
 	//释放资源
 	_XFontTTF::GetInstance().releaseTTFFile(fontOrder);
 	_XVector2 size(fontSize,fontSize);
@@ -667,13 +685,27 @@ _XBool _XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,_XResource
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
+	m_sprite.setBlendMode(BLEND_FOUR_DATA);
+	m_sprite.setBlendType(4,5,1,5);
+	m_fboSprite.setACopy(m_sprite);
+	m_fboSprite.setBlendType(1,5);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 	//这里需要转字符
+#if !WITH_FULL_ALL_CHINESE
 	char tempStr[] = TEXT_FONT_UNICODE_MODE;
 	int length = strlen(TEXT_FONT_UNICODE_MODE);
+#else
+	std::string tmp = TEXT_FONT_UNICODE_MODE0;
+	tmp += TEXT_FONT_UNICODE_MODE1;
+	tmp += TEXT_FONT_UNICODE_MODE2;
+	tmp += TEXT_FONT_UNICODE_MODE3;
+	const char *tempStr = tmp.c_str();
+	int length = tmp.size() + 1;
+#endif
 	int j = 0;
 	m_libFontSum = 0;
 	for(int i = 0;i < length;)
@@ -717,26 +749,72 @@ void _XFontUnicode::draw()
 {
 //	if((m_isCliped != 0 && m_clipRect.top >= m_size.y)
 //		|| (m_isCliped != 0 && m_clipRect.bottom <= 0))
-	if(m_isCliped && m_clipRect.bottom <= 0)
-	{//这种情况什么也不用画
-		return;
-	}
-	if(!m_isVisiable) return;
+	if((m_isCliped && m_clipRect.bottom <= 0) ||//这种情况什么也不用画
+		!m_isVisible) return;
 	if(m_needUpdateData)
 	{
 		m_needUpdateData = XFalse;
 		updateData();
 	}
-	for(int i = 0;i < m_needShowTextSum;++ i)
-	{
-		m_sprite.setClipRect(m_textRect[i]);
-		m_sprite.setPosition(m_textPosition[i]);
+	if(m_withFBO)
+	{//尚未完成
+		if(m_needUpdateFBO)
+		{//更新FBO（尚未经过完整测试）
+			int minX,minY,maxX,maxY;
+			_XVector2 tmp = this->getBox(0);
+			minX = maxX = tmp.x;
+			minY = maxY = tmp.y;
+			for(int i = 1;i < 4;++ i)
+			{
+				tmp = this->getBox(i);
+				if(minX > tmp.x) minX = tmp.x;
+				if(maxX < tmp.x) maxX = tmp.x;
+				if(minY > tmp.y) minY = tmp.y;
+				if(maxY < tmp.y) maxY = tmp.y;
+			}
+			_XVector2 pos(minX,minY);
+			int w = m_pageW;
+			int h = m_pageH;
+			if(m_pFbo == NULL || w > m_pFbo->getWidth(0) || h > m_pFbo->getHeight(0))
+			{
+				XDELETE(m_pFbo);
+				m_pFbo = createMem<_XFBO>();
+				if(m_pFbo == NULL) return;
+				if(!m_pFbo->init(w,h)) return;
+			}
+			m_pFbo->useFBO();
+			m_pFbo->attachTex();
+			XEE::clearScreen(_XFColor(0.0f,0.0f,0.0f,0.0f));
+			for(int i = 0;i < m_needShowTextSum;++ i)
+			{
+				//if(m_textRect[i].getWidth() <= 0 || m_textRect[i].getHeight() <= 0) continue;
+				m_sprite.setClipRect(m_textRect[i]);
+				m_sprite.setPosition(m_textPosition[i] - pos);
 
-		m_sprite.draw(&(m_texture[m_textPageOrder[i]]));
+				m_sprite.draw(&(m_texture[m_textPageOrder[i]]));
+			}
+			m_pFbo->removeFBO();
+			m_fboSprite.setClipRect(_XRect(minX - pos.x,minY - pos.y,maxX - pos.x,maxY - pos.y));
+			m_fboSprite.setPosition(pos);
+			m_needUpdateFBO = XFalse;	//跟新完成
+		}
+		if(m_pFbo != NULL) m_fboSprite.draw(m_pFbo->getTexture(0));
+	}else
+	{
+		//下面这些代码很消耗计算量，这里考虑通过使用FBO一次完成
+		for(int i = 0;i < m_needShowTextSum;++ i)
+		{
+			//if(m_textRect[i].getWidth() <= 0 || m_textRect[i].getHeight() <= 0) continue;
+			m_sprite.setClipRect(m_textRect[i]);
+			m_sprite.setPosition(m_textPosition[i]);
+
+			m_sprite.draw(&(m_texture[m_textPageOrder[i]]));
+		}
 	}
 }
 void _XFontUnicode::updateData()
 {
+	if(m_withFBO) m_needUpdateFBO = XTrue;
 	m_needShowTextSum = 0;
 	m_maxPixelWidth = 0;
 	m_maxPixelHeight = 0;
@@ -779,7 +857,7 @@ void _XFontUnicode::updateData()
 		if(m_string[i] == '\0') break;	//字符串结束
 		if((unsigned char)m_string[i] < 128)
 		{//ASCII
-			if(m_isPassword == 0)
+			if(!m_isPassword)
 			{//非密码模式
 				tempChar[0] = m_string[i];
 				tempChar[1] = ' ';
@@ -814,7 +892,7 @@ void _XFontUnicode::updateData()
 			}
 		}else
 		{//非ASCII
-			if(m_isPassword == 0)
+			if(!m_isPassword)
 			{//非密码模式
 				tempChar[0] = m_string[i];
 				tempChar[1] = m_string[i + 1];
@@ -831,16 +909,8 @@ void _XFontUnicode::updateData()
 			}
 		}
 		//查找字符
-		charPoint = 0;
-		for(charPoint = 0;charPoint < m_libFontSum;++ charPoint)
-		{
-			if(m_fontPageText[UNICODE_BYTES_WIDTH * charPoint] == tempChar[0]
-				&& m_fontPageText[UNICODE_BYTES_WIDTH * charPoint + 1] == tempChar[1])
-			{
-				break;
-			}
-		}
-		if(charPoint == m_libFontSum)
+		charPoint = getTextIndex(tempChar);
+		if(charPoint == m_libFontSum || charPoint < 0)
 		{//如果找不到这个字符则作为空格来处理
 			//charPoint = 0;
 			if(nowIsD) ++ wordsSumD;
@@ -857,77 +927,77 @@ void _XFontUnicode::updateData()
 		if(!m_isCliped)
 		{
 			m_textRect[m_needShowTextSum].set(now_x,now_y,now_x + m_size.x,now_y + m_size.y);
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_LEFT)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+			switch(m_alignmentModeX)
+			{
+			case FONT_ALIGNMENT_MODE_X_LEFT://左对齐，啥也不用做
+				switch(m_alignmentModeY)
 				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						- m_angleSin * textPixelY * m_lineSum,
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						+ m_angleCos * textPixelY * m_lineSum);
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum));
+					break;
 				}
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_MIDDLE)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+				break;
+			case FONT_ALIGNMENT_MODE_X_MIDDLE://左对齐，啥也不用做
+				switch(m_alignmentModeY)
 				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						- m_angleSin * textPixelY * m_lineSum,
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						+ m_angleCos * textPixelY * m_lineSum);
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum));
+					break;
 				}
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_RIGHT)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
+				break;
+			case FONT_ALIGNMENT_MODE_X_RIGHT://左对齐，啥也不用做
+				switch(m_alignmentModeY)
 				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						- m_angleSin * textPixelY * m_lineSum,
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						+ m_angleCos * textPixelY * m_lineSum);
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum),
 						m_position.y + m_angleSin * (textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS)
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum));
+					break;
 				}
+				break;
 			}
 
 		//	m_textPosition[m_needShowTextSum].set(m_position.x + m_angleCos * (textPixelDX * wordsSumD + textPixelSX * wordsSumS)
@@ -937,9 +1007,11 @@ void _XFontUnicode::updateData()
 			m_textPageOrder[m_needShowTextSum] = pageNumble;
 			m_needShowTextSum ++;
 
-			if(textPixelDX * (wordsSumD + 1) + textPixelSX * wordsSumS > m_maxPixelWidth)
+			if(nowIsD) ++ wordsSumD;
+			else ++wordsSumS;
+			if(textPixelDX * wordsSumD + textPixelSX * wordsSumS > m_maxPixelWidth)
 			{
-				m_maxPixelWidth = textPixelDX * (wordsSumD + 1) + textPixelSX * wordsSumS;
+				m_maxPixelWidth = textPixelDX * wordsSumD + textPixelSX * wordsSumS;
 			}
 			if(textPixelY * (m_lineSum + 1) > m_maxPixelHeight)
 			{
@@ -957,17 +1029,17 @@ void _XFontUnicode::updateData()
 		//		top = m_clipRect.top;
 		//	}
 			float tempY = 0.0f;
-			if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
-			{//左对齐，啥也不用做
+			switch(m_alignmentModeY)
+			{
+			case FONT_ALIGNMENT_MODE_Y_UP://左对齐，啥也不用做
 				tempY = (m_size.y + m_distanceY) * m_lineSum;
-			}else
-			if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-			{//居中，每个文字左移半个宽度
+				break;
+			case FONT_ALIGNMENT_MODE_Y_MIDDLE://居中，每个文字左移半个宽度
 				tempY = (m_size.y + m_distanceY) * (m_lineSum - allLineSum * 0.5f);
-			}else
-			if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-			{//右对齐，每个文字左移整个宽度
+				break;
+			case FONT_ALIGNMENT_MODE_Y_DOWN://右对齐，每个文字左移整个宽度
 				tempY = (m_size.y + m_distanceY) * (m_lineSum - allLineSum);
+				break;
 			}
 			//float tempY = (m_size.y + m_distanceY) * m_lineSum;	//字体左边的距离
 			if(m_clipRect.bottom < tempY + m_distance)
@@ -985,17 +1057,19 @@ void _XFontUnicode::updateData()
 			}
 			//下面判断x方向是否超出范围，如果超出范围则不显示
 			float tempX = 0.0f;
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_LEFT)
-			{//左对齐，啥也不用做
+			switch(m_alignmentModeX)
+			{
+			case FONT_ALIGNMENT_MODE_X_LEFT://左对齐，啥也不用做
 				tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS;
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_MIDDLE)
-			{//居中，每个文字左移半个宽度
-				tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS - (m_size.x + m_distance) * nowLineWidthD * 0.5f - (m_size.x * 0.5f + m_distance) * nowLineWidthS * 0.5f;
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_RIGHT)
-			{//右对齐，每个文字左移整个宽度
-				tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS - (m_size.x + m_distance) * nowLineWidthD - (m_size.x * 0.5f + m_distance) * nowLineWidthS;
+				break;
+			case FONT_ALIGNMENT_MODE_X_MIDDLE://居中，每个文字左移半个宽度
+				tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS - 
+					(m_size.x + m_distance) * nowLineWidthD * 0.5f - (m_size.x * 0.5f + m_distance) * nowLineWidthS * 0.5f;
+				break;
+			case FONT_ALIGNMENT_MODE_X_RIGHT://右对齐，每个文字左移整个宽度
+				tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS - 
+					(m_size.x + m_distance) * nowLineWidthD - (m_size.x * 0.5f + m_distance) * nowLineWidthS;
+				break;
 			}
 			//float tempX = (m_size.x + m_distance) * wordsSumD + (m_size.x * 0.5f + m_distance) * wordsSumS;	//字体左边的距离
 			if(tempX + m_distance >= m_clipRect.right) 
@@ -1058,95 +1132,95 @@ void _XFontUnicode::updateData()
 				}
 			}
 			m_textRect[m_needShowTextSum].set(now_x + left,now_y + top,now_x + m_size.x - right,now_y + m_size.y - bottom);
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_LEFT)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
-				{//左对齐，啥也不用做
+			switch(m_alignmentModeX)
+			{
+			case FONT_ALIGNMENT_MODE_X_LEFT:
+				switch(m_alignmentModeY)
+				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * m_lineSum
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * m_lineSum
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS));
+					break;
 				}
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_MIDDLE)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
-				{//左对齐，啥也不用做
+				break;
+			case FONT_ALIGNMENT_MODE_X_MIDDLE:
+				switch(m_alignmentModeY)
+				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * m_lineSum
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * m_lineSum
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD * 0.5f - textPixelSX * nowLineWidthS * 0.5f));
+					break;
 				}
-			}else
-			if(m_alignmentModeX == FONT_ALIGNMENT_MODE_X_MIDDLE)
-			{//左对齐，啥也不用做
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_UP)
-				{//左对齐，啥也不用做
+				break;
+			case FONT_ALIGNMENT_MODE_X_RIGHT:
+				switch(m_alignmentModeY)
+				{
+				case FONT_ALIGNMENT_MODE_Y_UP:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * m_lineSum
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * m_lineSum
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_MIDDLE)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS));
-				}else
-				if(m_alignmentModeY == FONT_ALIGNMENT_MODE_Y_DOWN)
-				{//左对齐，啥也不用做
+					break;
+				case FONT_ALIGNMENT_MODE_Y_DOWN:
 					m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 						- m_angleSin * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleCos * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS),
 						m_position.y + m_angleCos * top * m_showSize.x 
 						+ m_angleCos * textPixelY * (m_lineSum - allLineSum)
 						+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS - textPixelDX * nowLineWidthD - textPixelSX * nowLineWidthS));
+					break;
 				}
+				break;
 			}
 		//	m_textPosition[m_needShowTextSum].set(m_position.x - m_angleSin * top * m_showSize.y 
 		//		- m_angleSin * textPixelY * m_lineSum
@@ -1156,15 +1230,24 @@ void _XFontUnicode::updateData()
 		//		+ m_angleSin * (left * m_showSize.x + textPixelDX * wordsSumD + textPixelSX * wordsSumS));
 			m_textPageOrder[m_needShowTextSum] = pageNumble;
 			++m_needShowTextSum;
+
+			if(nowIsD) ++ wordsSumD;
+			else ++wordsSumS;
+			if(textPixelDX * wordsSumD + textPixelSX * wordsSumS > m_maxPixelWidth)
+			{
+				m_maxPixelWidth = textPixelDX * wordsSumD + textPixelSX * wordsSumS;
+			}
+			if(textPixelY * (m_lineSum + 1) > m_maxPixelHeight)
+			{
+				m_maxPixelHeight = textPixelY * (m_lineSum + 1);
+			}
 		}
-		if(nowIsD) ++ wordsSumD;
-		else ++wordsSumS;
 	}
 }
 _XFontUnicode& _XFontUnicode::operator = (const _XFontUnicode& temp)
 {
 	if(this == &temp) return *this;		//防止自生拷贝
-	if(temp.m_isInited == 0) return *this;	//如果目标没有初始化则直接退出
+	if(!temp.m_isInited) return *this;	//如果目标没有初始化则直接退出
 	
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	if(m_cp != NULL && -- m_cp->m_counter <= 0)
@@ -1183,8 +1266,9 @@ _XFontUnicode& _XFontUnicode::operator = (const _XFontUnicode& temp)
 
 	_XFontBasic::operator =(temp);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 
 	//字体的副本不能有自己的资源，如果存在自己的资源则需要释放掉
@@ -1212,7 +1296,7 @@ _XFontUnicode& _XFontUnicode::operator = (const _XFontUnicode& temp)
 _XBool _XFontUnicode::setACopy(const _XFontUnicode & temp)
 {
 	if(this == &temp) return XFalse;		//防止自生拷贝
-	if(temp.m_isInited == 0) return XFalse;	//如果目标没有初始化则直接退出
+	if(!temp.m_isInited) return XFalse;	//如果目标没有初始化则直接退出
 
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	if(m_cp != NULL && -- m_cp->m_counter <= 0)
@@ -1229,10 +1313,11 @@ _XBool _XFontUnicode::setACopy(const _XFontUnicode & temp)
 	m_cp = temp.m_cp;
 
 	//release();
-	if(_XFontBasic::setACopy(temp) == 0) return 0;
+	if(!_XFontBasic::setACopy(temp)) return XFalse;
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 
 	//字体的副本不能有自己的资源，如果存在自己的资源则需要释放掉
@@ -1262,8 +1347,9 @@ _XFontUnicode::_XFontUnicode(const _XFontUnicode & temp)
 {
 	//if(this == &temp) return;		//防止自生拷贝
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-	_XObjectManager::GetInstance().decreaseAObject(&m_sprite);
-	_XObjectManager::GetInstance().addAObject(this,OBJ_FONTUNICODE);
+	_XObjManger.decreaseAObject(&m_sprite);
+	_XObjManger.decreaseAObject(&m_fboSprite);
+	_XObjManger.addAObject(this);
 #endif
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
 
@@ -1293,7 +1379,8 @@ _XFontUnicode::_XFontUnicode(const _XFontUnicode & temp)
 }
 void _XFontUnicode::setMaxStrLen(int maxStrLen)
 {
-	XDELETE_ARRAY(m_string);
+	char *tempXtr = m_string;	//保存旧的数据
+//	XDELETE_ARRAY(m_string);
 	XDELETE_ARRAY(m_textPosition);
 	XDELETE_ARRAY(m_textRect);
 	XDELETE_ARRAY(m_textPageOrder);
@@ -1305,6 +1392,9 @@ void _XFontUnicode::setMaxStrLen(int maxStrLen)
 	m_textPosition = createArrayMem<_XVector2>(m_maxStringLen);
 	m_textRect = createArrayMem<_XRect>(m_maxStringLen);
 	m_textPageOrder = createArrayMem<int>(m_maxStringLen);
+
+	this->setString(tempXtr);
+	XDELETE_ARRAY(tempXtr);
 
 	m_needUpdateData = XTrue;
 }

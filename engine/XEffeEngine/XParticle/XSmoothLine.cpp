@@ -30,9 +30,10 @@ void _XSmoothLine::updateData()
 		len += m_points[i]->m_length;
 		m_points[i]->m_percentage = len;
 	}
+	len = 1.0f / len;
 	for(int i = 0;i < m_points.size();++ i)
 	{
-		m_points[i]->m_percentage = m_points[i]->m_percentage / len;
+		m_points[i]->m_percentage = m_points[i]->m_percentage * len;
 	}
 }
 void _XSmoothLine::draw()

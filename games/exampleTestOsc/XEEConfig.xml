@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="gb2312" standalone="yes" ?>
+<!--这个文件中定义的所有变量是与系统相关的-->
+<root>
+  <!--窗口类型：0、普通窗口，1、可自适应、旋转和翻转的窗口，2、支持3D渲染的窗口-->
+  <windowType>1</windowType>
+  <!--窗口宽度-->
+  <w>1024</w>
+  <!--窗口高度-->
+  <h>768</h>
+  <!--场景高度-->
+  <sceneW>1024</sceneW>
+  <!--场景宽度-->
+  <sceneH>768</sceneH>
+  <!--窗口的原点坐标-->
+  <positionX>0</positionX>
+  <!--窗口的原点坐标-->
+  <positionY>0</positionY>
+  <!--是否全屏：0、不全屏，1、全屏-->
+  <isFullScreen>0</isFullScreen>
+  <!--是否隐藏鼠标：0、隐藏鼠标，1、显示鼠标-->
+  <isShowCursor>1</isShowCursor>
+  <!--窗口是否拥有边框：0、无边框的窗口，1、有边框的窗口-->
+  <withFrame>0</withFrame>
+  <!--窗口模式：0、左上角对齐并裁剪，1、重点对齐并裁剪，2、短边拉伸长边裁剪，3、长边拉伸短边填空白，4、自动拉伸全屏-->
+  <windowMode>4</windowMode>
+  <!--窗口标题-->
+  <windowTitle>Osc工具</windowTitle>
+  <!--窗口的旋转模式：0、不旋转，1、90旋转，2、180度旋转，3、270旋转-->
+  <rotateMode>0</rotateMode>
+  <!--窗口的反转模式：0、不翻转，1、左右翻转，2、上下翻转，3、左右上下翻转-->
+  <turnOverMode>0</turnOverMode>
+  <!--配置的工作模式：0、普通模式，1、服务器模式，2、客户端模式-->
+  <CFGMode>0</CFGMode>
+  <!--是否开启启动延迟-->
+  <isStartDelay>0</isStartDelay>
+  <!--启动延迟的时间：单位ms-->
+  <startDelayTimer>1000</startDelayTimer>
+  <!--是否显示版本号-->
+  <isShowVersion>0</isShowVersion>
+  <!--版本号-->
+  <versionString>1.0.0.0</versionString>
+  <!--是否启动定时关机-->
+  <isAutoShutDown>0</isAutoShutDown>
+  <!--定时关机的时间.小于0表示这项无效-->
+  <shutDownTimer_year>2014</shutDownTimer_year>
+  <shutDownTimer_month>1</shutDownTimer_month>
+  <shutDownTimer_day>23</shutDownTimer_day>
+  <shutDownTimer_hour>17</shutDownTimer_hour>
+  <shutDownTimer_minute>55</shutDownTimer_minute>
+  <shutDownTimer_second>0</shutDownTimer_second>
+  <isInitWindowPos>0</isInitWindowPos>
+  <windowPosX>0</windowPosX>
+  <windowPosY>0</windowPosY>
+  <isAlwaysTop>0</isAlwaysTop>
+  <withCustomTitle>1</withCustomTitle>
+</root>

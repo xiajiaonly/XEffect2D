@@ -9,7 +9,7 @@ DWORD WINAPI _XSocketEx::connectThread(void * pParam)
 	int oldTime = tempTimer.getCurrentTime();
 	int nowTime;
 	int stepTime = 0;
-	while(1)
+	while(true)
 	{
 		if(par.m_connectThreadState == STATE_SET_TO_END) break;
 		//下面是保持连接状态的代码
@@ -61,7 +61,7 @@ DWORD WINAPI _XSocketEx::recvThreadX(void * pParam)
 	fd_set readfds;
 	timeval timeout;
 	int testError;
-	while(1)
+	while(true)
 	{
 		if(par.m_usersData[clinetID]->recvThreadState == STATE_SET_TO_END) break;
 		if(par.m_usersData[clinetID]->state == CLINET_STATE_CONNECT
@@ -148,7 +148,7 @@ DWORD WINAPI _XSocketEx::boardcastThread(void * pParam)
 #endif
 	unsigned char szRecvBuffer[BOARDCAST_DATA_LEN];
 	std::string serverName;
-	while(1)
+	while(true)
 	{
 		if(par.m_boardcastThreadState == STATE_SET_TO_END) break;
 		memset(szRecvBuffer,0,BOARDCAST_DATA_LEN);
@@ -228,7 +228,7 @@ DWORD WINAPI _XSocketEx::recvThread(void * pParam)
 	fd_set readfds;
 	timeval timeout;
 	int testError;
-	while(1)
+	while(true)
 	{
 		if(par.m_recvThreadState == STATE_SET_TO_END) break;
 		//从网络接收数据，并对数据进行处理，如果作为服务器收到需要转发的数据，则直接转发
@@ -267,7 +267,7 @@ DWORD WINAPI _XSocketEx::sendThread(void * pParam)
 	int ret,len;
 	int tempDataSize = 2048;
 	unsigned char * tempData = createArrayMem<unsigned char>(tempDataSize);
-	while(1)
+	while(true)
 	{
 		if(par.m_sendThreadState == STATE_SET_TO_END) break;
 		if(par.m_sendDeque.size() <= 0) 
@@ -369,7 +369,7 @@ DWORD WINAPI _XSocketEx::acceptThread(void * pParam)
 	_XSocketEx &par = *(_XSocketEx *)pParam;
 	par.m_acceptThreadState = STATE_START;
 	int clientSocket;
-	while(1)
+	while(true)
 	{
 		if(par.m_acceptThreadState == STATE_SET_TO_END) break;
         clientSocket = accept(par.m_netSocket,NULL,NULL);
@@ -602,10 +602,10 @@ void _XSocketEx::systemDataproc(const _XSocketDataPack *data)
 		}
 	}
 }
-void _XSocketEx::lockData(unsigned char *data,int len)
+void _XSocketEx::lockData(unsigned char *,int)
 {//尚未完成,不忙于实现
 }
-void _XSocketEx::unlockData(unsigned char *data,int len)
+void _XSocketEx::unlockData(unsigned char *,int)
 {//尚未完成,不忙于实现
 }
 bool _XSocketEx::getDataPacket(_XSocketRecvPacket &packet,unsigned char *buff,int len)
@@ -737,7 +737,7 @@ bool _XSocketEx::getDataPacket(_XSocketRecvPacket &packet,unsigned char *buff,in
 			}
 		}
 	}
-	return true;
+//	return true;
 }
 bool _XSocketEx::connectToServer()
 {//通过IP连接到服务器

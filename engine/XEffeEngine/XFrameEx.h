@@ -21,21 +21,21 @@ private:
 	_XSCounter *m_cp;		//引用计数器
 	_XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
 	float angle;			//精灵的角度
-	_XBool m_isVisiable;
+	_XBool m_isVisible;
 public:
 	void setAngle(float temp);
 	float getAngle() const;
-	void setVisiable() 
+	void setVisible() 
 	{
-		m_isVisiable = XTrue;
-		updateChildVisiable();
+		m_isVisible = XTrue;
+		updateChildVisible();
 	}					//设置物件可见
-	void disVisiable() 
+	void disVisible() 
 	{
-		m_isVisiable = XFalse;
-		updateChildVisiable();
+		m_isVisible = XFalse;
+		updateChildVisible();
 	}					//设置物件不可见
-	_XBool getVisiable() const {return m_isVisiable;}			//获取物件是否可见的状态 
+	_XBool getVisible() const {return m_isVisible;}			//获取物件是否可见的状态 
 private:
 	float x, y;				//精灵的位置
 	float xsize, ysize;		//精灵的缩放尺寸
@@ -128,7 +128,7 @@ public:
 	void setColor(float r,float g,float b,float a);		//小于0不会改变这一元素
 	_XFColor getColor() const 
 	{
-		if(m_pSprite == NULL) return _XFColor();
+		if(m_pSprite == NULL) return _XFColor::white;
 		else return m_pSprite[0].getColor();
 	}
 	void setAlpha(float a);
@@ -149,7 +149,7 @@ public:
 
 	_XFrameEx();
 	~_XFrameEx();
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 };
 
 struct _XFrameExParamData
@@ -197,25 +197,25 @@ struct _XFrameExParamData
 		int offset = 0;
 		if(sscanf(str + offset,"ResPos:%d,\n",&resourcePosition) != 1) return offset;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"ObjPos:%f|%f,\n",&pos.x,&pos.y);
+		if(sscanf(str + offset,"ObjPos:%f|%f,\n",&pos.x,&pos.y) != 2) return offset;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"Loop:%d,\n",&tempData);
+		if(sscanf(str + offset,"Loop:%d,\n",&tempData) != 1) return offset;
 		if(tempData == 0) loop = XFalse;
 		else loop = XTrue;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"EndIMD:%d,\n",&tempData);
+		if(sscanf(str + offset,"EndIMD:%d,\n",&tempData) != 1) return offset;
 		if(tempData == 0) endImmediately = XFalse;
 		else endImmediately = XTrue;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"StartFRM:%d,\n",&startFrame);
+		if(sscanf(str + offset,"StartFRM:%d,\n",&startFrame) != 1) return offset;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"Speed:%f,\n",&actionSpeed);
+		if(sscanf(str + offset,"Speed:%f,\n",&actionSpeed) != 1) return offset;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"disappear:%d,\n",&tempData);
+		if(sscanf(str + offset,"disappear:%d,\n",&tempData) != 1) return offset;
 		if(tempData == 0) disappearAtEnd = XFalse;
 		else disappearAtEnd = XTrue;
 		offset += getCharPosition(str + offset,',') + 1;
-		sscanf(str + offset,"Overturn:%d,\n",&tempData);
+		if(sscanf(str + offset,"Overturn:%d,\n",&tempData) != 1) return offset;
 		if(tempData == 0) isOverturn = XFalse;
 		else isOverturn = XTrue;
 		offset += getCharPosition(str + offset,',') + 1;
@@ -225,20 +225,20 @@ struct _XFrameExParamData
 	{
 		if(fp == NULL) return XFalse;
 		int tempData = 0;
-		fscanf(fp,"ResPos:%d,\n",&resourcePosition);
-		fscanf(fp,"ObjPos:%f|%f,\n",&pos.x,&pos.y);
-		fscanf(fp,"Loop:%d,\n",&tempData);
+		if(fscanf(fp,"ResPos:%d,\n",&resourcePosition) != 1) return XFalse;
+		if(fscanf(fp,"ObjPos:%f|%f,\n",&pos.x,&pos.y) != 2) return XFalse;
+		if(fscanf(fp,"Loop:%d,\n",&tempData) != 1) return XFalse;
 		if(tempData == 0) loop = XFalse;
 		else loop = XTrue;
-		fscanf(fp,"EndIMD:%d,\n",&tempData);
+		if(fscanf(fp,"EndIMD:%d,\n",&tempData) != 1) return XFalse;
 		if(tempData == 0) endImmediately = XFalse;
 		else endImmediately = XTrue;
-		fscanf(fp,"StartFRM:%d,\n",&startFrame);
-		fscanf(fp,"Speed:%f,\n",&actionSpeed);
-		fscanf(fp,"disappear:%d,\n",&tempData);
+		if(fscanf(fp,"StartFRM:%d,\n",&startFrame) != 1) return XFalse;
+		if(fscanf(fp,"Speed:%f,\n",&actionSpeed) != 1) return XFalse;
+		if(fscanf(fp,"disappear:%d,\n",&tempData) != 1) return XFalse;
 		if(tempData == 0) disappearAtEnd = XFalse;
 		else disappearAtEnd = XTrue;
-		fscanf(fp,"Overturn:%d,\n",&tempData);
+		if(fscanf(fp,"Overturn:%d,\n",&tempData) != 1) return XFalse;
 		if(tempData == 0) isOverturn = XFalse;
 		else isOverturn = XTrue;
 		return XTrue;
@@ -253,10 +253,8 @@ struct _XFrameExParamData
 		,actionSpeed(0.03f)
 		,disappearAtEnd(XFalse)
 		,isOverturn(XFalse)
-	{
-	}
+	{}
 };
-
 #include "XFrameEx.inl"
 
 #endif

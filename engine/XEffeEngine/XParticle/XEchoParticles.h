@@ -24,8 +24,8 @@ private:
 
 	//下面的变量是为了优化速度而定义的
 	const _XTexture *m_texture;
-//	int w;
-//	int h;
+	int w;
+	int h;
 	int halfW;
 	int halfH;
 //	int m_glListOrder;
@@ -96,11 +96,25 @@ public:
 	void setAlpha(float temp);
 	void move(int timeDelay);
 	void moveEx(float sizeX,float sizeY,float alpha);	//将数据提取出来，优化了速度
+	//描绘粒子
 	void draw() const;
-
+	//下面这组方法效率高，补贴贴图，忽略旋转和缩放
+	void drawAsLine() const;
+	//下面这组方法效率较高，效果不影响
 	void drawExBegin() const;
 	void drawExBody() const;
-	void drawExEnd() const;
+	void drawExEnd() const
+	{
+		glDisable(GL_BLEND);
+	}
+	//下面这一组方法效率最高，但是忽略旋转
+	void drawExBeginEx() const;
+	void drawExBodyEx() const;	//不考虑尺寸和角度的因素
+	void drawExEndEx() const
+	{
+		glEnd();
+		glDisable(GL_BLEND);
+	}
 
 	_XEchoParticles();
 	void release();
@@ -110,12 +124,10 @@ public:
 	void resetState(const _XVector2& position,float initSize = 1.0f);	//重新设置初始位置
 	int getIsEnd();
 };
-
 inline void _XEchoParticles::setEnd()
 {
 	if(m_isInited != 0 && m_isEnd == 0 && m_isSetEnd == 0) m_isSetEnd = 1;
 }
-
 inline void _XEchoParticles::reset()
 {
 	if(m_isInited != 0 && m_isEnd != 0) 
@@ -137,35 +149,29 @@ inline void _XEchoParticles::resetState(const _XVector2& position,float initSize
 		m_particles[i].m_isEnable = 0;
 	}
 }
-
 inline int _XEchoParticles::getIsEnd()
 {
 	return m_isEnd;
 }
-
 inline void _XEchoParticles::setAlpha(float temp)
 {
 	if(temp < 0) m_parentParticle.m_initColor.setA(0.0f);
 	else if(temp > 1) m_parentParticle.m_initColor.setA(1.0f);
 	else m_parentParticle.m_initColor.setA(temp);
 }
-
 inline void _XEchoParticles::setDSize(float dSize)
 {
 	m_parentParticle.m_dSize.x = dSize;
 }
-
 inline void _XEchoParticles::setDAlpha(float dAlpha)
 {
 	m_parentParticle.m_dColor.setA(dAlpha);
 }
-
 inline void _XEchoParticles::setInsertSum(float insertSum)
 {
 	if(insertSum < 0) insertSum = 0;
 	m_insertSum = insertSum;
 }
-
 inline void _XEchoParticles::setDensity(float density)
 {
 	if(density < 1) density = 1;

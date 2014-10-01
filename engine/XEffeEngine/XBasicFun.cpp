@@ -22,7 +22,7 @@ void initSinData()
 float xSin(float x)
 {
 	int temp = (int)(x * 100.0f);
-	while(1)
+	while(true)
 	{
 		if(temp < 0) temp += 628;
 		else break;
@@ -155,8 +155,12 @@ void getHalfData(unsigned char H1,unsigned char L1,unsigned char H2,unsigned cha
 }
 
 //图像缩放算法
+//void pixelDataZoomRGB(unsigned char * src,unsigned char * dst,float zoom,	//原始图像数据，目标图像数据，缩放尺寸
+//					  int sw,int sh,int dw,int dh,	//原始图像尺寸，目标图像尺寸
+//					  int sOffsetX,int sOffsetY,int dOffsetX,int dOffsetY,	//原始图像裁剪的位置，和目标图像的位置
+//					  int sClipW,int sClipH)	//原始图像的裁剪大小
 void pixelDataZoomRGB(unsigned char * src,unsigned char * dst,float zoom,	//原始图像数据，目标图像数据，缩放尺寸
-					  int sw,int sh,int dw,int dh,	//原始图像尺寸，目标图像尺寸
+					  int sw,int,int dw,int,	//原始图像尺寸，目标图像尺寸
 					  int sOffsetX,int sOffsetY,int dOffsetX,int dOffsetY,	//原始图像裁剪的位置，和目标图像的位置
 					  int sClipW,int sClipH)	//原始图像的裁剪大小
 {
@@ -292,7 +296,8 @@ void shutDownSystem(_XShutDownSystemMode mode)
 		switch(mode)
 		{
 		case SYS_SD_MODE_G:
-			//InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE,SHTDN_REASON_MAJOR_APPLICATION);
+			//InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE,SHTDN_REASON_MAJOR_APPLICATION);	//关闭自身的计算机
+			//InitiateSystemShutdownEx("192.168.0.1",NULL,0,TRUE,FALSE,SHTDN_REASON_MAJOR_APPLICATION);	//关闭远程的计算机
 			ExitWindowsEx(EWX_SHUTDOWN|EWX_POWEROFF,0);
 			break;
 		case SYS_SD_MODE_Z:

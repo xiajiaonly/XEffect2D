@@ -80,12 +80,10 @@ void _XModelStl::draw()
 	//glScalef(m_size.x,m_size.y,m_size.z);
 
 	_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
-	glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-	_X3DWorld::GetInstance().useShadow(false,SHADER_SHADOW);
+	glColor4fv(m_color);
+	_X3DWorld::GetInstance().useShadow(XFalse,SHADER_SHADOW);
 
-	vbo.use();
-	glDrawArrays(GL_TRIANGLES,0,vbo.getSize()); 
-	vbo.disuse();
+	vbo.drawByArray(GL_TRIANGLES);
 
 	_X3DWorld::GetInstance().removeShadow();
 

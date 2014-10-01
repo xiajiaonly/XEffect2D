@@ -1,11 +1,11 @@
 #ifndef _JIA_XCOMBO_
 #define _JIA_XCOMBO_
-#include "XButton.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
+#include "XButton.h"
 
 //下拉菜单的类的贴图
 class _XComboTexture
@@ -24,7 +24,7 @@ public:
 	_XRect m_mouseRect;
 
 	_XComboTexture();
-	~_XComboTexture();
+	~_XComboTexture() {release();}
 	_XBool init(const char *inputNormal,const char *inputDisable,
 		const char *downButtonNormal,const char *downButtonOn,const char *downButtonDown,const char *downButtonDisable,
 		const char *downMenuUpNormal,const char *downMenuUpOn,const char *downMenuUpDown,const char *downMenuUpDisable,
@@ -35,12 +35,12 @@ public:
 	void release();
 };
 
-#define COMBO_MAX_MENU_LENGTH (512)
-#define COMBO_LEFT_DISTANSE (10)
-#define COMBO_TOP_DISTANSE (2)
-#define DEFAULT_COMBO_BT_SIZE (36)
+#define COMBO_MAX_MENU_LENGTH (1024)
+#define COMBO_LEFT_DISTANSE (5)
+#define COMBO_TOP_DISTANSE (0)
+#define DEFAULT_COMBO_BT_SIZE (32)
 #define DEFAULT_COMBO_UD_HEIGHT (24)
-#define DEFAULT_COMBO_MN_HEIGHT (36)
+#define DEFAULT_COMBO_MN_HEIGHT (32)
 
 class _XCombo:public _XControlBasic
 {
@@ -68,6 +68,7 @@ private:
 	_XButton *m_buttom;			//下拉菜单中的按钮，3个按钮为功能按钮，其他为菜单按钮
 
 	void updateString();				//跟新字符串到具体的菜单内容
+	void changeDownMenuState();		//改变下拉菜单的状态
 
 	void (*m_funDataChange)(void *,int ID);
 	void *m_pClass;				//回调函数的参数
@@ -97,19 +98,19 @@ public:
 		int menuSum,					//下拉菜单中的选项的数量
 		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
 		const _XFontUnicode &font,		//显示文字使用的字体
-		float fontSize);				//字体的大小
-	_XBool initEx(const _XComboTexture &tex,	//控件的贴图
-		const _XVector2& position,		//控件的位置
-		int menuSum,					//下拉菜单中的选项的数量
-		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
-		const _XFontUnicode &font,		//显示文字使用的字体
-		float fontSize);				//字体的大小
+		float fontSize = 1.0f);				//字体的大小
+	_XBool initEx(const _XComboTexture &tex,	//上面接口的简化版本
+		const _XVector2& position,		
+		int menuSum,					
+		int drawMenuSum,				
+		const _XFontUnicode &font,		
+		float fontSize = 1.0f);
 	_XBool initPlus(const char * path,
 		int menuSum,					//下拉菜单中的选项的数量
 		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
 		const _XFontUnicode &font,		//显示文字使用的字体
-		float fontSize,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);				//字体的大小
+		float fontSize = 1.0f,
+		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	//int initWithoutTex(const _XRect& inputArea,		//输入框的有效范围
 	//	const _XRect& downButtonArea,	//下拉按钮的响应范围
 	//	const _XRect& downMenuUpArea,	//上翻页的响应范围
@@ -123,27 +124,32 @@ public:
 		int menuSum,					//下拉菜单中的选项的数量
 		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
 		const _XFontUnicode &font,		//显示文字使用的字体
-		float fontSize);
+		float fontSize = 1.0f);
+	_XBool initWithoutTex(int inputLen,
+		int menuSum,					//下拉菜单中的选项的数量
+		int drawMenuSum)				//下拉菜单中显示的菜单项的数量
+	{
+		return initWithoutTex(inputLen,menuSum,drawMenuSum,XEE::systemFont,1.0f);
+	}
+
 protected:			
 	void draw();
 	void drawUp();
+	void update(int stepTime);
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState){return 1;};	//do nothing
-	void insertChar(const char *ch,int len){;}
+	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
 	_XBool canLostFocus(float x,float y);
 public:
 	int getNowChooseOrder() {return m_nowChooseOrder;}	//获取当前选项编号
-	_XBool setNowChooseOrder(int index)	//设置当前选项编号
-	{
-		if(index < 0 || index >= m_menuSum) return XFalse;
-		if(m_nowChooseOrder == index) return XTrue;
-		m_nowChooseOrder = index;
-		updateString();
-		return XTrue;
-	}
+	_XBool setNowChooseOrder(int index);	//设置当前选项编号
 	_XBool setMenuStr(const char *str,int order);			//设置某个下拉菜单的文字
+	_XBool setMenuStr(const char *str);			//设置多项的值，每项之间用';'隔开,如果总项数不匹配，则自动匹配
+	std::string getMenuStr() const;
+	std::string getMenuStr(int order);
 	void setShowMenuSum(int sum);	//动态改变显示的选项数量(尚未实现)
+	void setMenuSum(int sum);		//设置总的菜单数量(尚未实现)
 
 	using _XObjectBasic::setSize;		//避免覆盖的问题
 	void setSize(float x,float y);			//设置控件的尺寸
@@ -151,47 +157,18 @@ public:
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);		//设置空间的位置
 
-	void setTextColor(const _XFColor& color) 
-	{
-		if(!m_isInited) return;
-		m_textColor = color;
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_menuDrawSum + 3;++ i)
-		{
-			m_buttom[i].setTextColor(m_textColor);
-		}
-	}	//设置字体的颜色
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
 	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using _XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 	//设置按钮的颜色
-	{
-		if(!m_isInited) return;
-		m_color.setColor(r,g,b,a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_menuDrawSum + 3;++ i)
-		{
-			m_buttom[i].setColor(m_color);
-		}
-	}	//设置按钮的颜色
-	void setAlpha(float a) 
-	{
-		if(!m_isInited) return;
-		m_color.setA(a);
-		m_sprite.setColor(m_color);
-		m_caption.setColor(m_textColor * m_color);
-		for(int i = 0;i < m_menuDrawSum + 3;++ i)
-		{
-			m_buttom[i].setColor(m_color);
-		}
-	}	//设置按钮的颜色
+	void setColor(float r,float g,float b,float a); 	//设置按钮的颜色
+	void setAlpha(float a);	//设置按钮的颜色
 
 	//副本拥有自己的行为,但是与母体使用同样的资源,如果母体资源被改变,副本的资源也会相应的被改变
 	_XBool setACopy(const _XCombo &temp);	//建立一个副本
 	void release();						//释放资源
 	_XCombo();
-	~_XCombo();
+	~_XCombo(){release();}
 
 	//下面是内联函数
 	void setCallbackFun(void (* funDataChange)(void *,int),void *pClass = NULL);
@@ -201,24 +178,16 @@ public:
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
-	virtual void justForTest() {}
+	//virtual void justForTest() {}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XCombo(const _XCombo &temp);
 	_XCombo& operator = (const _XCombo& temp);
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是为了实现控件动态而定义的变量
+	_XMoveData m_actionMoveData;
+	bool m_isDraw;	//是否是菜单出现
+	//-----------------------------------------------------
 };
+#include "XCombo.inl"
 
-inline void _XCombo::setCallbackFun(void (* funDataChange)(void *,int),void *pClass)
-{
-	if(funDataChange != NULL) m_funDataChange = funDataChange;
-	if(pClass != NULL) m_pClass = pClass;
-	else m_pClass = this;
-}
-inline void _XCombo::disable()					//使无效
-{
-	m_isEnable = XFalse;
-}
-inline void _XCombo::enable()					//使能
-{
-	m_isEnable = XTrue;
-}
 #endif

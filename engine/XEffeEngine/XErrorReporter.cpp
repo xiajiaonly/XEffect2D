@@ -1,10 +1,8 @@
 #include "XEffeEngine.h"
 #include "XErrorReporter.h"
-
-void errorReporterBtnProc(void *pClass,int id)
+void errorReporterBtnProc(void *pClass,int)
 {
-	_XErrorReporter *p = (_XErrorReporter *)pClass;
-	p->m_isBtnChecked = true;
+	((_XErrorReporter *)pClass)->m_isBtnChecked = true;
 }
 bool _XErrorReporter::reportFile(const std::string & errorDescription,const std::string &filename,int line,const std::string &funName)
 {
@@ -12,7 +10,7 @@ bool _XErrorReporter::reportFile(const std::string & errorDescription,const std:
 	getTimeMs(t);
 	//输出到后台
 	printf("---------------- Head Of File ----------------\n");
-	printf("时间：%d-%d-%d %d:%d:%d %d\n",t.year,t.month,t.day,t.hour,t.minute,t.second,t.millisecond);
+	printf("时间：%04d-%02d-%02d %02d:%02d:%02d %03d\n",t.year,t.month,t.day,t.hour,t.minute,t.second,t.millisecond);
 	printf("错误描述：%s\n",errorDescription.c_str());
 	printf("执行文件：%s\n",getCurrentExeFileFullPath().c_str());
 	printf("文件：%s @ %d 行\n",filename.c_str(),line);
@@ -95,7 +93,7 @@ void _XErrorReporter::reportError(const std::string & errorDescription,const std
 	{//如果在其他线程中则阻塞线程并等待主线程处理
 		//方案1、子线程自动挂起，主线程中检测状态并作相应的处理
 		//问题，如果主线程与子线程存在互锁关系，那么会造成死锁
-		//while(1) Sleep(1);
+		//while(true) Sleep(1);
 		//方案2、由于子线程不能进行OpenGL渲染，所以子线程中不能做图形处理
 		//所以错误处理抛弃图形化界面直接做最简单的输出
 		//m_isInited = false;	
@@ -115,7 +113,7 @@ void _XErrorReporter::reportError(const std::string & errorDescription,const std
 		if(m_isMainThreadProc)
 		{
 			printf("主线程接收了错误处理!\n");
-			while(1) Sleep(1);
+			while(true) Sleep(1);
 		}
 		printf("主线程未接收错误处理!\n");
 		m_isInited = false;	
@@ -131,8 +129,8 @@ void _XErrorReporter::errorProc()
 		_XWindow.setCurcor(true);//显示鼠标光标
 		gameShot(ERROR_REPORTER_PIC_FILENAME,XEE::windowData.w,XEE::windowData.h,false);//屏幕截图
 		m_screenShot.init(ERROR_REPORTER_PIC_FILENAME,RESOURCE_LOCAL_FOLDER);
-		m_edit.setVisiable();
-		m_button.setVisiable();
+		m_edit.setVisible();
+		m_button.setVisible();
 		string temp = "错误描述:";
 		temp += m_errDescription;
 		m_fontDescrip.setString(temp.c_str());
@@ -157,20 +155,17 @@ void _XErrorReporter::errorProc()
 bool _XErrorReporter::init(_XResourcePosition resoursePosition)	//初始化
 {
 	if(m_isInited) return false;
-#if WITH_COMMON_RESOURCE_FOLDER
-	if(!m_background.init("../../Common/ResourcePack/pic/ErrorReporter/Back.png",resoursePosition)) return false;
-	if(!m_button.initPlus("../../Common/ResourcePack/pic/ErrorReporter/btn"," ",XEE::systemFont,1.0f,resoursePosition)) return false;
-#else
-	if(!m_background.init("ResourcePack/pic/ErrorReporter/Back.png",resoursePosition)) return false;
-	if(!m_button.initPlus("ResourcePack/pic/ErrorReporter/btn"," ",XEE::systemFont,1.0f,resoursePosition)) return false;
-#endif
+	if(!m_background.init((XEE::windowData.commonResourcePos + "ResourcePack/pic/ErrorReporter/Back.png").c_str(),
+		resoursePosition)) return false;
+	if(!m_button.initPlus((XEE::windowData.commonResourcePos + "ResourcePack/pic/ErrorReporter/btn").c_str(),
+		" ",XEE::systemFont,1.0f,resoursePosition)) return false;
 	if(!m_edit.initWithoutTex(_XRect(0.0f,0.0f,448.0f,40.0f),"此处输入备注.",XEE::systemFont,1.0f)) return false;
 	m_edit.setPosition(XEE::windowData.w * 0.5f - 220.0f,XEE::windowData.h * 0.5f + 20.0f);
-	m_edit.disVisiable();
+	m_edit.disVisible();
 	m_background.setPosition(XEE::windowData.w * 0.5f - 256.0f,XEE::windowData.h * 0.5f - 128.0f);
 	m_button.setPosition(XEE::windowData.w * 0.5f - 77.0f,XEE::windowData.h * 0.5f + 65.0f);
 	m_button.setCallbackFun(NULL,NULL,NULL,errorReporterBtnProc,NULL,this);
-	m_button.disVisiable();
+	m_button.disVisible();
 	m_font.setACopy(XEE::systemFont);
 	m_font.setPosition(XEE::windowData.w * 0.5f - 220.0f,XEE::windowData.h * 0.5f - 50.0f);
 	m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);

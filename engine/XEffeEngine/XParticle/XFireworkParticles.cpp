@@ -42,8 +42,8 @@ int _XFireWorkParticles::init(const _XVector2& position,const _XVector2& initSpe
 
 void _XFireWorkParticles::reset()
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd == 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd == 0) return;
 	float temp1;
 	float temp2;
 	float temp3;
@@ -51,7 +51,7 @@ void _XFireWorkParticles::reset()
 	for(int i = 0;i < m_atomSum;++ i)
 	{
 		m_atom[i].m_isInited = 0;
-		m_atom[i].init(m_texture,88,2,m_position,0.95,0.0015,256);
+		m_atom[i].init(m_texture,88,2,m_position,0.95f,0.0015f,256);
 		//m_atom[i].init(m_texture,1,2,m_position,0.95f,0.0015f,2);	
 		//m_atom[i].setAlpha(0);
 		m_atom[i].m_parentParticle.m_initPosition = m_position;
@@ -65,7 +65,7 @@ void _XFireWorkParticles::reset()
 		m_atom[i].m_parentParticle.m_dPosition.set(m_initSpeed.x * temp1,m_initSpeed.y * temp2);
 		m_atom[i].m_parentParticle.m_stage = STAGE_PRODUCE;		//µãÈ¼½×¶Î
 		_XVector2 tempA(0.0f,0.0f);
-		m_atom[i].m_parentParticle.m_initAngle = tempA.getAngle(m_initSpeed.x * temp1,m_initSpeed.y * temp2) * RADIAN_TO_ANGLE - 90;
+		m_atom[i].m_parentParticle.m_initAngle = tempA.getAngle(m_initSpeed.x * temp1,m_initSpeed.y * temp2) * RADIAN2DEGREE - 90;
 	}
 
 	m_isEnd = 0;
@@ -73,8 +73,8 @@ void _XFireWorkParticles::reset()
 
 void _XFireWorkParticles::move(int timeDelay)
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	int flag = 0;
 	float tempGravity = m_gravity * timeDelay * 0.00002f;
 	for(int i = 0;i < m_atomSum;++ i)
@@ -120,8 +120,8 @@ void _XFireWorkParticles::move(int timeDelay)
 
 void _XFireWorkParticles::draw() const
 {
-	if(m_isInited == 0) return;
-	if(m_isEnd != 0) return;
+	if(m_isInited == 0 ||
+		m_isEnd != 0) return;
 	for(int i = 0;i < m_atomSum;++ i)
 	{
 		m_atom[i].draw();

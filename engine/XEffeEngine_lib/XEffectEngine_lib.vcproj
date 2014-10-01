@@ -159,7 +159,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XButtonBar.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XButtonEx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCalendar.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XChart.h"
 					>
 				</File>
 				<File
@@ -168,6 +180,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XCombo.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XComment.h"
 					>
 				</File>
 				<File
@@ -195,7 +211,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XImageCtrl.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XImageList.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XLineCtrl.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMenu.h"
 					>
 				</File>
 				<File
@@ -219,7 +247,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XControl\XPasswardPad.h"
+					RelativePath="..\XEffeEngine\XControl\XPasswordPad.h"
 					>
 				</File>
 				<File
@@ -231,7 +259,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XProgressRing.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XRadios.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleLine.h"
 					>
 				</File>
 				<File
@@ -240,6 +276,22 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XSliderEx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindow.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XTab.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XText.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XToolBar.h"
 					>
 				</File>
 			</Filter>
@@ -251,7 +303,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XButtonBar.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XButtonEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCalendar.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XChart.cpp"
 					>
 				</File>
 				<File
@@ -260,6 +324,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XCombo.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XComment.cpp"
 					>
 				</File>
 				<File
@@ -283,7 +351,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XImageCtrl.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XImageList.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XLineCtrl.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMenu.cpp"
 					>
 				</File>
 				<File
@@ -307,7 +387,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XControl\XPasswardPad.cpp"
+					RelativePath="..\XEffeEngine\XControl\XPasswordPad.cpp"
 					>
 				</File>
 				<File
@@ -319,7 +399,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XProgressRing.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XRadios.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleLine.cpp"
 					>
 				</File>
 				<File
@@ -328,6 +416,154 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XSliderEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindow.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XTab.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XText.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XToolBar.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XButton.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XButtonBar.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XButtonEx.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCalendar.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XChart.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCheck.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCombo.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XComment.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XControlBasic.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XDirectoryList.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XEdit.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XGroup.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XImageCtrl.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XImageList.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XLineCtrl.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMenu.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMouseRightButtonMenu.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMultiList.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMultiListBasic.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XMultiText.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XPasswordPad.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XPointCtrl.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XProgress.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XProgressRing.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XRadios.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleLine.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSlider.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderEx.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindow.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XTab.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XText.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XToolBar.inl"
 					>
 				</File>
 			</Filter>
@@ -483,6 +719,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XEmail.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XFtpClient.h"
 					>
 				</File>
@@ -527,6 +767,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XSimpleProtocol.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSonovoProtocol.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XVideoStream.h"
 					>
 				</File>
@@ -556,6 +804,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XDirectory.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XEmail.cpp"
 					>
 				</File>
 				<File
@@ -599,7 +851,31 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XSimpleProtocol.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSonovoProtocol.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XVideoStream.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XEmail.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSimpleProtocol.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSonovoProtocol.inl"
 					>
 				</File>
 			</Filter>
@@ -610,6 +886,14 @@
 			<Filter
 				Name="Inline Files"
 				>
+				<File
+					RelativePath="..\XEffeEngine\XActionEx.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XActionSimple.inl"
+					>
+				</File>
 				<File
 					RelativePath="..\XEffeEngine\XBasicClass.inl"
 					>
@@ -647,7 +931,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XOprateDes.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XSprite.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XStringFun.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\X3D\XTerrain.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XWindowTitle.inl"
 					>
 				</File>
 			</Filter>
@@ -658,6 +958,10 @@
 				>
 				<File
 					RelativePath="..\XEffeEngine\X2DPacker.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XActionEx.h"
 					>
 				</File>
 				<File
@@ -797,6 +1101,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMemoryPool.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMouseAndKeyBoardDefine.h"
 					>
 				</File>
@@ -830,6 +1138,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XObjectManager.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XOprateDes.h"
 					>
 				</File>
 				<File
@@ -952,6 +1264,14 @@
 					RelativePath="..\XEffeEngine\XWindowSDL.h"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XWindowTitle.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XXml.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
@@ -960,6 +1280,10 @@
 				>
 				<File
 					RelativePath="..\XEffeEngine\X2DPacker.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XActionEx.cpp"
 					>
 				</File>
 				<File
@@ -1087,6 +1411,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMemoryPool.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMovieCore.cpp"
 					>
 				</File>
@@ -1116,6 +1444,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XObjectManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XOprateDes.cpp"
 					>
 				</File>
 				<File
@@ -1218,6 +1550,14 @@
 					RelativePath="..\XEffeEngine\XWindowSDL.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XWindowTitle.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XXml.cpp"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -1244,6 +1584,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\X3D\XCam.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\X3D\XCubeMap.h"
 					>
 				</File>
 				<File
@@ -1304,6 +1648,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\X3D\XCam.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\X3D\XCubeMap.cpp"
 					>
 				</File>
 				<File
@@ -1475,6 +1823,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XKalman.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XLine.h"
 					>
 				</File>
@@ -1523,6 +1875,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XKalman.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XLine.cpp"
 					>
 				</File>
@@ -1568,6 +1924,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\XFColor.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XKalman.inl"
 					>
 				</File>
 				<File

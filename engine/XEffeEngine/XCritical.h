@@ -21,7 +21,7 @@ private:
     CRITICAL_SECTION m_sec; 
 };
 typedef _XCritical pthread_mutex_t;
-inline void pthread_mutex_init(_XCritical &temp,int sum){;}	//do nothing
+inline void pthread_mutex_init(_XCritical &,int){;}	//do nothing
 inline void pthread_mutex_lock(_XCritical &temp) {temp.Lock();}
 inline void pthread_mutex_unlock(_XCritical &temp) {temp.Unlock();}
 

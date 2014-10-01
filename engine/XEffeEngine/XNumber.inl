@@ -24,15 +24,15 @@ inline void _XNumber::setSize(float x,float y)
 	m_showSize.set(x,y);
 	updateChildSize();
 	m_sprite.setSize(x,y);
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XNumber::setAngle(float angle)
 {
 	m_angle = angle;
 	updateChildAngle();
 	m_sprite.setAngle(angle);
-	m_angleSin = sin(m_angle * ANGLE_TO_RADIAN);
-	m_angleCos = cos(m_angle * ANGLE_TO_RADIAN);
+	m_angleSin = sin(m_angle * DEGREE2RADIAN);
+	m_angleCos = cos(m_angle * DEGREE2RADIAN);
 
 	_XVector2 tempPosition;
 	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
@@ -41,7 +41,7 @@ inline void _XNumber::setAngle(float angle)
 		+ m_rotateBasicPoint.y * m_angleCos);
 	m_position.set(tempPosition.x,tempPosition.y);
 
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XNumber::setRotateBasePoint(float x,float y)
 {
@@ -59,7 +59,7 @@ inline void _XNumber::setPosition(float x,float y)
 		+ m_rotateBasicPoint.y * m_angleCos);
 	m_position.set(tempPosition.x,tempPosition.y);
 
-	m_needUpdateData = 1;
+	m_needUpdateData = XTrue;
 }
 inline void _XNumber::setPositionX(float x)
 {
@@ -68,4 +68,45 @@ inline void _XNumber::setPositionX(float x)
 inline void _XNumber::setPositionY(float y)
 {
 	setPosition(m_setPosition.x,y);
+}
+inline _XBool _XNumber::isInRect(float x,float y)
+{
+	if(!m_isInited) return XFalse;
+	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+}
+inline void _XNumber::setAlignmentMode(_XNumberAlignmentMode mode)
+{
+	if(mode != m_alignmentMode)
+	{
+		m_alignmentMode = mode;
+		m_needUpdateData = XTrue;
+	}
+}
+inline void _XNumber::setVisible() 
+{
+	m_isVisible = XTrue;
+	updateChildVisible();
+}					//设置物件可见
+inline void _XNumber::disVisible() 
+{
+	m_isVisible = XFalse;
+	updateChildVisible();
+}
+inline int _XNumber::getMaxPixelWidth()
+{
+	if(m_needUpdateData)
+	{
+		updateData();
+		m_needUpdateData = XFalse;
+	}
+	return m_maxPixelWidth;
+}
+inline int _XNumber::getMaxPixelHeight()
+{
+	if(m_needUpdateData)
+	{
+		updateData();
+		m_needUpdateData = XFalse;
+	}
+	return m_maxPixelHeight;
 }

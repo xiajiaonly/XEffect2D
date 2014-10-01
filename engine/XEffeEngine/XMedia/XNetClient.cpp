@@ -217,7 +217,7 @@ _XBool _XNetClient::sendDataSocket(char * data,int len)
 	return XTrue;
 	//方案2：限制发送的最小数据单位
 	//int offset = 0;
-	//while(1)
+	//while(true)
 	//{
 	//	if(len - offset < 4096)
 	//	{
@@ -251,7 +251,7 @@ _XBool _XNetClient::getDataPacket(unsigned char *buff,int len)
 		if(len >= PACKET_HEAD_LEN)
 		{//完整的包头
 			m_recvPacket = createMem<_XNetData>();
-			if(m_recvPacket == NULL) return 0;
+			if(m_recvPacket == NULL) return XFalse;
 			m_recvPacket->type = (_XNetDataType)buff[0];
 			//if(m_recvPacket->type != DATA_TYPE_VIDEO)
 			//{
@@ -263,7 +263,7 @@ _XBool _XNetClient::getDataPacket(unsigned char *buff,int len)
 			//	printf("haha\n");
 			//}
 			m_recvPacket->data = createArrayMem<unsigned char>(m_recvPacket->dataLen);
-			if(m_recvPacket->data == NULL) return 0;
+			if(m_recvPacket->data == NULL) return XFalse;
 			if(len - PACKET_HEAD_LEN >= m_recvPacket->dataLen)
 			{//数据完整
 				m_recvPacket->isEnable = XTrue;
@@ -316,7 +316,7 @@ _XBool _XNetClient::getDataPacket(unsigned char *buff,int len)
 				memcpy(m_packetHeadData + m_recvPacketSize,buff,PACKET_HEAD_LEN - m_recvPacketSize);
 				//解析包头
 				m_recvPacket = createMem<_XNetData>();
-				if(m_recvPacket == NULL) return 0;
+				if(m_recvPacket == NULL) return XFalse;
 				m_recvPacket->type = (_XNetDataType)m_packetHeadData[0];
 				if(m_recvPacket->type != DATA_TYPE_VIDEO)
 				{
@@ -328,7 +328,7 @@ _XBool _XNetClient::getDataPacket(unsigned char *buff,int len)
 					printf("haha\n");
 				}
 				m_recvPacket->data = createArrayMem<unsigned char>(m_recvPacket->dataLen);
-				if(m_recvPacket->data == NULL) return 0;
+				if(m_recvPacket->data == NULL) return XFalse;
 				//解析余下的数据
 				if(len - (PACKET_HEAD_LEN - m_recvPacketSize) >= m_recvPacket->dataLen)
 				{//数据完整
@@ -359,29 +359,29 @@ _XBool _XNetClient::getDataPacket(unsigned char *buff,int len)
 }
 DWORD WINAPI _XNetClient::recvThread(void * pParam)
 {
-	_XNetClient * pPar = (_XNetClient *)pParam;
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum ++;
-	pPar->m_mutexThread.Unlock();
+	_XNetClient &pPar = *(_XNetClient *)pParam;
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum ++;
+	pPar.m_mutexThread.Unlock();
 	int buffLen = 4096;
 	char recvBuff[4096];
 	int ret = 0;
-	pPar->m_recvPacketSize = 0;
+	pPar.m_recvPacketSize = 0;
 	fd_set readfds;
 	timeval timeout;
 	int test_error;
-	while(1)
+	while(true)
 	{
-		//if(pPar->m_isExit) break;
-		if(pPar->m_connectState == CONNECT_STATE_DISCONNECT) 
+		//if(pPar.m_isExit) break;
+		if(pPar.m_connectState == CONNECT_STATE_DISCONNECT) 
 		{
-			pPar->m_mutexRecv.Lock();
-			if(pPar->m_recvPacketSize != 0)
+			pPar.m_mutexRecv.Lock();
+			if(pPar.m_recvPacketSize != 0)
 			{//如果网络断开，但是最后一个包没有接收完整，则丢弃最后一个包
-				XDELETE(pPar->m_recvPacket);	//丢弃不完整的包
-				pPar->m_recvPacketSize = 0;
+				XDELETE(pPar.m_recvPacket);	//丢弃不完整的包
+				pPar.m_recvPacketSize = 0;
 			}
-			pPar->m_mutexRecv.Unlock();
+			pPar.m_mutexRecv.Unlock();
 			break;
 		}
 		//下面接收数据
@@ -389,41 +389,41 @@ DWORD WINAPI _XNetClient::recvThread(void * pParam)
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 0;
 		FD_ZERO(&readfds);
-		FD_SET(pPar->m_netSocket,&readfds);
+		FD_SET(pPar.m_netSocket,&readfds);
 		test_error = select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
-		if(test_error > 0 && FD_ISSET(pPar->m_netSocket,&readfds))
+		if(test_error > 0 && FD_ISSET(pPar.m_netSocket,&readfds))
 		{//可以接受数据
-			FD_CLR(pPar->m_netSocket, &readfds);
-			ret = recv(pPar->m_netSocket,recvBuff,buffLen,0);
-			if(ret == SOCKET_ERROR) pPar->m_connectState = CONNECT_STATE_DISCONNECT;	//连接断开
-			if(ret > 0) pPar->getDataPacket((unsigned char *)recvBuff,ret);//接收到数据
+			FD_CLR(pPar.m_netSocket, &readfds);
+			ret = recv(pPar.m_netSocket,recvBuff,buffLen,0);
+			if(ret == SOCKET_ERROR) pPar.m_connectState = CONNECT_STATE_DISCONNECT;	//连接断开
+			if(ret > 0) pPar.getDataPacket((unsigned char *)recvBuff,ret);//接收到数据
 		}
 		Sleep(1);
 	}
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum --;
-	pPar->m_mutexThread.Unlock();
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum --;
+	pPar.m_mutexThread.Unlock();
 	return 1;
 }
 DWORD WINAPI _XNetClient::sendThread(void * pParam)
 {
-	_XNetClient * pPar = (_XNetClient *)pParam;
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum ++;
-	pPar->m_mutexThread.Unlock();
+	_XNetClient &pPar = *(_XNetClient *)pParam;
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum ++;
+	pPar.m_mutexThread.Unlock();
 	int buffSize = 4096;
 	char * sendBuff = createArrayMem<char>(buffSize);
 	if(sendBuff == NULL) return 0;
-	while(1)
+	while(true)
 	{
-		//if(pPar->m_isExit) break;
-		if(pPar->m_connectState == CONNECT_STATE_DISCONNECT) break;
-		pPar->m_mutexSend.Lock();
-		if(pPar->m_sendDataBuff.size() > 0)
+		//if(pPar.m_isExit) break;
+		if(pPar.m_connectState == CONNECT_STATE_DISCONNECT) break;
+		pPar.m_mutexSend.Lock();
+		if(pPar.m_sendDataBuff.size() > 0)
 		{//有数据需要发送
-			_XNetData *tempData = (* pPar->m_sendDataBuff.begin());
-			pPar->m_sendDataBuff.pop_front();
-			pPar->m_mutexSend.Unlock();
+			_XNetData *tempData = (* pPar.m_sendDataBuff.begin());
+			pPar.m_sendDataBuff.pop_front();
+			pPar.m_mutexSend.Unlock();
 			if(tempData->isEnable)
 			{
 				if(tempData->dataLen + PACKET_HEAD_LEN > buffSize)
@@ -437,11 +437,11 @@ DWORD WINAPI _XNetClient::sendThread(void * pParam)
 				memcpy(sendBuff + 1,&tempData->dataLen,sizeof(int));
 				memcpy(sendBuff + PACKET_HEAD_LEN,tempData->data,tempData->dataLen);
 				//发送数据
-				if(!pPar->sendDataSocket(sendBuff,tempData->dataLen + PACKET_HEAD_LEN))
+				if(!pPar.sendDataSocket(sendBuff,tempData->dataLen + PACKET_HEAD_LEN))
 				{//如果发送失败，则这里将数据推回
-					pPar->m_mutexSend.Lock();
-					pPar->m_sendDataBuff.push_front(tempData);
-					pPar->m_mutexSend.Unlock();
+					pPar.m_mutexSend.Lock();
+					pPar.m_sendDataBuff.push_front(tempData);
+					pPar.m_mutexSend.Unlock();
 				}else
 				{
 					showNetData(tempData);
@@ -454,23 +454,23 @@ DWORD WINAPI _XNetClient::sendThread(void * pParam)
 			}
 		}else
 		{
-			pPar->m_mutexSend.Unlock();
+			pPar.m_mutexSend.Unlock();
 		}
 		Sleep(1);
 	}
 	XDELETE_ARRAY(sendBuff);
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum --;
-	pPar->m_mutexThread.Unlock();
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum --;
+	pPar.m_mutexThread.Unlock();
 	return 1;
 }
 DWORD WINAPI _XNetClient::boardcastThread(void * pParam)
 {
-	_XNetClient * pPar = (_XNetClient *)pParam;
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum ++;
-	pPar->m_mutexThread.Unlock();
-	pPar->m_boardcastThreadState = XTrue;
+	_XNetClient &pPar = *(_XNetClient *)pParam;
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum ++;
+	pPar.m_mutexThread.Unlock();
+	pPar.m_boardcastThreadState = XTrue;
 	unsigned char tempCheck;
 	int offset = 0;
 	int len;
@@ -496,9 +496,9 @@ DWORD WINAPI _XNetClient::boardcastThread(void * pParam)
 	unsigned char szRecvBuffer[BOARDCAST_DATA_LEN];
 	memset(szRecvBuffer,0,BOARDCAST_DATA_LEN);
 	char recvProjectStr[PROJECT_STRING_LEN];
-	while(1)
+	while(true)
 	{
-		if(pPar->m_isExit) break;
+		if(pPar.m_isExit) break;
 		//从服务器接收反馈
 		memset(szRecvBuffer,0,BOARDCAST_DATA_LEN);
 		//非阻塞访问
@@ -532,28 +532,28 @@ DWORD WINAPI _XNetClient::boardcastThread(void * pParam)
 				memcpy(recvProjectStr,szRecvBuffer + offset,len);offset += len;
 				recvProjectStr[len] = '\0';
 				printf("recv:%s\n",recvProjectStr);
-				if(strcmp(recvProjectStr,pPar->m_projectStr) != 0) continue;
+				if(strcmp(recvProjectStr,pPar.m_projectStr) != 0) continue;
 				//校验正确之后连接数据
-				pPar->m_mutexBoardCast.Lock();
-				pPar->m_serverPort = tempServerPort;
-				pPar->m_serverAddr = addrPeer;
-				pPar->m_mutexBoardCast.Unlock();
+				pPar.m_mutexBoardCast.Lock();
+				pPar.m_serverPort = tempServerPort;
+				pPar.m_serverAddr = addrPeer;
+				pPar.m_mutexBoardCast.Unlock();
 			}
 		}
 		Sleep(1);
 	}
 	closesocket(recvSocket);
-	pPar->m_boardcastThreadState = XFalse;
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum --;
-	pPar->m_mutexThread.Unlock();
+	pPar.m_boardcastThreadState = XFalse;
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum --;
+	pPar.m_mutexThread.Unlock();
 	return 0;
 }
 void _XNetClient::release()
 {
 	m_isExit = XTrue;
 	if(m_connectState == CONNECT_STATE_CONNECT) m_connectState = CONNECT_STATE_DISCONNECT;
-	while(1)
+	while(true)
 	{//等待所有线程结束
 		if(m_threadSum == 0) break;
 		Sleep(1);
@@ -580,42 +580,42 @@ void _XNetClient::release()
 }
 DWORD WINAPI _XNetClient::connectThread(void * pParam)
 {
-	_XNetClient * pPar = (_XNetClient *)pParam;
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum ++;
-	pPar->m_mutexThread.Unlock();
-	_XBool upState = pPar->getIsConnect();
-	while(1)
+	_XNetClient &pPar = *(_XNetClient *)pParam;
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum ++;
+	pPar.m_mutexThread.Unlock();
+	_XBool upState = pPar.getIsConnect();
+	while(true)
 	{
-		if(pPar->m_isExit) break;
-		if(!pPar->getIsConnect())
+		if(pPar.m_isExit) break;
+		if(!pPar.getIsConnect())
 		{//如果连接失败，这里开始连接服务器
 			Sleep(1000);	//每秒连接一次，防止连接频率过快
-			if(upState == XTrue)
+			if(upState)
 			{
-				if(pPar->m_connectBrokenFun != NULL) (*pPar->m_connectBrokenFun)();
+				if(pPar.m_connectBrokenFun != NULL) (*pPar.m_connectBrokenFun)();
 				upState = XFalse;
 			}
-			if(pPar->m_useBroadcast)
+			if(pPar.m_useBroadcast)
 			{
-				if(pPar->connectToServer())
+				if(pPar.connectToServer())
 				{
-					if(pPar->m_connectFun != NULL) (*pPar->m_connectFun)();
+					if(pPar.m_connectFun != NULL) (*pPar.m_connectFun)();
 					upState = XTrue;
 				}
 			}else
 			{
-				if(pPar->connectToServer(pPar->m_serverIP.c_str(),pPar->m_serverPort))
+				if(pPar.connectToServer(pPar.m_serverIP.c_str(),pPar.m_serverPort))
 				{
-					if(pPar->m_connectFun != NULL) (*pPar->m_connectFun)();
+					if(pPar.m_connectFun != NULL) (*pPar.m_connectFun)();
 					upState = XTrue;
 				}
 			}
 		}
 		Sleep(1);
 	}
-	pPar->m_mutexThread.Lock();
-	pPar->m_threadSum --;
-	pPar->m_mutexThread.Unlock();
+	pPar.m_mutexThread.Lock();
+	pPar.m_threadSum --;
+	pPar.m_mutexThread.Unlock();
 	return 1;
 }

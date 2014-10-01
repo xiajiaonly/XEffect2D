@@ -11,13 +11,13 @@ XMusicHandle _XMusic::addMusic(const char *fileName)
 {
 	if(!m_firstAddMusicFlag)
 	{//这里相当于是初始化
-		m_musicVolume = _XSoundHandle.getVolume(0);
+		m_musicVolume = _XSoundHandle.getMusicVolume();
 		m_firstAddMusicFlag = XTrue;
 	}
 	void *p = NULL;
 	if(!_XSoundHandle.loadMusic(fileName,p))
 	{
-		AddLogInfoStr("Sound load error!\n");
+		LogStr("Sound load error!");
 		return -1;
 	}
 	m_music.push_back(p);

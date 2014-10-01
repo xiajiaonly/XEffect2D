@@ -6,8 +6,6 @@
 //Date:		2011.4.9
 //--------------------------------
 
-#include "XControlBasic.h"
-#include "../XSprite.h"
 #include "XButton.h"
 
 enum _XSliderType
@@ -15,7 +13,6 @@ enum _XSliderType
 	SLIDER_TYPE_VERTICAL,		//垂直的
 	SLIDER_TYPE_HORIZONTAL	//水平的
 };
-
 enum _XSliderState
 {
 	SLIDER_STATE_NORMAL,		//普通状态
@@ -23,7 +20,6 @@ enum _XSliderState
 	SLIDER_STATE_ON,			//鼠标悬浮
 	SLIDER_STATE_DISABLE		//无效状态
 };
-
 class _XSliderTexture
 {
 private:
@@ -44,7 +40,7 @@ public:
 	_XVector2 m_fontPosition;	//放置文字的位置
 
 	_XSliderTexture();
-	~_XSliderTexture();
+	~_XSliderTexture(){release();}
 	_XBool init(const char *LNormal,const char *LDown,const char *LOn,const char *LDisable,
 		const char *BNormal,const char *BDown,const char *BOn,const char *BDisable,
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
@@ -56,13 +52,15 @@ class _XMultiListBasic;
 class _XMultiText;
 class _XDirectoryList;
 class _XSliderEx;
-class _XSlider:public _XControlBasic
+class _XImageList;
+class _XSlider:public _XControlBasic,public _XBasicOprate
 {
 	friend _XMultiList;
 	friend _XMultiListBasic;
 	friend _XMultiText;
 	friend _XDirectoryList;
 	friend _XSliderEx;
+	friend _XImageList;
 private:
 	_XBool m_isInited;
 	_XSliderState m_nowSliderState;			//滑动条的状态
@@ -124,13 +122,18 @@ public:
 		const _XRect& Area,				//控件的鼠标响应范围
 		const _XRect& buttonArea,		//滑动块的鼠标响应范围(这个数据实际上没有起到作用)
 		const _XSliderTexture &tex,float max = 100.0f,float min = 0.0f,_XSliderType type = SLIDER_TYPE_HORIZONTAL);
-	_XBool initEx(const _XVector2& position,	//控件所在的位置
+	_XBool initEx(const _XVector2& position,	//对上面接口的简化
 		const _XSliderTexture &tex,float max = 100.0f,float min = 0.0f,_XSliderType type = SLIDER_TYPE_HORIZONTAL);
 	_XBool initPlus(const char * path,float max = 100.0f,float min = 0.0f,_XSliderType type = SLIDER_TYPE_HORIZONTAL,
 		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	//int initWithoutTex(const _XRect& area,const _XRect& buttonArea,_XSliderType type,float max,float min,const _XVector2 &fontPosition);
 	_XBool initWithoutTex(const _XRect& area,float max = 100.0f,float min = 0.0f,
-		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2(0.0f,0.0f));
+		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2::zero);
+	_XBool initWithoutTex(const _XVector2& pixelSize,float max = 100.0f,float min = 0.0f,
+		_XSliderType type = SLIDER_TYPE_HORIZONTAL,const _XVector2 &fontPosition = _XVector2::zero)
+	{
+		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),max,min,type,fontPosition);
+	}
 
 	_XBool setFont(const char *caption,const _XFontUnicode &font,float captionSize,const _XVector2 &fontPosition);
 	_XBool setFontEx(const char *caption,const _XFontUnicode &font,float captionSize);
@@ -143,41 +146,22 @@ public:
 //	using _XControlBasic::getSize;	//避免覆盖的问题
 	void setSize(float x,float y);				//设置滑动条的缩放比例
 
+	void setTextColor(const _XFColor& color);	//设置字体的颜色
+	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+
 	using _XObjectBasic::setColor;	//避免覆盖的问题
 //	using _XControlBasic::getColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a)
-	{
-		if(!m_isInited) return;
-		m_color.setColor(r,g,b,a);
-		m_buttonSprite.setColor(m_color);
-		m_lineSprite.setColor(m_color);
-		updateChildColor();
-	}
-	void setAlpha(float a)
-	{
-		if(!m_isInited) return;
-		m_color.setA(a);
-		m_buttonSprite.setColor(m_color);
-		m_lineSprite.setColor(m_color);
-		updateChildAlpha();
-	}
+	void setColor(float r,float g,float b,float a);
+	void setAlpha(float a);
 protected:
 	void draw();							//描绘滑动条
-	void drawUp(){};						//do nothing
+	void drawUp();
 	_XBool mouseProc(float x,float y,_XMouseState mouseState);	//对于鼠标动作的响应函数
 	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
-	void insertChar(const char *ch,int len){;}
+	void insertChar(const char *,int){;}
 	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y){return XTrue;}
-	void setLostFocus() 
-	{
-		if(!m_isInited) return;	//如果没有初始化直接退出
-		if(!m_isActive) return;		//没有激活的控件不接收控制
-		if(!m_isVisiable) return;	//如果不可见直接退出
-		if(!m_isEnable) return;		//如果无效则直接退出
-
-		if(m_nowSliderState != SLIDER_STATE_DISABLE) m_nowSliderState = SLIDER_STATE_NORMAL;
-	}	//设置失去焦点
+	_XBool canLostFocus(float,float){return !(m_nowSliderState == SLIDER_STATE_DOWN);}
+	void setLostFocus();	//设置失去焦点
 public:
 	void setCallbackFun(void (* funInit)(void *,int),
 		void (* funRelease)(void *,int),
@@ -187,13 +171,16 @@ public:
 		void (*funValueChange)(void *,int),
 		void (*funMouseMove)(void *,int),
 		void *pClass = NULL);
-	void setNowValue(float temp);			//设置滑块当前的值
+	void setDataChangeCB(void (*funValueChange)(void *,int),
+		void (*funMouseMove)(void *,int),
+		void *pClass = NULL);
+	void setNowValue(float temp,bool cbFun = true);			//设置滑块当前的值,cbFun是否触发数值变化的回调函数
 	void setRange(float max,float min);
 
 	_XBool setACopy(const _XSlider &temp);			//建立一个副本
 
 	_XSlider();
-	~_XSlider();
+	~_XSlider(){release();}
 	void release();
 	//内联函数
 	void disable();		//使控件无效
@@ -204,34 +191,26 @@ public:
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
 	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	virtual void justForTest() {;}
+	//virtual void justForTest() {;}
 private:	//为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	_XSlider(const _XSlider &temp);
 	_XSlider& operator = (const _XSlider& temp);
+public:
+	virtual void setOprateState(void * data);
+	virtual void *getOprateState() const;
+	virtual bool isSameState(void * data);
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是对控件动态支持而定义的相关属性和方法
+private:
+	_XMoveData m_actionMoveData;	//动态效果的变量
+	_XVector2 m_oldPos;				//动作播放时的位置
+	_XVector2 m_oldSize;			//动作播放时的大小
+	_XMoveData m_lightMD;
+	_XRect m_lightRect;
+protected:
+	void update(int stepTime);
+	//---------------------------------------------------------
 };
-inline void _XSlider::disable()//使控件无效
-{
-	m_nowSliderState = SLIDER_STATE_DISABLE;
-}
-inline void _XSlider::enable()//使控件有效
-{
-	if(m_nowSliderState == SLIDER_STATE_DISABLE)
-	{
-		m_nowSliderState = SLIDER_STATE_NORMAL;
-		//还需要调用鼠标函数
-		mouseProc(m_upMousePoint.x,m_upMousePoint.y,MOUSE_MOVE);
-	}
-}
-inline float _XSlider::getNowValue() const	//获取滑块当前的值
-{
-	return m_nowValue;
-}
-inline float _XSlider::getMaxValue() const
-{
-	return m_maxValue;
-}
-inline float _XSlider::getMinValue() const
-{
-	return m_minValue;
-}
+#include "XSlider.inl"
+
 #endif

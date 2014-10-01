@@ -7,14 +7,20 @@
 //--------------------------------
 #include "XWindowCore.h"
 #include "XSDL.h"
+#include "windows.h"
+#include "XStringFun.h"
 
 class _XWindowSDL:public _XWindowCore
 {
 protected:
-	_XWindowSDL(){}
+	_XWindowSDL()
+		:m_screen(NULL)
+	{}
 	_XWindowSDL(const _XWindowSDL&);
 	_XWindowSDL &operator= (const _XWindowSDL&);
 	virtual ~_XWindowSDL() {}
+
+	SDL_Surface *m_screen;
 public:
 	static _XWindowSDL& GetInstance()
 	{
@@ -23,14 +29,22 @@ public:
 	}
 public:
 	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame);
-	virtual void setWindowTitle(const std::string &title) {SDL_WM_SetCaption(title.c_str(), NULL);}
-	virtual void setCurcor(bool flag) {SDL_ShowCursor(flag);}
+	virtual void setWindowTitle(const std::string &title) {SDL_WM_SetCaption(ANSI2UTF8(title.c_str()).c_str(), NULL);}
+	virtual void setCurcor(bool flag) 
+	{
+		//SDL_ShowCursor(flag);
+		ShowCursor(flag);
+	}
 	virtual bool getCurcor() 
 	{
 		if(SDL_ShowCursor(-1)) return true;
 		else return false;
 	}
-	virtual void release() {SDL_Quit();}
+	virtual void release() 
+	{
+		SDL_FreeSurface(m_screen);
+		SDL_Quit();
+	}
 	virtual void update()
 	{
 		//glFlush();

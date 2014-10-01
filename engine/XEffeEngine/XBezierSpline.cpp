@@ -6,16 +6,15 @@
 #include "XBezierSpline.h"
 
 _XBezierSpline::_XBezierSpline()
-:m_pS(0,0)
-,m_pSP(0,0)
-,m_pEP(0,0)
-,m_pE(0,0)
-,m_nowPosition(0)
-,m_isEnd(XFalse)
-,m_nowValue(0,0)
-,m_speed(0)
-{
-}
+:m_pS(0.0f,0.0f)
+,m_pSP(0.0f,0.0f)
+,m_pEP(0.0f,0.0f)
+,m_pE(0.0f,0.0f)
+,m_nowPosition(0.0f)
+,m_isEnd(XTrue)
+,m_nowValue(0.0f,0.0f)
+,m_speed(0.0f)
+{}
 _XVector2 _XBezierSpline::getBezierSplineValue(float temp)
 {
 	if(temp <= 0) return m_pS;
@@ -50,43 +49,40 @@ float _XBezierSpline::getBezierSplineAngle(float temp)
 }
 void _XBezierSpline::move(int timeDelay)
 {
-	if(!m_isEnd)
+	if(m_isEnd) return;
+	m_nowPosition += m_speed * timeDelay;
+	if(m_nowPosition < 0.0f) m_nowPosition = 0.0f;
+	if(m_nowPosition > 1.0f)
 	{
-		m_nowPosition += m_speed * timeDelay;
-		if(m_nowPosition < 0) m_nowPosition = 0;
-		if(m_nowPosition > 1)
-		{
-			m_isEnd = XTrue;
-			m_nowPosition = 1.0f;
-		}
-		m_nowValue = getBezierSplineValue(m_nowPosition);
-		m_nowAngle = getBezierSplineAngle(m_nowPosition);
+		m_isEnd = XTrue;
+		m_nowPosition = 1.0f;
 	}
+	m_nowValue = getBezierSplineValue(m_nowPosition);
+	m_nowAngle = getBezierSplineAngle(m_nowPosition);
 }
 #include "XEffeEngine.h"
 void _XBezierSpline::draw()
 {
-	drawLine(m_pS,m_pSP,1,1,0,0);
-	drawLine(m_pEP,m_pE,1,1,0,0);
+	drawLine(m_pS,m_pSP,1.0f,1.0f,0.0f,0.0f);
+	drawLine(m_pEP,m_pE,1.0f,1.0f,0.0f,0.0f);
 	//drawLine(m_pS,m_pE);
 	for(int  i = 0;i < 50;++ i)
 	{
-		drawLine(getBezierSplineValue(i * 0.02f),getBezierSplineValue((i + 1) * 0.02f));
+		drawLine(getBezierSplineValue(i * 0.02f),getBezierSplineValue((i + 1.0f) * 0.02f));
 	}
-	drawLine(m_nowValue,m_nowAngle * RADIAN_TO_ANGLE,20);
+	drawLine(m_nowValue,m_nowAngle * RADIAN2DEGREE,20.0f);
 	//drawLine(m_nowValue,m_nowValue + _XVector2(1.0f,1.0f));
 }
 
 _XBezierSpline2::_XBezierSpline2()
-:m_pS(0,0)
-,m_pP(0,0)
-,m_pE(0,0)
-,m_nowPosition(0)
-,m_isEnd(XFalse)
-,m_nowValue(0,0)
-,m_speed(0)
-{
-}
+:m_pS(0.0f,0.0f)
+,m_pP(0.0f,0.0f)
+,m_pE(0.0f,0.0f)
+,m_nowPosition(0.0f)
+,m_isEnd(XTrue)
+,m_nowValue(0.0f,0.0f)
+,m_speed(0.0f)
+{}
 _XVector2 _XBezierSpline2::getBezierSplineValue(float temp)
 {
 	if(temp <= 0) return m_pS;
@@ -102,12 +98,12 @@ _XVector2 _XBezierSpline2::getBezierSplineValue(float temp)
 float _XBezierSpline2::getBezierSplineAngle(float temp)
 {
 	_XVector2 tempV;
-	if(temp <= 0)
+	if(temp <= 0.0f)
 	{
 		tempV = m_pS - m_pP;
 		return tempV.getAngle();
 	}
-	if(temp >= 1)
+	if(temp >= 1.0f)
 	{
 		tempV = m_pE - m_pP;
 		return tempV.getAngle();
@@ -119,29 +115,27 @@ float _XBezierSpline2::getBezierSplineAngle(float temp)
 }
 void _XBezierSpline2::move(int timeDelay)
 {
-	if(!m_isEnd)
+	if(m_isEnd) return;
+	m_nowPosition += m_speed * timeDelay;
+	if(m_nowPosition < 0.0f) m_nowPosition = 0.0f;
+	if(m_nowPosition > 1.0f)
 	{
-		m_nowPosition += m_speed * timeDelay;
-		if(m_nowPosition < 0) m_nowPosition = 0;
-		if(m_nowPosition > 1)
-		{
-			m_isEnd = XTrue;
-			m_nowPosition = 1.0f;
-		}
-		m_nowValue = getBezierSplineValue(m_nowPosition);
-		m_nowAngle = getBezierSplineAngle(m_nowPosition);
+		m_isEnd = XTrue;
+		m_nowPosition = 1.0f;
 	}
+	m_nowValue = getBezierSplineValue(m_nowPosition);
+	m_nowAngle = getBezierSplineAngle(m_nowPosition);
 }
 #include "XEffeEngine.h"
 void _XBezierSpline2::draw()
 {
-	drawLine(m_pS,m_pP,1,1,0,0);
-	drawLine(m_pP,m_pE,1,1,0,0);
+	drawLine(m_pS,m_pP,1.0f,1.0f,0.0f,0.0f);
+	drawLine(m_pP,m_pE,1.0f,1.0f,0.0f,0.0f);
 	//drawLine(m_pS,m_pE);
 	for(int  i = 0;i < 50;++ i)
 	{
-		drawLine(getBezierSplineValue(i * 0.02f),getBezierSplineValue((i + 1) * 0.02f));
+		drawLine(getBezierSplineValue(i * 0.02f),getBezierSplineValue((i + 1.0f) * 0.02f));
 	}
-	drawLine(m_nowValue,m_nowAngle * RADIAN_TO_ANGLE,20);
+	drawLine(m_nowValue,m_nowAngle * RADIAN2DEGREE,20.0f);
 	//drawLine(m_nowValue,m_nowValue + _XVector2(1.0f,1.0f));
 }

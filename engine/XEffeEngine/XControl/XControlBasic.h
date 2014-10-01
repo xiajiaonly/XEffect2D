@@ -9,6 +9,10 @@
 #include "../XBasicClass.h"
 #include "../XMouseAndKeyBoardDefine.h"
 #include "../XObjectBasic.h" 
+#include "../XFontUnicode.h"
+#include "../XSprite.h"
+#include "../XNumberEx.h"
+#include "XComment.h"
 
 //控件的模式
 enum _XCtrlMode
@@ -17,29 +21,80 @@ enum _XCtrlMode
 	CTRL_MODE_NORMAL,	//标准模式，描绘常用的信息
 	CTRL_MODE_COMPLETE,	//完成模式，描绘所有的信息
 };
-
+enum _XCtrlObjType
+{
+	CTRL_OBJ_NULL,		//无效的物件
+	CTRL_OBJ_BUTTON,	//按钮物件
+	CTRL_OBJ_BUTTONEX,	//按钮物件
+	CTRL_OBJ_CHECK,		//复选框的物件
+	CTRL_OBJ_EDIT,		//输入框的物件
+	CTRL_OBJ_MOUSERIGHTBUTTONMENU,	//鼠标右键菜单的物件
+	CTRL_OBJ_SLIDER,	//滑动条的物件
+	CTRL_OBJ_RADIOS,	//单选框的物件
+	CTRL_OBJ_PROGRESS,	//进度条的物件
+	CTRL_OBJ_MUTITEXT,	//多行文本的物件
+	CTRL_OBJ_MUTILIST,	//多列列表框
+	CTRL_OBJ_COMBO,		//下拉列表框的物件
+	CTRL_OBJ_DIRECTORYLIST,	//路径列表框
+	CTRL_OBJ_GROUP,		//群组框
+	CTRL_OBJ_POINTCTRL,		//点原
+	CTRL_OBJ_LINECTRL,		//线原
+	CTRL_OBJ_SLIDEREX,	//滑动条的物件
+	CTRL_OBJ_PASSWORDPAD,	//密码输入板
+	CTRL_OBJ_IMAGELIST,		//图像陈列框
+	CTRL_OBJ_XCHART,		//图标框
+	CTRL_OBJ_XTAB,			//标签控件
+	CTRL_OBJ_XTEXT,			//文字控件
+	CTRL_OBJ_XSIMPLELINE,	//分割线控件
+	CTRL_OBJ_PROGRESSRING,	//进度条的物件
+	CTRL_OBJ_CALENDAR,		//日历控件
+	CTRL_OBJ_XMENU,			//菜单类的控件
+	CTRL_OBJ_XIMAGE,		//图片的控件
+	CTRL_OBJ_BTNBAR,		//按钮条的控件
+	CTRL_OBJ_XTOOLBAR,		//工具条的控件
+	CTRL_OBJ_FUNCTION,	//绘图函数
+};
+//通过控件类型返回控件的类名如：CTRL_OBJ_BUTTON返回_XButton
+inline std::string getCtrlNameByType(_XCtrlObjType type);
+inline std::string getCtrlTypeByString(_XCtrlObjType type);
+inline _XCtrlObjType getCtrlTypeByString(const std::string &name);
 //说明：引入友元的目的是为了让控件管理器可以访问控件的绘图函数和消息处理函数，
 //但是控件的实体被定义之后，定义的程序员不能自己调用这些函数，防止重复绘图和重
 //复的消息处理，但是友元的引入造成了类结构设计的耦合度和复杂度，这里需要思考更
 //好的解决方式
 class _XControlManager;
+class _XToolBar;
+class _XTab;
 //控件类的基类
 class _XControlBasic:public _XObjectBasic
 {
 	friend _XControlManager;
+	friend _XToolBar;
+	friend _XTab;
 protected:
+	_XCtrlObjType m_ctrlType;
 	_XRect m_mouseRect;		//控件的鼠标响应范围
-	_XRect m_nowMouseRect;	//当前鼠标的响应范围，这个范围受到位置和大小的变化而变化
+	_XRect m_nowMouseRect;	//当前鼠标的响应范围，这个范围受到位置和大小的变化而变化	(这个值，没有在所有的控件中使用，造成效率下降，2014.4.30修正这个问题)
 	_XVector2 m_size;		//控件的大小
 	_XVector2 m_position;	//控件的位置
 	_XFColor m_color;		//控件的颜色
 
 	_XBool m_isEnable;		//控件是否有效，无效的物件可以看到，但是却显示为不能操作的模式
-	_XBool m_isVisiable;		//控件是否可见，可见的物件才会显示出来
+	_XBool m_isVisible;		//控件是否可见，可见的物件才会显示出来
 	_XBool m_isActive;		//控件是否处于激活状态，激活的物件才能接收控制信号,同时允许多个物体被激活
 	_XBool m_isBeChoose;		//控件是否被选中，接收键盘操作，例如用table键选择(暂时尚未实现)，但是同时只有一个物件能成为焦点
 	int m_objectID;			//控件的ID
+	_XBool m_withAction;	//是否使用控件的动态效果
+	_XBool m_isInAction;	//是否正在处于动作过程中
+
+	_XComment m_comment;	//注释
+	_XBool m_isMouseInRect;	//鼠标是否在范围内
 public:
+	_XVector2 getPixelSize() const {return _XVector2(m_mouseRect.getWidth(),m_mouseRect.getHeight());}
+	_XCtrlObjType getCtrlType()const{return m_ctrlType;}
+	void setWithAction(_XBool flag){m_withAction = flag;}
+	_XBool getWithAction()const{return m_withAction;}
+	_XBool getIsInAction()const{return m_isInAction;}
 	_XRect getMouseRect() const {return m_mouseRect;}
 	float getMouseRectWidth() const {return m_mouseRect.getWidth();}
 	float getMouseRectHeight() const {return m_mouseRect.getHeight();}
@@ -47,29 +102,47 @@ public:
 	void setActive(){m_isActive = XTrue;}
 	void disActive(){m_isActive = XFalse;}		//设置控件不接收控制信息
 	_XBool getActive() const {return m_isActive;}
-	void setVisiable()
+	void setVisible()
 	{
-		m_isVisiable = XTrue;
-		updateChildVisiable();
+		m_isVisible = XTrue;
+		m_comment.setVisible();
+		updateChildVisible();
 	}
-	void disVisiable()
+	void disVisible()
 	{
-		m_isVisiable = XFalse;
-		updateChildVisiable();
+		m_isVisible = XFalse;
+		m_isBeChoose = XFalse;
+		m_comment.disVisible();
+		updateChildVisible();
 	}	//设置控件不可见
-	_XBool getVisiable() const {return m_isVisiable;}
+	_XBool getVisible() const {return m_isVisible;}
+	_XBool getEnable() const {return m_isEnable;}
 	_XBool setACopy(const _XControlBasic & temp);
+	//++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是注释相关的接口
+	void setComment(const char *str) {m_comment.setString(str);}
+	void disComment() {m_comment.setString(NULL);}
+	void setCommentPos(float x,float y){m_comment.setPosition(x,y);}
+	//------------------------------------------------
 protected:	//设计为下面的函数不允许在外部调用
-	virtual void update(int stepTime){;}	//默认什么也不做
+	virtual void update(int){;}	//默认什么也不做
 	virtual void draw() = 0;
 	virtual void drawUp() = 0;	//用于描绘上一个层面的东西，控件分两个层面，底层和漂浮层，漂浮层也就是上层有：例如右键菜单，下拉菜单等
 	virtual _XBool mouseProc(float x,float y,_XMouseState mouseState) = 0;	//鼠标响应函数,关于这个函数的返回值的意义，各个空间类的定义尚不统一，有返回控件是否发生状态变更的，等等
 	virtual _XBool keyboardProc(int keyOrder,_XKeyState keyState) = 0;		//键盘响应函数
 	virtual void insertChar(const char * ch,int len) = 0;
 
+	virtual _XBool canBeChoose()
+	{
+		return m_isActive &&		//没有激活的控件不接收控制
+			m_isVisible &&		//如果不可见直接退出
+			m_isEnable;		//如果无效则直接退出
+	}
 	virtual _XBool canGetFocus(float x,float y) = 0;	//是否可以获得焦点
 	virtual _XBool canLostFocus(float x,float y) = 0;	//当前控件是否可以失去焦点，用于处理焦点抢夺问题
 	virtual void setLostFocus() {m_isBeChoose = XFalse;}	//设置失去焦点
+	virtual void setFocus() {m_isBeChoose = XTrue;}			//设置为焦点
+	virtual _XBool isFocus() {return m_isBeChoose;}		//是否处于焦点
 public:
 	using _XObjectBasic::setPosition;	//避免覆盖的问题
 //	virtual void setPosition(const _XVector2& position) {setPosition(position.x,position.y);}
@@ -87,8 +160,8 @@ public:
 //	virtual void setColor(const _XFColor& color) {setColor(color.fR,color.fG,color.fB,color.fA);}
 	virtual _XFColor getColor() const {return m_color;}	//获取控件字体的颜色
 
-	float getAngle() const {return 0;}				//获取物件的角度
-	void setAngle(float angle){updateChildAngle();}					//设置物件的角度
+	float getAngle() const {return 0.0f;}				//获取物件的角度
+	void setAngle(float){updateChildAngle();}					//设置物件的角度
 
 	_XControlBasic();
 	virtual ~_XControlBasic() {};
@@ -113,5 +186,5 @@ private:	//为了防止意外调用的错误，这里重载赋值操作符和赋值构造函数
 12、多行输入框	MutiEdit		(目前还不能解决中文输入的问题)
 13、控件管理的类 用于统一管理所有空间直接的ID以及以内互斥关系
 */
-
+#include "XControlBasic.inl"
 #endif
