@@ -11,21 +11,20 @@
 
 #include <vector>
 #include <list>
-
-class _XReductionFace
+namespace XE{
+class XReductionFace
 {
 private:
-	_XBool m_isInited;
+	XBool m_isInited;
 public:
-//	void reductionFace(std::vector<_XVector3> &v,	//顶点的数据
-//		std::vector<_XFaceInfo> &f,
+//	void reductionFace(std::vector<XVector3> &v,	//顶点的数据
+//		std::vector<XFaceInfo> &f,
 //		std::vector<int> &map,
 //		std::vector<int> &permutation);
 
-	_XReductionFace()
+	XReductionFace()
 		:m_isInited(XFalse)
-	{
-	}
+	{}
 };
-
+}
 #endif

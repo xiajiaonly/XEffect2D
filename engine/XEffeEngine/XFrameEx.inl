@@ -1,47 +1,25 @@
-//inline 函数
-inline void _XFrameEx::setPosition(float a,float b)
+//INLINE  函数
+INLINE void XFrameEx::setPositionX(float a)
 {
-	if(!m_isInited) return;
-	x = a;
-	y = b;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
-	{
-		m_pSprite[i].setPosition(x,y);
-	}
-	updateChildPos();
+	setPosition(a,m_position.y);
 }
-inline void _XFrameEx::setPositionX(float a)
+INLINE void XFrameEx::setPositionY(float b)
 {
-	setPosition(a,y);
+	setPosition(m_position.x,b);
 }
-inline void _XFrameEx::setPositionY(float b)
+INLINE XVector2 XFrameEx::getPosition() const
 {
-	setPosition(x,b);
+	return m_position;
 }
-inline _XVector2 _XFrameEx::getPosition() const
+INLINE XVector2 XFrameEx::getScale()const
 {
-	return _XVector2(x,y);
+	return m_scale;
 }
-inline void _XFrameEx::setSize(float x,float y)
-{
-	if(!m_isInited) return;
-	xsize = x;
-	ysize = y;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
-	{
-		m_pSprite[i].setSize(xsize,ysize);
-	}
-	updateChildSize();
-}
-inline _XVector2 _XFrameEx::getSize()const
-{
-	return _XVector2(xsize,ysize);
-}
-inline _XBool _XFrameEx::getIsEnd() const
+INLINE XBool XFrameEx::getIsEnd() const
 {
 	return m_isEnd;
 }
-inline void _XFrameEx::setEnd()
+INLINE void XFrameEx::setEnd()
 {
 	if(!m_isEndImmediately)
 	{
@@ -52,85 +30,75 @@ inline void _XFrameEx::setEnd()
 		m_isEnd = XTrue;
 	}
 }
-inline void _XFrameEx::reset()	//设置已经播放完成的序列帧动画重新播放
+INLINE void XFrameEx::reset()	//设置已经播放完成的序列帧动画重新播放
 {
-	if(m_isEnd)
-	{
-		m_isEnd = XFalse;
-		m_isSetEnd = XFalse;
-		m_nowFramesNumble = (float)m_startFrame;
-	}
+	if(!m_isEnd) return;	//如果没有结束，则不能重置，这个逻辑好像并不严谨
+	m_isEnd = XFalse;
+	m_isSetEnd = XFalse;
+	m_curFramesNumble = (float)m_startFrame;
 }
-inline _XSprite * _XFrameEx::getNowSprite(char frameFlag)
+INLINE XSprite * XFrameEx::getCurSprite(bool isAllFrames)
 {
 	if(!m_isInited) return NULL;
-	if(frameFlag == 0)
-	{
-		return &(m_pSprite[(int)(m_nowFramesNumble)]);
-	}else
-	{
+	if(isAllFrames)
 		return m_pSprite;
-	}
-}
-inline void _XFrameEx::setAngle(float temp)
-{
-	if(!m_isInited) return;
-	angle = temp;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	else
 	{
-		m_pSprite[i].setAngle(angle);
+		int temp = m_curFramesNumble;
+		if(m_curFramesNumble < 0 || m_curFramesNumble >= m_allFramesSum) temp = 0;
+		if(m_keyFrameArray[temp] < 0 || m_keyFrameArray[temp] >= m_allKeyFramesSum) return NULL;
+		return &(m_pSprite[m_keyFrameArray[temp]]);
 	}
-	updateChildAngle();
 }
-inline float _XFrameEx::getAngle() const
+INLINE float XFrameEx::getAngle() const
 {
-	return angle;
+	return m_angle;
 }
-inline void _XFrameEx::setColor(float r,float g,float b,float a)
+INLINE float XFrameEx::getAlpha() const
 {
-	if(!m_isInited) return;
-	if(r >= 0) colorRed = r;
-	if(g >= 0) colorGreen = g;
-	if(b >= 0) colorBlue = b;
-	if(a >= 0) alpha = a;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
-	{
-		m_pSprite[i].setColor(r,g,b,a);
-	}
-	updateChildColor();
+	return m_color.fA;
 }
-inline void _XFrameEx::setAlpha(float a)
-{
-	if(!m_isInited) return;
-	if(a >= 0) alpha = a;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
-	{
-		m_pSprite[i].setAlpha(a);
-	}
-	updateChildAlpha();
-}
-inline float _XFrameEx::getAlpha() const
-{
-	return alpha;
-}
-inline void _XFrameEx::setActionSpeed(float actionSpeed)	//设置序列帧播放的速度
+INLINE void XFrameEx::setActionSpeed(float actionSpeed)	//设置序列帧播放的速度
 {
 	m_actionSpeed = actionSpeed;
 }
-inline void _XFrameEx::setRestart()
+INLINE void XFrameEx::setRestart()
 {
-	m_nowFramesNumble = (float)(m_startFrame);
+	m_curFramesNumble = (float)(m_startFrame);
 }
-inline _XBool _XFrameEx::isInRect(float x,float y)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE void XFrameEx::setIsTransformCenter(XTransformMode temp)
+{//尚未实现
+	if(!m_isInited) return;
+	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	{
+		m_pSprite[i].setIsTransformCenter(temp);
+	}
+}
+INLINE void XFrameEx::setBlendType(int typeScr,int typeDst)	//设置混合模式
 {
-	int temp = m_nowFramesNumble;
-	if(m_nowFramesNumble < 0 || m_nowFramesNumble >= m_allFramesSum) temp = 0;
-	return m_pSprite[m_keyFrameArray[temp]].isInRect(x,y);
+	if(typeScr < 0) typeScr = 0;
+	if(typeDst < 0) typeDst = 0;
+	if(typeScr > 8 ) typeScr = 8;
+	if(typeDst > 7 ) typeDst = 7;
+	m_blendTypeScr = typeScr;
+	m_blendTypeDst = typeDst;
+	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	{
+		m_pSprite[i].setBlendType(m_blendTypeScr,m_blendTypeDst);
+	}
 }
-//获取四个顶点的坐标，目前先不考虑旋转和缩放
-inline _XVector2 _XFrameEx::getBox(int order)
+INLINE XFColor XFrameEx::getColor() const 
 {
-	int temp = m_nowFramesNumble;
-	if(m_nowFramesNumble < 0 || m_nowFramesNumble >= m_allFramesSum) temp = 0;
-	return m_pSprite[m_keyFrameArray[temp]].getBox(order);
+	if(m_pSprite == NULL) return XFColor::white;
+	else return m_pSprite[0].getColor();
 }
+INLINE void XFrameEx::setVisible() 
+{
+	m_isVisible = XTrue;
+	updateChildVisible();
+}					//设置物件可见
+INLINE void XFrameEx::disVisible() 
+{
+	m_isVisible = XFalse;
+	updateChildVisible();
+}	

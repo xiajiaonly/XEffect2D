@@ -1,11 +1,12 @@
+#include "XStdHead.h"
 #include "XSimpleProtocol.h"
-
-void simpleProctocolRecvCB(void *pClass,unsigned char * data,int len)
+namespace XE{
+void XSimpleProtocol::simpleProctocolRecvCB(void *pClass,unsigned char * data,int len)
 {
-	_XSimpleProtocol &pPar = *(_XSimpleProtocol *)pClass;
+	XSimpleProtocol &pPar = *(XSimpleProtocol *)pClass;
 	pPar.recvDataProc(data,len);	//下面解析数据
 }
-void _XSimpleProtocol::recvDataProc(unsigned char *data,int len)
+void XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 {
 	if(data == NULL || len <= 0) return;
 	if(m_recvedDataLen != 0)
@@ -15,7 +16,7 @@ void _XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 		case 1:
 			if(data[0] >= 0x80)
 			{//之前收到的数据是不完整的包
-				printf("Error Data:0x%02x\n",m_recvedData[0]);
+				LogNull("Error Data:0x%02x",m_recvedData[0]);
 				m_recvedDataLen = 0;
 				recvDataProc(data,len);
 			}else
@@ -28,20 +29,21 @@ void _XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 		case 2:
 			if(data[0] >= 0x80)
 			{//之前收到的数据是不完整的包
-				printf("Error Data:0x%02x,0x%02x\n",m_recvedData[0],m_recvedData[1]);
+				LogNull("Error Data:0x%02x,0x%02x", m_recvedData[0], m_recvedData[1]);
 				m_recvedDataLen = 0;
 				recvDataProc(data,len);
 			}else
 			{//正确的数据
 				m_recvedData[2] = data[0];
 				//收到一个完整的数据包
-				m_data[m_recvedData[0] - 0xa0] = (m_recvedData[1] << 7) + m_recvedData[2];
+				//m_data[m_recvedData[0] - 0xa0] = (m_recvedData[1] << 7) + m_recvedData[2];
+				m_data[m_recvedData[0] - 0xa0] = decodeData(m_recvedData + 1);
 				if(m_callBackFun != NULL)
 				{
-					_XSimProData tmp;
+					XSimProData tmp;
 					tmp.type = SIMPRO_TYPE_DATA;
 					tmp.index = m_recvedData[0] - 0xa0;
-					tmp.data = (m_recvedData[1] << 7) + m_recvedData[2];
+					tmp.data = decodeData(m_recvedData + 1);//(m_recvedData[1] << 7) + m_recvedData[2];
 					m_callBackFun(tmp,m_pClass);
 				}
 
@@ -58,52 +60,54 @@ void _XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 			{//数据数据
 				m_recvedData[0] = data[0];
 				++ m_recvedDataLen;
-				recvDataProc(data + 1,len - 1);
 			}else
 			{//状态数据
 				m_state[(data[0] & 0x0f)] = ((data[0] & 0xf0) == 0x80)?1:0;
 				if(m_callBackFun != NULL)
 				{
-					_XSimProData tmp;
+					XSimProData tmp;
 					tmp.type = SIMPRO_TYPE_STATE;
 					tmp.index = (data[0] & 0x0f);
 					tmp.data = ((data[0] & 0xf0) == 0x80)?1:0;
 					m_callBackFun(tmp,m_pClass);
 				}
 			}
+			recvDataProc(data + 1,len - 1);
 		}else
 		{//不完整的头数据
-			printf("Error Data:");
+			std::string tmp = "Error Data:";
+			char tmpStr[16];
 			for(int i = 0;i < len;++ i)
 			{
 				if(data[i] >= 0x80)
 				{
-					printf("\n");
+					LogStr(tmp.c_str());
 					recvDataProc(data + i,len - i);
 					return;
 				}else
 				{//错误的数据
-					printf("0x%02x ",data[i]);
+					sprintf(tmpStr,"0x%02x ",data[i]);
+					tmp += tmpStr;
 				}
 			}
 			//所有数据都被抛弃
-			printf("\n");
+			LogStr(tmp.c_str());
 		}
 	}
 }
-DWORD WINAPI _XSimpleProtocol::sendThread(void * pParam)
+DWORD WINAPI XSimpleProtocol::sendThread(void * pParam)
 {
-	_XSimpleProtocol &pPar = *(_XSimpleProtocol *)pParam;
+	XSimpleProtocol &pPar = *(XSimpleProtocol *)pParam;
 	pPar.m_sendThreadState = STATE_START;
 
-	while(true)
+	while(pPar.m_sendThreadState != STATE_SET_TO_END)
 	{
-		if(pPar.m_sendThreadState == STATE_SET_TO_END) break;
+		//if(pPar.m_sendThreadState == STATE_SET_TO_END) break;
 		//这里发送数据
 		if(pPar.m_sendData.size() > 0)
 		{//这里发送一个数据
 			pPar.m_sendMutex.Lock();
-			_XSimProData tmp = pPar.m_sendData[0];
+			XSimProData tmp = pPar.m_sendData[0];
 			pPar.m_sendData.pop_front();
 			pPar.m_sendMutex.Unlock();
 			//下面发送tmp
@@ -115,27 +119,34 @@ DWORD WINAPI _XSimpleProtocol::sendThread(void * pParam)
 	pPar.m_sendThreadState = STATE_END;
 	return 0;
 }
-void _XSimpleProtocol::sendData(const _XSimProData&tmp)
+void XSimpleProtocol::sendData(const XSimProData&tmp)
 {
 	if(tmp.type == SIMPRO_TYPE_STATE)
 	{
-		if(tmp.index < 0 || tmp.index >= getMaxStateSum()) return;	//数据不合法
+		if(tmp.index < 0 || tmp.index >= m_maxXSPStateSum) return;	//数据不合法
 		unsigned char data;
 		if(tmp.data == 0)
 		{
 			data = 0x90 + tmp.index;
+			m_state[tmp.index] = 0;
 		}else
 		{
 			data = 0x80 + tmp.index;
+			m_state[tmp.index] = 1;
 		}
 		m_serialPort.sendData(&data,1);
+		//这里发送完成之后需要修改本地的数据
 	}else
 	{
-		if(tmp.index < 0 || tmp.index >= getMaxDataSum()) return;	//数据不合法
+		if(tmp.index < 0 || tmp.index >= m_maxXSPValueSum) return;	//数据不合法
 		unsigned char data[3];
 		data[0] = tmp.index + 0xa0;
-		data[1] = (tmp.data / 128) % 128;
-		data[2] = (tmp.data) % 128;
+		m_data[tmp.index] = tmp.data;
+		encodeData(tmp.data,data + 1);
 		m_serialPort.sendData(data,3);
 	}
+}
+#if !WITH_INLINE_FILE
+#include "XSimpleProtocol.inl"
+#endif
 }

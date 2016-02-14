@@ -8,12 +8,12 @@
 #include "XCommonDefine.h"
 #include "XWindowSDL.h"
 #include "XWindowGlut.h"
-
-#ifdef CREATE_WINDOW_WITH_GLUT
-#define _XWindow _XWindowGlut::GetInstance()
-#endif
-#ifdef CREATE_WINDOW_WITH_SDL
-#define _XWindow _XWindowSDL::GetInstance()
-#endif
-
+//namespace XE{
+//#ifdef CREATE_WINDOW_WITH_GLUT
+//#define XWindow XWindowGlut::GetInstance()
+//#endif
+//#ifdef CREATE_WINDOW_WITH_SDL
+//#define XWindow XWindowSDL::GetInstance()
+//#endif
+//}
 #endif

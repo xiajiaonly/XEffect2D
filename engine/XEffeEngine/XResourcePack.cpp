@@ -1,31 +1,25 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
-//#include "stdafx.h"
 #include "XResourcePack.h"
 #include "XResourceOptimize.h"
-#include "stdlib.h"
-#include "stdio.h"
-#include "XBasicWindow.h"
-#include "XMD5.h"
-#ifdef XEE_OS_WINDOWS
-#include "windows.h"
-#endif
+
+#include "XMath/XMD5.h"
+#include "XFile.h"
 
 #include "XTextureInformation.h"	//为了实现资源反压缩而引入的头文件
-
-#define LOCK_DATA_PART_1 ("~!si2e69,;1'5/1io&*%!*(&@%onjkli")
-#define MEMORY_CHANGE_TIMES (36)
-#define MD5_CODE_SIZE (16)
+namespace XE{
+#define LOCK_DATA_PART_1 "~!si2e69,;1'5/1io&*%!*(&@%onjkli"
 
 //强化建议加入加密和压缩
-#define FILE_LIST_TEXT_NAME ("ResourceFileList.txt")
-#define OUT_FILE_NAME ("Resource.dat")
-#define FILE_CODE  ("SP:xiajia_1981@163.com")
+#define FILE_LIST_TEXT_NAME "ResourceFileList.txt"
+#define OUT_FILE_NAME "Resource.dat"
+#define FILE_CODE  "SP:xiajia_1981@163.com"
 
-int _XResourcePack::makeResourcePack(int packMode)
+int XResourcePack::makeResourcePack(int packMode)
 {
 	FILE *fpTemp = NULL;
 	FILE *fp = NULL;
@@ -41,8 +35,8 @@ int _XResourcePack::makeResourcePack(int packMode)
 	m_fileSum = 0;	//实际操作的文件数量
 	char fileNameTemp[MAX_FILE_NAME_LENGTH];
 	char fileNameTemp1[MAX_FILE_NAME_LENGTH];
-	_XBool flag = XTrue;
-	for(int i = 0;i < MAX_FILE_SUM;++ i)
+	XBool flag = XTrue;
+	for(int i = 0;i < m_maxFileSum;++ i)
 	{
 		while(true)
 		{
@@ -53,7 +47,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 			}
 
 			fileNameTemp[0] = '\0';
-			fscanf(fp,"%s",fileNameTemp);
+			if(fscanf(fp,"%s",fileNameTemp) != 1) continue;
 			if(fileNameTemp[0]  == '\0') continue;
 			int tempLen = getStringLength(fileNameTemp);
 			if(tempLen < 4) continue;
@@ -69,17 +63,17 @@ int _XResourcePack::makeResourcePack(int packMode)
 						fileNameTemp1[j] = '\0';
 					}
 				}
-				if(!fileNameCompare(fileNameTemp1,"normalResource")) continue;	//只有normalResource目录下面的文件才会经过这个处理
+				if(!XFile::fileNameCompare(fileNameTemp1,"normalResource")) continue;	//只有normalResource目录下面的文件才会经过这个处理
 			}else
 			{
-				if(fileNameCompare(fileNameTemp,"ResourcePack.exe")) continue;			//去掉可执行文件自身
-				if(fileNameCompare(fileNameTemp,"ResourceFileList.txt")) continue;		//去掉文件列表文档
-				if(fileNameCompare(fileNameTemp,"Resource.dat")) continue;				//去掉资源包文件
+				if(XFile::fileNameCompare(fileNameTemp,"ResourcePack.exe")) continue;			//去掉可执行文件自身
+				if(XFile::fileNameCompare(fileNameTemp,"ResourceFileList.txt")) continue;		//去掉文件列表文档
+				if(XFile::fileNameCompare(fileNameTemp,"Resource.dat")) continue;				//去掉资源包文件
 				if(fileNameTemp[tempLen - 4]  != '.') continue;		//这个可以不必要如此处理,这一行的目的是为了去掉文件夹，保证选取的都是文件
 				//下面去掉资源优化产生的几个临时文件
-				if(fileNameCompare(fileNameTemp,PNG_FILE_LIST_NAME)) continue;	//去掉资源优化中间文件
-				if(fileNameCompare(fileNameTemp,"!!BasePath.png")) continue;	//去掉资源优化中间文件
-				if(fileNameCompare(fileNameTemp,"logBook.txt")) continue;		//去掉资源优化中间文件
+				if(XFile::fileNameCompare(fileNameTemp,PNG_FILE_LIST_NAME)) continue;	//去掉资源优化中间文件
+//				if(XFile::fileNameCompare(fileNameTemp,"!!BasePath.png")) continue;	//去掉资源优化中间文件
+				if(XFile::fileNameCompare(fileNameTemp,"logBook.txt")) continue;		//去掉资源优化中间文件
 				//DLL文件不需要打包
 				if(fileNameTemp[tempLen - 4] == '.'
 					&& (fileNameTemp[tempLen - 3] == 'D' || fileNameTemp[tempLen - 3] == 'd')
@@ -97,7 +91,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 						fileNameTemp1[j] = '\0';
 					}
 				}
-				if(fileNameCompare(fileNameTemp1,"normalResource")) continue;	//normalResource目录下的文件不会经过这个处理
+				if(XFile::fileNameCompare(fileNameTemp1,"normalResource")) continue;	//normalResource目录下的文件不会经过这个处理
 			}
 			break;
 		}
@@ -123,7 +117,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 	if(flag)
 	{
 #ifdef DEBUG_MODE
-		printf("Need packed files is more than %d.Pack filed!\n",MAX_FILE_SUM);
+		printf("Need packed files is more than %d.Pack filed!\n",m_maxFileSum);
 #endif
 		return 0;
 	}
@@ -141,7 +135,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 			}
 		}
 		//写入包头长度
-		m_headLength = m_fileSum * sizeof(_XResourceFileStruct);
+		m_headLength = m_fileSum * sizeof(XResourceFileStruct);
 		fwrite(&m_headLength,sizeof(m_headLength),1,fp);		//4bytes
 		//写入包头加上文件的总长度
 		for(int i = 0;i < m_fileSum;++ i)
@@ -157,7 +151,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 				m_fileInfo[i].filePosition = m_fileInfo[i-1].filePosition + m_fileInfo[i-1].fileLength;
 			}else
 			{
-				m_fileInfo[i].filePosition = sizeof(m_headLength) + sizeof(m_headLength) + m_fileSum * sizeof(_XResourceFileStruct);
+				m_fileInfo[i].filePosition = sizeof(m_headLength) + sizeof(m_headLength) + m_fileSum * sizeof(XResourceFileStruct);
 			}
 			fwrite(m_fileInfo[i].fileName,sizeof(m_fileInfo[i].fileName),1,fp);	
 			fwrite(&(m_fileInfo[i].fileLength),sizeof(m_fileInfo[i].fileLength),1,fp);	
@@ -214,18 +208,18 @@ int _XResourcePack::makeResourcePack(int packMode)
 		fwrite(temp,sizeof(temp),1,fp);				//23bytes
 		//printf("%d\n",ftell(fp));
 		//写入包头长度
-		m_headLength = LOCK_CODE_LENGTH + m_fileSum * sizeof(_XResourceFileStruct);
+		m_headLength = m_lockCodeLength  + m_fileSum * sizeof(XResourceFileStruct);
 		fwrite(&m_headLength,sizeof(m_headLength),1,fp);		//4bytes
 		//printf"%d\n",ftell(fp));
 		//写入32bytes的随机码
-		for(int i = 0;i < LOCK_CODE_LENGTH;++ i)
+		for(int i = 0;i < m_lockCodeLength ;++ i)
 		{
 			tempCode[i] = rand()%256;
 		}
-		fwrite(tempCode,LOCK_CODE_LENGTH,1,fp);		//32bytes
+		fwrite(tempCode,m_lockCodeLength ,1,fp);		//32bytes
 		getlockKey();	//计算掩码
 		//printf"%d,%d\n",ftell(fp),m_headLength);
-		int tempFilePosition = sizeof(FILE_CODE) + sizeof(long) + LOCK_CODE_LENGTH;
+		int tempFilePosition = sizeof(FILE_CODE) + sizeof(long) + m_lockCodeLength ;
 		//写入包头内容
 		for(int i = 0;i < m_fileSum;++ i)
 		{
@@ -306,8 +300,7 @@ int _XResourcePack::makeResourcePack(int packMode)
 #endif
 	return 1;
 }
-
-int _XResourcePack::isOptimized(const char *p) const
+int XResourcePack::isOptimized(const char *p) const
 {
 	FILE *fp;
 	if((fp = fopen(PNG_FILE_LIST_NAME,"r")) == NULL)
@@ -320,7 +313,7 @@ int _XResourcePack::isOptimized(const char *p) const
 	{
 		if(feof(fp)) break;
 		if(fscanf(fp,"%s",temp) != 1) break;
-		if(fileNameCompare(p,temp))
+		if(XFile::fileNameCompare(p,temp))
 		{
 			fclose(fp);
 			return 1;
@@ -329,8 +322,7 @@ int _XResourcePack::isOptimized(const char *p) const
 	fclose(fp);
 	return 0;
 }
-
-int _XResourcePack::unpackAllResource()
+int XResourcePack::unpackAllResource()
 {
 	if(!m_haveReadedNormalFileList)
 	{
@@ -371,14 +363,14 @@ int _XResourcePack::unpackAllResource()
 		needFileOrder = 0;
 		for(int j = 0;j < m_texInfoSum;++ j)
 		{
-			if(fileNameCompare(m_targetName + m_targetOrder[j] * MAX_FILE_NAME_LENGTH,m_fileInfo[i].fileName))
+			if(XFile::fileNameCompare(m_targetName + m_targetOrder[j] * MAX_FILE_NAME_LENGTH,m_fileInfo[i].fileName))
 			{
 				needFileOrder = 1;
 				break;
 			}
 		}
 		if(needFileOrder == 1) continue;
-		tempFileData = createArrayMem<unsigned char>(m_fileInfo[i].fileLength);
+		tempFileData = XMem::createArrayMem<unsigned char>(m_fileInfo[i].fileLength);
 		if(tempFileData == NULL) return -1;
 
 		if((fpTemp = fopen(m_fileInfo[i].fileName,"wb")) == NULL)
@@ -400,7 +392,7 @@ int _XResourcePack::unpackAllResource()
 
 		//结束
 		fclose(fpTemp);
-		XDELETE_ARRAY(tempFileData);
+		XMem::XDELETE_ARRAY(tempFileData);
 	}
 #ifdef DEBUG_MODE
 	printf("下面进入压缩文件还原：%d\n",m_texInfoSum);
@@ -418,8 +410,7 @@ int _XResourcePack::unpackAllResource()
 #endif
 	return 1;
 }
-
-int _XResourcePack::checkFileCode(const char *p) const
+int XResourcePack::checkFileCode(const char *p) const
 {
 	char temp[] = FILE_CODE;
 	for(int i = 0;i < sizeof(temp);++ i)
@@ -428,70 +419,70 @@ int _XResourcePack::checkFileCode(const char *p) const
 	}
 	return 1;
 }
-_XBool _XResourcePack::getOptimizeInfo()
+XBool XResourcePack::getOptimizeInfo()
 {
 	if(m_isGetOptimizeInfo) return XTrue;
 	//从资源包中提取压缩文件信息
 	int lengthTemp = getFileLength(PNG_INFORMATION_FILE_NAME);
 	if(lengthTemp < 0) return XFalse;
-	unsigned char *p = createArrayMem<unsigned char>(lengthTemp);
+	unsigned char *p = XMem::createArrayMem<unsigned char>(lengthTemp);
 	if(p == NULL) return XFalse;
 
 	//从资源包中提取出资源文件的内容
 	unpackResource(PNG_INFORMATION_FILE_NAME,p);
 	//解析一下内容
 	int offset = 0;
-	if(sscanf((char *)(p + offset),"%d,",&m_texInfoSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
-	offset += getCharPosition((char *)(p + offset),',') + 1;
-	if(sscanf((char *)(p + offset),"%d;",&m_targetTextureSum) != 1) {XDELETE_ARRAY(p);return XFalse;}
-	offset += getCharPosition((char *)(p + offset),';') + 1;
+	if(sscanf((char *)(p + offset),"%d,",&m_texInfoSum) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+	if(sscanf((char *)(p + offset),"%d;",&m_targetTextureSum) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),';') + 1;
 	if(m_texInfoSum <= 0 || m_targetTextureSum <= 0)
 	{
-		XDELETE_ARRAY(p);
+		XMem::XDELETE_ARRAY(p);
 		return XFalse;
 	}
-	m_texInfo = createArrayMem<_XTextureInfo>(m_texInfoSum);
+	m_texInfo = XMem::createArrayMem<XTextureInfo>(m_texInfoSum);
 	if(m_texInfo == NULL)
 	{
-		XDELETE_ARRAY(p);
+		XMem::XDELETE_ARRAY(p);
 		return XFalse;
 	}
-	m_targetOrder = createArrayMem<int>(m_texInfoSum);
+	m_targetOrder = XMem::createArrayMem<int>(m_texInfoSum);
 	if(m_targetOrder == NULL)
 	{
-		XDELETE_ARRAY(p);
-		XDELETE_ARRAY(m_texInfo);
+		XMem::XDELETE_ARRAY(p);
+		XMem::XDELETE_ARRAY(m_texInfo);
 		return XFalse;
 	}
 	for(int i = 0;i < m_texInfoSum;++ i)
 	{
 		m_targetOrder[i] = 0;
 	}
-	m_targetName = createArrayMem<char>(m_targetTextureSum * MAX_FILE_NAME_LENGTH);
+	m_targetName = XMem::createArrayMem<char>(m_targetTextureSum * MAX_FILE_NAME_LENGTH);
 	if(m_targetName == NULL)
 	{
-		XDELETE_ARRAY(p);
-		XDELETE_ARRAY(m_texInfo);
-		XDELETE_ARRAY(m_targetOrder);
+		XMem::XDELETE_ARRAY(p);
+		XMem::XDELETE_ARRAY(m_texInfo);
+		XMem::XDELETE_ARRAY(m_targetOrder);
 		return XFalse;
 	}
-	int nowGetTargetNameSum = 0;
+	int curGetTargetNameSum = 0;
 	//下面开始提取压缩文件信息
 	char tempChar;
 	int tempFlag;
 	char targetFileName[MAX_FILE_NAME_LENGTH] = "";
 	for(int i = 0;i < m_texInfoSum;++ i)
 	{//这里有一个回车位
-		if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset ++;//读取文本的回车位
-		if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset ++;//读取文本的回车位
+		if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		++ offset;//读取文本的回车位
+		if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		++ offset;//读取文本的回车位
 
 		tempFlag = 0;
 		for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 		{
-			if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
-			offset ++;
+			if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+			++ offset;
 			if(tempChar == ':')
 			{
 				m_texInfo[i].textureName[j] = '\0';
@@ -504,18 +495,18 @@ _XBool _XResourcePack::getOptimizeInfo()
 		}
 		if(tempFlag == 0)
 		{//文件数据发生错误，这里直接返回
-			XDELETE_ARRAY(p);
-			XDELETE_ARRAY(m_texInfo);
-			XDELETE_ARRAY(m_targetOrder);
-			XDELETE_ARRAY(m_targetName);
+			XMem::XDELETE_ARRAY(p);
+			XMem::XDELETE_ARRAY(m_texInfo);
+			XMem::XDELETE_ARRAY(m_targetOrder);
+			XMem::XDELETE_ARRAY(m_targetName);
 			return XFalse;
 		}
 		
 		tempFlag = 0;
 		for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 		{
-			if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XDELETE_ARRAY(p);return XFalse;}
-			offset ++;
+			if(sscanf((char *)(p + offset),"%c",&tempChar) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+			++ offset;
 			if(tempChar == ':')
 			{
 				targetFileName[j] = '\0';
@@ -528,16 +519,16 @@ _XBool _XResourcePack::getOptimizeInfo()
 		}
 		if(tempFlag == 0)
 		{//文件数据发生错误，这里直接返回
-			XDELETE_ARRAY(p);
-			XDELETE_ARRAY(m_texInfo);
-			XDELETE_ARRAY(m_targetOrder);
-			XDELETE_ARRAY(m_targetName);
+			XMem::XDELETE_ARRAY(p);
+			XMem::XDELETE_ARRAY(m_texInfo);
+			XMem::XDELETE_ARRAY(m_targetOrder);
+			XMem::XDELETE_ARRAY(m_targetName);
 			return XFalse;
 		}
 		tempFlag = 0;
-		for(int j = 0;j < nowGetTargetNameSum;++ j)
+		for(int j = 0;j < curGetTargetNameSum;++ j)
 		{
-			if(fileNameCompare(targetFileName,m_targetName + j * MAX_FILE_NAME_LENGTH))
+			if(XFile::fileNameCompare(targetFileName,m_targetName + j * MAX_FILE_NAME_LENGTH))
 			{//文件名相同
 				m_targetOrder[i] = j;
 				tempFlag = 1;
@@ -546,66 +537,66 @@ _XBool _XResourcePack::getOptimizeInfo()
 		}
 		if(tempFlag == 0)
 		{
-			if(nowGetTargetNameSum >= m_targetTextureSum)
+			if(curGetTargetNameSum >= m_targetTextureSum)
 			{//发生数据错误
-				XDELETE_ARRAY(p);
-				XDELETE_ARRAY(m_texInfo);
-				XDELETE_ARRAY(m_targetOrder);
-				XDELETE_ARRAY(m_targetName);
+				XMem::XDELETE_ARRAY(p);
+				XMem::XDELETE_ARRAY(m_texInfo);
+				XMem::XDELETE_ARRAY(m_targetOrder);
+				XMem::XDELETE_ARRAY(m_targetName);
 				return XFalse;
 			}
-			m_targetOrder[i] = nowGetTargetNameSum;
-			strcpy(m_targetName + nowGetTargetNameSum * MAX_FILE_NAME_LENGTH,targetFileName);
-			++nowGetTargetNameSum;
+			m_targetOrder[i] = curGetTargetNameSum;
+			strcpy(m_targetName + curGetTargetNameSum * MAX_FILE_NAME_LENGTH,targetFileName);
+			++curGetTargetNameSum;
 		}
-		if(sscanf((char *)(p + offset),"%d:",&tempFlag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
+		if(sscanf((char *)(p + offset),"%d:",&tempFlag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),':') + 1;
 		if(tempFlag < 0 || tempFlag >= m_targetTextureSum)
 		{//文件数据发生错误，这里直接返回
-			XDELETE_ARRAY(p);
-			XDELETE_ARRAY(m_texInfo);
-			XDELETE_ARRAY(m_targetOrder);
-			XDELETE_ARRAY(m_targetName);
+			XMem::XDELETE_ARRAY(p);
+			XMem::XDELETE_ARRAY(m_texInfo);
+			XMem::XDELETE_ARRAY(m_targetOrder);
+			XMem::XDELETE_ARRAY(m_targetName);
 			return XFalse;
 		}
 		//读取剩下的信息
-		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureOffset.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),',') + 1;
-		if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureOffset.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
+		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureOffset.x) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+		if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureOffset.y) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),':') + 1;
 
-		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),',') + 1;
-		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),',') + 1;
-		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove2.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),',') + 1;
-		if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureMove2.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureSize.x) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),',') + 1;
-		if(sscanf((char *)(p + offset),"%f;",&m_texInfo[i].textureSize.y) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),';') + 1;
+		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.x) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove.y) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureMove2.x) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+		if(sscanf((char *)(p + offset),"%f:",&m_texInfo[i].textureMove2.y) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+		if(sscanf((char *)(p + offset),"%f,",&m_texInfo[i].textureSize.x) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),',') + 1;
+		if(sscanf((char *)(p + offset),"%f;",&m_texInfo[i].textureSize.y) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),';') + 1;
 	}
 	//所有数据读取完成
-	XDELETE_ARRAY(p);
+	XMem::XDELETE_ARRAY(p);
 
 	m_isGetOptimizeInfo = XTrue;
 	return XTrue;
 }
-_XBool _XResourcePack::releaseOptimizeInfo()
+XBool XResourcePack::releaseOptimizeInfo()
 {
 	if(!m_isGetOptimizeInfo) return XTrue;
 	
-	XDELETE_ARRAY(m_texInfo);
-	XDELETE_ARRAY(m_targetOrder);
-	XDELETE_ARRAY(m_targetName);	
+	XMem::XDELETE_ARRAY(m_texInfo);
+	XMem::XDELETE_ARRAY(m_targetOrder);
+	XMem::XDELETE_ARRAY(m_targetName);	
 
 	m_isGetOptimizeInfo = XFalse;
 	return XTrue;
 }
 
-int _XResourcePack::unpackResource(const char *fileName)
+int XResourcePack::unpackResource(const char *fileName)
 {
 	if(!m_haveReadedNormalFileList)
 	{
@@ -621,7 +612,7 @@ int _XResourcePack::unpackResource(const char *fileName)
 	int needFileOrder = -1;
 	for(int i = 0;i < m_fileSum;++ i)
 	{
-		if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+		if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 		{
 			needFileOrder = i;
 			break;
@@ -640,7 +631,7 @@ int _XResourcePack::unpackResource(const char *fileName)
 			}
 			for(int i = 0;i < m_fileSum;++ i)
 			{
-				if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+				if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 				{
 					needFileOrder = i;
 					break;
@@ -665,7 +656,7 @@ int _XResourcePack::unpackResource(const char *fileName)
 		needFileOrder = -1;
 		for(int i = 0;i < m_texInfoSum;++ i)
 		{
-			if(fileNameCompare(m_texInfo[i].textureName,fileName))
+			if(XFile::fileNameCompare(m_texInfo[i].textureName,fileName))
 			{
 				needFileOrder = i;
 				break;
@@ -681,7 +672,7 @@ int _XResourcePack::unpackResource(const char *fileName)
 		{//找到资源之后提取资源并还原资源
 			int lengthTemp = getFileLength(m_targetName + m_targetOrder[needFileOrder] * MAX_FILE_NAME_LENGTH);
 			if(lengthTemp < 0) return 0;
-			unsigned char *p = createArrayMem<unsigned char>(lengthTemp + 1);
+			unsigned char *p = XMem::createArrayMem<unsigned char>(lengthTemp + 1);
 			if(p == NULL) return 0;
 
 			if(unpackResource(m_targetName + m_targetOrder[needFileOrder] * MAX_FILE_NAME_LENGTH,p) == 0)
@@ -689,7 +680,7 @@ int _XResourcePack::unpackResource(const char *fileName)
 #ifdef DEBUG_MODE
 				printf("Optimize file unpack error!\n");
 #endif
-				XDELETE_ARRAY(p);
+				XMem::XDELETE_ARRAY(p);
 				return 0;
 			}
 			//下面根据解压出来的信息还原资源
@@ -698,17 +689,17 @@ int _XResourcePack::unpackResource(const char *fileName)
 #ifdef DEBUG_MODE
 				printf("Texture reduction error!\n");
 #endif
-				XDELETE_ARRAY(p);
+				XMem::XDELETE_ARRAY(p);
 				return 0;
 			}
-			XDELETE_ARRAY(p);
+			XMem::XDELETE_ARRAY(p);
 			return 1;
 		}
 	}
 	FILE *fpTemp;
 
 	//生成资源文件
-	unsigned char * tempFileData = createArrayMem<unsigned char>(m_fileInfo[needFileOrder].fileLength);
+	unsigned char * tempFileData = XMem::createArrayMem<unsigned char>(m_fileInfo[needFileOrder].fileLength);
 	if(tempFileData == NULL) return -1;
 
 	if((fpTemp = fopen(m_fileInfo[needFileOrder].fileName,"wb")) == NULL)
@@ -745,14 +736,14 @@ int _XResourcePack::unpackResource(const char *fileName)
 	//结束
 	fclose(fpTemp);
 	//fclose(fp);
-	XDELETE_ARRAY(tempFileData);
+	XMem::XDELETE_ARRAY(tempFileData);
 #ifdef DEBUG_MODE
 	printf("%s Unpack finished!\n",fileName);
 #endif
 	return 1;
 }
 
-int _XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//解包某一个资源到一段内存空间
+int XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//解包某一个资源到一段内存空间
 {//这里可以优化并不需要每次都需要读取资源包中的文件索引表
 	if(p == NULL) return 0;
 	if(fileName == NULL) return 0;
@@ -770,7 +761,7 @@ int _XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//解包
 	int needFileOrder = -1;
 	for(int i = 0;i < m_fileSum;++ i)
 	{
-		if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+		if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 		{
 			needFileOrder = i;
 			break;
@@ -789,7 +780,7 @@ int _XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//解包
 			}
 			for(int i = 0;i < m_fileSum;++ i)
 			{
-				if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+				if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 				{
 					needFileOrder = i;
 					break;
@@ -831,7 +822,7 @@ int _XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//解包
 	return 1;
 }
 
-int _XResourcePack::makeFileList()
+int XResourcePack::makeFileList()
 {
 #ifdef XEE_OS_WINDOWS
 	char temp[512];
@@ -851,9 +842,9 @@ int _XResourcePack::makeFileList()
 	int pathDeep = 1000;
 	int tempPathDeep;
 	char fileNameTemp[MAX_FILE_NAME_LENGTH];
-	_XBool flag = XTrue;
+	XBool flag = XTrue;
 	m_fileSum = 0;	//实际操作的文件数量
-	for(int i = 0;i < MAX_FILE_SUM;++ i)
+	for(int i = 0;i < m_maxFileSum;++ i)
 	{
 		while(true)
 		{
@@ -864,7 +855,7 @@ int _XResourcePack::makeFileList()
 			}
 
 			fileNameTemp[0] = '\0';
-			fscanf(fp,"%s",fileNameTemp);
+			if(fscanf(fp,"%s",fileNameTemp) != 1) continue;
 			if(fileNameTemp[0]  == '\0') continue;
 			//if(fileNameTemp[getStringLength(fileNameTemp) - 4]  != '.') continue;
 			break;
@@ -872,7 +863,7 @@ int _XResourcePack::makeFileList()
 		if(!flag) break;
 		memcpy(m_fileInfo[i].fileName,fileNameTemp,sizeof(fileNameTemp));
 
-		tempPathDeep = getPathDeepByChar(m_fileInfo[i].fileName);
+		tempPathDeep = XFile::getPathDeepByChar(m_fileInfo[i].fileName);
 		if(tempPathDeep < pathDeep) pathDeep = tempPathDeep;
 		++ m_fileSum;
 	}
@@ -908,7 +899,7 @@ int _XResourcePack::makeFileList()
 //	int tempPathDeep;
 	char tempStr[256];
 	char tempDir[256] = "";
-	_XBool firstEnterFlag = XFalse;
+	XBool firstEnterFlag = XFalse;
 	m_fileSum = 0;
 	int len = 0; 
 	int j = 0;
@@ -960,9 +951,9 @@ int _XResourcePack::makeFileList()
 	return 1;
 }
 
-int _XResourcePack::readNormalFileListFromResouce()
+int XResourcePack::readNormalFileListFromResouce()
 {
-	printf("readNormalFileListFromResouce\n");
+///	printf("readNormalFileListFromResouce\n");
 	if(m_fileInfo == NULL) return 0;
 	FILE *fp;
 	//打开资源文件
@@ -975,9 +966,9 @@ int _XResourcePack::readNormalFileListFromResouce()
 	}
 	long tempHeadLength;
 	fread(&tempHeadLength,sizeof(long),1,fp);	//读取头的长度
-	m_fileSum = tempHeadLength / sizeof(_XResourceFileStruct);
+	m_fileSum = tempHeadLength / sizeof(XResourceFileStruct);
 	m_normalFileSum = m_fileSum;
-	if(m_normalFileSum >= MAX_FILE_SUM)
+	if(m_normalFileSum >= m_maxFileSum)
 	{//文件数量超过上限
 		fclose(fp);
 		return 0;
@@ -999,7 +990,7 @@ int _XResourcePack::readNormalFileListFromResouce()
 	return 1;
 }
 
-int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
+int XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 {
 	printf("readFileListFromResouce\n");
 //	printf("开始取资源:%d\n",getCurrentTicks());
@@ -1028,8 +1019,8 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 		return 1;
 	}
 	fseek(fp,tempHeadLength,SEEK_SET);	//移动指针到指定位置
-	XDELETE_ARRAY(m_fileData);
-	m_fileData = createArrayMem<unsigned char>(m_fileDataLength);
+	XMem::XDELETE_ARRAY(m_fileData);
+	m_fileData = XMem::createArrayMem<unsigned char>(m_fileDataLength);
 	if(m_fileData == NULL) 
 	{
 		fclose(fp);
@@ -1040,26 +1031,26 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 	fclose(fp);
 //	printf("取出资源:%d\n",getCurrentTicks());
 	//内存混乱的逆向操作
-	unsigned char *fileData = createArrayMem<unsigned char>(m_fileDataLength);
+	unsigned char *fileData = XMem::createArrayMem<unsigned char>(m_fileDataLength);
 	if(fileData == NULL) 
 	{
-		XDELETE_ARRAY(m_fileData);
+		XMem::XDELETE_ARRAY(m_fileData);
 		return 0;
 	}
 	int coreLen;
-	char coreOrder[MEMORY_CHANGE_TIMES];
-	int oldDataLength = m_fileDataLength - 1 - MEMORY_CHANGE_TIMES * sizeof(char) - sizeof(int);
+	char coreOrder[m_memoryChangeTimes];
+	int oldDataLength = m_fileDataLength - 1 - m_memoryChangeTimes * sizeof(char) - sizeof(int);
 	memcpy(&coreLen,m_fileData + oldDataLength,sizeof(int));
-	memcpy(coreOrder,m_fileData + oldDataLength + sizeof(int),MEMORY_CHANGE_TIMES * sizeof(char));
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+	memcpy(coreOrder,m_fileData + oldDataLength + sizeof(int),m_memoryChangeTimes * sizeof(char));
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
 		memcpy(fileData + coreLen * coreOrder[i],m_fileData + coreLen * i,coreLen);
 	}
-	oldDataLength -= MD5_CODE_SIZE;
+	oldDataLength -= m_md5CodeSize;
 	//结余部分继续补全
-	if(oldDataLength % MEMORY_CHANGE_TIMES != 0)
+	if(oldDataLength % m_memoryChangeTimes != 0)
 	{
-		memcpy(fileData + coreLen * MEMORY_CHANGE_TIMES,m_fileData + coreLen * MEMORY_CHANGE_TIMES,oldDataLength - coreLen * MEMORY_CHANGE_TIMES);
+		memcpy(fileData + coreLen * m_memoryChangeTimes,m_fileData + coreLen * m_memoryChangeTimes,oldDataLength - coreLen * m_memoryChangeTimes);
 	}
 	//奇偶交换
 	for(int i = 0;i < oldDataLength - 1;i += 2)
@@ -1071,17 +1062,17 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 	{
 		m_fileData[oldDataLength - 1] = fileData[oldDataLength - 1];
 	}
-	XDELETE_ARRAY(fileData);
+	XMem::XDELETE_ARRAY(fileData);
 	/*
-	int memoryChangeData[MEMORY_CHANGE_TIMES];
-	int oldDataLength = m_fileDataLength - 1 - MEMORY_CHANGE_TIMES * sizeof(int);
-	memcpy(memoryChangeData,m_fileData + oldDataLength,MEMORY_CHANGE_TIMES * sizeof(int));
-	oldDataLength -= MD5_CODE_SIZE;
-//	for(int i = MEMORY_CHANGE_TIMES - 1;i >= 0;-- i)
+	int memoryChangeData[m_memoryChangeTimes];
+	int oldDataLength = m_fileDataLength - 1 - m_memoryChangeTimes * sizeof(int);
+	memcpy(memoryChangeData,m_fileData + oldDataLength,m_memoryChangeTimes * sizeof(int));
+	oldDataLength -= m_md5CodeSize;
+//	for(int i = m_memoryChangeTimes - 1;i >= 0;-- i)
 	int tempI;
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
-		tempI = MEMORY_CHANGE_TIMES - 1 - i;
+		tempI = m_memoryChangeTimes - 1 - i;
 		if((i % 2) == 0)
 		{
 			memcpy(fileData,m_fileData + (oldDataLength - memoryChangeData[tempI]),memoryChangeData[tempI]);
@@ -1092,11 +1083,11 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 			memcpy(m_fileData + memoryChangeData[tempI],fileData,oldDataLength - memoryChangeData[tempI]);
 		}
 	}
-	if((MEMORY_CHANGE_TIMES % 2) != 0)
+	if((m_memoryChangeTimes % 2) != 0)
 	{
 		memcpy(m_fileData,fileData,oldDataLength);
 	}
-	XDELETE_ARRAY(fileData);
+	XMem::XDELETE_ARRAY(fileData);
 //	printf("资源混乱完成:%d\n",getCurrentTicks());
 */
 	//读取文件特征码
@@ -1107,7 +1098,7 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 	//fread(temp,23,1,fp);
 	if(checkFileCode(temp) != 1) 
 	{
-		XDELETE_ARRAY(m_fileData);
+		XMem::XDELETE_ARRAY(m_fileData);
 		return -1;
 	}
 	//读取包头长度
@@ -1115,15 +1106,15 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 	m_fileDataPoint += sizeof(m_headLength);
 	//fread(&m_headLength,sizeof(int),1,fp);		//4bytes
 	//读取加密码
-	memcpy(tempCode,m_fileData + m_fileDataPoint,LOCK_CODE_LENGTH);
-	m_fileDataPoint += LOCK_CODE_LENGTH;
-	//fread(tempCode,LOCK_CODE_LENGTH,1,fp);		//32bytes
+	memcpy(tempCode,m_fileData + m_fileDataPoint,m_lockCodeLength );
+	m_fileDataPoint += m_lockCodeLength ;
+	//fread(tempCode,m_lockCodeLength ,1,fp);		//32bytes
 	getlockKey();	//计算掩码
 	//读取文件列表(查找到相应的资源以及偏移地址)
-	m_fileSum += (m_headLength - LOCK_CODE_LENGTH) / sizeof(_XResourceFileStruct);
-	if(m_fileSum < 0 || (m_fileSum + m_normalFileSum) >= MAX_FILE_SUM)
+	m_fileSum += (m_headLength - m_lockCodeLength ) / sizeof(XResourceFileStruct);
+	if(m_fileSum < 0 || (m_fileSum + m_normalFileSum) >= m_maxFileSum)
 	{//数据非法会造成错误
-		XDELETE_ARRAY(m_fileData);
+		XMem::XDELETE_ARRAY(m_fileData);
 		return -1;
 	}
 	//int needFileOrder = -1;
@@ -1154,14 +1145,14 @@ int _XResourcePack::readFileListFromResouce()				//从压缩包中读取文件索引信息
 		printf("Data Check ERROR！\n");
 #endif
 		m_haveReadedFileList = XFalse;
-		XDELETE_ARRAY(m_fileData);
+		XMem::XDELETE_ARRAY(m_fileData);
 		return 0;
 	}
 //	printf("资源检查完成:%d\n",getCurrentTicks());
 	return 1;
 }
 
-int _XResourcePack::getFileLength(const char *fileName)
+int XResourcePack::getFileLength(const char *fileName)
 {
 	int i = 0;
 	if(!m_haveReadedNormalFileList) 
@@ -1177,7 +1168,7 @@ int _XResourcePack::getFileLength(const char *fileName)
 	//查找资源位置
 	for(i = 0;i < m_fileSum;++ i)
 	{
-		if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+		if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 		{
 			return m_fileInfo[i].fileLength;
 		}
@@ -1195,7 +1186,7 @@ int _XResourcePack::getFileLength(const char *fileName)
 		//查找资源位置
 		for(i = 0;i < m_fileSum;++ i)
 		{
-			if(fileNameCompare(m_fileInfo[i].fileName,fileName))
+			if(XFile::fileNameCompare(m_fileInfo[i].fileName,fileName))
 			{
 				return m_fileInfo[i].fileLength;
 			}
@@ -1204,31 +1195,29 @@ int _XResourcePack::getFileLength(const char *fileName)
 	return 0;
 }
 
-unsigned char *_XResourcePack::getFileData(const char *filename)
+unsigned char *XResourcePack::getFileData(const char *filename)
 {
 	if(filename == NULL) return NULL;
 	int lengthTemp = getFileLength(filename);
 	if(lengthTemp <= 0) return NULL;
 	unsigned char *p = NULL;
-	if((p = createArrayMem<unsigned char>(lengthTemp + 1)) == NULL) return NULL;
-	_XResourcePack::GetInstance().unpackResource(filename,p);
+	if((p = XMem::createArrayMem<unsigned char>(lengthTemp + 1)) == NULL) return NULL;
+	XResPack.unpackResource(filename,p);
 	*(p + lengthTemp) = '\0';
 	return p;
 }
-
-void _XResourcePack::lockOrUnlockProc(unsigned char *p,int startPoint,int length) const
+void XResourcePack::lockOrUnlockProc(unsigned char *p,int startPoint,int length) const
 {
 	if(length < 0) return;
-	int loopStart = startPoint % ALL_LOCK_CODE_LENGTH;
+	int loopStart = startPoint % m_allLockCodeLength;
 
 	for(int i = 0,j = loopStart;i < length;++ i,++ j)
 	{
-		if(j >= ALL_LOCK_CODE_LENGTH) j = 0;
+		if(j >= m_allLockCodeLength) j = 0;
 		p[i] = p[i]^m_lockKey[j];
 	}
 }
-
-int _XResourcePack::writeCheckData()
+int XResourcePack::writeCheckData()
 {
 	FILE *fp;
 	//下面加入写入MD5校验码
@@ -1256,12 +1245,12 @@ int _XResourcePack::writeCheckData()
 		fclose(fp);
 		return 1;
 	}
-	unsigned char *fileData = createArrayMem<unsigned char>(tempLength);
-	unsigned char *fileDataHead = createArrayMem<unsigned char>(tempHeadLength);
+	unsigned char *fileData = XMem::createArrayMem<unsigned char>(tempLength);
+	unsigned char *fileDataHead = XMem::createArrayMem<unsigned char>(tempHeadLength);
 	if(fileData == NULL || fileDataHead == NULL) 
 	{
-		XDELETE_ARRAY(fileData);
-		XDELETE_ARRAY(fileDataHead);
+		XMem::XDELETE_ARRAY(fileData);
+		XMem::XDELETE_ARRAY(fileDataHead);
 		fclose(fp);
 		return 0;
 	}
@@ -1271,10 +1260,10 @@ int _XResourcePack::writeCheckData()
 	fread(fileData,tempLength,1,fp);			//去读文件头之后的内容
 	fclose(fp);
 	//计算MD5值
-	unsigned char *MD5Result = md5(fileData,tempLength);
+	unsigned char *MD5Result = XMath::md5(fileData,tempLength);
 #ifdef DEBUG_MODE
 	printf("MD5:");
-	for(int j = 0;j < MD5_CODE_SIZE;++ j)
+	for(int j = 0;j < m_md5CodeSize;++ j)
 	{
 		printf("%02x-",MD5Result[j]);
 	}
@@ -1282,7 +1271,7 @@ int _XResourcePack::writeCheckData()
 #endif
 
 	//这里需要进行内存混乱操作
-	unsigned char *fileData1 = createArrayMem<unsigned char>(tempLength);
+	unsigned char *fileData1 = XMem::createArrayMem<unsigned char>(tempLength);
 	if(fileData1 == NULL) return 0;
 	//++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面修改混乱操作的具体内容
@@ -1299,18 +1288,18 @@ int _XResourcePack::writeCheckData()
 		fileData1[tempLength - 1] = fileData[tempLength - 1];
 	}
 	//第二步分块交换
-	int coreLen = (tempLength - (tempLength % MEMORY_CHANGE_TIMES)) / MEMORY_CHANGE_TIMES;
-	char coreOrder[MEMORY_CHANGE_TIMES];
-	//printf("区块长度为：%d :%d:%d！\n",coreLen,MEMORY_CHANGE_TIMES,tempLength);
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+	int coreLen = (tempLength - (tempLength % m_memoryChangeTimes)) / m_memoryChangeTimes;
+	char coreOrder[m_memoryChangeTimes];
+	//printf("区块长度为：%d :%d:%d！\n",coreLen,m_memoryChangeTimes,tempLength);
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
 		coreOrder[i] = i;
 	}
 	char tempData;
 	int tempOrder;
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
-		tempOrder = random(MEMORY_CHANGE_TIMES);
+		tempOrder = XRand::random(m_memoryChangeTimes);
 		if(i != tempOrder)
 		{
 			tempData = coreOrder[i];
@@ -1319,13 +1308,13 @@ int _XResourcePack::writeCheckData()
 		}
 	}
 	//printf("开始交换数据！\n");
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
 		memcpy(fileData + i * coreLen,fileData1 + coreOrder[i] * coreLen,coreLen);
 	}
-	if(tempLength % MEMORY_CHANGE_TIMES != 0)
+	if(tempLength % m_memoryChangeTimes != 0)
 	{
-		memcpy(fileData + MEMORY_CHANGE_TIMES * coreLen,fileData1 + MEMORY_CHANGE_TIMES * coreLen,tempLength -  MEMORY_CHANGE_TIMES * coreLen);
+		memcpy(fileData + m_memoryChangeTimes * coreLen,fileData1 + m_memoryChangeTimes * coreLen,tempLength -  m_memoryChangeTimes * coreLen);
 	}
 	//printf("数据交换完成，写入数据:%d.\n",tempLength);
 	//下面开始文件写入操作
@@ -1338,17 +1327,17 @@ int _XResourcePack::writeCheckData()
 	}
 	fwrite(fileDataHead,tempHeadLength,1,fp);	//读取文件头的内容
 	fwrite(fileData,tempLength,1,fp);	//写入文件内容
-	fwrite(MD5Result,MD5_CODE_SIZE,1,fp);			//写入MD5校验字符串
+	fwrite(MD5Result,m_md5CodeSize,1,fp);			//写入MD5校验字符串
 	fwrite(&coreLen,sizeof(int),1,fp);			//写入区块长度
-	fwrite(coreOrder,MEMORY_CHANGE_TIMES * sizeof(char),1,fp);			//写入区块编号
+	fwrite(coreOrder,m_memoryChangeTimes * sizeof(char),1,fp);			//写入区块编号
 	fclose(fp);
-	XDELETE_ARRAY(fileData);
-	XDELETE_ARRAY(fileDataHead);
-	XDELETE_ARRAY(fileData1);
+	XMem::XDELETE_ARRAY(fileData);
+	XMem::XDELETE_ARRAY(fileDataHead);
+	XMem::XDELETE_ARRAY(fileData1);
 	//printf("完成数据混乱操作.\n");
 	//------------------------------------------------
-/*	int memoryChangeData[MEMORY_CHANGE_TIMES];
-	for(int i = 0;i < MEMORY_CHANGE_TIMES;++ i)
+/*	int memoryChangeData[m_memoryChangeTimes];
+	for(int i = 0;i < m_memoryChangeTimes;++ i)
 	{
 		memoryChangeData[i] = tempLength *(random(75) / 100.0f + 0.125f);
 	//	printf("%d\n",memoryChangeData[i]);
@@ -1365,18 +1354,18 @@ int _XResourcePack::writeCheckData()
 		}
 	}
 	//printf("length:%d\n",tempLength);
-	if((MEMORY_CHANGE_TIMES % 2) != 0)
+	if((m_memoryChangeTimes % 2) != 0)
 	{
 		fwrite(fileData1,tempLength,1,fp);	//写入文件内容
 	}else
 	{
 		fwrite(fileData,tempLength,1,fp);	//写入文件内容
 	}
-	fwrite(MD5Result,MD5_CODE_SIZE,1,fp);			//写入MD5校验字符串
-	fwrite(memoryChangeData,MEMORY_CHANGE_TIMES * sizeof(int),1,fp);			//写入混乱数据
+	fwrite(MD5Result,m_md5CodeSize,1,fp);			//写入MD5校验字符串
+	fwrite(memoryChangeData,m_memoryChangeTimes * sizeof(int),1,fp);			//写入混乱数据
 	fclose(fp);
-	XDELETE_ARRAY(fileData);
-	XDELETE_ARRAY(fileData1);
+	XMem::XDELETE_ARRAY(fileData);
+	XMem::XDELETE_ARRAY(fileData1);
 	*/
 	//打开资源文件
 	if((fp = fopen(m_outFileName,"rb")) == NULL)
@@ -1402,13 +1391,13 @@ int _XResourcePack::writeCheckData()
 	}
 	//fread(fileDataHead,tempHeadLength,1,fp);	//读取文件头的内容，这部分内容不会经过字节校验处理
 	fseek(fp,tempHeadLength,SEEK_SET);
-	int nowPosition = 0;
+	int curPosition = 0;
 	while(true)
 	{
-		if(tempLength <= nowPosition + 1024)
+		if(tempLength <= curPosition + 1024)
 		{
-			fread(temp,tempLength - nowPosition,1,fp);
-			for(int i = 0;i< tempLength - nowPosition;++ i)
+			fread(temp,tempLength - curPosition,1,fp);
+			for(int i = 0;i< tempLength - curPosition;++ i)
 			{
 				checkData += temp[i];
 			}
@@ -1420,7 +1409,7 @@ int _XResourcePack::writeCheckData()
 			{
 				checkData += temp[i];
 			}
-			nowPosition += 1024;
+			curPosition += 1024;
 		}
 	}
 	fclose(fp);
@@ -1436,25 +1425,24 @@ int _XResourcePack::writeCheckData()
 	fclose(fp);
 	return 1;
 }
-
-_XBool _XResourcePack::checkCheckData()
+XBool XResourcePack::checkCheckData()
 {
 	if(m_haveReadedFileList)
 	{
 		//计算MD5值
-		int tempLen = m_fileDataLength - MD5_CODE_SIZE - 1 - MEMORY_CHANGE_TIMES * sizeof(char) - sizeof(int);
-		unsigned char *MD5Result = md5(m_fileData,tempLen);
+		int tempLen = m_fileDataLength - m_md5CodeSize - 1 - m_memoryChangeTimes * sizeof(char) - sizeof(int);
+		unsigned char *MD5Result = XMath::md5(m_fileData,tempLen);
 		//检查计算结果
-		for(int i = 0;i < MD5_CODE_SIZE;++ i)
+		for(int i = 0;i < m_md5CodeSize;++ i)
 		{
 			if(MD5Result[i] != m_fileData[tempLen + i]) 
 			{
-				//for(int j = 0;j < MD5_CODE_SIZE;++ j)
+				//for(int j = 0;j < m_md5CodeSize;++ j)
 				//{
 				//	printf("%2x-",MD5Result[j]);
 				//}
 				//printf("\n%d\n",tempLen);
-				//for(int j = 0;j < MD5_CODE_SIZE;++ j)
+				//for(int j = 0;j < m_md5CodeSize;++ j)
 				//{
 				//	printf("%2x-",m_fileData[tempLen + j]);
 				//}
@@ -1502,7 +1490,7 @@ _XBool _XResourcePack::checkCheckData()
 			return XTrue;
 		}
 		fseek(fp,tempHeadLength,SEEK_SET);
-		unsigned char *fileData = createArrayMem<unsigned char>(tempLength);
+		unsigned char *fileData = XMem::createArrayMem<unsigned char>(tempLength);
 		if(fileData == NULL) 
 		{
 			fclose(fp);
@@ -1512,26 +1500,26 @@ _XBool _XResourcePack::checkCheckData()
 		fread(fileData,tempLength,1,fp);
 		fclose(fp);
 		//计算MD5值
-		int tempLen = tempLength - MD5_CODE_SIZE - 1 - MEMORY_CHANGE_TIMES * sizeof(char) - sizeof(int);
-		unsigned char *MD5Result = md5(fileData,tempLen);
+		int tempLen = tempLength - m_md5CodeSize - 1 - m_memoryChangeTimes * sizeof(char) - sizeof(int);
+		unsigned char *MD5Result = XMath::md5(fileData,tempLen);
 		//检查计算结果
-		for(int i = 0;i < MD5_CODE_SIZE;++ i)
+		for(int i = 0;i < m_md5CodeSize;++ i)
 		{
 			if(MD5Result[i] != fileData[tempLen + i]) 
 			{
-				//for(int j = 0;j < MD5_CODE_SIZE;++ j)
+				//for(int j = 0;j < m_md5CodeSize;++ j)
 				//{
 				//	printf("%2x-",MD5Result[j]);
 				//}
 				//printf("\n");
-				//for(int j = 0;j < MD5_CODE_SIZE;++ j)
+				//for(int j = 0;j < m_md5CodeSize;++ j)
 				//{
-				//	printf("%2x-",m_fileData[tempLength - 17 - MEMORY_CHANGE_TIMES * sizeof(char) - sizeof(int) + j]);
+				//	printf("%2x-",m_fileData[tempLength - 17 - m_memoryChangeTimes * sizeof(char) - sizeof(int) + j]);
 				//}
 #ifdef DEBUG_MODE
 				printf("MD5校验码检测错误:2!\n");
 #endif
-				XDELETE_ARRAY(fileData);
+				XMem::XDELETE_ARRAY(fileData);
 				return XFalse;
 			}
 		}
@@ -1543,38 +1531,39 @@ _XBool _XResourcePack::checkCheckData()
 		unsigned char temp[1024];
 		memset(temp,0,1024);
 
-		int nowPosition = 0;
+		int curPosition = 0;
 		while(true)
 		{
-			if(tempLength <= nowPosition + 1024)
+			if(tempLength <= curPosition + 1024)
 			{
-				//fread(temp,tempLength - nowPosition,1,fp);
-				memcpy(temp,fileData + nowPosition,tempLength - nowPosition);
-				for(int i = 0;i< tempLength - nowPosition;++ i)
+				//fread(temp,tempLength - curPosition,1,fp);
+				memcpy(temp,fileData + curPosition,tempLength - curPosition);
+				assert(tempLength - curPosition <= 1024);
+				for(int i = 0;i< tempLength - curPosition;++ i)
 				{
-					if(i < tempLength - nowPosition - 1) checkData += temp[i];
+					if(i < tempLength - curPosition - 1) checkData += temp[i];
 				}
-				temp[0] = temp[tempLength - nowPosition - 1];
+				temp[0] = temp[tempLength - curPosition - 1];
 				break;
 			}else
 			{
 				//fread(temp,1024,1,fp);
-				memcpy(temp,fileData + nowPosition,1024);
+				memcpy(temp,fileData + curPosition,1024);
 				for(int i = 0;i< 1024;++ i)
 				{
 					checkData += temp[i];
 				}
-				nowPosition += 1024;
+				curPosition += 1024;
 			}
 		}
-		XDELETE_ARRAY(fileData);
+		XMem::XDELETE_ARRAY(fileData);
 
 		if(checkData != temp[0]) return XFalse;
 		return XTrue;
 	}
 }
 
-void _XResourcePack::getlockKey()
+void XResourcePack::getlockKey()
 {
 	unsigned char tempLockData[33] = LOCK_DATA_PART_1;	//这一部分是代码中的密码段
 	memcpy(m_lockKey,tempCode,32);						//0  - 31个字节的密钥来自于打包程序自动生成
@@ -1593,8 +1582,7 @@ void _XResourcePack::getlockKey()
 		m_lockKey[96 + i] = (tempCode[i] + tempLockData[i] + m_hardLockKey[i])%256;
 	}
 }
-
-_XResourcePack::_XResourcePack()
+XResourcePack::XResourcePack()
 :m_haveReadedFileList(XFalse)
 ,m_haveReadedNormalFileList(XFalse)
 ,m_fileInfo(NULL)
@@ -1608,18 +1596,18 @@ _XResourcePack::_XResourcePack()
 ,m_texInfoSum(0)
 {
 	//put single object into auto_ptr object 
-	//m_auto_ptr = auto_ptr<_XResourcePack>(this);
+	//m_auto_ptr = auto_ptr<XResourcePack>(this);
 
-/*	for(int i = 0;i < MAX_FILE_SUM;++ i)
+/*	for(int i = 0;i < m_maxFileSum;++ i)
 	{
 		m_fileInfo[i] = NULL;
-		m_fileInfo[i] = (_XResourceFileStruct *)operator new(sizeof(_XResourceFileStruct));
+		m_fileInfo[i] = (XResourceFileStruct *)operator new(sizeof(XResourceFileStruct));
 		if(m_fileInfo[i] == NULL) 
 		{
 			printf("Memory Error!\n");
 		}
 	}*/
-	m_fileInfo = createArrayMem<_XResourceFileStruct>(MAX_FILE_SUM);
+	m_fileInfo = XMem::createArrayMem<XResourceFileStruct>(m_maxFileSum);
 	if(m_fileInfo == NULL) 
 	{
 #ifdef DEBUG_MODE
@@ -1634,8 +1622,7 @@ _XResourcePack::_XResourcePack()
 
 	setOutFileName(NULL);
 }
-
-void _XResourcePack::setOutFileName(const char *temp)
+void XResourcePack::setOutFileName(const char *temp)
 {
 	if(temp == NULL)
 	{
@@ -1665,11 +1652,11 @@ void _XResourcePack::setOutFileName(const char *temp)
 	if(m_haveReadedFileList) 
 	{
 		m_haveReadedFileList = XFalse;
-		XDELETE_ARRAY(m_fileData);
+		XMem::XDELETE_ARRAY(m_fileData);
 	}
 //	if(m_haveReadedFileList) 
 //	{
-//		XDELETE_ARRAY(m_fileData);
+//		XMem::XDELETE_ARRAY(m_fileData);
 //		if(readFileListFromResouce() != 1) 
 //		{
 //#ifdef DEBUG_MODE
@@ -1678,4 +1665,5 @@ void _XResourcePack::setOutFileName(const char *temp)
 //			return;
 //		}
 //	}
+}
 }

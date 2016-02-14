@@ -9,142 +9,144 @@
 #include "XEdit.h"
 #include "XCheck.h"
 #include "XButton.h"
-#include "XMedia/XDirectory.h"
+#include "XDirectory.h"
+namespace XE{
 //工作正在进行中，尚未经过测试
 //这是一个现实目录信息的控件的类，这个类由一个输入框，一个按钮，2个拖动条和1个展示框组成
-class _XDirListTexture
+class XDirListSkin
 {
 private:
-	_XBool m_isInited;
+	XBool m_isInited;
+
+	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
 public:
-	_XTextureData *dirListNormal;			//普通状态
-	_XTextureData *dirListDisable;			//无效状态
+	XTextureData *dirListNormal;			//普通状态
+	XTextureData *dirListDisable;			//无效状态
 
-	_XRect m_mouseRect;			//鼠标的响应范围
+	XRect m_mouseRect;			//鼠标的响应范围
 
-	_XDirListTexture();
-	~_XDirListTexture(){release();}
-	_XBool init(const char *normal,const char *disable,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XDirListSkin();
+	~XDirListSkin(){release();}
+	XBool init(const char *normal,const char *disable,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
 };
 //目录列表框的一行信息
-class _XDirListOneLine
+class XDirListOneLine
 {
 public:
-	_XFontUnicode m_font;
+	XFontUnicode m_font;
 	char *m_string;		//字符内容
-	_XCheck *m_check;
-	_XBool m_needCheck;
-	_XBool m_isEnable;		//是否有效
+	XCheck *m_check;
+	XBool m_needCheck;
+	XBool m_isEnable;		//是否有效
 
-	//_XVector2 m_pos;		//当前行所在的位置
-	_XFile *m_file;			//指向文件信息的指针
-	_XDirListOneLine()
+	//XVector2 m_pos;		//当前行所在的位置
+	XFileInfo *m_file;			//指向文件信息的指针
+	XDirListOneLine()
 		:m_isEnable(XFalse)
 		,m_needCheck(XFalse)
 		,m_check(NULL)
 		,m_string(NULL)
 		,m_file(NULL)
 	{}
-	~_XDirListOneLine(){release();}
+	~XDirListOneLine(){release();}
 	void release();
 };
 #ifndef DEFAULT_SLIDER_WIDTH
-#define DEFAULT_SLIDER_WIDTH (32)		//默认的滑动条宽度
+#define DEFAULT_SLIDER_WIDTH (MIN_FONT_CTRL_SIZE)		//默认的滑动条宽度
 #endif	//DEFAULT_SLIDER_WIDTH
 #ifndef DEFAULT_DIRLIST_BT_SIZE
-#define DEFAULT_DIRLIST_BT_SIZE (40)
+#define DEFAULT_DIRLIST_BT_SIZE (MIN_FONT_CTRL_SIZE + 8.0f)
 #endif	//DEFAULT_DIRLIST_BT_SIZE
 #ifndef DEFAULT_DIRLIST_CK_SIZE
-#define DEFAULT_DIRLIST_CK_SIZE (28)
+#define DEFAULT_DIRLIST_CK_SIZE (MIN_FONT_CTRL_SIZE - 4.0f)
 #endif	//DEFAULT_DIRLIST_CK_SIZE
-class _XDirectoryList:public _XControlBasic
+class XDirectoryList:public XControlBasic
 {
 private:
-	_XBool m_isInited;	//是否初始化
+	XBool m_isInited;	//是否初始化
 
-	_XDirectory m_dir;	//用于解析路径
+	XDirectory m_dir;	//用于解析路径
 
-	_XSprite m_spriteBackGround;
-	const _XTextureData *m_dirListNormal;
-	const _XTextureData *m_dirListDisable;
+	XSprite m_spriteBackGround;
+	const XTextureData *m_dirListNormal;
+	const XTextureData *m_dirListDisable;
 
-	_XBool m_needShowVSlider;			//是否需要显示垂直滑动条
-	_XSlider m_verticalSlider;		//垂直滑动条
-	_XBool m_needShowHSlider;			//是否需要显示水平滑动条
-	_XSlider m_horizontalSlider;	//水平滑动条
-	_XButton m_button;	//按钮
-	_XEdit m_edit;
-	_XCheck m_check;
+	XBool m_needShowVSlider;			//是否需要显示垂直滑动条
+	XSlider m_verticalSlider;		//垂直滑动条
+	XBool m_needShowHSlider;			//是否需要显示水平滑动条
+	XSlider m_horizontalSlider;	//水平滑动条
+	XButton m_button;	//按钮
+	XEdit m_edit;
+	XCheck m_check;
 
-	_XBool m_haveSelect;				//是否有选择
+	XBool m_haveSelect;				//是否有选择
 	int m_selectLineOrder;			//选择的是哪一行
 	int m_showStartLine;			//显示的是从第几行开始的
 	int m_canShowLineSum;			//控件中能显示的行数
 	
-	int m_nowLineSum;				//当前一共拥有多少行
+	int m_curLineSum;				//当前一共拥有多少行
 	int m_mouseTime;				//用于鼠标计时，判断是否双击
 
 	int m_maxLineWidth;				//当前的最大行宽[像素]
-	int m_nowLineLeft;				//当前的间距[像素]
+	int m_curLineLeft;				//当前的间距[像素]
 	int m_canShowMaxLineWidth;		//可以显示的最大行宽[像素]
 
-	std::vector<_XDirListOneLine *> m_lineData;	//每一行的内容
+	std::vector<XDirListOneLine *> m_lineData;	//每一行的内容
 	int m_showPixWidth;				//显示区域的像素宽度
 	int m_showPixHight;				//显示区域的像素高度
 
-	_XFontUnicode m_caption;
-	_XVector2 m_fontSize;
-	_XFColor m_textColor;			//文字的颜色
-	float m_nowTextWidth;			//当前的字体宽度
-	float m_nowTextHeight;			//当前的字体高度
-	void furlFolder(int index,_XBool flag = XTrue);		//收拢某个文件夹,在控件回调中flag = XTrue;
+	XFontUnicode m_caption;
+	XVector2 m_fontSize;
+	XFColor m_textColor;			//文字的颜色
+	float m_curTextWidth;			//当前的字体宽度
+	float m_curTextHeight;			//当前的字体高度
+	void furlFolder(int index,XBool flag = XTrue);		//收拢某个文件夹,在控件回调中flag = XTrue;
 	void updateHSliderState();	//更新水平条的状态
 	void updateShowPosition();	//更新显示的状态
 
 	//下面是内部控件的回调函数
-	friend void funDirListButton(void *pClass,int objectID);
-	friend void funDirListValueChangeV(void *pClass,int objectID);
-	friend void funDirListValueChangeH(void *pClass,int objectID);
-	friend void funDirListCheck(void *pClass,int objectID);
+	static void ctrlProc(void *,int,int);
 
-	_XResourceInfo *m_resInfo;
-	_XBool m_withoutTex;	//没有贴图的形式
+	XResourceInfo *m_resInfo;
+	XBool m_withoutTex;	//没有贴图的形式
 
-	_XBool m_canChangePath;
+	XBool m_canChangePath;
 public:
-	_XBool getCanChangePath() const {return m_canChangePath;}
-	void setCanChangePath(_XBool flag);
+	XBool getCanChangePath() const {return m_canChangePath;}
+	void setCanChangePath(XBool flag);
 public:
-	_XBool init(const _XVector2& position,
-		const _XRect& Area,	
-		_XDirListTexture & tex,
-		_XFontUnicode &font,
+	XBool init(const XVector2& position,
+		const XRect& Area,	
+		XDirListSkin & tex,
+		const XFontUnicode &font,
 		float fontSize,
-		const _XCheck &check,
-		const _XButton &button,
-		const _XEdit &edit,
-		const _XSlider &vSlider,	//垂直滑动条
-		const _XSlider &hSlider);
-	_XBool initEx(const _XVector2& position,	//对上面接口的简化
-		_XDirListTexture & tex,
-		_XFontUnicode &font,
+		const XCheck &check,
+		const XButton &button,
+		const XEdit &edit,
+		const XSlider &vSlider,	//垂直滑动条
+		const XSlider &hSlider);
+	XBool initEx(const XVector2& position,	//对上面接口的简化
+		XDirListSkin & tex,
+		const XFontUnicode &font,
 		float fontSize,
-		const _XCheck &check,
-		const _XButton &button,
-		const _XEdit &edit,
-		const _XSlider &vSlider,
-		const _XSlider &hSlider);
-	_XBool initPlus(const char * path,
-		_XFontUnicode &font,float fontSize = 1.0f,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	_XBool initWithoutTex(const _XRect& area,	
-		_XFontUnicode &font,float fontSize = 1.0f);
-	_XBool initWithoutTex(const _XRect& area) {return initWithoutTex(area,XEE::systemFont,1.0f);}
-	_XBool initWithoutTex(const _XVector2& pixelSize) 
+		const XCheck &check,
+		const XButton &button,
+		const XEdit &edit,
+		const XSlider &vSlider,
+		const XSlider &hSlider);
+	XBool initPlus(const char * path,
+		const XFontUnicode &font,float fontSize = 1.0f,
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool initWithoutSkin(const XRect& area,	
+		const XFontUnicode &font,float fontSize = 1.0f);
+	XBool initWithoutSkin(const XRect& area) {return initWithoutSkin(area,getDefaultFont(),1.0f);}
+	XBool initWithoutSkin(const XVector2& pixelSize) 
 	{
-		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),XEE::systemFont,1.0f);
+		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),getDefaultFont(),1.0f);
 	}
 	const char * getSelectFileName() const;	//获取全路径
 	int getSelectLineOrder() const;
@@ -152,62 +154,30 @@ protected:
 	//下面三个函数需要进行优化，也可以进行优化
 	void draw();
 	void drawUp();
-	void update(int stepTime);
-	_XBool mouseProc(float x,float y,_XMouseState mouseState);					//对于鼠标动作的响应函数
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState);
+	void update(float stepTime);
+	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool keyboardProc(int keyOrder,XKeyState keyState);
 	void insertChar(const char *,int) {;}
-	_XBool canGetFocus(float x,float y);//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(float x,float y);//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(float,float){return XTrue;}
 public:
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
+	using XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
 
-	using _XObjectBasic::setSize;		//避免覆盖的问题
-	void setSize(float x,float y);			//设置尺寸
+	using XObjectBasic::setScale;		//避免覆盖的问题
+	void setScale(float x,float y);			//设置尺寸
 
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	_XBool isInRect(float x,float y);						//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	_XVector2 getBox(int order);						//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(float x,float y);						//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVector2 getBox(int order);						//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
-	using _XObjectBasic::setColor;		//避免覆盖的问题
-	virtual void setColor(float r,float g,float b,float a)
-	{
-		m_color.setColor(r,g,b,a);
-		m_caption.setColor(m_color);
-		m_spriteBackGround.setColor(m_color);
-		m_verticalSlider.setColor(m_color);
-		m_horizontalSlider.setColor(m_color);
-		m_button.setColor(m_color);
-		m_edit.setColor(m_color);
-		m_check.setColor(m_color);
-		for(int i = 0;i < m_lineData.size();++ i)
-		{
-			m_lineData[i]->m_font.setColor(m_color);
-			if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setColor(m_color); 
-		}
-		updateChildColor();
-	}
-	virtual void setAlpha(float a)
-	{
-		m_color.setA(a);
-		m_caption.setAlpha(a);
-		m_spriteBackGround.setAlpha(a);
-		m_verticalSlider.setAlpha(a);
-		m_horizontalSlider.setAlpha(a);
-		m_button.setAlpha(a);
-		m_edit.setAlpha(a);
-		m_check.setAlpha(a);
-		for(int i = 0;i < m_lineData.size();++ i)
-		{
-			m_lineData[i]->m_font.setAlpha(a);
-			if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setAlpha(a); 
-		}
-		updateChildAlpha();
-	}
+	using XObjectBasic::setColor;		//避免覆盖的问题
+	virtual void setColor(float r,float g,float b,float a);
+	virtual void setAlpha(float a);
 	//virtual void justForTest() {;}
 
 	void release();
-	_XDirectoryList()
+	XDirectoryList()
 		:m_isInited(XFalse)
 		,m_resInfo(NULL)
 		,m_withoutTex(XFalse)
@@ -215,8 +185,10 @@ public:
 	{
 		m_ctrlType = CTRL_OBJ_DIRECTORYLIST;
 	}
-	~_XDirectoryList(){release();}
+	~XDirectoryList(){release();}
 };
+#if WITH_INLINE_FILE
 #include "XDirectoryList.inl"
-
+#endif
+}
 #endif

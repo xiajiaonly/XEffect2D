@@ -5,67 +5,68 @@
 //Version:	1.0.0
 //Date:		2013.6.3
 //--------------------------------
-#include "XBasicFun.h"
-#include "XBasicClass.h"
+//#include "XBasicFun.h"
+//#include "XBasicClass.h"
 #include "glu.h"
+#include "../XMath/XVector3.h"
+#include "../XMath/XMatrix4x4.h"
+namespace XE{
 //fov为摄像机垂直方向的视角开角或者是水平和垂直开角中较小的一个，尚须确认。
-
-class _XBasicCam
+class XBasicCam
 {
 public:
 	virtual void useCam() = 0;
-	virtual ~_XBasicCam() {}
+	virtual ~XBasicCam() {}
 };
-
-class _XCam:public _XBasicCam	//普通摄像机
+class XCam:public XBasicCam	//普通摄像机
 {
 private:
-	_XVector3 m_position;			//摄像机的位置
-	_XVector3 m_lookAtPosition;		//摄像机目标点的位置
-	_XVector3 m_direction;			//摄像机的方向
-	//_XVector3 m_angle;				//摄像机的角度
+	XVector3 m_position;			//摄像机的位置
+	XVector3 m_lookAtPosition;		//摄像机目标点的位置
+	XVector3 m_direction;			//摄像机的方向
+	//XVector3 m_angle;				//摄像机的角度
 public:
-	void init(const _XVector3 &pos,const _XVector3 &lookAt,const _XVector3 &direction)
+	void init(const XVector3 &pos,const XVector3 &lookAt,const XVector3 &direction)
 	{
 		m_position = pos;
 		m_lookAtPosition = lookAt;
 		m_direction = direction;
 	}
 	void setPosition(float x,float y,float z) {m_position.set(x,y,z);}
-	void setPosition(const _XVector3 &p) {m_position = p;}
+	void setPosition(const XVector3 &p) {m_position = p;}
 	void setLookAt(float x,float y,float z) {m_lookAtPosition.set(x,y,z);}
-	void setLookAt(const _XVector3 &l) {m_lookAtPosition = l;}
+	void setLookAt(const XVector3 &l) {m_lookAtPosition = l;}
 	void setDirection(float x,float y,float z) {m_direction.set(x,y,z);}
-	void setDirection(const _XVector3 &d) {m_direction = d;}
+	void setDirection(const XVector3 &d) {m_direction = d;}
 	void useCam()	//使摄像机生效
 	{
 		gluLookAt(m_position.x,m_position.y,m_position.z,
 			m_lookAtPosition.x,m_lookAtPosition.y,m_lookAtPosition.z,
 			m_direction.x,m_direction.y,m_direction.z);
 	}
-	_XCam()
+	XCam()
 		:m_position(0.0f,0.0f,-100.0f)
 		,m_lookAtPosition(0.0f,0.0f,0.0f)
 		,m_direction(0.0f,1.0f,0.0f)
 	{}
 };
 //用于漫游的摄像机
-class _XCamRoam:public _XBasicCam
+class XCamRoam:public XBasicCam
 {
 private:
-	_XVector3 m_position;			//摄像机的位置
+	XVector3 m_position;			//摄像机的位置
 	float m_len;					//摄像机的视距
-	_XVector3 m_angle;				//摄像机的角度[0 - 360]
+	XVector3 m_angle;				//摄像机的角度[0 - 360]
 
-	_XVector3 m_lookAtPosition;		//摄像机目标点的位置
-	_XVector3 m_direction;			//摄像机的方向
-	_XMatrix4x4 m_projectMatrix;	//摄像机的世界矩阵
-	_XMatrix4x4 m_viewMatrix;		//摄像机的观察矩阵
-	_XMatrix4x4 m_projXView;		//m_projectMatrix * m_viewMatrix
+	XVector3 m_lookAtPosition;		//摄像机目标点的位置
+	XVector3 m_direction;			//摄像机的方向
+	XMatrix4x4 m_projectMatrix;	//摄像机的世界矩阵
+	XMatrix4x4 m_viewMatrix;		//摄像机的观察矩阵
+	XMatrix4x4 m_projXView;		//m_projectMatrix * m_viewMatrix
 
-	_XBool m_needCalculate;			//是否需要计算
-	_XBool m_neadCalFrustum;		//是否需要计算视锥
-	_XBool m_neadCalProjXView;		//是否需要计算pXv
+	XBool m_needCalculate;			//是否需要计算
+	XBool m_neadCalFrustum;		//是否需要计算视锥
+	XBool m_neadCalProjXView;		//是否需要计算pXv
 	float m_near;					//近距离
 	float m_far;					//远距离
 	float m_fov;					//开角
@@ -92,7 +93,7 @@ public:
 	}
 	float getFov()const {return m_fov;}
 public:
-	_XMatrix4x4 getProjXView()
+	XMatrix4x4 getProjXView()
 	{
 		calculate();
 		if(m_neadCalProjXView)
@@ -102,10 +103,10 @@ public:
 		}
 		return m_projXView;
 	}
-	_XMatrix4x4 getProjectMatrix() {return m_projectMatrix;}
-	_XMatrix4x4 getViewMatrix() {return m_viewMatrix;}
-	_XBool calculate();
-	void init(const _XVector3 &pos,float len,_XVector3 &angle)
+	XMatrix4x4 getProjectMatrix() {return m_projectMatrix;}
+	XMatrix4x4 getViewMatrix() {return m_viewMatrix;}
+	XBool calculate();
+	void init(const XVector3 &pos,float len,XVector3 &angle)
 	{
 		m_position = pos;
 		m_len = len;
@@ -156,15 +157,15 @@ public:
 		m_neadCalFrustum = XTrue;
 		if(m_angle.x < -90.0f) m_angle.x = -90.0f;
 	}
-	_XVector3 getPosition() const {return m_position;}
-	_XVector3 getLookAtPos() const {return m_lookAtPosition;}
+	XVector3 getPosition() const {return m_position;}
+	XVector3 getLookAtPos() const {return m_lookAtPosition;}
 	void setPosition(float x,float y,float z)
 	{
 		m_position.set(x,y,z);
 		m_needCalculate = XTrue;
 		m_neadCalFrustum = XTrue;
 	}
-	void setPosition(const _XVector3 &pos)
+	void setPosition(const XVector3 &pos)
 	{
 		m_position = pos;
 		m_needCalculate = XTrue;
@@ -183,7 +184,7 @@ public:
 		m_needCalculate = XTrue;
 		m_neadCalFrustum = XTrue;
 	}
-	_XVector3 getAngle() const {return m_angle;}
+	XVector3 getAngle() const {return m_angle;}
 	void useCam()	//使摄像机生效
 	{
 		calculate();
@@ -191,7 +192,7 @@ public:
 			m_lookAtPosition.x,m_lookAtPosition.y,m_lookAtPosition.z,
 			m_direction.x,m_direction.y,m_direction.z);
 	}
-	_XCamRoam()
+	XCamRoam()
 		:m_position(0.0f,0.0f,-100.0f)
 		,m_len(100.0f)
 		,m_angle(0.0f,0.0f,0.0f)
@@ -201,8 +202,8 @@ public:
 	{}
 //下面是尚未实现的接口
 private:
-	_XVector4 m_face[6];	//视锥体的6个截面
-	_XVector3 m_point[9];	//视锥体的8个顶点,最后一个点为摄像机所在的位置
+	XVector4 m_face[6];	//视锥体的6个截面
+	XVector3 m_point[9];	//视锥体的8个顶点,最后一个点为摄像机所在的位置
 public:
 	//需要增加的接口（经过初步测试）
 	void calculateFrustumPlanes(); //计算视锥体
@@ -210,4 +211,5 @@ public:
 	void calculateFrustumPoint();
 	void drawFrustum();	//描绘视锥体
 };
+}
 #endif //_JIA_XCAM_

@@ -1,14 +1,15 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XSkyBox.h"
-
-int _XSkyBox::init(const char *filename,_XResourcePosition resourcePosition)
+namespace XE{
+XBool XSkyBox::init(const char *filename,XResourcePosition resourcePosition)
 {
-	if(m_isInited != 0) return 1;
-	if(filename == NULL) return 0;
+	if(m_isInited) return XTrue;
+	if(filename == NULL) return XFalse;
 	char tempFilename[256];
 	strcpy(tempFilename,filename);
 	char fileType[10];
@@ -26,12 +27,12 @@ int _XSkyBox::init(const char *filename,_XResourcePosition resourcePosition)
 	if(!m_texture[4].load(tempFilename,resourcePosition)) return 0;
 	sprintf(tempFilename + strlen(filename) - 7,"back%s",fileType);
 	if(!m_texture[5].load(tempFilename,resourcePosition)) return 0;
-	m_isInited = 1;
-	return 1;
+	m_isInited = XTrue;
+	return XTrue;
 }
-void _XSkyBox::draw()
+void XSkyBox::draw()
 {
-	if(m_isInited == 0) return;
+	if(!m_isInited) return;
 	GLboolean lp;
 	glGetBooleanv(GL_LIGHTING,&lp);	//记录原来灯光的设置
 
@@ -39,14 +40,14 @@ void _XSkyBox::draw()
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 //	glLoadIdentity();
-	glEnable(GL_TEXTURE_2D);
+	XGL::EnableTexture2D();
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(XFalse);
-	glDisable(GL_BLEND);
+	XGL::DisableBlend();
 	glDisable(GL_LIGHTING);
 	//bottom
 	glColor4f(1.0f,1.0f,1.0f,1.0f);
-	glBindTexture(GL_TEXTURE_2D, m_texture[1].texture.m_texture);
+	XGL::BindTexture2D(m_texture[1].texture.m_texture);
 	glBegin(GL_QUADS);	
 		glNormal3f(0.0f,1.0f,0.0f);
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(m_left,m_bottom,m_front);
@@ -55,7 +56,7 @@ void _XSkyBox::draw()
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(m_left,m_bottom,m_back); 
 	glEnd();
 	//top
-	glBindTexture(GL_TEXTURE_2D, m_texture[0].texture.m_texture);
+	XGL::BindTexture2D(m_texture[0].texture.m_texture);
 	glBegin(GL_QUADS);		
 		glNormal3f(0.0f,-1.0f,0.0f);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(m_left,m_top,m_front);
@@ -64,7 +65,7 @@ void _XSkyBox::draw()
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(m_right,m_top,m_front);		
 	glEnd();
 	//left
-	glBindTexture(GL_TEXTURE_2D, m_texture[3].texture.m_texture);
+	XGL::BindTexture2D(m_texture[3].texture.m_texture);
 	glBegin(GL_QUADS);
 		glNormal3f(1.0f,0.0f,0.0f);
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(m_left,m_bottom,m_front);
@@ -73,7 +74,7 @@ void _XSkyBox::draw()
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(m_left,m_top,m_front);
 	glEnd();
 	//right
-	glBindTexture(GL_TEXTURE_2D, m_texture[2].texture.m_texture);
+	XGL::BindTexture2D(m_texture[2].texture.m_texture);
 	glBegin(GL_QUADS);
 		glNormal3f(-1.0f,0.0f,0.0f);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(m_right,m_bottom,m_front);
@@ -82,7 +83,7 @@ void _XSkyBox::draw()
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(m_right,m_bottom,m_back);		
 	glEnd();
 	//front
-	glBindTexture(GL_TEXTURE_2D, m_texture[4].texture.m_texture);
+	XGL::BindTexture2D(m_texture[4].texture.m_texture);
 	glBegin(GL_QUADS);		
 		glNormal3f(0.0f,0.0f,-1.0f);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(m_left,m_bottom,m_front);		
@@ -91,7 +92,7 @@ void _XSkyBox::draw()
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(m_right,m_bottom,m_front);
 	glEnd();
 	//back
-	glBindTexture(GL_TEXTURE_2D, m_texture[5].texture.m_texture);
+	XGL::BindTexture2D(m_texture[5].texture.m_texture);
 	glBegin(GL_QUADS);	
 		glNormal3f(0.0f,0.0f,1.0f);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(m_right,m_bottom,m_back);
@@ -103,10 +104,10 @@ void _XSkyBox::draw()
 	glPopMatrix();
 	glPopAttrib();
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
+	XGL::EnableBlend();
 	glDepthMask(XTrue);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	if(lp) glEnable(GL_LIGHTING);	//恢复光照状态  
-	glDisable(GL_TEXTURE_2D);
+}
 }

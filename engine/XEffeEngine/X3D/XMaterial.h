@@ -5,7 +5,8 @@
 //Version:	1.0.0
 //Date:		2013.6.3
 //--------------------------------
-class _XMaterial
+namespace XE{
+class XMaterial
 {
 private:
 	float m_amblient[4];	//材质的环境颜色
@@ -15,7 +16,7 @@ private:
 	float m_emission[4];	//材质的发射光颜色
 	int m_colorIndex[3];	//环境颜色索引、散射颜色索引和镜面反射颜色索引
 public:
-	_XMaterial()
+	XMaterial()
 		:m_shininess(128.0f)
 	{
 		m_amblient[0] = 0.4f;
@@ -45,7 +46,7 @@ public:
 		m_amblient[2] = z;
 		m_amblient[3] = w;
 	}
-	void setAmblient(const _XVector4 &a) {setAmblient(a.x,a.y,a.z,a.w);}
+	void setAmblient(const XVector4 &a) {setAmblient(a.x,a.y,a.z,a.w);}
 	void setDiffuse(float x,float y,float z,float w)
 	{
 		m_diffuse[0] = x;
@@ -53,7 +54,7 @@ public:
 		m_diffuse[2] = z;
 		m_diffuse[3] = w;
 	}
-	void setDiffuse(const _XVector4 &d) {setDiffuse(d.z,d.y,d.z,d.w);}
+	void setDiffuse(const XVector4 &d) {setDiffuse(d.z,d.y,d.z,d.w);}
 	void setSpecular(float x,float y,float z,float w)
 	{
 		m_specular[0] = x;
@@ -61,7 +62,7 @@ public:
 		m_specular[2] = z;
 		m_specular[3] = w;
 	}
-	void setSpecular(const _XVector4 &s) {setSpecular(s.x,s.y,s.z,s.w);}
+	void setSpecular(const XVector4 &s) {setSpecular(s.x,s.y,s.z,s.w);}
 	void setEmission(float x,float y,float z,float w)
 	{
 		m_emission[0] = x;
@@ -69,7 +70,7 @@ public:
 		m_emission[2] = z;
 		m_emission[3] = w;
 	}
-	void setEmission(const _XVector4 &e) {setEmission(e.x,e.y,e.z,e.w);}
+	void setEmission(const XVector4 &e) {setEmission(e.x,e.y,e.z,e.w);}
 	void setShininess(float shininess) {m_shininess = shininess;}
 	void usetMaterial()
 	{//材质正面属性的设置
@@ -80,5 +81,5 @@ public:
 		glMaterialfv(GL_FRONT,GL_SHININESS,&m_shininess);
 	}
 };
-
+}
 #endif //_JIA_XMATERIAL_

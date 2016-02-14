@@ -5,20 +5,37 @@
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-
 #include "XControlBasic.h"
-#include "XResourcePack.h"
 #include "XResourceManager.h"
-#include "../XBasicWindow.h"
+//#include "../XMath/XMoveData.h"
 
 //这是一个按钮的类，可以相应按钮事件等
-
-enum _XButtonState
+namespace XE{
+enum XButtonState
 {
 	BUTTON_STATE_NORMAL,		//按钮状态普通状态
 	BUTTON_STATE_DOWN,		//按钮按下的状态
 	BUTTON_STATE_ON,			//按钮鼠标处于悬浮的状态
 	BUTTON_STATE_DISABLE		//按钮无效的状态
+};
+enum XButtonStyle
+{
+	BTN_STYLE_NORMAL,	//普通样式按钮
+	BTN_STYLE_CHECK,	//check样式的按钮
+};
+enum XButtonSymbol
+{
+	BTN_SYMBOL_NULL,		//没有
+	BTN_SYMBOL_CIRCLE,		//圆形
+	BTN_SYMBOL_RECT,		//矩形
+	BTN_SYMBOL_CROSS,		//十字架
+	BTN_SYMBOL_TRIANGLE,	//三角形
+	BTN_SYMBOL_MASK_RIGHT,	//对号
+	BTN_SYMBOL_MASK_WRONG,	//错号
+	BTN_SYMBOL_LEFT,		//左
+	BTN_SYMBOL_RIGHT,		//右
+	BTN_SYMBOL_UP,			//上
+	BTN_SYMBOL_DOWN,		//下
 };
 //控件事件的响应使用回调函数的方式
 //建立事件	暂时先不用
@@ -26,178 +43,176 @@ enum _XButtonState
 //悬浮事件
 //按下事件
 //弹起事件
-class _XButtonTexture
+class XButtonSkin
 {
 private:
-	_XBool m_isInited;
-	//_XSCounter *m_cp;		//引用计数器,尚未完成
+	XBool m_isInited;
+	//XSCounter *m_cp;		//引用计数器,尚未完成
 	void releaseTex();
 public:
-	_XTextureData *buttonNormal;			//普通状态下的按钮贴图
-	_XTextureData *buttonDown;				//按下状态下的按钮贴图
-	_XTextureData *buttonOn;				//悬浮状态下的按钮贴图
-	_XTextureData *buttonDisable;			//无效状态下的按钮贴图
+	XTextureData *buttonNormal;			//普通状态下的按钮贴图
+	XTextureData *buttonDown;				//按下状态下的按钮贴图
+	XTextureData *buttonOn;				//悬浮状态下的按钮贴图
+	XTextureData *buttonDisable;			//无效状态下的按钮贴图
 
-	_XRect m_mouseRect;			//鼠标的响应范围
-	_XVector2 m_fontPosition;	//放置文字的位置
+	XRect m_mouseRect;			//鼠标的响应范围
+	XVector2 m_fontPosition;	//放置文字的位置
 	int m_areaPointSum;			//点整的数量
-	_XVector2 *m_pArea;			//点整的信息
+	XVector2 *m_pArea;			//点整的信息
 
-	_XButtonTexture();
-	~_XButtonTexture(){release();}
-	_XBool init(const char *normal,const char *down,const char *on,const char *disable,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XButtonSkin();
+	~XButtonSkin(){release();}
+	XBool init(const char *normal,const char *down,const char *on,const char *disable,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
+private:
+	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
 };
 
 //存在的问题：标题没有显示居中
-class _XCombo;
-class _XMouseRightButtonMenu;
-class _XDirectoryList;
-class _XGroup;
-class _XSliderEx;
-class _XPasswordPad;
-class _XTab;
-class _XCalendar;
-class _XButtonBar;
-class _XButton:public _XControlBasic
+class XCombo;
+class XMouseRightButtonMenu;
+class XDirectoryList;
+class XGroup;
+class XSliderEx;
+class XPasswordPad;
+class XTab;
+class XCalendar;
+class XButtonBar;
+class XSubWindow;
+class XParameterCtrl;
+class XButton:public XControlBasic
 {
-	friend _XCombo;
-	friend _XMouseRightButtonMenu;
-	friend _XDirectoryList;
-	friend _XGroup;
-	friend _XSliderEx;
-	friend _XPasswordPad;
-	friend _XTab;
-	friend _XCalendar;
-	friend _XButtonBar;
+	friend XCombo;
+	friend XMouseRightButtonMenu;
+	friend XDirectoryList;
+	friend XGroup;
+	friend XSliderEx;
+	friend XPasswordPad;
+	friend XTab;
+	friend XCalendar;
+	friend XButtonBar;
+	friend XSubWindow;
+	friend XParameterCtrl;
 private:
-	_XBool m_isInited;					//按钮是否被初始化
-	_XButtonState m_nowButtonState;		//当前的按钮状态
+	XBool m_isInited;					//按钮是否被初始化
+	XButtonState m_curButtonState;		//当前的按钮状态
 
-	_XFontUnicode m_caption;			//按钮的标题
+	XFontUnicode m_caption;			//按钮的标题
 
-	const _XTextureData *m_buttonNormal;			//普通状态下的按钮贴图(无论如何，这个贴图一定要有)
-	const _XTextureData *m_buttonDown;			//按下状态下的按钮贴图
-	const _XTextureData *m_buttonOn;				//悬浮状态下的按钮贴图
-	const _XTextureData *m_buttonDisable;			//无效状态下的按钮贴图
-
-	void (*m_funInit)(void *,int ID);
-	void (*m_funRelease)(void *,int ID);
-	void (*m_funMouseOn)(void *,int ID);
-	void (*m_funMouseDown)(void *,int ID);
-	void (*m_funMouseUp)(void *,int ID);
-	void *m_pClass;				//回调函数的参数
-
-	_XSprite m_sprite;	//用于显示贴图的精灵
-	_XVector2 m_textPosition;	//文字显示的位置，是相对于控件的位置来定的
-	_XVector2 m_textSize;		//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
-	_XFColor m_textColor;		//文字的颜色
-	_XVector2 m_upMousePoint;	//上次记录的鼠标位置
+	const XTextureData *m_buttonNormal;			//普通状态下的按钮贴图(无论如何，这个贴图一定要有)
+	const XTextureData *m_buttonDown;			//按下状态下的按钮贴图
+	const XTextureData *m_buttonOn;				//悬浮状态下的按钮贴图
+	const XTextureData *m_buttonDisable;			//无效状态下的按钮贴图
+	XSprite m_sprite;	//用于显示贴图的精灵
+	XVector2 m_textPosition;	//文字显示的位置，是相对于控件的位置来定的
+	XVector2 m_textSize;		//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
+	XFColor m_textColor;		//文字的颜色
+	XVector2 m_upMousePoint;	//上次记录的鼠标位置
 
 	int m_hotKey;
 
-	_XResourceInfo *m_resInfo;
-	_XBool m_withoutTex;	//没有贴图的形式
-	_XBool initProc(const _XFontUnicode &font,const char *caption,float captionSize);	//公共的初始化过程
+	XResourceInfo *m_resInfo;
+	XBool m_withoutTex;	//没有贴图的形式
+	XBool initProc(const XFontUnicode &font,const char *caption,float captionSize);	//公共的初始化过程
 public:
 	//需要注意的是这里的字体的位置，随着控件的缩放存在一些bug，需要实际使用中微调，不能做动态效果，以后需要改进
-	_XBool init(const _XVector2& position,	//控件所在的位置
-		const _XRect& Area,				//控件鼠标响应的区间，使用的是相对于图片左上角的坐标
-		const _XButtonTexture &tex,		//控件的贴图信息
-		const char *caption,const _XFontUnicode &font,float captionSize,const _XVector2 &textPosition);	//控件标题的相关信息
-	_XBool initEx(const _XVector2& position,	//上面一个接口的简化版本
-		const _XButtonTexture &tex,		
-		const char *caption,const _XFontUnicode &font,float captionSize = 1.0f);
-	_XBool initPlus(const char * path,const char *caption,const _XFontUnicode &font,float captionSize = 1.0f,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);//这是经过最终优化的版本，估计以后尽量只是用这个版本
-	_XBool initWithoutTex(const char *caption,const _XFontUnicode &font,
-		float captionSize,const _XRect& area,const _XVector2 &textPosition);	//没有贴图的形式,直接用写屏绘图函数绘图(尚未实现，未完成工作之一)
-	_XBool initWithoutTex(const char *caption,const _XFontUnicode &font,const _XRect& area);	//这个接口是上个接口的简化版本
-	_XBool initWithoutTex(const char *caption,const _XRect& area) {return initWithoutTex(caption,XEE::systemFont,area);}
-	_XBool initWithoutTex(const char *caption,const _XVector2& pixelSize) 
+	XBool init(const XVector2& position,	//控件所在的位置
+		const XRect& Area,				//控件鼠标响应的区间，使用的是相对于图片左上角的坐标
+		const XButtonSkin &tex,		//控件的贴图信息
+		const char *caption,const XFontUnicode &font,float captionSize,const XVector2 &textPosition);	//控件标题的相关信息
+	XBool initEx(const XVector2& position,	//上面一个接口的简化版本
+		const XButtonSkin &tex,		
+		const char *caption,const XFontUnicode &font,float captionSize = 1.0f);
+	XBool initPlus(const char * path,const char *caption,const XFontUnicode &font,float captionSize = 1.0f,
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);//这是经过最终优化的版本，估计以后尽量只是用这个版本
+	XBool initWithoutSkin(const char *caption,const XFontUnicode &font,
+		float captionSize,const XRect& area,const XVector2 &textPosition);	//没有贴图的形式,直接用写屏绘图函数绘图(尚未实现，未完成工作之一)
+	XBool initWithoutSkin(const char *caption,const XFontUnicode &font,const XRect& area);	//这个接口是上个接口的简化版本
+	XBool initWithoutSkin(const char *caption,const XRect& area) {return initWithoutSkin(caption,getDefaultFont(),area);}
+	XBool initWithoutSkin(const char *caption,const XVector2& pixelSize) 
 	{
-		return initWithoutTex(caption,XEE::systemFont,_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y));
+		return initWithoutSkin(caption,getDefaultFont(),XRect(0.0f,0.0f,pixelSize.x,pixelSize.y));
 	}
-	_XBool initWithoutTex(const char *caption,float width) 
+	XBool initWithoutSkin(const char *caption,float width) 
 	{
-		return initWithoutTex(caption,XEE::systemFont,_XRect(0.0f,0.0f,width,32.0f));
+		return initWithoutSkin(caption,getDefaultFont(), XRect(0.0f, 0.0f, width, MIN_FONT_CTRL_SIZE));
 	}
 
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
+	using XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
 
-	using _XObjectBasic::setSize;	//避免覆盖的问题
-	void setSize(float x,float y);
+	using XObjectBasic::setScale;	//避免覆盖的问题
+	void setScale(float x,float y);
 
-	void setTextColor(const _XFColor& color);	//设置字体的颜色
-	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	void setTextColor(const XFColor& color);	//设置字体的颜色
+	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
-	using _XObjectBasic::setColor;	//避免覆盖的问题
+	using XObjectBasic::setColor;	//避免覆盖的问题
 	void setColor(float r,float g,float b,float a);
 	void setAlpha(float a);
 protected:
 	void draw();								//描绘按钮
 	void drawUp();							
-	_XBool mouseProc(float x,float y,_XMouseState mouseState);		//对于鼠标动作的响应函数
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState);			//返回是否触发按键动作
+	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool keyboardProc(int keyOrder,XKeyState keyState);			//返回是否触发按键动作
 	void insertChar(const char *,int){;}
-	_XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
 	void setLostFocus();	//设置失去焦点
 public:
-	void setCallbackFun(void (* funInit)(void *,int),
-		void (* funRelease)(void *,int),
-		void (* funMouseOn)(void *,int),
-		void (* funMouseDown)(void *,int),
-		void (* funMouseUp)(void *,int),
-		void *pClass = NULL);
-	void setMouseDownCB(void (* funMouseDown)(void *,int),void *pClass = NULL);
-	void setMouseUpCB(void (* funMouseUp)(void *,int),void *pClass = NULL);
-	void setTexture(const _XButtonTexture& tex);
+	void setTexture(const XButtonSkin& tex);
 
-	_XBool setACopy(const _XButton &temp);
+	XBool setACopy(const XButton &temp);
 
-	_XButton();
-	~_XButton(){release();}
+	XButton();
+	~XButton(){release();}
 	void release();
 	//下面是为了提升效率而定义的内联函数
-	void setCaptionPosition(const _XVector2& textPosition);			//设置按钮的标题的位置，相对于按键左上角
-	void setCaptionPosition(float x,float y);			//设置按钮的标题的位置，相对于按键左上角
-	void setCaptionSize(const _XVector2& size);						//设置按钮的标题的尺寸
-	void setCaptionSize(float x,float y);						//设置按钮的标题的尺寸
+	void setCaptionPosition(const XVector2& textPosition);			//设置按钮的标题的位置，相对于按键左上角
+	void setCaptionPosition(float x,float y);						//设置按钮的标题的位置，相对于按键左上角
+	void setCaptionSize(const XVector2& size);						//设置按钮的标题的尺寸
+	void setCaptionSize(float x,float y);							//设置按钮的标题的尺寸
 	void setCaptionText(const char *caption);						//设置按钮的标题的文字
+	void setCaptionAlignmentModeX(XFontAlignmentModeX x){m_caption.setAlignmentModeX(x);}			//设置字体的对其方式
+	void setCaptionAlignmentModeY(XFontAlignmentModeY y){m_caption.setAlignmentModeY(y);}	
 	const char *getCaptionString() const {return m_caption.getString();}
 	void setHotKey(int hotKey);	//设置按键的热键
 	int getHotKey() const;			//获取当前按键的热键信息
-	void setState(_XButtonState temp);		//设置按钮的状态
-	_XButtonState getState() const; 
+	void setState(XButtonState temp);		//设置按钮的状态
+	XButtonState getState() const; 
 	void disable();
 	void enable();
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	////virtual void justForTest() {;}
+	//在不使用贴图的情况下才能调用这个函数
+	//调用这个函数之后字体自动修改为居中对齐
+	void setWidth(int width);	//设置按钮的宽度
+	int getWidth()const{return m_mouseRect.getWidth();}
 private://下面为了防止错误，重载赋值操作符，复制构造函数
-	_XButton(const _XButton &temp);
-	_XButton& operator = (const _XButton& temp);
+	XButton(const XButton &temp);
+	XButton& operator = (const XButton& temp);
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面是为了给btn添加icon而定义的接口，icon分两种:普通icon和无效icon
 private:
-	_XBool m_withNormalIcon;		//是否拥有普通icon
-	_XSprite m_normalIcon;
-	_XBool m_withDisableIcon;		//是否拥有无效icon
-	_XSprite m_disableIcon;	
-	_XVector2 m_iconSize;		//icon的尺寸
-	_XVector2 m_iconPosition;	//icon的位置
+	XBool m_withNormalIcon;		//是否拥有普通icon
+	XSprite m_normalIcon;
+	XBool m_withDisableIcon;		//是否拥有无效icon
+	XSprite m_disableIcon;	
+	XVector2 m_iconSize;		//icon的尺寸
+	XVector2 m_iconPosition;	//icon的位置
 public:
 	void setNormalIcon(const char * filename,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	void setNormalIcon(const _XSprite &icon);
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	void setNormalIcon(const XSprite &icon);
 	void setDisableIcon(const char * filename,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	void setDisableIcon(const _XSprite &icon);
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	void setDisableIcon(const XSprite &icon);
 	void removeIcon();	//去掉所有的icon
 	void setIconPosition(float x,float y);	//设置icon的位置
 	void setIconSize(float x,float y);	//设置icon的缩放大小
@@ -206,16 +221,46 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面是对控件动态支持而定义的相关属性和方法
 private:
-	_XMoveData m_actionMoveData;	//动态效果的变量
-	_XVector2 m_oldPos;				//动作播放时的位置
-	_XVector2 m_oldSize;			//动作播放时的大小
-	_XMoveData m_lightMD;
-	_XRect m_lightRect;
+	XMoveData m_actionMoveData;	//动态效果的变量
+	XVector2 m_oldPos;				//动作播放时的位置
+	XVector2 m_oldSize;			//动作播放时的大小
+	XMoveData m_lightMD;
+	XRect m_lightRect;
 public:
 protected:
-	void update(int stepTime);
+	void update(float stepTime);
 	//---------------------------------------------------------
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面增加显示特殊符号
+private:
+	XButtonSymbol m_symbolType;	//显示的符号
+public:
+	void setSymbol(XButtonSymbol type){m_symbolType = type;}	//设置显示的符号
+	XButtonSymbol getSymbol() const {return m_symbolType;}		//获取显示的符号
+	void disSymbol(){m_symbolType = BTN_SYMBOL_NULL;}			//取消符号显示
+	//---------------------------------------------------------
+public:
+	enum XButtonEvent
+	{
+		BTN_INIT,
+		BTN_RELEASE,
+		BTN_MOUSE_ON,
+		BTN_MOUSE_DOWN,
+		BTN_MOUSE_UP,
+	};
+	//++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面是为了支持check样式的按钮而定义的
+private:
+	XButtonStyle m_buttonStyle;	//按钮的样式
+	bool m_isCheck;	//是否按下
+public:
+	void setStyle(XButtonStyle style){m_buttonStyle = style;}
+	void setIsCheck(bool flag){m_isCheck = flag;}
+	bool getIsCheck()const{return m_isCheck;}
+	//--------------------------------------------------
 };
+#if WITH_INLINE_FILE
 #include "XButton.inl"
-
+#endif
+}
 #endif

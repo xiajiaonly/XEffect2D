@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 /*
 www.sourceforge.net/projects/tinyxml
 Original code by Lee Thomason (www.grinninglizard.com)
@@ -667,7 +668,7 @@ int TiXmlElement::QueryIntAttribute( const char* name, int* ival ) const
 }
 
 
-int TiXmlElement::QueryUnsignedAttribute( const char* name, unsigned* value ) const
+int TiXmlElement::QueryUnsignedAttribute( const char* name, unsigned* _value ) const
 {
 	const TiXmlAttribute* node = attributeSet.Find( name );
 	if ( !node )
@@ -675,7 +676,7 @@ int TiXmlElement::QueryUnsignedAttribute( const char* name, unsigned* value ) co
 
 	int ival = 0;
 	int result = node->QueryIntValue( &ival );
-	*value = (unsigned)ival;
+	*_value = (unsigned)ival;
 	return result;
 }
 

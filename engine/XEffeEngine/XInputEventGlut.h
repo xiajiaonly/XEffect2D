@@ -6,8 +6,8 @@
 //Date:		2014.3.25
 //--------------------------------
 #include "XInputEventCore.h"
-
+namespace XE{
 //返回是否有未处理的事件
-inline bool getInputEventGlut(_XInputEvent &) {return true;}
-
+inline bool getInputEventGlut(XInputEvent &) {return true;}
+}
 #endif

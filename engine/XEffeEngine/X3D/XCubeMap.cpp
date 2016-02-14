@@ -1,9 +1,9 @@
-#include "glew.h"
+#include "XStdHead.h"
 #include "XCubeMap.h"
-
-bool _XCubeMap::loadPic(const std::string & name,int index,_XResourcePosition resPos)
+namespace XE{
+bool XCubeMap::loadPic(const std::string & name,int index,XResourcePosition resPos)
 {
-	_XPixels<_XCurPixel> tmp;
+	XPixels<XCurPixel> tmp;
 	if(!tmp.load(name,resPos)) return false;
 	switch(tmp.getColorMode())
 	{
@@ -30,7 +30,7 @@ bool _XCubeMap::loadPic(const std::string & name,int index,_XResourcePosition re
 	return true;
 }
 
-bool _XCubeMap::init(const std::string &path,_XResourcePosition resPos)
+bool XCubeMap::init(const std::string &path,XResourcePosition resPos)
 {
 	if(m_isInited) return true;
 	FILE *fp = NULL;
@@ -56,13 +56,16 @@ bool _XCubeMap::init(const std::string &path,_XResourcePosition resPos)
 	if(!loadPic(path + "/" + name,GL_TEXTURE_CUBE_MAP_POSITIVE_Z,resPos)) return false;
 	if(fscanf(fp,"%s\n",name) != 1) return false;
 	if(!loadPic(path + "/" + name,GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,resPos)) return false;
+#if WITH_ENGINE_STATISTICS
+	XEG.addStaticsticsTexInfo(m_texture,0,GL_TEXTURE_CUBE_MAP);
+#endif
 	glDisable(GL_TEXTURE_CUBE_MAP);
 	fclose(fp);
 
 	m_isInited = true;
 	return true;
 }
-void _XCubeMap::draw()
+void XCubeMap::draw()
 {
 	if(!m_isInited) return;
 	static const GLfloat vertex[4*6][3] = 
@@ -94,11 +97,15 @@ void _XCubeMap::draw()
 	 
 	glDisable(GL_TEXTURE_CUBE_MAP);
 }
-void _XCubeMap::release()
+void XCubeMap::release()
 {
 	if(glIsTexture(m_texture)) 
 	{
-		printf("delete texture:%d\n",m_texture);
+#if WITH_ENGINE_STATISTICS
+		XEG.decStaticsticsTexInfo(m_texture,0,GL_TEXTURE_CUBE_MAP);
+#endif
+		LogNull("delete texture:%d\n",m_texture);
 		glDeleteTextures(1, &m_texture);
 	}
+}
 }

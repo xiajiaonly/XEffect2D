@@ -7,77 +7,50 @@
 //--------------------------------
 //这是一个简单的贴图的控件，用于显示一张图片
 #include "XControlBasic.h"
-
-class _XImageCtrl:public _XControlBasic
+namespace XE{
+class XImageCtrl:public XControlBasic
 {
 private:
-	_XBool m_isInited;	//是否初始化
-	_XTextureData m_texture;	//贴图数据
-	_XSprite m_sprite;	//用于显示
+	XBool m_isInited;	//是否初始化
+	XTextureData m_texture;	//贴图数据
+	XSprite m_sprite;	//用于显示
 	int m_pixelSum;	//点的数量
 public:
-	_XBool init(const char *filename);			//从文件中读取图片
-	_XBool init(int w,int h,_XColorMode mode);	//建立空的图片
-	void updateTxt(unsigned char *data)	//更新贴图数据
-	{
-		m_texture.updateTexture(data);
-	}
-	int getWidth() const {return m_texture.textureMove2.x - m_texture.textureMove.x;}		//获取图片的宽度
-	int getHeight() const {return m_texture.textureMove2.y - m_texture.textureMove.y;}	//获取图片的高度
+	XBool init(const char *filename);			//从文件中读取图片
+	XBool init(int w,int h,XColorMode mode);	//建立空的图片
+	void updateTxt(unsigned char *data)	{m_texture.updateTexture(data);}//更新贴图数据
+	int getWidth() const {return (int)(m_texture.textureMove2.x - m_texture.textureMove.x);}		//获取图片的宽度
+	int getHeight() const {return (int)(m_texture.textureMove2.y - m_texture.textureMove.y);}	//获取图片的高度
 protected:
-	void draw()
-	{
-		if(!m_isInited ||	//如果没有初始化直接退出
-			!m_isVisible) return;	//如果不可见直接退出
-		m_sprite.draw();
-	}
+	void draw();
 	void drawUp() {;}
 
-	_XBool mouseProc(float,float,_XMouseState){return XFalse;}
-	_XBool keyboardProc(int,_XKeyState){return XFalse;}
+	XBool mouseProc(float,float,XMouseState){return XFalse;}
+	XBool keyboardProc(int,XKeyState){return XFalse;}
 	void insertChar(const char *,int) {;}
-	_XBool canGetFocus(float x,float y)
-	{
-		if(!m_isInited ||	//如果没有初始化直接退出
-			!m_isActive ||		//没有激活的控件不接收控制
-			!m_isVisible ||	//如果不可见直接退出
-			!m_isEnable) return XFalse;		//如果无效则直接退出
-		return isInRect(x,y);
-	}
-	_XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(float x,float y);
+	XBool canLostFocus(float,float){return XTrue;}
 public:
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y)
-	{
-		m_position.set(x,y);
-		m_sprite.setPosition(m_position);
-	}
-	using _XObjectBasic::setSize;	//避免覆盖的问题
-	void setSize(float x,float y)
-	{
-		m_size.set(x,y);
-		m_sprite.setSize(m_size);
-	}
-	_XImageCtrl()
+	void bind(){m_texture.bind();}	//绑定贴图
+	using XObjectBasic::setPosition;	//避免覆盖的问题
+	void setPosition(float x,float y);
+	using XObjectBasic::setScale;	//避免覆盖的问题
+	void setScale(float x,float y);
+	XImageCtrl()
 		:m_isInited(XFalse)
 	{
-		m_ctrlType = CTRL_OBJ_XIMAGE;
+		m_ctrlType = CTRL_OBJ_IMAGE;
 	}
-	~_XImageCtrl(){release();}
+	~XImageCtrl(){release();}
 	void release();
-	_XBool isInRect(float x,float y) {return m_sprite.isInRect(x,y);}
-	_XVector2 getBox(int order) {return m_sprite.getBox(order);}
-	using _XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a) 
-	{
-		m_color.setColor(r,g,b,a);
-		return m_sprite.setColor(r,g,b,a);
-	}
-	void setAlpha(float a)
-	{
-		m_color.setA(a);
-		return m_sprite.setAlpha(a);
-	}
+	XBool isInRect(float x,float y) {return m_sprite.isInRect(x,y);}
+	XVector2 getBox(int order) {return m_sprite.getBox(order);}
+	using XObjectBasic::setColor;	//避免覆盖的问题
+	void setColor(float r,float g,float b,float a);
+	void setAlpha(float a);
 };
+#if WITH_INLINE_FILE
 #include "XImageCtrl.inl"
+#endif
+}
 #endif

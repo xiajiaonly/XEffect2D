@@ -5,123 +5,119 @@
 //Version:    1.0.0
 //Date:       2014.8.20
 //--------------------------------
-#include "XBasicClass.h"
+//#include "XBasicClass.h"
 #include "XMedia/XSerialPort.h"
-#include "XLogBook.h"
+#include "../XLogBook.h"
+#include <deque>
+namespace XE{
 //工作模式
-enum _XSPDevType
+enum XSPDevType
 {
 	DEV_MASTER,		//主设备
 	DEV_SLAVE,		//从设备
 };
-enum _XSPCommand
+enum XSPCommand
 {
 	CMD_WRITE = 0x00,		//写指令
 	CMD_READ = 0x01,		//读指令
 	CMD_WRITE_ACK = 0x10,	//写指令的回复
 	CMD_READ_ACK = 0x11,		//读指令的回复
 };
-struct _XSPData
+struct XSPData
 {
 	int dataLen;
 	unsigned char * data;
-	_XSPData()
+	XSPData()
 		:dataLen(0)
 		,data(NULL)
 	{}
 };
 //用于描述当前协议信息的结构
-struct _XSPInfo
+struct XSPInfo
 {
-	int nPort;		//通讯串口的端口号
-	int nBaud;		//通讯频率
-	int nParity;	//奇偶校验
-	_XSPDevType devType;
+	XSerialPortInfo serialPortInfo;
+	XSPDevType devType;
 	unsigned short * buff;	//存储单元的指针
 	int buffSize;			//存储单元中可以存储的元素数量
-	_XSPInfo()
-		:nPort(0)
-		,nBaud(19200)
-		,nParity(0)
-		,devType(DEV_MASTER)
+	XSPInfo()
+		:devType(DEV_MASTER)
 		,buff(NULL)
 		,buffSize(0)
 	{}
 };
-#include <deque>
-class _XSonovoProtocol
+class XSonovoProtocol
 {
 private:
-	_XBool m_isInited;
-	std::deque<_XSPData> m_recvData;	//收到的数据
-	std::deque<_XSPData> m_sendData;	//发送的数据
+	XBool m_isInited;
+	std::deque<XSPData> m_recvData;	//收到的数据
+	std::deque<XSPData> m_sendData;	//发送的数据
 
-	_XBool m_needRecv;	//是否要等待回复
+	XBool m_needRecv;	//是否要等待回复
 	int m_delayTime;	//等待回复的时间
 
-	_XSerialPort m_serialPort;
-	_XThreadState m_sendThreadState;
+	XSerialPort m_serialPort;
+	XThreadState m_sendThreadState;
 	static DWORD WINAPI sendThread(void * pParam);		//发送线程
-	_XCritical m_recvMutex;
-	_XCritical m_sendMutex;
+	XCritical m_recvMutex;
+	XCritical m_sendMutex;
 
-	friend void SPRecvCB(void *pClass,unsigned char * data,int len);	//数据接收到的回调函数
-	void (*m_callBackFun)(const _XSPData & data,void *p);	//增加一个回调函数，当接收到数据时调用该回调函数
+	static void SPRecvCB(void *pClass,unsigned char * data,int len);	//数据接收到的回调函数
+	void (*m_callBackFun)(const XSPData & data,void *p);	//增加一个回调函数，当接收到数据时调用该回调函数
 	void * m_pClass;
 
-	_XBool pushAData(_XSPData &data);			//向发送队列中推入一个数据(注意，这里会复制数据)
-	void answerProc(_XSPData &data);			//根据指定的问题回答主机
+	XBool pushAData(XSPData &data);			//向发送队列中推入一个数据(注意，这里会复制数据)
+	void answerProc(XSPData &data);			//根据指定的问题回答主机
 
-	_XSPInfo m_info;
-	_XSPData m_nowSendData;	//当前发送的数据包
-	_XBool m_withLog;
+	XSPInfo m_info;
+	XSPData m_curSendData;	//当前发送的数据包
+	XBool m_withLog;
 
-	void sendNowData();			//发送当前需要发送的数据
+	void sendCurData();			//发送当前需要发送的数据
 	unsigned char *m_sendBuff;	//用于发送的临时数据
 	int m_sendBuffSize;	
 public:
-	_XSPDevType getWorkType() const {return m_info.devType;}
-	void setWithLog(_XBool flag) {m_withLog = flag;}
-	_XBool getWithLog() {return m_withLog;}
-	void setCallBackFun(void (*p)(const _XSPData &,void *),void *pC)
+	XSPDevType getWorkType() const {return m_info.devType;}
+	void setWithLog(XBool flag) {m_withLog = flag;}
+	XBool getWithLog() {return m_withLog;}
+	void setCallBackFun(void (*p)(const XSPData &,void *),void *pC)
 	{
 		m_callBackFun = p;
 		m_pClass = pC;
 	}
 
-	_XBool getIsOpen() const {return m_isInited;}
-	_XBool openDevice(const _XSPInfo &info);	//打开设备
+	XBool getIsOpen() const {return m_isInited;}
+	XBool openDevice(const XSPInfo &info);	//打开设备
 	int getSendBuffSize();							//获取发送队列的长度
 
-	_XSonovoProtocol()
+	XSonovoProtocol()
 		:m_isInited(false)
 		,m_withStatistics(false)
 		,m_callBackFun(NULL)
 		,m_pClass(NULL)
 	{}
-	~_XSonovoProtocol(){release();}
+	~XSonovoProtocol(){release();}
 	void release()
 	{
 		if(!m_isInited) return;
 		waitThreadEnd(m_sendThreadState);
 		//清除所有的数据
-		for(int i = 0;i < m_sendData.size();++ i)
+		for(unsigned int i = 0;i < m_sendData.size();++ i)
 		{
-			XDELETE_ARRAY(m_sendData[i].data);
+			XMem::XDELETE_ARRAY(m_sendData[i].data);
 		}
 		m_sendData.clear();
-		for(int i = 0;i < m_sendData.size();++ i)
+		for(unsigned int i = 0;i < m_sendData.size();++ i)
 		{
-			XDELETE_ARRAY(m_recvData[i].data);
+			XMem::XDELETE_ARRAY(m_recvData[i].data);
 		}
 		m_recvData.clear();
 
 		m_serialPort.close();
 		m_isInited = XFalse; 
 	}
-	_XSPData popData()							//从接受队列中取出一个数据
+	XSPData popData()							//从接受队列中取出一个数据
 	{
-		_XSPData tempData;
+		XSPData tempData;
 		if(m_info.devType == DEV_MASTER)
 		{
 			m_recvMutex.Lock();
@@ -134,20 +130,20 @@ public:
 		}
 		return tempData;
 	}
-	_XBool pushData(_XSPData &data)				//向发送队列中推入一个数据
+	XBool pushData(XSPData &data)				//向发送队列中推入一个数据
 	{
 		if(m_info.devType == DEV_MASTER)
 			return pushAData(data);
 		return XFalse;
 	}
 
-	void showData(const _XSPData &data,const std::string &title);
+	void showData(const XSPData &data,const std::string &title);
 private:
 	//下面是统计信息
 	bool m_withStatistics;	//是否启用统计
 	int m_statisticsTimer;	//统计计时
-	int m_comunicateTimesNow;	//交互次数
-	int m_delayTimeNow;			//总延迟
+	int m_comunicateTimesCur;	//交互次数
+	int m_delayTimeCur;			//总延迟
 	float m_delayTimeAvg;	//平均延迟
 public:
 	int getSendTimesAll()const{return m_serialPort.getSendTimesAll();}
@@ -168,8 +164,8 @@ public:
 			m_withStatistics = true;
 			//数据归零
 			m_statisticsTimer = 0;	//统计计时
-			m_comunicateTimesNow = 0;	//交互次数
-			m_delayTimeNow = 0;			//总延迟
+			m_comunicateTimesCur = 0;	//交互次数
+			m_delayTimeCur = 0;			//总延迟
 			m_delayTimeAvg = 0.0f;	//平均延迟
 			m_serialPort.setStatistics(true);
 		}else
@@ -184,7 +180,7 @@ public:
 	void readRegisters(int startAddr,int sum);	//读取多个保持寄存器
 };
 
-inline void _XSonovoProtocol::showData(const _XSPData &data,const std::string &title)
+inline void XSonovoProtocol::showData(const XSPData &data,const std::string &title)
 {
 	std::string tmp = title + "data:";
 	char tmpStr[32];
@@ -195,14 +191,14 @@ inline void _XSonovoProtocol::showData(const _XSPData &data,const std::string &t
 	}
 	LogStr(tmp.c_str());
 }
-inline int _XSonovoProtocol::getSendBuffSize()
+inline int XSonovoProtocol::getSendBuffSize()
 {
 	m_sendMutex.Lock();
 	int ret = m_sendData.size();
 	m_sendMutex.Unlock();
 	return ret;
 }
-inline bool getSPCMDAddress(const _XSPData &CMD,unsigned int &addr)
+inline bool getSPCMDAddress(const XSPData &CMD,unsigned int &addr)
 {//根据协议获取命令的操作地址
 	if(CMD.dataLen <= 0) return 0;
 	switch(CMD.data[0])
@@ -220,7 +216,7 @@ inline bool getSPCMDAddress(const _XSPData &CMD,unsigned int &addr)
 	}
 	return false;
 }
-inline int getSPCMDDataSum(const _XSPData &CMD)	//从命令中解析数据数量
+inline int getSPCMDDataSum(const XSPData &CMD)	//从命令中解析数据数量
 {
 	if(CMD.dataLen <= 0) return 0;
 	switch(CMD.data[0])
@@ -236,7 +232,7 @@ inline int getSPCMDDataSum(const _XSPData &CMD)	//从命令中解析数据数量
 	}
 	return false;
 }
-inline bool getSPCMDData(const _XSPData &CMD,int index,unsigned int &data)
+inline bool getSPCMDData(const XSPData &CMD,int index,unsigned int &data)
 {//根据协议获取命令的操作地址
 	if(CMD.dataLen <= 0) return false;
 	if(index < 0 || index >= getSPCMDDataSum(CMD)) return false;
@@ -258,7 +254,9 @@ inline bool getSPCMDData(const _XSPData &CMD,int index,unsigned int &data)
 	}
 	return false;
 }
+#if WITH_INLINE_FILE
 #include "XSonovoProtocol.inl"
+#endif
 /****************************协议说明文档******************************
 寄存单元：2Bytes连续内存空间为一个存储单元，每个存储单元有一个序号，0到n
 存储空间：由n个存储单元构成，存储空间中存储单元的编号从0开始到n-1结束
@@ -291,5 +289,5 @@ CRC16校验使用的公式为：x16 + x12 + x5 + 1(XModen)
 确认使用CRC16校验，命令(头字节)需要参与校验。
 重码可能会造成通讯错误，如果对协议进行修订需要考虑解决该问题。
 ***********************************************************************/
-
+}
 #endif

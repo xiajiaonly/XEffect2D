@@ -3,190 +3,104 @@
 //program by 贾胜华
 //********************************************************************************
 #include "GGame.h"
-//Environment="PATH=%PATH%;..\..\engine\dll\libfreetype;..\..\engine\dll\SDL;..\..\engine\dll\gl;..\..\engine\dll\MemoryPool;"	//需要设置dll路径
+//Environment="PATH=%PATH%;..\..\engine\dll\SDL;..\..\engine\dll\gl;..\..\engine\dll\MemoryPool;..\..\engine\dll\ffmpeg;"	//需要设置dll路径
 #ifdef XEE_OS_WINDOWS
-#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )	//隐藏控制台的编译说明
+//#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )	//隐藏控制台的编译说明
 #endif
 
-#ifdef CREATE_WINDOW_WITH_SDL
-int inputEvent();	//下面是事件处理函数，例如：键盘事件或者鼠标事件
-
-inline void XEE_Error(const char *p){REPORT_ERROR(p);}
-LONG WINAPI unhandledExceptionFilter(struct _EXCEPTION_POINTERS *pExceptionPointers)  
-{  
-    //SetErrorMode( SEM_NOGPFAULTERRORBOX );  
-	//printf("Error address %x/n",pExceptionPointers->ExceptionRecord->ExceptionAddress);   
-	//printf("CPU register:/n");   
-	//printf("eax %x ebx %x ecx %x edx %x/n",pExceptionPointers->ContextRecord->Eax,   
-	//	pExceptionPointers->ContextRecord->Ebx,pExceptionPointers->ContextRecord->Ecx,   
-	//	pExceptionPointers->ContextRecord->Edx); 
-	XEE_Error("运行异常");
-	return EXCEPTION_EXECUTE_HANDLER;//EXCEPTION_CONTINUE_SEARCH; //或者 EXCEPTION_EXECUTE_HANDLER 关闭程序  
-} 
-BOOL WINAPI consoleHandler(DWORD consoleEvent)
-{
-	switch(consoleEvent)
-	{
-	case CTRL_C_EVENT:		//关闭
-	case CTRL_BREAK_EVENT:	//暂停
-	case CTRL_CLOSE_EVENT:	//关闭
-	case CTRL_LOGOFF_EVENT:	//用户退出
-	case CTRL_SHUTDOWN_EVENT:	//关闭
-		_XLogbook::GetInstance().releaseLog();	//窗口退出时，保证日志的完整性
-		//XEE::release();	//捕获到退出事件，但是未解决问题，需要进一步的处理
-		break;
-	}
-	return TRUE;
-}
 int main(int argc, char **argv)
 {
-	SetUnhandledExceptionFilter(unhandledExceptionFilter);  
-	__try{ 
-		if(SetConsoleCtrlHandler((PHANDLER_ROUTINE)consoleHandler,TRUE) == FALSE)
-		{
-			printf("Unable to install handler!\n");
-			return 0;
-		}
-		if(!initWindowEx()) XEE_Error("建立窗体失败");
-		if(!_GGameMain.init()) XEE_Error("初始化失败");
-
-		while(!inputEvent()) 
-		{//程序主循环
-			_GGameMain.move(XEE::engineIdle());
-			XEE::clearScreen();			//清除屏幕
-			_GGameMain.draw();
-
-			XEE::updateScreen();			//更新屏幕的内容
-			//mySleep(1);
-		}
-		_GGameMain.release();
-		XEE::release();
-	}__except(EXCEPTION_EXECUTE_HANDLER) 
-	{
-		XEE_Error("运行异常!");
-	}
+	XE::XWindowInfo tmp(640,128);
+	tmp.windowTitle = "测试";
+	XE::runGame<GGame>(&tmp);
 	return 0;	
 }
-
-int inputEvent()
-{
-	_XInputEvent tmpEvent;		//SDL事件句柄
-	while(getInputEventSDL(tmpEvent)) 
-	{
-		switch(tmpEvent.type)
-		{
-		case EVENT_EXIT:return 1;
-		case EVENT_RESIZE:	//窗口大小发生变化
-			XEE::windowData.w = tmpEvent.mouseX;
-			XEE::windowData.h = tmpEvent.mouseY;
-			initWindowMatrix();
-			break;
-		case EVENT_KEYBOARD:
-			if(tmpEvent.keyState == KEY_STATE_DOWN)
-			{
-				switch(tmpEvent.keyValue)
-				{
-				case XKEY_ESCAPE:return 1;
-				}
-			}
-			break;
-		}
-		_GGameMain.input(tmpEvent);
-		XEE::inputEvent(tmpEvent);
-	}
-	return 0;
-}
-#endif
-#ifdef CREATE_WINDOW_WITH_GLUT
-void draw(){}
-void idle()
-{
-	_GGameMain.move(XEE::engineIdle());
-
-	XEE::clearScreen();			//清除屏幕
-	_GGameMain.draw();
-	XEE::updateScreen();			//更新屏幕的内容
-	//Sleep(1);
-}
-void inputProc(const _XInputEvent &input)
-{
-	_GGameMain.input(input);
-	XEE::inputEvent(input);
-}
-void input(unsigned char c,int x,int y)
-{
-	_XInputEvent tmpEvent;
-	tmpEvent.type = EVENT_KEYBOARD;
-	tmpEvent.keyState = KEY_STATE_DOWN;
-	tmpEvent.keyValue = (_XKeyValue)_XWindow.mapKey(c);
-	tmpEvent.mouseX = x;
-	tmpEvent.mouseY = y;
-	inputProc(tmpEvent);
-	if(tmpEvent.keyValue == XKEY_ESCAPE) exit(1);
-}
-void sInput(int k,int x,int y)
-{
-	_XInputEvent tmpEvent;
-	tmpEvent.type = EVENT_KEYBOARD;
-	tmpEvent.keyState = KEY_STATE_DOWN;
-	tmpEvent.keyValue = (_XKeyValue)_XWindow.mapKey(k + 512);
-	tmpEvent.mouseX = x;
-	tmpEvent.mouseY = y;
-	inputProc(tmpEvent);
-	if(tmpEvent.keyValue == XKEY_ESCAPE) exit(1);
-}
-void mouseMove(int x,int y)
-{
-	_XInputEvent tmpEvent;
-	tmpEvent.type = EVENT_MOUSE;
-	tmpEvent.mouseState = MOUSE_MOVE;
-	tmpEvent.mouseX = x;
-	tmpEvent.mouseY = y;
-	inputProc(tmpEvent);
-}
-void mouseProc(int b,int s,int x,int y)
-{
-	_XInputEvent tmpEvent;
-	tmpEvent.type = EVENT_MOUSE;
-	tmpEvent.mouseX = x;
-	tmpEvent.mouseY = y;
-	if(s == GLUT_DOWN)
-	{
-		switch(b)
-		{
-		case GLUT_LEFT_BUTTON: tmpEvent.mouseState = MOUSE_LEFT_BUTTON_DOWN;break;
-		case GLUT_RIGHT_BUTTON: tmpEvent.mouseState = MOUSE_RIGHT_BUTTON_DOWN;break;
-		case GLUT_MIDDLE_BUTTON: tmpEvent.mouseState = MOUSE_MIDDLE_BUTTON_DOWN;break;
-		}
-	}else
-	{
-		switch(b)
-		{
-		case GLUT_LEFT_BUTTON: tmpEvent.mouseState = MOUSE_LEFT_BUTTON_UP;break;
-		case GLUT_RIGHT_BUTTON: tmpEvent.mouseState = MOUSE_RIGHT_BUTTON_UP;break;
-		case GLUT_MIDDLE_BUTTON: tmpEvent.mouseState = MOUSE_MIDDLE_BUTTON_UP;break;
-		}
-	}
-	inputProc(tmpEvent);
-}
-int main(int argc, char **argv)
-{
-	glutInit(&argc, argv);
-	if(!initWindowEx()) REPORT_ERROR("建立窗体失败");
-	if(!_GGameMain.init()) REPORT_ERROR("初始化失败");
-
-	glutDisplayFunc(draw);
-	glutIdleFunc(idle);
-	//glutReshapeFunc(changeSize);
-	glutKeyboardFunc(input);
-	glutSpecialFunc(sInput);
-	glutMouseFunc(mouseProc);
-	glutMotionFunc(mouseMove);
-	glutPassiveMotionFunc(mouseMove);
-	glutMainLoop();
-
-	_GGameMain.release();
-	XEE::release();
-	return 0;	
-}
-#endif
+///**
+//   Test the robustness of oscpkt.
+//
+//   build with: 
+//
+//   g++ -O3 -Wall -W -I. oscpkt/oscpkt_test.cc 
+//   cl.exe /Zi /EHsc /I. oscpkt/oscpkt_test.cc 
+// */
+//
+///*
+//  This is a lame ping-ping demo for oscpkt
+//*/
+//
+//#define OSCPKT_OSTREAM_OUTPUT
+//#include "oscpkt.hh"
+//#include "udp.hh"
+//
+//using std::cout;
+//using std::cerr;
+//
+//using namespace oscpkt;
+//
+//const int PORT_NUM = 9109;
+//
+//void runServer() {
+//  UdpSocket sock; 
+//  sock.bindTo(PORT_NUM);
+//  if (!sock.isOk()) {
+//    cerr << "Error opening port " << PORT_NUM << ": " << sock.errorMessage() << "\n";
+//  } else {
+//    cout << "Server started, will listen to packets on port " << PORT_NUM << std::endl;
+//    PacketReader pr;
+//    PacketWriter pw;
+//    while (sock.isOk()) {      
+//      if (sock.receiveNextPacket(30 /* timeout, in ms */)) {
+//        pr.init(sock.packetData(), sock.packetSize());
+//        oscpkt::Message *msg;
+//        while (pr.isOk() && (msg = pr.popMessage()) != 0) {
+//          int iarg;
+//          if (msg->match("/ping").popInt32(iarg).isOkNoMoreArgs()) {
+//            cout << "Server: received /ping " << iarg << " from " << sock.packetOrigin() << "\n";
+//            Message repl; repl.init("/pong").pushInt32(iarg+1);
+//            pw.init().addMessage(repl);
+//            sock.sendPacketTo(pw.packetData(), pw.packetSize(), sock.packetOrigin());
+//          } else {
+//            cout << "Server: unhandled message: " << *msg << "\n";
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
+//
+//void runClient() {
+//  UdpSocket sock;
+//  sock.connectTo("localhost", PORT_NUM);
+//  if (!sock.isOk()) {
+//    cerr << "Error connection to port " << PORT_NUM << ": " << sock.errorMessage() << "\n";
+//  } else {
+//    cout << "Client started, will send packets to port " << PORT_NUM << std::endl;
+//    int iping = 1;
+//    while (sock.isOk()) {
+//      Message msg("/ping"); msg.pushInt32(iping);
+//      PacketWriter pw;
+//      pw.startBundle().startBundle().addMessage(msg).endBundle().endBundle();
+//      bool ok = sock.sendPacket(pw.packetData(), pw.packetSize());
+//      cout << "Client: sent /ping " << iping++ << ", ok=" << ok << "\n";
+//      // wait for a reply ?
+//      if (sock.receiveNextPacket(30 /* timeout, in ms */)) {
+//        PacketReader pr(sock.packetData(), sock.packetSize());
+//        Message *incoming_msg;
+//        while (pr.isOk() && (incoming_msg = pr.popMessage()) != 0) {
+//          cout << "Client: received " << *incoming_msg << "\n";
+//        }
+//      }
+//    }
+//    cout << "sock error: " << sock.errorMessage() << " -- is the server running?\n";
+//  }
+//}
+//
+//int main(int argc, char **argv) {
+////  if (argc > 1 && strcmp(argv[1], "--cli") == 0) {
+////    runClient();
+////  } else if (argc > 1 && strcmp(argv[1], "--serv") == 0) {
+//    runServer();
+////  } else {
+// //   cout << "syntax: --serv to run as server, --cli to run as client\n";
+////  }
+//}

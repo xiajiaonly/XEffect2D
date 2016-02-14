@@ -1,85 +1,47 @@
-inline void _XEditTexture::releaseTex()
+INLINE void XEditSkin::releaseTex()
 {
-	XDELETE(editNormal);
-	XDELETE(editDisable);
-	XDELETE(editSelect);
-	XDELETE(editInsert);
-	XDELETE(editUpon);
+	XMem::XDELETE(editNormal);
+	XMem::XDELETE(editDisable);
+	XMem::XDELETE(editSelect);
+	XMem::XDELETE(editInsert);
+	XMem::XDELETE(editUpon);
 }
-inline void _XEditTexture::release()
+INLINE void XEditSkin::release()
 {
 	if(!m_isInited) return;
 	releaseTex();
 	m_isInited = XFalse;
 }
-inline void _XEdit::upDateInsertShowPosition()	//¸ù¾ÝÊµ¼ÊÇé¿ö¸üÐÂ¹â±êÏÔÊ¾µÄÎ»ÖÃ
+INLINE void XEdit::upDateInsertShowPosition()	//¸ù¾ÝÊµ¼ÊÇé¿ö¸üÐÂ¹â±êÏÔÊ¾µÄÎ»ÖÃ
 {
+	setImmPos();
 	if(m_withoutTex) return;
-	m_spriteInsert.setPosition(m_position.x + m_textPosition.x * m_size.x 
-		+ (m_nowInsertPoint - m_nowShowStart) * m_nowTextWidth,
-		m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f);
+	m_spriteInsert.setPosition(m_position.x + m_textPosition.x * m_scale.x 
+		+ (m_curInsertPoint - m_curShowStart) * m_curTextWidth,
+		m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f);
 }
-inline _XBool _XEdit::initEx(const _XVector2& position,	//ÉÏÃæ½Ó¿ÚµÄ¼ò»¯°æ±¾
-	const _XEditTexture &tex,			
+INLINE XBool XEdit::initEx(const XVector2& position,	//ÉÏÃæ½Ó¿ÚµÄ¼ò»¯°æ±¾
+	const XEditSkin &tex,			
 	const char *str,					
-	const _XFontUnicode &font,			
+	const XFontUnicode &font,			
 	float strSize,	
-	_XMouseRightButtonMenu * mouseMenu)
+	XMouseRightButtonMenu * mouseMenu)
 {
 	return init(position,tex.m_mouseRect,tex,str,font,strSize,mouseMenu);
 }
-inline _XBool _XEdit::initPlus(const char * path,			//¿Ø¼þµÄÌùÍ¼
+INLINE XBool XEdit::initPlus(const char * path,			//¿Ø¼þµÄÌùÍ¼
 	const char *str,					//¿Ø¼þµÄ³õÊ¼»¯×Ö·û´®
-	const _XFontUnicode &font,			//¿Ø¼þµÄ×ÖÌå
+	const XFontUnicode &font,			//¿Ø¼þµÄ×ÖÌå
 	float strSize,	//¿Ø¼þµÄ×ÖÌåÐÅÏ¢
-	_XMouseRightButtonMenu * mouseMenu,//¿Ø¼þµÄÓÒ¼ü²Ëµ¥
-	_XResourcePosition resoursePosition)
+	XMouseRightButtonMenu * mouseMenu,//¿Ø¼þµÄÓÒ¼ü²Ëµ¥
+	XResourcePosition resoursePosition)
 {
 	if(m_isInited || path == NULL) return XFalse;
-	m_resInfo = _XResourceManager::GetInstance().loadResource(path,RESOURCE_TYPE_XEDIT_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXEDIT_TEX,resoursePosition);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(_XVector2::zero,*(_XEditTexture *)m_resInfo->m_pointer,str,font,strSize,mouseMenu);
+	return initEx(XVector2::zero,*(XEditSkin *)m_resInfo->m_pointer,str,font,strSize,mouseMenu);
 }
-inline void _XEdit::update(int stepTime)
-{
-	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	m_comment.update(stepTime);
-	if(m_isEnable && m_isBeChoose)
-	{//ÊäÈë¹â±êÉÁË¸µÄ¼ÆÊ±
-		m_timer += stepTime;
-		if(m_timer > 500) m_timer -= 500;
-		if(m_nowKeyDown)
-		{
-			m_nowKeyDownTimer += XEE::frameTime;
-			if(m_nowKeyDownTimer > 500)
-			{//¿ªÊ¼ÖØ¸´¼ÆÊý
-				m_nowKeyRepTimer += XEE::frameTime;
-				if(m_nowKeyRepTimer >= 50)
-				{
-					m_nowKeyRepTimer = 0;
-					keyProc(m_nowKey);
-				}
-			}
-		}
-	}
-	if(!m_lightMD.getIsEnd())
-	{
-		m_lightMD.move(stepTime);
-		_XVector2 pos(m_oldPos.x + m_mouseRect.getWidth() * 0.5f * m_oldSize.x,
-			m_oldPos.y + m_mouseRect.getHeight() * 0.5f * m_oldSize.y);
-		_XVector2 size(m_mouseRect.getWidth() * m_oldSize.x * m_lightMD.getNowData() * 0.5f,
-			m_mouseRect.getHeight() * m_oldSize.y * m_lightMD.getNowData() * 0.5f);
-		m_lightRect.set(pos.x - size.x,pos.y - size.y,pos.x + size.x,pos.y + size.y);
-	}
-	if(!m_insertActionMD.getIsEnd())
-	{
-		m_insertActionMD.move(stepTime);
-	}
-	if(m_mouseRightButtonMenu != NULL)
-		m_mouseRightButtonMenu->update(stepTime);
-}
-inline void _XEdit::drawUp()				//Ãè»æÐ¡²Ëµ¥
+INLINE void XEdit::drawUp()				//Ãè»æÐ¡²Ëµ¥
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -91,22 +53,22 @@ inline void _XEdit::drawUp()				//Ãè»æÐ¡²Ëµ¥
 	}
 	if(!m_insertActionMD.getIsEnd())
 	{
-		float nowData = m_insertActionMD.getNowData();
-		float x = m_position.x + m_textPosition.x * m_size.x + (m_nowInsertPoint - m_nowShowStart) * m_nowTextWidth;
-		float y = m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f * nowData;
-		float r = lineSlerp<float>(1.0f,0.25f * m_color.fR,m_insertActionMD.getNowTimer());
-		float g = lineSlerp<float>(1.0f,0.25f * m_color.fG,m_insertActionMD.getNowTimer());
-		float b = lineSlerp<float>(1.0f,0.25f * m_color.fB,m_insertActionMD.getNowTimer());
-		drawLine(x,y,x,y + m_nowTextHeight * nowData,1.0f * nowData,
-			r,g,b,m_color.fA * m_insertActionMD.getNowTimer());
+		float curData = m_insertActionMD.getCurData();
+		float x = m_position.x + m_textPosition.x * m_scale.x + (m_curInsertPoint - m_curShowStart) * m_curTextWidth;
+		float y = m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f * curData;
+		float r = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fR,m_insertActionMD.getCurTimer());
+		float g = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fG,m_insertActionMD.getCurTimer());
+		float b = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fB,m_insertActionMD.getCurTimer());
+		XRender::drawLine(x,y,x,y + m_curTextHeight * curData,1.0f * curData,
+			r,g,b,m_color.fA * m_insertActionMD.getCurTimer());
 	}
 	if(m_withoutTex && !m_lightMD.getIsEnd())
 	{
-		drawRect(m_lightRect,1.0f * m_lightMD.getNowData() * 2.0f,1.0f,1.0f,1.0f,(1.0f - m_lightMD.getNowTimer()) * 0.5f);
+		XRender::drawRect(m_lightRect,1.0f * m_lightMD.getCurData() * 2.0f,1.0f,1.0f,1.0f,(1.0f - m_lightMD.getCurTimer()) * 0.5f);
 	}
 	m_comment.draw();
 }
-inline _XBool _XEdit::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XEdit::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
@@ -114,7 +76,7 @@ inline _XBool _XEdit::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµ
 		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline _XBool _XEdit::canLostFocus(float,float)
+INLINE XBool XEdit::canLostFocus(float,float)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
@@ -125,14 +87,7 @@ inline _XBool _XEdit::canLostFocus(float,float)
 	//if(m_isBeChoose) return XFalse;
 	return XTrue;
 }
-inline void _XEdit::setLostFocus() 
-{
-	if(m_haveSelect) m_haveSelect = XFalse;
-	m_isBeChoose = XFalse;
-	m_selectMouseDown = XFalse;
-	m_nowKeyDown = XFalse;
-}
-inline void _XEdit::setColor(float r,float g,float b,float a) 
+INLINE void XEdit::setColor(float r,float g,float b,float a) 
 {
 	m_color.setColor(r,g,b,a);
 	m_spriteBackGround.setColor(m_color);
@@ -143,7 +98,7 @@ inline void _XEdit::setColor(float r,float g,float b,float a)
 		m_mouseRightButtonMenu->setColor(m_color);
 	updateChildColor();
 }	//ÉèÖÃ°´Å¥µÄÑÕÉ«
-inline void _XEdit::setAlpha(float a) 
+INLINE void XEdit::setAlpha(float a) 
 {
 	m_color.setA(a);
 	m_spriteBackGround.setColor(m_color);
@@ -154,50 +109,50 @@ inline void _XEdit::setAlpha(float a)
 		m_mouseRightButtonMenu->setAlpha(a);
 	updateChildAlpha();
 }
-inline _XBool _XEdit::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XEdit::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return m_nowMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(x,y);
 }
-inline _XVector2 _XEdit::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
+INLINE XVector2 XEdit::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	switch(order)
 	{
-	case 0:return _XVector2(m_nowMouseRect.left,m_nowMouseRect.top);
-	case 1:return _XVector2(m_nowMouseRect.right,m_nowMouseRect.top);
-	case 2:return _XVector2(m_nowMouseRect.right,m_nowMouseRect.bottom);
-	case 3:return _XVector2(m_nowMouseRect.left,m_nowMouseRect.bottom);
+	case 0:return XVector2(m_curMouseRect.left,m_curMouseRect.top);
+	case 1:return XVector2(m_curMouseRect.right,m_curMouseRect.top);
+	case 2:return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
+	case 3:return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
 	}
-	return _XVector2::zero;
+	return XVector2::zero;
 }
-inline void _XEdit::deleteSelectStr()
+INLINE void XEdit::deleteSelectStr()
 {
-	if(getSelectEnd() == m_nowStringLength)
+	if(getSelectEnd() == m_curStringLength)
 	{//Æ¬Ñ¡µ½½áÊø
-		m_nowStringLength -= getSelectLength();
-		m_nowString[getSelectHead()] = '\0';
-		changeInsertPoint(getSelectHead() - m_nowInsertPoint);
+		m_curStringLength -= getSelectLength();
+		m_curString[getSelectHead()] = '\0';
+		changeInsertPoint(getSelectHead() - m_curInsertPoint);
 	}else
 	{
-		strcpy(m_nowString + getSelectHead(),m_nowString + getSelectEnd());
-		m_nowStringLength -= getSelectLength();
-		changeInsertPoint(getSelectHead() - m_nowInsertPoint);
+		strcpy(m_curString + getSelectHead(),m_curString + getSelectEnd());
+		m_curStringLength -= getSelectLength();
+		changeInsertPoint(getSelectHead() - m_curInsertPoint);
 	}
 }
-inline void _XEdit::setPosition(float x,float y)
+INLINE void XEdit::setPosition(float x,float y)
 {
 	if(!m_isInited) return;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 	m_position.set(x,y);
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
 	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position);
 	upDateInsertShowPosition();
 	upDataSelectShow();
 	updateChildPos();
 }
-inline void _XEdit::disable()					//Ê¹ÎÞÐ§
+INLINE void XEdit::disable()					//Ê¹ÎÞÐ§
 {
 	m_isEnable = XFalse;
 	if(m_withAction && m_isBeChoose)
@@ -207,58 +162,58 @@ inline void _XEdit::disable()					//Ê¹ÎÞÐ§
 	m_isBeChoose = XFalse;
 	if(m_mouseRightButtonMenu != NULL) m_mouseRightButtonMenu->disVisible(); //È¡ÏûÓÒ¼ü²Ëµ¥µÄÏÔÊ¾
 }
-inline void _XEdit::enable()					//Ê¹ÄÜ
+INLINE void XEdit::enable()					//Ê¹ÄÜ
 {
 	m_isEnable = XTrue;
 }
-inline  char *_XEdit::getString() const				//·µ»ØÊäÈëµÄ×Ö·û´®
+INLINE  char *XEdit::getString() const				//·µ»ØÊäÈëµÄ×Ö·û´®
 {
-	return m_nowString;
+	return m_curString;
 }
-inline int _XEdit::getSelectLength() const				//»òµÃÑ¡ÇøµÄ³¤¶È
+INLINE int XEdit::getSelectLength() const				//»òµÃÑ¡ÇøµÄ³¤¶È
 {
 	if(m_selectEnd < m_selectStart) return m_selectStart - m_selectEnd;
 	else return m_selectEnd - m_selectStart;
 }
-inline int _XEdit::getSelectHead() const				//»ñµÃÑ¡È¡µÄÍ·
+INLINE int XEdit::getSelectHead() const				//»ñµÃÑ¡È¡µÄÍ·
 {
 	if(m_selectEnd < m_selectStart)return  m_selectEnd;
 	else return m_selectStart;
 }
-inline int _XEdit::getSelectEnd() const				//»ñµÃÑ¡È¡µÄÎ²
+INLINE int XEdit::getSelectEnd() const				//»ñµÃÑ¡È¡µÄÎ²
 {
 	if(m_selectEnd < m_selectStart) return m_selectStart;
 	else return m_selectEnd;
 }
-inline void _XEdit::setCallbackFun(void (* funInputChenge)(void *,int),void (* funInputOver)(void *,int),void *pClass)		//ÉèÖÃ»Øµ÷º¯Êý
+//INLINE void XEdit::setCallbackFun(void (* funInputChenge)(void *,int),void (* funInputOver)(void *,int),void *pClass)		//ÉèÖÃ»Øµ÷º¯Êý
+//{
+//	m_funInputChenge = funInputChenge;
+//	m_funInputOver = funInputOver;
+//	if(pClass != NULL) m_pClass = pClass;
+//	else m_pClass = this;
+//}
+INLINE XBool XEdit::getEdtIsNumber()	//ÊäÈëµÄÊý¾ÝÊÇ·ñÎªÊýÖµ
 {
-	m_funInputChenge = funInputChenge;
-	m_funInputOver = funInputOver;
-	if(pClass != NULL) m_pClass = pClass;
-	else m_pClass = this;
+	if(XString::getIsNumber(getString())) return XTrue;
+	return XString::getIsHexNumber(getString()) >= 0;
 }
-inline _XBool _XEdit::getEdtIsNumber()	//ÊäÈëµÄÊý¾ÝÊÇ·ñÎªÊýÖµ
+INLINE int XEdit::getAsInt()
 {
-	if(getIsNumber(getString())) return XTrue;
-	return getIsHexNumber(getString()) >= 0;
+	if(XString::getIsNumber(getString())) return atoi(getString());
+	return XString::getIsHexNumber(getString());
 }
-inline int _XEdit::getAsInt()
+//XBool getAsBool();
+INLINE float XEdit::getAsFloat()
 {
-	if(getIsNumber(getString())) return atoi(getString());
-	return getIsHexNumber(getString());
+	if(XString::getIsNumber(getString())) return XString::toValue<float>(getString());
+	return XString::getIsHexNumber(getString());
 }
-//_XBool getAsBool();
-inline float _XEdit::getAsFloat()
-{
-	if(getIsNumber(getString())) return toValue<float>(getString());
-	return getIsHexNumber(getString());
-}
-inline void _XEdit::setTextColor(const _XFColor& color) 
+INLINE void XEdit::setTextColor(const XFColor& color) 
 {
 	m_textColor = color;
 	m_caption.setColor(m_textColor * m_color);
 }
-inline void _XEdit::setIsPassword(bool flag) 
+INLINE void XEdit::setIsPassword(bool flag) 
 {
 	if((m_isPassword && flag) ||
 		(!m_isPassword && !flag)) return;	//ÖØ¸´µÄÉèÖÃ

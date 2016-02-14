@@ -1,2 +1,3 @@
-#include "XInputEventGlut.h"
-#include <gl/glut.h>
+#include "XStdHead.h"
+//#include "XInputEventGlut.h"
+//#include <gl/glut.h>

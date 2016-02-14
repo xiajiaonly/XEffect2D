@@ -1,121 +1,106 @@
-inline _XBool _XButtonBar::setBtnEnable(const std::string &name)		//ÉèÖÃ°´Å¥Ê¹ÄÜ
+INLINE XBool XButtonBar::setBtnEnable(const std::string &name)		//ÉèÖÃ°´Å¥Ê¹ÄÜ
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->enable();
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnDisable(const std::string &name)	//ÉèÖÃ°´Å¥Ê§Ğ§
+INLINE XBool XButtonBar::setBtnDisable(const std::string &name)	//ÉèÖÃ°´Å¥Ê§Ğ§
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->disable();
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnCaption(const std::string &name,const std::string &caption)	//ÉèÖÃ°´Å¥µÄÎÄ×Ö
+INLINE XBool XButtonBar::setBtnCaption(const std::string &name,const std::string &caption)	//ÉèÖÃ°´Å¥µÄÎÄ×Ö
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setCaptionText(caption.c_str());
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnCallbackFun(const std::string &name,
-	void (* funInit)(void *,int),
-	void (* funRelease)(void *,int),
-	void (* funMouseOn)(void *,int),
-	void (* funMouseDown)(void *,int),
-	void (* funMouseUp)(void *,int),
-	void *pClass)	//ÉèÖÃ°´Å¥µÄ»Øµ÷º¯Êı
+INLINE XBool XButtonBar::setEventProc(const std::string &name,
+		void (* eventProc)(void *,int,int),void *pClass)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
-	m_buttons[index].button->setCallbackFun(funInit,funRelease,funMouseOn,
-		funMouseDown,funMouseUp,pClass);
+	m_buttons[index].button->setEventProc(eventProc,pClass);
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnMouseDownCB(const std::string &name,
-	void (* funMouseDown)(void *,int),
-	void *pClass)	//ÉèÖÃ°´Å¥±»°´ÏÂÊ±µÄ»Øµ÷º¯Êı
-{
-	int index = getIndexByName(name);
-	if(index < 0) return XFalse;
-	m_buttons[index].button->setMouseDownCB(funMouseDown,pClass);
-	return XTrue;
-}
-inline _XBool _XButtonBar::setBtnNormalIcon(const std::string &name,const char * filename,
-	_XResourcePosition resoursePosition)
+INLINE XBool XButtonBar::setBtnNormalIcon(const std::string &name,const char * filename,
+	XResourcePosition resoursePosition)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setNormalIcon(filename,resoursePosition);
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnNormalIcon(const std::string &name,const _XSprite &icon)
+INLINE XBool XButtonBar::setBtnNormalIcon(const std::string &name,const XSprite &icon)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setNormalIcon(icon);
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnDisableIcon(const std::string &name,const char * filename,
-	_XResourcePosition resoursePosition)
+INLINE XBool XButtonBar::setBtnDisableIcon(const std::string &name,const char * filename,
+	XResourcePosition resoursePosition)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setDisableIcon(filename,resoursePosition);
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnDisableIcon(const std::string &name,const _XSprite &icon)
+INLINE XBool XButtonBar::setBtnDisableIcon(const std::string &name,const XSprite &icon)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setDisableIcon(icon);
 	return XTrue;
 }
-inline _XBool _XButtonBar::removeBtnIcon(const std::string &name)	//È¥µôËùÓĞµÄicon
+INLINE XBool XButtonBar::removeBtnIcon(const std::string &name)	//È¥µôËùÓĞµÄicon
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->removeIcon();
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnIconPosition(const std::string &name,float x,float y)	//ÉèÖÃiconµÄÎ»ÖÃ
+INLINE XBool XButtonBar::setBtnIconPosition(const std::string &name,float x,float y)	//ÉèÖÃiconµÄÎ»ÖÃ
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setIconPosition(x,y);
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnIconSize(const std::string &name,float x,float y)	//ÉèÖÃiconµÄËõ·Å´óĞ¡
+INLINE XBool XButtonBar::setBtnIconSize(const std::string &name,float x,float y)	//ÉèÖÃiconµÄËõ·Å´óĞ¡
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setIconSize(x,y);
 	return XTrue;
 }
-inline _XFColor _XButtonBar::getTextColor() const 
+INLINE XFColor XButtonBar::getTextColor() const 
 {
-	if(m_buttons.size() <= 0) return _XFColor::white;
+	if(m_buttons.size() <= 0) return XFColor::white;
 	else return m_buttons[0].button->getTextColor();
 }
-inline _XBool _XButtonBar::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XButtonBar::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return m_nowMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(x,y);
 }
-inline _XVector2 _XButtonBar::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
+INLINE XVector2 XButtonBar::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	switch(order)
 	{
-	case 0:return _XVector2(m_nowMouseRect.left,m_nowMouseRect.top);
-	case 1:return _XVector2(m_nowMouseRect.right,m_nowMouseRect.top);
-	case 2:return _XVector2(m_nowMouseRect.right,m_nowMouseRect.bottom);
-	case 3:return _XVector2(m_nowMouseRect.left,m_nowMouseRect.bottom);
+	case 0:return XVector2(m_curMouseRect.left,m_curMouseRect.top);
+	case 1:return XVector2(m_curMouseRect.right,m_curMouseRect.top);
+	case 2:return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
+	case 3:return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
 	}
-	return _XVector2::zero;
+	return XVector2::zero;
 }
-inline _XBool _XButtonBar::canGetFocus(float x,float y)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XButtonBar::canGetFocus(float x,float y)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||		//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -123,20 +108,20 @@ inline _XBool _XButtonBar::canGetFocus(float x,float y)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·
 		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline int _XButtonBar::getBtnID(const std::string &name)	//»ñÈ¡Ö¸¶¨°´Å¥µÄID
+INLINE int XButtonBar::getBtnID(const std::string &name)	//»ñÈ¡Ö¸¶¨°´Å¥µÄID
 {
 	int index = getIndexByName(name);
 	if(index < 0) return -1;
 	return m_buttons[index].button->getControlID();
 }
-inline _XBool _XButtonBar::setBtnComment(const std::string &name,const std::string &comment)
+INLINE XBool XButtonBar::setBtnComment(const std::string &name,const std::string &comment)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;
 	m_buttons[index].button->setComment(comment.c_str());
 	return XTrue;
 }
-inline _XBool _XButtonBar::setBtnHotKey(const std::string &name,int hotKey)
+INLINE XBool XButtonBar::setBtnHotKey(const std::string &name,int hotKey)
 {
 	int index = getIndexByName(name);
 	if(index < 0) return XFalse;

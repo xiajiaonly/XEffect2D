@@ -1,43 +1,50 @@
-inline void _XRadios::setCallbackFun(void (* funStateChange)(void *,int),void *pClass)
+//INLINE void XRadios::setCallbackFun(void (* funStateChange)(void *,int),void *pClass)
+//{
+//	m_funStateChange = funStateChange;
+//	if(pClass == NULL) m_pClass = this;
+//	else m_pClass = pClass;
+//}
+INLINE int XRadios::getCurChoose() const	//·µ»Øµ±Ç°µ¥Ñ¡ÏîÖĞÑ¡ÔñµÄÏîµÄ±àºÅ
 {
-	m_funStateChange = funStateChange;
-	if(pClass == NULL) m_pClass = this;
-	else m_pClass = pClass;
+	return m_curChoose;
 }
-inline int _XRadios::getNowChoose() const	//·µ»Øµ±Ç°µ¥Ñ¡ÏîÖĞÑ¡ÔñµÄÏîµÄ±àºÅ
-{
-	return m_nowChoose;
-}
-inline void _XRadios::setRadioText(const char *temp,int order)	//ÉèÖÃµ¥Ñ¡ÏîÖĞÄ³Ò»ÏîµÄÎÄ×Ö
+INLINE void XRadios::setRadioText(const char *temp,int order)	//ÉèÖÃµ¥Ñ¡ÏîÖĞÄ³Ò»ÏîµÄÎÄ×Ö
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		temp == NULL ||
 		order < 0 || order >= m_radioSum) return;
 	m_radio[order].setCaptionText(temp);
 }
-inline void _XRadios::setRadioPosition(const _XVector2& position,int order)
+INLINE void XRadios::setRadioState(bool state,int order)
+{
+	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		order < 0 || order >= m_radioSum) return;
+	if(state) m_radio[order].enable();
+	else m_radio[order].disable();
+}
+INLINE void XRadios::setRadioPosition(const XVector2& position,int order)
 {
 	setRadioPosition(position.x,position.y,order);
 }
-inline _XBool _XRadios::initEx(int radioSum,			//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
-	const _XVector2& distance,	
-	const _XVector2& position,	
-	const _XRadiosTexture* tex,const _XFontUnicode &font,float captionSize)
+INLINE XBool XRadios::initEx(int radioSum,			//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
+	const XVector2& distance,	
+	const XVector2& position,	
+	const XRadiosSkin* tex,const XFontUnicode &font,float captionSize)
 {
 	return init(radioSum,distance,position,tex->m_mouseRect,tex,font,captionSize,tex->m_fontPosition);
 }
-inline _XBool _XRadios::initPlus(int radioSum,			//Ñ¡ÏîµÄÊıÁ¿
-	const _XVector2& distance,	//Ã¿¸öµ¥Ñ¡ÏîÖ®¼äµÄ¾àÀë
-	const char *path,const _XFontUnicode &font,float captionSize,
-	_XResourcePosition resoursePosition)
+INLINE XBool XRadios::initPlus(int radioSum,			//Ñ¡ÏîµÄÊıÁ¿
+	const XVector2& distance,	//Ã¿¸öµ¥Ñ¡ÏîÖ®¼äµÄ¾àÀë
+	const char *path,const XFontUnicode &font,float captionSize,
+	XResourcePosition resoursePosition)
 {
 	if(m_isInited ||
 		path == NULL) return XFalse;
-	m_resInfo = _XResourceManager::GetInstance().loadResource(path,RESOURCE_TYPE_XCHECK_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXCHECK_TEX,resoursePosition);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(radioSum,distance,_XVector2::zero,(_XRadiosTexture *)m_resInfo->m_pointer,font,captionSize);
+	return initEx(radioSum,distance,XVector2::zero,(XRadiosSkin *)m_resInfo->m_pointer,font,captionSize);
 }
-inline _XBool _XRadios::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XRadios::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -45,7 +52,7 @@ inline _XBool _XRadios::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»
 		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline void _XRadios::disable()
+INLINE void XRadios::disable()
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isEnable) return;
@@ -56,7 +63,7 @@ inline void _XRadios::disable()
 		m_radio[i].disable();
 	}
 }
-inline void _XRadios::enable()
+INLINE void XRadios::enable()
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		m_isEnable) return;
@@ -66,35 +73,38 @@ inline void _XRadios::enable()
 		m_radio[i].enable();
 	}
 }
-inline void _XRadios::setRadioPosition(float x,float y,int order)			//ÉèÖÃµ¥Ñ¡ÏîÖĞÄ³Ò»ÏîµÄÎ»ÖÃ(ÕâÀïÊ¹ÓÃÏà¶Ô×ø±ê)
+INLINE void XRadios::setRadioPosition(float x,float y,int order)			//ÉèÖÃµ¥Ñ¡ÏîÖĞÄ³Ò»ÏîµÄÎ»ÖÃ(ÕâÀïÊ¹ÓÃÏà¶Ô×ø±ê)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		order < 0 || order >= m_radioSum) return;
 	m_checkPosition[order].set(x,y);
-	m_radio[order].setPosition(m_position.x + x * m_size.x,m_position.y + y * m_size.y);
+	m_radio[order].setPosition(m_position.x + x * m_scale.x,m_position.y + y * m_scale.y);
 }
-inline void _XRadios::setDistance(const _XVector2& distance)
+INLINE void XRadios::setDistance(const XVector2& distance)
 {
 	if(!m_isInited) return;
 	m_distance = distance;
 	//¸üĞÂÊı¾İ
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
-		m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_size.x,m_position.y + m_checkPosition[i].y * m_size.y);
+	//	m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
+	//	m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y);
+		m_checkPosition[i].set(m_distance * i);
+		m_radio[i].setPosition(m_position + m_checkPosition[i] * m_scale);
 	}
 }
-inline void _XRadios::setTextColor(const _XFColor& color) 
+INLINE void XRadios::setTextColor(const XFColor& color) 
 {
 	if(!m_isInited) return;
 	m_textColor = color;
-	m_caption.setColor(m_textColor * m_color);
+	XFColor tmpColor = m_textColor * m_color;
+	m_caption.setColor(tmpColor);
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		m_radio[i].setTextColor(m_textColor * m_color);
+		m_radio[i].setTextColor(tmpColor);
 	}
 }	//ÉèÖÃ×ÖÌåµÄÑÕÉ«
-inline void _XRadios::setColor(float r,float g,float b,float a) 
+INLINE void XRadios::setColor(float r,float g,float b,float a) 
 {
 	if(!m_isInited) return;
 	m_color.setColor(r,g,b,a);
@@ -104,7 +114,7 @@ inline void _XRadios::setColor(float r,float g,float b,float a)
 		m_radio[i].setColor(m_color);
 	}
 }	//ÉèÖÃ°´Å¥µÄÑÕÉ«
-inline void _XRadios::setAlpha(float a) 
+INLINE void XRadios::setAlpha(float a) 
 {
 	if(!m_isInited) return;
 	m_color.setA(a);
@@ -114,12 +124,12 @@ inline void _XRadios::setAlpha(float a)
 		m_radio[i].setColor(m_color);
 	}
 }	
-inline _XBool _XRadios::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XRadios::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-inline void _XRadios::draw()
+INLINE void XRadios::draw()
 {	
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -128,7 +138,7 @@ inline void _XRadios::draw()
 		m_radio[i].draw();
 	}
 }
-inline void _XRadios::drawUp()
+INLINE void XRadios::drawUp()
 {	
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -137,7 +147,7 @@ inline void _XRadios::drawUp()
 		m_radio[i].drawUp();
 	}
 }
-inline void _XRadios::update(int stepTime)
+INLINE void XRadios::update(float stepTime)
 {
 	for(int i = 0;i < m_radioSum;++ i)
 	{

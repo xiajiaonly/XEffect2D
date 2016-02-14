@@ -1,67 +1,140 @@
-inline void _XSliderEx::disable()//Ê¹¿Ø¼şÎŞĞ§
+INLINE void XSliderEx::disable()//Ê¹¿Ø¼şÎŞĞ§
 {
 	m_mainSld.disable();
 	m_secondarySld.disable();
 	m_chooseBtn.disable();
 	m_isEnable = XFalse;
 	m_isBeChoose = XFalse;
+	m_secondarySld.disVisible();
+	m_chooseBtn.disVisible();
 }
-inline void _XSliderEx::enable()//Ê¹¿Ø¼şÓĞĞ§
+INLINE void XSliderEx::enable()//Ê¹¿Ø¼şÓĞĞ§
 {
 	m_mainSld.enable();
 	m_secondarySld.enable();
 	m_chooseBtn.enable();
 	m_isEnable = XTrue;
 }
-inline float _XSliderEx::getNowValue() const	//»ñÈ¡»¬¿éµ±Ç°µÄÖµ
+INLINE float XSliderEx::getCurValue() const	//»ñÈ¡»¬¿éµ±Ç°µÄÖµ
 {
-	return m_mainSld.getNowValue();
+	return m_mainSld.getCurValue();
 }
-inline float _XSliderEx::getMaxValue() const
+INLINE float XSliderEx::getMaxValue() const
 {
 	return m_mainSld.getMaxValue();
 }
-inline float _XSliderEx::getMinValue() const
+INLINE float XSliderEx::getMinValue() const
 {
 	return m_mainSld.getMinValue();
 }
-inline void _XSliderEx::setCallbackFun(void (* funInit)(void *,int),
-	void (* funRelease)(void *,int),
-	void (* funMouseOn)(void *,int),
-	void (* funMouseDown)(void *,int),
-	void (* funMouseUp)(void *,int),
-	void (* funValueChange)(void *,int),
-	void (* funMouseMove)(void *,int),
-	void *pClass)
+//INLINE void XSliderEx::setCallbackFun(void (* funInit)(void *,int),
+//	void (* funRelease)(void *,int),
+//	void (* funMouseOn)(void *,int),
+//	void (* funMouseDown)(void *,int),
+//	void (* funMouseUp)(void *,int),
+//	void (* funValueChange)(void *,int),
+//	void (* funMouseMove)(void *,int),
+//	void *pClass)
+//{
+//	m_funInit = funInit;
+//	m_funRelease = funRelease;
+//	m_funMouseOn = funMouseOn;
+//	m_funMouseDown = funMouseDown;		//ÓĞĞ§
+//	m_funMouseUp = funMouseUp;
+//	m_funValueChange = funValueChange;
+//	m_funMouseMove = funMouseMove;
+//	m_pClass = pClass;
+//}
+INLINE void XSliderEx::setCurValue(float temp)
 {
-	m_funInit = funInit;
-	m_funRelease = funRelease;
-	m_funMouseOn = funMouseOn;
-	m_funMouseDown = funMouseDown;		//ÓĞĞ§
-	m_funMouseUp = funMouseUp;
-	m_funValueChange = funValueChange;
-	m_funMouseMove = funMouseMove;
-	m_pClass = pClass;
+	m_mainSld.setCurValue(temp);
 }
-inline void _XSliderEx::setNowValue(float temp)
-{
-	m_mainSld.setNowValue(temp);
-}
-inline void _XSliderEx::setRange(float max,float min)
+INLINE void XSliderEx::setRange(float max,float min)
 {
 	m_mainSld.setRange(max,min);
 }
-inline _XBool _XSliderEx::isInRect(float x,float y) //µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XSliderEx::isInRect(float x,float y) //µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-inline _XVector2 _XSliderEx::getBox(int order)		//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
+INLINE XVector2 XSliderEx::getBox(int order)		//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
-	return m_mainSld.getBox(order);
+	if(!m_isInited) return XVector2::zero;
+	if(m_mainSld.m_typeVorH == SLIDER_TYPE_HORIZONTAL)
+	{
+		if(m_chooseBtn.getVisible() && m_secondarySld.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_mainSld.getBox(0);
+			case 1:return m_chooseBtn.getBox(1);
+			case 2:return XVector2(m_chooseBtn.getBox(2).x,m_secondarySld.getBox(2).y);
+			case 3:return m_secondarySld.getBox(3);
+			}
+		}else
+		if(m_chooseBtn.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_mainSld.getBox(0);
+			case 1:return m_chooseBtn.getBox(1);
+			case 2:return m_chooseBtn.getBox(2);
+			case 3:return m_mainSld.getBox(3);
+			}
+		}else
+		if(m_secondarySld.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_mainSld.getBox(0);
+			case 1:return m_mainSld.getBox(1);
+			case 2:return m_secondarySld.getBox(2);
+			case 3:return m_secondarySld.getBox(3);
+			}
+		}else
+		{
+			return m_mainSld.getBox(order);
+		}
+	}else
+	{//ÕâÀï¿ÉÄÜ»áÓĞÎÊÌâ
+		if(m_chooseBtn.getVisible() && m_secondarySld.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_secondarySld.getBox(0);
+			case 1:return m_mainSld.getBox(1);
+			case 2:return m_chooseBtn.getBox(2);
+			case 3:return XVector2(m_secondarySld.getBox(3).x,m_chooseBtn.getBox(3).y);
+			}
+		}else
+		if(m_chooseBtn.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_mainSld.getBox(0);
+			case 1:return m_mainSld.getBox(1);
+			case 2:return m_chooseBtn.getBox(2);
+			case 3:return m_chooseBtn.getBox(3);
+			}
+		}else
+		if(m_secondarySld.getVisible())
+		{
+			switch(order)
+			{
+			case 0:return m_secondarySld.getBox(0);
+			case 1:return m_mainSld.getBox(1);
+			case 2:return m_mainSld.getBox(2);
+			case 3:return m_secondarySld.getBox(3);
+			}
+		}else
+		{
+			return m_mainSld.getBox(order);
+		}
+	}
+	return XVector2::zero;
 }
-inline void _XSliderEx::setColor(float r,float g,float b,float a)
+INLINE void XSliderEx::setColor(float r,float g,float b,float a)
 {
 	if(!m_isInited) return;
 	m_color.setColor(r,g,b,a);
@@ -70,7 +143,7 @@ inline void _XSliderEx::setColor(float r,float g,float b,float a)
 	m_chooseBtn.setColor(m_color);
 	updateChildColor();
 }//ÉèÖÃ×ÖÌåµÄÑÕÉ«
-inline void _XSliderEx::setAlpha(float a)
+INLINE void XSliderEx::setAlpha(float a)
 {
 	if(!m_isInited) return;
 	m_color.setA(a);
@@ -80,19 +153,15 @@ inline void _XSliderEx::setAlpha(float a)
 	updateChildAlpha();
 }
 //ÏÂÃæÊÇÒ»Ğ©¹«¹²·½·¨
-inline _XBool _XSliderEx::setFont(const char *caption,const _XFontUnicode &font,float captionSize,const _XVector2 &fontPosition)
+INLINE XBool XSliderEx::setFont(const char *caption,const XFontUnicode &font,float captionSize,const XVector2 &fontPosition)
 {
 	return m_mainSld.setFont(caption,font,captionSize,fontPosition);
 }
-inline _XBool _XSliderEx::setFontEx(const char *caption,const _XFontUnicode &font,float captionSize)
-{
-	return m_mainSld.setFontEx(caption,font,captionSize);
-}
-inline _XBool _XSliderEx::keyboardProc(int keyOrder,_XKeyState keyState)
+INLINE XBool XSliderEx::keyboardProc(int keyOrder,XKeyState keyState)
 {
 	return m_mainSld.keyboardProc(keyOrder,keyState);
 }
-//inline void _XSliderEx::setLostFocus() 
+//INLINE void XSliderEx::setLostFocus() 
 //{
 //	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 //		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -104,7 +173,7 @@ inline _XBool _XSliderEx::keyboardProc(int keyOrder,_XKeyState keyState)
 //	//m_chooseBtn.setLostFocus();
 //	m_isBeChoose = XFalse;
 //}
-inline void _XSliderEx::setVisible()
+INLINE void XSliderEx::setVisible()
 {
 	m_isVisible = XTrue;
 	m_mainSld.setVisible();
@@ -112,25 +181,34 @@ inline void _XSliderEx::setVisible()
 	//m_chooseBtn.setVisible();
 	updateChildVisible();
 }
-inline void _XSliderEx::disVisible()
+INLINE void XSliderEx::disVisible()
 {
 	m_isVisible = XFalse;
+	m_isBeChoose = XFalse;
 	m_mainSld.disVisible();
 	m_secondarySld.disVisible();
 	m_chooseBtn.disVisible();
 	updateChildVisible();
 }
-inline void _XSliderEx::draw()//Ãè»æ»¬¶¯Ìõ
+INLINE void XSliderEx::draw()//Ãè»æ»¬¶¯Ìõ
 {
-	if(!m_isInited || //Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-		!m_isEnable) return;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
+	if(!m_isInited ||			//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 
 	m_mainSld.draw();
 	m_secondarySld.draw();
 	m_chooseBtn.draw();
 }
-inline _XBool _XSliderEx::mouseProc(float x,float y,_XMouseState mouseState)	//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êı
+INLINE void XSliderEx::drawUp()
+{
+	if(!m_isInited ||			//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+
+	m_mainSld.drawUp();
+	m_secondarySld.drawUp();
+	m_chooseBtn.drawUp();
+}
+INLINE XBool XSliderEx::mouseProc(float x,float y,XMouseState mouseState)	//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êı
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -141,12 +219,10 @@ inline _XBool _XSliderEx::mouseProc(float x,float y,_XMouseState mouseState)	//¶
 	m_secondarySld.mouseProc(x,y,mouseState);
 	m_chooseBtn.mouseProc(x,y,mouseState);
 	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_mainSld.isInRect(x,y))
-	{
 		m_isBeChoose = XTrue;
-	}
 	return XTrue;
 }
-inline _XBool _XSliderEx::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XSliderEx::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -154,19 +230,24 @@ inline _XBool _XSliderEx::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒ
 		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline void _XSliderEx::setOprateState(void * data)
+INLINE void XSliderEx::setOprateState(void * data)
 {
 	float index = *(float *)data;
-	setNowValue(index);
+	setCurValue(index);
 }
-inline void *_XSliderEx::getOprateState() const
+INLINE void *XSliderEx::getOprateState() const
 {
-	float *data = createMem<float>();
-	*data = getNowValue();
+	float *data = XMem::createMem<float>();
+	*data = getCurValue();
 	return data;
 }
-inline bool _XSliderEx::isSameState(void * data)
+INLINE void XSliderEx::releaseOprateStateData(void *p)
+{
+	float *data = (float *)p;
+	XMem::XDELETE(data);
+}
+INLINE bool XSliderEx::isSameState(void * data)
 {
 	if(data == NULL) return false;
-	return(*(float*)data == getNowValue());
+	return(*(float*)data == getCurValue());
 }

@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 /*
 www.sourceforge.net/projects/tinyxml
 Original code by Lee Thomason (www.grinninglizard.com)
@@ -511,7 +512,7 @@ const char* TiXmlBase::GetEntity( const char* p, char* value, int* length, TiXml
 		return p + delta + 1;
 	}
 
-	// Now try to match it.
+	// Cur try to match it.
 	for( i=0; i<NUM_ENTITY; ++i )
 	{
 		if ( strncmp( entity[i].str, p, entity[i].strLength ) == 0 )

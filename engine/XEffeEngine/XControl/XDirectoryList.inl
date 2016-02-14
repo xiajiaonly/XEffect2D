@@ -1,47 +1,47 @@
-inline void _XDirListTexture::release()
+INLINE void XDirListSkin::release()
 {
 	if(!m_isInited) return;
-	XDELETE(dirListNormal);
-	XDELETE(dirListDisable);
+	XMem::XDELETE(dirListNormal);
+	XMem::XDELETE(dirListDisable);
 	m_isInited = XFalse;
 }
-inline void _XDirListOneLine::release()
+INLINE void XDirListOneLine::release()
 {
 	if(!m_isEnable) return;
-	XDELETE_ARRAY(m_string);
-	XDELETE(m_check);
+	XMem::XDELETE_ARRAY(m_string);
+	XMem::XDELETE(m_check);
 	m_isEnable = XFalse;
 }
-inline void _XDirectoryList::setCanChangePath(_XBool flag)
+INLINE void XDirectoryList::setCanChangePath(XBool flag)
 {
 	if((flag && m_canChangePath) || (!flag && !m_canChangePath)) return;
 	m_canChangePath = flag;
 	if(flag) m_edit.enable();
 	else m_edit.disable();
 }
-inline _XBool _XDirectoryList::initEx(const _XVector2& position,	//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
-		_XDirListTexture & tex,
-		_XFontUnicode &font,
+INLINE XBool XDirectoryList::initEx(const XVector2& position,	//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
+		XDirListSkin & tex,
+		const XFontUnicode &font,
 		float fontSize,
-		const _XCheck &check,
-		const _XButton &button,
-		const _XEdit &edit,
-		const _XSlider &vSlider,
-		const _XSlider &hSlider)
+		const XCheck &check,
+		const XButton &button,
+		const XEdit &edit,
+		const XSlider &vSlider,
+		const XSlider &hSlider)
 {
 	return init(position,tex.m_mouseRect,tex,font,fontSize,check,button,edit,vSlider,hSlider);
 }
-inline const char * _XDirectoryList::getSelectFileName() const	//»ñÈ¡È«Â·¾¶
+INLINE const char * XDirectoryList::getSelectFileName() const	//»ñÈ¡È«Â·¾¶
 {
-	if(m_haveSelect) return m_lineData[m_selectLineOrder]->m_file->allPath;
+	if(m_haveSelect) return m_lineData[m_selectLineOrder]->m_file->allPath.c_str();
 	else return NULL;
 }
-inline int _XDirectoryList::getSelectLineOrder() const
+INLINE int XDirectoryList::getSelectLineOrder() const
 {
 	if(m_haveSelect) return m_selectLineOrder;
 	else return -1;
 }
-inline _XBool _XDirectoryList::canGetFocus(float x,float y)//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XDirectoryList::canGetFocus(float x,float y)//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
@@ -49,48 +49,48 @@ inline _XBool _XDirectoryList::canGetFocus(float x,float y)//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·
 		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline void _XDirectoryList::setPosition(float x,float y)
+INLINE void XDirectoryList::setPosition(float x,float y)
 {
 	m_position.set(x,y);
 	updateShowPosition();
-	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_size);
-	m_button.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),0.0f) * m_size);
-	m_verticalSlider.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_size);
-	m_horizontalSlider.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_size);
+	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_scale);
+	m_button.setPosition(m_position + XVector2(m_mouseRect.getWidth(),0.0f) * m_scale);
+	m_verticalSlider.setPosition(m_position + XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_scale);
+	m_horizontalSlider.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_scale);
 	m_edit.setPosition(m_position);
-	m_nowMouseRect.set(m_position.x,m_position.y,
-		m_position.x + (m_mouseRect.getWidth() + m_verticalSlider.getMouseRect().getWidth()) * m_size.x,
-		m_position.y + (m_mouseRect.getHeight() + m_edit.getMouseRect().getHeight() + m_horizontalSlider.getMouseRect().getHeight()) * m_size.y);
+	m_curMouseRect.set(m_position.x,m_position.y,
+		m_position.x + (m_mouseRect.getWidth() + m_verticalSlider.getMouseRect().getWidth()) * m_scale.x,
+		m_position.y + (m_mouseRect.getHeight() + m_edit.getMouseRect().getHeight() + m_horizontalSlider.getMouseRect().getHeight()) * m_scale.y);
 	updateChildPos();
 }
-inline void _XDirectoryList::setSize(float x,float y)
+INLINE void XDirectoryList::setScale(float x,float y)
 {//×óÉÏ½Ç¶ÔÆä
-	m_size.set(x,y);
+	m_scale.set(x,y);
 	updateShowPosition();
 	if(!m_withoutTex) 
 	{
-		m_spriteBackGround.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_size);
-		m_spriteBackGround.setSize(m_size);
+		m_spriteBackGround.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight()) * m_scale);
+		m_spriteBackGround.setScale(m_scale);
 	}
-	m_button.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),0.0f) * m_size);
-	m_button.setSize(m_size);
-	m_verticalSlider.setPosition(m_position + _XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_size);
-	m_verticalSlider.setSize(m_size);
-	m_horizontalSlider.setPosition(m_position + _XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_size);
-	m_horizontalSlider.setSize(m_size);
+	m_button.setPosition(m_position + XVector2(m_mouseRect.getWidth(),0.0f) * m_scale);
+	m_button.setScale(m_scale);
+	m_verticalSlider.setPosition(m_position + XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()) * m_scale);
+	m_verticalSlider.setScale(m_scale);
+	m_horizontalSlider.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()) * m_scale);
+	m_horizontalSlider.setScale(m_scale);
 	m_edit.setPosition(m_position);
-	m_edit.setSize(m_size);
-	m_nowMouseRect.set(m_position.x,m_position.y,
-		m_position.x + (m_mouseRect.getWidth() + m_verticalSlider.getMouseRect().getWidth()) * m_size.x,
-		m_position.y + (m_mouseRect.getHeight() + m_edit.getMouseRect().getHeight() + m_horizontalSlider.getMouseRect().getHeight()) * m_size.y);
-	updateChildSize();
+	m_edit.setScale(m_scale);
+	m_curMouseRect.set(m_position.x,m_position.y,
+		m_position.x + (m_mouseRect.getWidth() + m_verticalSlider.getMouseRect().getWidth()) * m_scale.x,
+		m_position.y + (m_mouseRect.getHeight() + m_edit.getMouseRect().getHeight() + m_horizontalSlider.getMouseRect().getHeight()) * m_scale.y);
+	updateChildScale();
 }
-inline _XBool _XDirectoryList::isInRect(float x,float y)						//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XDirectoryList::isInRect(float x,float y)						//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return m_nowMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(x,y);
 }
-inline _XBool _XDirectoryList::keyboardProc(int keyOrder,_XKeyState keyState)
+INLINE XBool XDirectoryList::keyboardProc(int keyOrder,XKeyState keyState)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return XTrue;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -100,15 +100,49 @@ inline _XBool _XDirectoryList::keyboardProc(int keyOrder,_XKeyState keyState)
 	m_button.keyboardProc(keyOrder,keyState);
 	return XTrue;
 }
-inline _XVector2 _XDirectoryList::getBox(int order)		//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
+INLINE XVector2 XDirectoryList::getBox(int order)		//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	switch(order)
 	{
-	case 0: return _XVector2(m_nowMouseRect.left,m_nowMouseRect.top);
-	case 1: return _XVector2(m_nowMouseRect.right,m_nowMouseRect.top);
-	case 2: return _XVector2(m_nowMouseRect.right,m_nowMouseRect.bottom);
-	case 3: return _XVector2(m_nowMouseRect.left,m_nowMouseRect.bottom);
+	case 0: return XVector2(m_curMouseRect.left,m_curMouseRect.top);
+	case 1: return XVector2(m_curMouseRect.right,m_curMouseRect.top);
+	case 2: return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
+	case 3: return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
 	}
-	return _XVector2::zero;
+	return XVector2::zero;
+}
+INLINE void XDirectoryList::setColor(float r,float g,float b,float a)
+{
+	m_color.setColor(r,g,b,a);
+	m_caption.setColor(m_color);
+	m_spriteBackGround.setColor(m_color);
+	m_verticalSlider.setColor(m_color);
+	m_horizontalSlider.setColor(m_color);
+	m_button.setColor(m_color);
+	m_edit.setColor(m_color);
+	m_check.setColor(m_color);
+	for(unsigned int i = 0;i < m_lineData.size();++ i)
+	{
+		m_lineData[i]->m_font.setColor(m_color);
+		if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setColor(m_color); 
+	}
+	updateChildColor();
+}
+INLINE void XDirectoryList::setAlpha(float a)
+{
+	m_color.setA(a);
+	m_caption.setAlpha(a);
+	m_spriteBackGround.setAlpha(a);
+	m_verticalSlider.setAlpha(a);
+	m_horizontalSlider.setAlpha(a);
+	m_button.setAlpha(a);
+	m_edit.setAlpha(a);
+	m_check.setAlpha(a);
+	for(unsigned int i = 0;i < m_lineData.size();++ i)
+	{
+		m_lineData[i]->m_font.setAlpha(a);
+		if(m_lineData[i]->m_check != NULL) m_lineData[i]->m_check->setAlpha(a); 
+	}
+	updateChildAlpha();
 }

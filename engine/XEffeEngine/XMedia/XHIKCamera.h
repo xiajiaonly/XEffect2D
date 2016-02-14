@@ -6,93 +6,116 @@
 //Date:		2013.3.15
 //--------------------------------
 #include "XCameraBasic.h"
-
+#include "../XCritical.h"
 #if SUPPORT_FOR_HIK
-#include "XEffeEngine.h"
-#include "windows.h"
 #include "HIK/HCNetSDK.h"
 #include "HIK/plaympeg4.h"
+//设置使用的版本号
+//#define VERSION_30
+#define VERSION_40
 
 #pragma comment(lib, "../../engine/lib/HIK/PlayCtrl.lib")
 #pragma comment(lib, "../../engine/lib/HIK/HCNetSDK.lib")
-
+#pragma comment(lib, "../../engine/lib/HIK/DsSdk.lib")
+#pragma comment(lib, "../../engine/lib/HIK/GdiPlus.lib")
+namespace XE{
+#define HIK_WITH_LOECORE (1)	//当系统性能不高时，将该项设置为1以便于使得模块能正常工作
 //接下来将其封装成单子系统
-class _XHIKCamera:public _XCameraBasic
+class XHIKCamera:public XCameraBasic
 {
 private:
+	bool m_isGetInitData;
+	void setInitData(int w,int h);
 	LONG m_lUserID;
 	NET_DVR_DEVICEINFO_V30 m_structDeviceInfo;
 	LONG m_lRealPlayHandle;
+	LONG m_lPort;
 
 	unsigned char *m_dataRGB;		//保存像素数据的指针,这个数据不对外开放
-	_XBool m_haveNewFrame;			//是否有新的帧
-	_XBool isNewFrame()				//是否有新的帧
+	XBool m_haveNewFrame;			//是否有新的帧
+	XBool isNewFrame()				//是否有新的帧
 	{
-		_XBool ret = m_haveNewFrame;
+		XBool ret = m_haveNewFrame;
 		m_haveNewFrame = XFalse;
 		return ret;
 	}
 
-	unsigned char *m_dataRGBOut;	//这个是对外的接口
+	//unsigned char *m_dataRGBOut;	//这个是对外的接口
+	static void CALLBACK decCBFun(long,char *,long,FRAME_INFO *, long,long);
+#ifdef VERSION_40
+	static void CALLBACK realDataCB(LONG, DWORD, BYTE *,DWORD ,void* );
+#endif
+#ifdef VERSION_30
+	static void CALLBACK realDataCB(LONG, DWORD, BYTE *,DWORD ,DWORD );
+#endif
+	static void CALLBACK exceptionCB(DWORD, LONG, LONG, void *);
+#if HIK_WITH_LOECORE
+	unsigned char *m_yuvData;	//用于临时存储YUV数据
+	XCritical m_mutex;			//线程锁
+#endif
 public:
-	_XBool init(_XCameraData &data);
+	XBool init(XCameraInfo &data);
 	void getData(unsigned char * p) const
 	{
 		if(!m_isInited) return;
-		memcpy(p,m_dataRGBOut,m_buffSize);
+		memcpy(p,m_dataRGB,m_buffSize);
 	}
 	unsigned char * getDataP() const
 	{
 		if(!m_isInited) return NULL;
-		return m_dataRGBOut;
+		return m_dataRGB;
 	}
 	//int getBuffSize() const {return m_buffSize;}
-	_XBool upDateFrame();
+	XBool updateFrame();
 	//void draw();
 
-	_XHIKCamera()
+	XHIKCamera()
 		:m_haveNewFrame(XFalse)
 		,m_dataRGB(NULL)
+		,m_isGetInitData(false)
+#if HIK_WITH_LOECORE
+		,m_yuvData(NULL)
+#endif
 	{}
-	~_XHIKCamera() {release();}
+	~XHIKCamera() {release();}
 	void release();
 };
 
-//class _XHIKCameraFactory:public _XCameraBaiscFactory
+//class XHIKCameraFactory:public XCameraBaiscFactory
 //{
 //	//+++++++++++++++++++++++++++++++++++++++++++
 //	//下面需要将其设计为Singleton模式
 //protected:
-//	_XHIKCameraFactory(){}
-//	_XHIKCameraFactory(const _XHIKCameraFactory&);
-//	_XHIKCameraFactory &operator= (const _XHIKCameraFactory&);
-//	virtual ~_XHIKCameraFactory(){} 
+//	XHIKCameraFactory(){}
+//	XHIKCameraFactory(const XHIKCameraFactory&);
+//	XHIKCameraFactory &operator= (const XHIKCameraFactory&);
+//	virtual ~XHIKCameraFactory(){} 
 //public:
-//	static _XHIKCameraFactory& GetInstance()
+//	static XHIKCameraFactory& GetInstance()
 //	{
-//		static _XHIKCameraFactory m_instance;
+//		static XHIKCameraFactory m_instance;
 //		return m_instance;
 //	}
 //	//-------------------------------------------
 //public:
-//	_XCameraBasic * create(_XCameraData & data)
+//	XCameraBasic * create(XCameraInfo & data)
 //	{
-//		_XCameraBasic *pCamera = NULL;
+//		XCameraBasic *pCamera = NULL;
 //		if(data.cameraType == CAMERA_TYPE_HIK)
 //		{
-//			pCamera = createMem<_XHIKCamera>();
+//			pCamera = XMem::createMem<XHIKCamera>();
 //			if(pCamera != NULL) 
 //			{
 //				if(pCamera->init(data) == 0)
 //				{//初始化失败
-//					XDELETE(pCamera);
+//					XMem::XDELETE(pCamera);
 //				}
 //			}
 //		}
 //		return pCamera;
 //	}
 //};
-
+}
 #endif	//SUPPORT_FOR_HIK
 
 #endif //_JIA_XHIKCAMERA_

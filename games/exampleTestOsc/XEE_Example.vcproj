@@ -101,7 +101,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			UseOfMFC="1"
+			UseOfMFC="0"
 			UseOfATL="0"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
@@ -193,12 +193,20 @@
 					RelativePath=".\GGame.h"
 					>
 				</File>
+				<File
+					RelativePath=".\GLanguage.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
 				>
 				<File
 					RelativePath=".\GGame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\GLanguage.cpp"
 					>
 				</File>
 				<File
@@ -399,22 +407,10 @@
 				</Filter>
 			</Filter>
 		</Filter>
-		<Filter
-			Name="Icon"
+		<File
+			RelativePath="..\..\Common\XEEIcon.rc"
 			>
-			<File
-				RelativePath=".\icon1.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\XEE_Example.rc"
-				>
-			</File>
-		</Filter>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

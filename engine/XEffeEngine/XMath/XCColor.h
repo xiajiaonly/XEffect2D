@@ -5,9 +5,12 @@
 //Version:    1.0.0
 //Date:       2014.1.1
 //--------------------------------
-#include "XBasicFun.h"
+//#include "XBasicFun.h"
+#include "XRandomFun.h"
+namespace XE{
+class XFColor;
 //单字节的颜色 0 - 255
-class _XCColor
+class XCColor
 {
 public:
     unsigned char r;    //0 - 255
@@ -15,14 +18,28 @@ public:
     unsigned char b;
     unsigned char a;
 	unsigned char w;
+public:
+	operator unsigned char* () const {return (unsigned char*) this;}
+	operator const unsigned char* () const {return (unsigned char*) this;}
+
+	XCColor(const XFColor &temp);
+	XCColor& operator = (const XFColor& temp);
+	XCColor(unsigned int color)
+	{
+		r = color >> 24;
+		g = (color >> 16) % 256;
+		b = (color >> 8) % 256;
+		a = color % 256;
+	}
 	void calculateW(){w = XEE_Max(r,XEE_Max(g,b));}
-    _XCColor()
-        :r(0),g(0),b(0),a(0)
+    XCColor()
+        :r(0),g(0),b(0),a(0),w(0)
     {}
-	_XCColor(unsigned char R,unsigned char G,unsigned char B,unsigned char A = 255)
-		:r(R),g(G),b(B),a(A)
+	XCColor(unsigned char R,unsigned char G,unsigned char B,unsigned char A = 255)
+		:r(R),g(G),b(B),a(A),w(0)
 	{}
-	//_XCColor(float R,float G,float B,float A)
+	bool operator==(const XCColor& c) const{return (r == c.r && g == c.g && b == c.b && a == c.a);}
+	//XCColor(float R,float G,float B,float A)
 	//	:r(R),g(G),b(B),a(A)
 	//{}
     void setColor(unsigned char cr,unsigned char cg,unsigned char cb,unsigned char ca);
@@ -30,8 +47,8 @@ public:
 	void getHsb(float& hue, float& saturation, float& brightness) const;
 	float getHue() const;
 	float limit() const {return 255.0f;}
-	_XCColor anti(){return _XCColor(255 - r,255 - g,255 - b,a);}
-	static const _XCColor white, gray, black, red, green, blue, cyan, magenta,
+	XCColor anti(){return XCColor(255 - r,255 - g,255 - b,a);}
+	static const XCColor white, gray, black, red, green, blue, cyan, magenta,
         yellow,aliceBlue,antiqueWhite,aqua,aquamarine,azure,beige,bisque,blanchedAlmond,
         blueViolet,brown,burlyWood,cadetBlue,chartreuse,chocolate,coral,cornflowerBlue,cornsilk,
         crimson,darkBlue,darkCyan,darkGoldenRod,darkGray,darkGrey,darkGreen,darkKhaki,
@@ -51,5 +68,8 @@ public:
         springGreen,steelBlue,tan,teal,thistle,tomato,turquoise,violet,wheat,whiteSmoke,
         yellowGreen;
 };
+#if WITH_INLINE_FILE
 #include "XCColor.inl"
+#endif
+}
 #endif

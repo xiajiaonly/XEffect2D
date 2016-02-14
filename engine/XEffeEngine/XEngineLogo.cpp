@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -5,39 +6,39 @@
 //--------------------------------
 #include "XEngineLogo.h"
 #include "XResourcePack.h"
+#include "XSprite.h"
 
-int _XEngineLogo::init(const _XVector2 &position,_XResourcePosition resoursePosition,int mode)
+namespace XE{
+XBool XEngineLogo::init(const XVector2 &position,XResourcePosition resoursePosition,XBool mode)
 {
-	if(m_isInited != 0) return 0;	//重复初始化
+	if(m_isInited) return XFalse;	//重复初始化
 
 	m_resoursePosition = resoursePosition;
 
-	if(mode != 0) m_mode = 1;
-	else m_mode = 0;
 	setPosition(position);
 
-	if(!m_back.init("ResourcePack/pic/Back.png",m_resoursePosition)) return 0;
+	if(!m_back.init("ResourcePack/pic/Back.png",m_resoursePosition)) return XFalse;
 //	m_back.setPosition(m_position.x - 160,m_position.y - 96);	//居中
 //	m_back.setPosition(0,0);	//全窗口
 	m_back.setIsTransformCenter(POINT_LEFT_TOP);
-	if(!m_logoBack.init("ResourcePack/pic/logo/Back.png",m_resoursePosition)) return 0;
+	if(!m_logoBack.init("ResourcePack/pic/logo/Back.png",m_resoursePosition)) return XFalse;
 	m_logoBack.setPosition(m_position);
-	if(!m_logoLight.init("ResourcePack/pic/logo/Light.png",m_resoursePosition)) return 0;
+	if(!m_logoLight.init("ResourcePack/pic/logo/Light.png",m_resoursePosition)) return XFalse;
 	m_logoLight.setPosition(m_position);
-	if(!m_logoMiddle.init("ResourcePack/pic/logo/Middle.png",m_resoursePosition)) return 0;
+	if(!m_logoMiddle.init("ResourcePack/pic/logo/Middle.png",m_resoursePosition)) return XFalse;
 	m_logoMiddle.setPosition(m_position);
-	if(!m_logoTextX.init("ResourcePack/pic/logo/X.png",m_resoursePosition)) return 0;
+	if(!m_logoTextX.init("ResourcePack/pic/logo/X.png",m_resoursePosition)) return XFalse;
 	m_logoTextX.setPosition(m_position);
-	if(!m_logoTextE.init("ResourcePack/pic/logo/E.png",m_resoursePosition)) return 0;
+	if(!m_logoTextE.init("ResourcePack/pic/logo/E.png",m_resoursePosition)) return XFalse;
 	m_logoTextE.setPosition(m_position.x + 63,m_position.y + 1);
 	m_logoTextE.setAlpha(0);
-	if(!m_logoTextRE.init("ResourcePack/pic/logo/RE.png",resoursePosition)) return 0;
+	if(!m_logoTextRE.init("ResourcePack/pic/logo/RE.png",resoursePosition)) return XFalse;
 	m_logoTextRE.setPosition(m_position.x + 63,m_position.y + 1);
 	m_logoTextRE.setAlpha(0);
 	m_logoTextEC.setACopy(m_logoTextE);
 	m_logoTextEC.setPosition(m_position.x + 121,m_position.y + 1);
-
-	if(m_mode != 0)
+	m_mode = mode;
+	if(!m_mode)
 	{
 	//	m_back.setAngle(90);
 		m_logoBack.setAngle(90);
@@ -62,26 +63,28 @@ int _XEngineLogo::init(const _XVector2 &position,_XResourcePosition resoursePosi
 	m_dxLight = 0;
 	m_eAlpha = 0;
 	m_logoTextX.setAlpha(m_eAlpha);
-	m_logoTextX.setSize(_XVector2(m_xSize,m_xSize));
-	for(int i = 0;i < 8;i++)
-	{
-		m_stageFlag[i] = 0;
-	}
+	m_logoTextX.setScale(XVector2(m_xSize,m_xSize));
+//	for(int i = 0;i < 8;i++)
+//	{
+//		m_stageFlag[i] = 0;
+//	}
+	memset(m_stageFlag,0,8);
 
-	m_isInited = 1;
-	return 1;
+	m_isInited = XTrue;
+	return XTrue;
 }
-void _XEngineLogo::reset()
+void XEngineLogo::reset()
 {
 	m_logoStage = -1;
-	for(int i = 0;i < 8;i++)
-	{
-		m_stageFlag[i] = 0;
-	}
+//	for(int i = 0;i < 8;i++)
+//	{
+//		m_stageFlag[i] = 0;
+//	}
+	memset(m_stageFlag,0,8);
 }
-void _XEngineLogo::move(int timeDelay)
+void XEngineLogo::move(float timeDelay)
 {
-	if(m_isInited == 0) return;
+	if(!m_isInited) return;
 	if(m_logoStage == -1)
 	{//初始化所有数据
 		m_xAlpha = 0.0f;
@@ -89,9 +92,9 @@ void _XEngineLogo::move(int timeDelay)
 		m_dxLight = 0.0f;
 		m_eAlpha = 0.0f;
 		m_logoTextX.setAlpha(m_xAlpha);
-		m_logoTextX.setSize(_XVector2(m_xSize,m_xSize));
+		m_logoTextX.setScale(XVector2(m_xSize,m_xSize));
 		m_logoTextE.setAlpha(m_eAlpha);
-		m_logoTextE.setSize(_XVector2(1.0f,1.0f));
+		m_logoTextE.setScale(XVector2(1.0f,1.0f));
 		m_logoStage = 0;
 		m_logoTextE.setAlpha(0.0f);
 		m_logoTextRE.setAlpha(0.0f);
@@ -127,7 +130,7 @@ void _XEngineLogo::move(int timeDelay)
 			m_dxLight = 20.0f;
 		}
 		m_logoTextX.setAlpha(m_xAlpha);
-		m_logoTextX.setSize(_XVector2(m_xSize,m_xSize));
+		m_logoTextX.setScale(XVector2(m_xSize,m_xSize));
 	}
 	if(m_logoStage >= 1 && m_logoStage < 5)
 	{//E出现
@@ -152,7 +155,7 @@ void _XEngineLogo::move(int timeDelay)
 		if(m_dxLight < 180.0f)
 		{
 			m_dxLight += 0.1f * timeDelay;
-			if(m_mode != 0)
+			if(!m_mode)
 			{
 				m_logoLight.setPosition(m_position.x + 91.0f + 21.0f,m_position.y - 64.0f + m_dxLight + 1.0f);
 			}else
@@ -169,15 +172,15 @@ void _XEngineLogo::move(int timeDelay)
 			m_xSize = PI_HALF;
 			m_logoStage = 3;
 			m_logoTextRE.setAlpha(1.0f);
-			m_logoTextRE.setSize(_XVector2(0.0f,1.0f));
+			m_logoTextRE.setScale(XVector2(0.0f,1.0f));
 			m_logoTextRE.setColor(1.0f,1.0f,-1.0f,-1.0f);
 		}
-		if(m_mode != 0)
+		if(!m_mode)
 		{
-			m_logoTextE.setSize(_XVector2(1.0f,cos(m_xSize)));
+			m_logoTextE.setScale(XVector2(1.0f,cos(m_xSize)));
 		}else
 		{
-			m_logoTextE.setSize(_XVector2(cos(m_xSize),1.0f));
+			m_logoTextE.setScale(XVector2(cos(m_xSize),1.0f));
 		}
 	}else
 	if(m_logoStage == 3)
@@ -188,14 +191,14 @@ void _XEngineLogo::move(int timeDelay)
 			m_xSize = 0.0f;			
 			m_logoStage = 4;
 		}
-		if(m_mode != 0)
+		if(!m_mode)
 		{
-			m_logoTextRE.setSize(_XVector2(1.0f,cos(m_xSize)));
+			m_logoTextRE.setScale(XVector2(1.0f,cos(m_xSize)));
 		}else
 		{
-			m_logoTextRE.setSize(_XVector2(cos(m_xSize),1.0f));
+			m_logoTextRE.setScale(XVector2(cos(m_xSize),1.0f));
 		}
-			m_logoTextRE.setColor(1.0f - cos(m_xSize),1.0f - cos(m_xSize),-1.0f,-1.0f);
+		m_logoTextRE.setColor(1.0f - cos(m_xSize),1.0f - cos(m_xSize),-1.0f,-1.0f);
 	}else
 	if(m_logoStage == 4)
 	{
@@ -225,13 +228,13 @@ void _XEngineLogo::move(int timeDelay)
 		m_logoMiddle.setAlpha(0.0f);
 	}
 }
-void _XEngineLogo::draw()
+void XEngineLogo::draw()
 {
-	if(m_isInited == 0) return;	
-	XEE::clearScreen();
+	if(!m_isInited) return;	
+	XEG.clearScreen();
 
-	if(XEE::windowData.windowType == WINDOW_TYPE_3D) 
-		XEE::begin2DDraw();
+	if(XEG.m_windowData.windowType == WINDOW_TYPE_3D) 
+		XEG.begin2DDraw();
 	m_back.draw();
 	m_logoBack.draw();
 	m_logoLight.draw();
@@ -245,18 +248,17 @@ void _XEngineLogo::draw()
 //	{
 //		m_logoTextECopy[i].draw();
 //	}
-	XEE::updateScreen();
-	mySleep(1);
+	XEG.updateScreen();
+	XEE::sleep(1);
 }
-
-_XEngineLogo::_XEngineLogo()
-:m_isInited(0)
-,m_resoursePosition(RESOURCE_LOCAL_FOLDER)
+XEngineLogo::XEngineLogo()
+	:m_isInited(XFalse)
+	,m_resoursePosition(RESOURCE_AUTO)
 {}
-_XEngineLogo::~_XEngineLogo(){release();}
-int _XEngineLogo::release()
+XEngineLogo::~XEngineLogo(){release();}
+XBool XEngineLogo::release()
 {
-	if(m_isInited == 0) return 1;
+	if(!m_isInited) return XTrue;
 	m_back.release();
 	m_logoBack.release();
 	m_logoLight.release();
@@ -265,6 +267,15 @@ int _XEngineLogo::release()
 	m_logoTextE.release();
 	m_logoTextRE.release();
 	m_logoTextEC.release();
-	m_isInited = 0;
-	return 1;
+	m_isInited = XFalse;
+	return XTrue;
+}
+void XEngineLogo::setBackSize(const XVector2 &size)		//设置背景图的尺寸
+{
+	m_back.setScale(size);
+}
+void XEngineLogo::setBackSize(float x,float y)		//设置背景图的尺寸
+{
+	m_back.setScale(x,y);
+}
 }

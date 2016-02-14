@@ -1,12 +1,13 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
-#include "glew.h"
 #include "XModelObj.h"
 #include "X3DWorld.h"
-
+#include "XFile.h"
+namespace XE{
 void removeRedundantSpace(char *p)	//删除连续的或者行尾的空格符
 {
 	int len = strlen(p);
@@ -51,7 +52,7 @@ void removeRedundantSpace(char *p)	//删除连续的或者行尾的空格符
 		if(p[i] == '\0') break;
 	}
 }
-_XBool _XModelObj::save(const char *filename)
+XBool XModelObj::save(const char *filename)
 {
 	if(!m_isInited ||
 		filename == NULL) return XFalse;
@@ -59,7 +60,7 @@ _XBool _XModelObj::save(const char *filename)
 	if((fp = fopen(filename,"w")) == NULL) return XFalse;	//文件打开失败
 	fprintf(fp,"# xiajia_1981@163.com\n");
 	//下面写入具体的模型内容
-	for(int i = 0;i < m_materialFilename.size();++ i)
+	for(unsigned int i = 0;i < m_materialFilename.size();++ i)
 	{
 		fprintf(fp,"mtllib %s\n",m_materialFilename[i].c_str());
 	}
@@ -68,19 +69,19 @@ _XBool _XModelObj::save(const char *filename)
 		fclose(fp);
 		return XFalse;
 	}
-	for(int i = 0;i < m_point.size();++ i)
+	for(unsigned int i = 0;i < m_point.size();++ i)
 	{//下面写入顶点数据
 		fprintf(fp,"v %f %f %f\n",m_point[i].x,m_point[i].y,m_point[i].z);
 	}
-	for(int i = 0;i < m_texturePoint.size();++ i)
+	for(unsigned int i = 0;i < m_texturePoint.size();++ i)
 	{//下面写入贴图数据
 		fprintf(fp,"vt %f %f\n",m_texturePoint[i].x,1.0f - m_texturePoint[i].y);
 	}
-	for(int i = 0;i < m_normal.size();++ i)
+	for(unsigned int i = 0;i < m_normal.size();++ i)
 	{//下面写入法线数据
 		fprintf(fp,"vn %f %f %f\n",m_normal[i].x,m_normal[i].y,m_normal[i].z);
 	}
-	for(int i = 0;i < m_group.size();++ i)
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{//下面写入组数据
 		if(m_group[i] == NULL) continue;
 		//写入组名
@@ -92,14 +93,14 @@ _XBool _XModelObj::save(const char *filename)
 
 		if(m_group[i]->withTexInfo != 1 && m_group[i]->withNormalInfo != 1)
 		{
-			for(int j = 0;j < m_group[i]->face.size();++ j)
+			for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
 			{
 				fprintf(fp,"f %d %d %d\n",m_group[i]->face[j].vIndex.x,m_group[i]->face[j].vIndex.y,m_group[i]->face[j].vIndex.z);
 			}
 		}else
 		if(m_group[i]->withTexInfo == 1 && m_group[i]->withNormalInfo != 1)
 		{
-			for(int j = 0;j < m_group[i]->face.size();++ j)
+			for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
 			{
 				fprintf(fp,"f %d/%d %d/%d %d/%d\n",m_group[i]->face[j].vIndex.x,m_group[i]->face[j].tIndex.x,
 					m_group[i]->face[j].vIndex.y,m_group[i]->face[j].tIndex.y,
@@ -108,7 +109,7 @@ _XBool _XModelObj::save(const char *filename)
 		}else
 		if(m_group[i]->withTexInfo != 1 && m_group[i]->withNormalInfo == 1)
 		{
-			for(int j = 0;j < m_group[i]->face.size();++ j)
+			for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
 			{
 				fprintf(fp,"f %d//%d %d//%d %d//%d\n",m_group[i]->face[j].vIndex.x,m_group[i]->face[j].nIndex.x,
 					m_group[i]->face[j].vIndex.y,m_group[i]->face[j].nIndex.y,
@@ -117,7 +118,7 @@ _XBool _XModelObj::save(const char *filename)
 		}else
 		if(m_group[i]->withTexInfo == 1 && m_group[i]->withNormalInfo == 1)
 		{
-			for(int j = 0;j < m_group[i]->face.size();++ j)
+			for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
 			{
 				fprintf(fp,"f %d/%d/%d %d/%d/%d %d/%d/%d\n",m_group[i]->face[j].vIndex.x,m_group[i]->face[j].tIndex.x,m_group[i]->face[j].nIndex.x,
 					m_group[i]->face[j].vIndex.y,m_group[i]->face[j].tIndex.y,m_group[i]->face[j].nIndex.y,
@@ -131,24 +132,24 @@ _XBool _XModelObj::save(const char *filename)
 std::string getObjInfo0FromStr(const char * p)
 {
 	if(p == NULL) return "";
-	static char tempLineData[1024];	//注意这里的1024的最大限制
+	char tempLineData[1024];	//注意这里的1024的最大限制
 	std::string tmp;
 	int len = strlen(p);
-	if(isUTF8(p,len)) tmp = UTF82ANSI(p);
+	if(XString::isUTF8(p,len)) tmp = XString::UTF82ANSI(p);
 	else tmp = p;
 	int s,e,b;
-	if(!getFirtCanShowString(tmp.c_str(),s,e))
+	if(!XString::getFirtCanShowString(tmp.c_str(),s,e))
 	{
 		printf("错误的数据:%s\n",tmp.c_str());
 	}else
 	{
-		b = getCharPosition(tmp.c_str() + s,' ');
+		b = XString::getCharPosition(tmp.c_str() + s,' ');
 		memcpy(tempLineData,tmp.c_str() + s + b + 1,e - s - b);
 		tempLineData[e - s - b] = '\0';
 	}
 	return tempLineData;
 }
-_XBool _XModelObj::load(const char *filename)	//从文件中载入数据
+XBool XModelObj::load(const char *filename)	//从文件中载入数据
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse;
@@ -157,10 +158,10 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 	char lineData[256];
 	char tempLineData[256];
 	//下面开始解析文件
-	_XVector3 tempData;
-	_XVector2 tempData2;
-	_XFaceInfo tempFaceInfo;
-	_XGroupInfo *tempGroupInfo = NULL;
+	XVector3 tempData;
+	XVector2 tempData2;
+	XFaceInfo tempFaceInfo;
+	XGroupInfo *tempGroupInfo = NULL;
 	int len = 0;
 	while(true)
 	{
@@ -178,9 +179,11 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 		if(lineData[0] == '#') continue;	//注释
 		if(lineData[0] == 'v' && lineData[1] == ' ')
 		{//顶点数据
-			sscanf(lineData,"v %f %f %f",&tempData.x,&tempData.y,&tempData.z);
-			//tempData.y = -tempData.y;
-			m_point.push_back(tempData);
+			if(sscanf(lineData,"v %f %f %f",&tempData.x,&tempData.y,&tempData.z) == 3)
+			{
+				//tempData.y = -tempData.y;
+				m_point.push_back(tempData);
+			}
 		}else
 		if(lineData[0] == 'v' && lineData[1] == 't')
 		{//贴图数据
@@ -207,17 +210,19 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 		}else
 		if(lineData[0] == 'v' && lineData[1] == 'n')
 		{//法线数据
-			sscanf(lineData,"vn %f %f %f",&tempData.x,&tempData.y,&tempData.z);
-		//	tempData.x = -tempData.x;
-		//	tempData.y = -tempData.y;
-		//	tempData.z = -tempData.z;
-			m_normal.push_back(tempData);
+			if(sscanf(lineData,"vn %f %f %f",&tempData.x,&tempData.y,&tempData.z) == 3)
+			{
+			//	tempData.x = -tempData.x;
+			//	tempData.y = -tempData.y;
+			//	tempData.z = -tempData.z;
+				m_normal.push_back(tempData);
+			}
 		}else
 		if(lineData[0] == 'f' && lineData[1] == ' ')
 		{//面数据
 			if(tempGroupInfo == NULL)
 			{
-				tempGroupInfo = createMem<_XGroupInfo>();
+				tempGroupInfo = XMem::createMem<XGroupInfo>();
 				if(tempGroupInfo == NULL)
 				{
 					fclose(fp);
@@ -241,7 +246,7 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 			tempGroupInfo = getGroup(tmp.c_str());
 			if(tempGroupInfo == NULL)
 			{
-				tempGroupInfo = createMem<_XGroupInfo>();
+				tempGroupInfo = XMem::createMem<XGroupInfo>();
 				if(tempGroupInfo == NULL)
 				{
 					fclose(fp);
@@ -252,7 +257,7 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 			}
 		}else
 		{
-			len = getCharPosition(lineData,' ');
+			len = XString::getCharPosition(lineData,' ');
 			if(len > 0)
 			{
 				memcpy(tempLineData,lineData,len);
@@ -261,7 +266,7 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 				{//usemtl
 					if(tempGroupInfo == NULL)
 					{
-						tempGroupInfo = createMem<_XGroupInfo>();
+						tempGroupInfo = XMem::createMem<XGroupInfo>();
 						if(tempGroupInfo == NULL)
 						{
 							fclose(fp);
@@ -281,7 +286,7 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 						continue;
 					}
 					m_materialFilename.push_back(tmp);
-					tmp = mergeFilename(filename,tmp);
+					tmp = XFile::mergeFilename(filename,tmp);
 					if(loadMaterial(tmp.c_str()))
 					{
 						m_materialIndex.push_back(m_material.size());
@@ -300,10 +305,10 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 	//下面计算物体的碰撞盒子(尚未完成)
 	bool first = true;
 	float xMin = 0.0f,xMax = 0.0f,yMin = 0.0f,yMax = 0.0f,zMin = 0.0f,zMax = 0.0f;
-	_XVector3 tmpV;
-	for(int i = 0;i < m_group.size();++ i)
+	XVector3 tmpV;
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
-		for(int j = 0;j < m_group[i]->face.size();++ j)
+		for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
 		{
 			tmpV = m_point[m_group[i]->face[j].vIndex.x - 1];
 			if(first)
@@ -348,14 +353,14 @@ _XBool _XModelObj::load(const char *filename)	//从文件中载入数据
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
+XBool XModelObj::readFaceInfo(XGroupInfo *group,char *lineData)
 {
 	/*{//简单文件的测试
 		group->withTexInfo = 0;
 		group->withNormalInfo = 1;
 		int v[3],n[3];
 		sscanf(lineData,"f %d//%d %d//%d %d//%d",&v[0],&n[0],&v[1],&n[1],&v[2],&n[2]);
-		_XFaceInfo tempxxx;
+		XFaceInfo tempxxx;
 		tempxxx.vIndex.x = v[0];
 		tempxxx.vIndex.y = v[1];
 		tempxxx.vIndex.z = v[2];
@@ -366,13 +371,13 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 		return XTrue;
 	}*/
 	removeRedundantSpace(lineData);
-	int sumSlash = getCharSum(lineData,'/');	//间隔的数量
-	int sumSpace = getCharSum(lineData,' ');	//数据的数量
+	int sumSlash = XString::getCharSum(lineData,'/');	//间隔的数量
+	int sumSpace = XString::getCharSum(lineData,' ');	//数据的数量
 	if(sumSpace < 3) return XFalse;
-	_XFaceInfo tempFaceInfo;
-	std::vector<_XVectorIndex3> tempData;
-	int offset = getCharPosition(lineData,' ') + 1;
-	_XVectorIndex3 tempIndex;
+	XFaceInfo tempFaceInfo;
+	std::vector<XVectorIndex3> tempData;
+	int offset = XString::getCharPosition(lineData,' ') + 1;
+	XVectorIndex3 tempIndex;
 	if(sumSlash == 0)
 	{//v
 		if(group->withTexInfo == 1) return XFalse;
@@ -383,7 +388,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 		for(int i = 0;i < sumSpace;++ i)
 		{
 			if(sscanf(lineData + offset,"%d ",&tempIndex.x) != 1) return XFalse;
-			offset += getCharPosition(lineData + offset,' ') + 1;
+			offset += XString::getCharPosition(lineData + offset,' ') + 1;
 			tempData.push_back(tempIndex);
 		}
 		for(int i = 0;i < sumSpace - 2;++ i)
@@ -404,7 +409,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 		for(int i = 0;i < sumSpace;++ i)
 		{
 			if(sscanf(lineData + offset,"%d/%d ",&tempIndex.x,&tempIndex.y) != 2) return XFalse;
-			offset += getCharPosition(lineData + offset,' ') + 1;
+			offset += XString::getCharPosition(lineData + offset,' ') + 1;
 			tempData.push_back(tempIndex);
 		}
 		for(int i = 0;i < sumSpace - 2;++ i)
@@ -420,7 +425,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 		}
 	}else
 	{// 
-		tempIndex.x = getCharPosition(lineData,'/');
+		tempIndex.x = XString::getCharPosition(lineData,'/');
 		if(lineData[tempIndex.x + 1] == '/')
 		{//v//n
 			if(group->withTexInfo == 1) return XFalse;
@@ -430,7 +435,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 			for(int i = 0;i < sumSpace;++ i)
 			{
 				if(sscanf(lineData + offset,"%d//%d ",&tempIndex.x,&tempIndex.z) != 2) return XFalse;
-				offset += getCharPosition(lineData + offset,' ') + 1;
+				offset += XString::getCharPosition(lineData + offset,' ') + 1;
 				tempData.push_back(tempIndex);
 			}
 			for(int i = 0;i < sumSpace - 2;++ i)
@@ -452,7 +457,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 			for(int i = 0;i < sumSpace;++ i)
 			{
 				if(sscanf(lineData + offset,"%d/%d/%d ",&tempIndex.x,&tempIndex.y,&tempIndex.z) != 3) return XFalse;
-				offset += getCharPosition(lineData + offset,' ') + 1;
+				offset += XString::getCharPosition(lineData + offset,' ') + 1;
 				tempData.push_back(tempIndex);
 			}
 			for(int i = 0;i < sumSpace - 2;++ i)
@@ -472,7 +477,7 @@ _XBool _XModelObj::readFaceInfo(_XGroupInfo *group,char *lineData)
 	}
 	return XTrue;
 }
-_XBool _XModelObj::loadMaterial(const char *filename)
+XBool XModelObj::loadMaterial(const char *filename)
 {
 	if(filename == NULL) return XFalse;
 	//下面打开贴图文件并读取相关信息
@@ -482,17 +487,17 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 	char tempLineData[256];
 	int startIndex = 0;
 	int endIndex = 0;
-	_XMaterialInfo * tempMaterialInfo = NULL;
+	XMaterialInfo * tempMaterialInfo = NULL;
 	while(true)
 	{
 		if(fgets(lineData,256,fp) == NULL) break;
 		if(lineData[0] == '#') continue;	//注释
-		if(!getFirstWord(lineData,startIndex,endIndex)) continue;
+		if(!XString::getFirstWord(lineData,startIndex,endIndex)) continue;
 		memcpy(tempLineData,lineData + startIndex,endIndex - startIndex + 1);
 		tempLineData[endIndex - startIndex + 1] = '\0';
 		if(strcmp(tempLineData,"newmtl") == 0)
 		{
-			tempMaterialInfo = createMem<_XMaterialInfo>();
+			tempMaterialInfo = XMem::createMem<XMaterialInfo>();
 			if(tempMaterialInfo == NULL)
 			{
 				fclose(fp);
@@ -515,7 +520,7 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 			}
 			tempMaterialInfo->mapKdName = tmp;
 			//路径整合
-			tmp = mergeFilename(filename,tmp);
+			tmp = XFile::mergeFilename(filename,tmp);
 			if(!tempMaterialInfo->textureData.load(tmp.c_str()))
 			{
 				printf("贴图文件读取失败:%s\n",tmp.c_str());
@@ -536,7 +541,7 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 			}
 			tempMaterialInfo->mapDumpName = tmp;
 			//路径整合
-			tmp = mergeFilename(filename,tmp);
+			tmp = XFile::mergeFilename(filename,tmp);
 			if(!tempMaterialInfo->dumpTexData.load(tmp.c_str()))
 			{
 				printf("贴图文件读取失败:%s\n",tmp.c_str());
@@ -546,9 +551,9 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 			//连接shader
 		//	if(tempMaterialInfo->normalShader == NULL)
 		//	{
-		//		tempMaterialInfo->normalShader = createMem<_XShaderGLSL>();
+		//		tempMaterialInfo->normalShader = XMem::createMem<XShaderGLSL>();
 		//		if(tempMaterialInfo->normalShader == NULL) return XFalse;
-		//		* tempMaterialInfo->normalShader = _X3DWorld::GetInstance().m_dumpMapShader;
+		//		* tempMaterialInfo->normalShader = X3DWld.m_dumpMapShader;
 		//		tempMaterialInfo->normalShader->connectTexture("Texture_00",NULL);
 		//		tempMaterialInfo->normalShader->connectTexture("normalTexture",&tempMaterialInfo->dumpTexData.texture.m_texture);
 		//	}
@@ -621,7 +626,7 @@ _XBool _XModelObj::loadMaterial(const char *filename)
 	fclose(fp);
 	return XTrue;
 }
-_XBool _XModelObj::saveMaterial()
+XBool XModelObj::saveMaterial()
 {
 	int sum = m_materialFilename.size();
 	if(sum == 0) return XTrue;	//如果没有材质文件直接返回
@@ -671,16 +676,16 @@ _XBool _XModelObj::saveMaterial()
 	}
 	return XTrue;
 }
-_XBool _XModelObj::checkData()
+XBool XModelObj::checkData()
 {
 	int vSum = m_point.size();
 	int tSum = m_texturePoint.size();
 	int nSum = m_normal.size();
-	_XGroupInfo * tempGroup = NULL;
+	XGroupInfo * tempGroup = NULL;
 	float *vPointers = NULL;
 	float *tPointers = NULL;
 	float *nPointers = NULL;
-	for(int i = 0;i < m_group.size();++ i)
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
 		tempGroup = m_group[i];
 		//获取贴图的编号
@@ -694,23 +699,23 @@ _XBool _XModelObj::checkData()
 			}
 		}
 		//建立绘图数据
-		if(vPointers != NULL) XDELETE_ARRAY(vPointers);
-		vPointers = createArrayMem<float>(tempGroup->face.size() * 9);
+		if(vPointers != NULL) XMem::XDELETE_ARRAY(vPointers);
+		vPointers = XMem::createArrayMem<float>(tempGroup->face.size() * 9);
 		if(vPointers == NULL) return XFalse;
 		if(tempGroup->withTexInfo == 1)
 		{
-			if(tPointers != NULL) XDELETE_ARRAY(tPointers);
-			tPointers = createArrayMem<float>(tempGroup->face.size() * 6);
+			if(tPointers != NULL) XMem::XDELETE_ARRAY(tPointers);
+			tPointers = XMem::createArrayMem<float>(tempGroup->face.size() * 6);
 			if(tPointers == NULL) return XFalse;
 		}
 		if(tempGroup->withNormalInfo == 1)
 		{
-			if(nPointers != NULL) XDELETE_ARRAY(nPointers);
-			nPointers = createArrayMem<float>(tempGroup->face.size() * 9);
+			if(nPointers != NULL) XMem::XDELETE_ARRAY(nPointers);
+			nPointers = XMem::createArrayMem<float>(tempGroup->face.size() * 9);
 			if(nPointers == NULL) return XFalse;
 		}
 		//检查数据的正确性
-		for(int j = 0;j < tempGroup->face.size();++ j)
+		for(unsigned int j = 0;j < tempGroup->face.size();++ j)
 		{
 			if(tempGroup->face[j].vIndex.x < 0) tempGroup->face[j].vIndex.x = vSum + tempGroup->face[j].vIndex.x + 1;
 			if(tempGroup->face[j].vIndex.y < 0) tempGroup->face[j].vIndex.y = vSum + tempGroup->face[j].vIndex.y + 1;
@@ -771,33 +776,34 @@ _XBool _XModelObj::checkData()
 		if(!tempGroup->vbo.init(tempGroup->face.size() * 3,vPointers,tempGroup->withTexInfo == 1?tPointers:NULL,
 			tempGroup->withNormalInfo == 1?nPointers:NULL,NULL)) 
 		{
-			XDELETE_ARRAY(vPointers);
-			XDELETE_ARRAY(tPointers);
-			XDELETE_ARRAY(nPointers);
+			XMem::XDELETE_ARRAY(vPointers);
+			XMem::XDELETE_ARRAY(tPointers);
+			XMem::XDELETE_ARRAY(nPointers);
 			return XFalse;
 		}
-		XDELETE_ARRAY(vPointers);
-		XDELETE_ARRAY(tPointers);
-		XDELETE_ARRAY(nPointers);
+		XMem::XDELETE_ARRAY(vPointers);
+		XMem::XDELETE_ARRAY(tPointers);
+		XMem::XDELETE_ARRAY(nPointers);
 	}
 	//下面使得材质数据生效
-	for(int i = 0;i < m_material.size(); ++ i)
+	for(unsigned int i = 0;i < m_material.size(); ++ i)
 	{
 		m_material[i]->setData();
 	}
 	return XTrue;
 }
-int _XModelObj::getMaterialIndex(const string &str)
+int XModelObj::getMaterialIndex(const std::string &str)
 {
-	for(int i = 0;i < m_material.size();++ i)
+	for(unsigned int i = 0;i < m_material.size();++ i)
 	{
 		if(m_material[i]->matetialName == str) return i;
 	}
 	return -1;
 }
-void _XModelObj::draw(_XBool withTex,const _XBasic3DObject *base)
+void XModelObj::draw(XBool withTex,const XBasic3DObject *base)
 {
 	if(!m_isInited) return;
+	if(gFrameworkData.p3DWorld == NULL) return;
 	updateMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -809,15 +815,15 @@ void _XModelObj::draw(_XBool withTex,const _XBasic3DObject *base)
 	//glRotatef(m_angle.x,1,0,0);
 	//glRotatef(m_angle.y,0,1,0);
 	//glRotatef(m_angle.z,0,0,1);
-	//glScalef(m_size.x,m_size.y,m_size.z);
+	//glScalef(m_scale.x,m_scale.y,m_scale.z);
 	//drawOrigin();
 	glColor4f(1.0f,1.0f,1.0f,1.0f);
 
-	_XGroupInfo * tempGroup = NULL;
-	for(int i = 0;i < m_group.size();++ i)
+	XGroupInfo * tempGroup = NULL;
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
 		tempGroup = m_group[i];
-		_XBool needTexture = tempGroup->withTexInfo == 1 && withTex && m_material[tempGroup->materialIndex]->withTexture;
+		XBool needTexture = tempGroup->withTexInfo == 1 && withTex && m_material[tempGroup->materialIndex]->withTexture;
 		glPushAttrib(GL_ALL_ATTRIB_BITS);
 		if(tempGroup->withTexInfo == 1 && withTex) 
 		{//如果存在贴图
@@ -825,96 +831,96 @@ void _XModelObj::draw(_XBool withTex,const _XBasic3DObject *base)
 			if(m_material[tempGroup->materialIndex]->withTexture)
 			{
 				glActiveTexture(GL_TEXTURE0);
-				glEnable(GL_TEXTURE_2D);
-				glBindTexture(GL_TEXTURE_2D,
-					m_material[tempGroup->materialIndex]->textureData.texture.m_texture);
+				XGL::EnableTexture2D();
+				XGL::BindTexture2D(m_material[tempGroup->materialIndex]->textureData.texture.m_texture);
 				if(m_material[tempGroup->materialIndex]->withDumpTex)
-					_X3DWorld::GetInstance().useShadow(needTexture,SHADER_DUMP_AND_SHADOW,m_material[tempGroup->materialIndex]->dumpTexData.texture.m_texture);	//使用dumpshader并传递dump贴图
+					gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_DUMP_AND_SHADOW,m_material[tempGroup->materialIndex]->dumpTexData.texture.m_texture);	//使用dumpshader并传递dump贴图
 				else
-					_X3DWorld::GetInstance().useShadow(needTexture,SHADER_SHADOW);
+					gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_SHADOW);
 				//glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA * m_material[tempGroup->materialIndex]->alpha);
 			}else
 			{//有材质无贴图
 				glColor4fv(m_color);
-				_X3DWorld::GetInstance().useShadow(needTexture,SHADER_SHADOW);
+				gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_SHADOW);
 			}
 		}else
 		{//如果不存在贴图
-			_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
+			gFrameworkData.p3DWorld->m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
 			glColor4fv(m_color);
-			_X3DWorld::GetInstance().useShadow(needTexture,SHADER_SHADOW);
+			gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_SHADOW);
 		}
 
 		tempGroup->vbo.drawByArray(GL_TRIANGLES,withTex);
 
-		_X3DWorld::GetInstance().removeShadow();
+		gFrameworkData.p3DWorld->removeShadow();
 		
 		glPopAttrib();
 	}
 
-	//glEnable(GL_BLEND);
-	//glEnable(GL_TEXTURE_2D);
+	//XGL::EnableBlend();
+	//XGL::DisableTexture2D();
 
 	glPopMatrix();
 }
 
-_XMaterialInfo * _XModelObj::getMaterialInfo(const string &MatName)
+XMaterialInfo * XModelObj::getMaterialInfo(const std::string &MatName)
 {
-	for(int i = 0;i < m_material.size();++ i)
+	for(unsigned int i = 0;i < m_material.size();++ i)
 	{
 		if(m_material[i]->matetialName == MatName) return m_material[i];
 	}
 	return NULL;
 }
-//_XBool _XModelObj::setNormalShader(const string &MatName,_XShaderGLSL *shader)
+//XBool XModelObj::setNormalShader(const string &MatName,XShaderGLSL *shader)
 //{
-//	_XMaterialInfo *tempMat = getMaterialInfo(MatName);
+//	XMaterialInfo *tempMat = getMaterialInfo(MatName);
 //	if(tempMat == NULL) return XFalse;
 //	tempMat->normalShader = shader;
 //	return XTrue;
 //}
-//void _XModelObj::setWithDumpMap(_XBool flag)
+//void XModelObj::setWithDumpMap(XBool flag)
 //{
 //	if(flag)
 //	{
-//		for(int i = 0;i < m_material.size();++ i)
+//		for(unsigned int i = 0;i < m_material.size();++ i)
 //		{
 //			if(m_material[i]->normalShader != NULL) m_material[i]->withDumpTex = XTrue;
 //		}
 //	}else
 //	{
-//		for(int i = 0;i < m_material.size();++ i)
+//		for(unsigned int i = 0;i < m_material.size();++ i)
 //		{
 //			m_material[i]->withDumpTex = XFalse;
 //		}
 //	}
 //}
-_XGroupInfo *_XModelObj::getGroup(const char *name)
+XGroupInfo *XModelObj::getGroup(const char *name)
 {
 	if(name == NULL) return NULL;
-	for(int i = 0;i < m_group.size();++ i)
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
 		if(strcmp(m_group[i]->groupName.c_str(),name) == 0) return m_group[i];
 	}
 	return NULL;
 }
-void _XModelObj::release()
+void XModelObj::release()
 {
 	if(!m_isInited) return;
 	m_point.clear();
 	m_texturePoint.clear();
 	m_normal.clear();
-	for(int i = 0;i < m_material.size();++ i)
+	for(unsigned int i = 0;i < m_material.size();++ i)
 	{
-		XDELETE(m_material[i]);
+		XMem::XDELETE(m_material[i]);
 	}
 	m_material.clear();
 	m_materialFilename.clear();
 	m_materialIndex.clear();
-	for(int i = 0;i < m_group.size();++ i)
+	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
-		XDELETE(m_group[i]);
+		XMem::XDELETE(m_group[i]);
 	}
 	m_group.clear();
 	m_isInited = XFalse;
+}
 }

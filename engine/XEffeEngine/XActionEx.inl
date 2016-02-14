@@ -1,57 +1,57 @@
-inline _XBool _XActionEx::isName(const char *name)
+INLINE  XBool XActionEx::isName(const char *name)
 {
 	if(name == NULL) return XFalse;
 	if(m_actionName == name) return XTrue;
 	return XFalse;
 }
-inline void _XActionEx::setPause()			//设置动作暂停
+INLINE  void XActionEx::setPause()			//设置动作暂停
 {
 	if(m_actionState == ACTION_STATE_ACTION)
 		m_actionState = ACTION_STATE_PAUSE;
 }
-inline void _XActionEx::setResume()		//设置动作恢复
+INLINE  void XActionEx::setResume()		//设置动作恢复
 {
 	if(m_actionState == ACTION_STATE_PAUSE)
 		m_actionState = ACTION_STATE_ACTION;
 }
-inline void _XActionEx::release()
+INLINE  void XActionEx::release()
 {
 	if(!m_isInited) return;
 	funRelease();
-	if(m_type == ACTION_TYPE_COMPLEX) XDELETE_ARRAY(m_pAction);
+	if(m_type == ACTION_TYPE_COMPLEX) XMem::XDELETE_ARRAY(m_pAction);
 	m_isInited = XFalse;
 }
 
-inline void _XActionExManager::move(int stepTime)		//遍历并推进所有的动作
+INLINE  void XActionExManager::move(float stepTime)		//遍历并推进所有的动作
 {
-	for(int i = 0;i < m_actionOrderX.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrderX.size();++ i)
 	{
 		if(m_pActions[m_actionOrderX[i]].actionIsEnable) m_pActions[m_actionOrderX[i]].pAction->move(stepTime);	//这个不需要顺序
 	}
 }
-inline void _XActionExManager::draw()					//遍历并描绘所有的动作
+INLINE  void XActionExManager::draw()					//遍历并描绘所有的动作
 {
-	for(int i = 0;i < m_actionOrderX.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrderX.size();++ i)
 	{
 		if(m_pActions[m_actionOrderX[i]].actionIsEnable) m_pActions[m_actionOrderX[i]].pAction->draw();	//draw的顺序问题，这里估计需要进行一个映射
 		m_pActions[m_actionOrderX[i]].pAction->keepDraw();
 	}
 }
-inline void _XActionExManager::input(const _XInputEvent &inputEvent)					//遍历并描绘所有的动作
+INLINE  void XActionExManager::input(const XInputEvent &inputEvent)					//遍历并描绘所有的动作
 {
-	for(int i = 0;i < m_actionOrderX.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrderX.size();++ i)
 	{
 		if(m_pActions[m_actionOrderX[i]].actionIsEnable) m_pActions[m_actionOrderX[i]].pAction->input(inputEvent);	//draw的顺序问题，这里估计需要进行一个映射
 	}
 }
-inline _XBool _XActionExManager::setStartAction(const char *actionName)
+INLINE  XBool XActionExManager::setStartAction(const char *actionName)
 {
 	int ret = getActionHandle(actionName);
 	if(ret < 0) return XFalse;
 	m_pActions[ret].pAction->setStart();
 	return XTrue;
 }
-inline _XBool _XActionExManager::setStartAction(_XActionExHandle actionHandle)
+INLINE  XBool XActionExManager::setStartAction(XActionExHandle actionHandle)
 {
 	if(actionHandle >= 0 && actionHandle < m_pActions.size()
 		&& m_pActions[actionHandle].actionIsEnable)
@@ -61,72 +61,72 @@ inline _XBool _XActionExManager::setStartAction(_XActionExHandle actionHandle)
 	}
 	return XFalse;
 }
-inline _XActionEx *_XActionExManager::getPAction(const char *actionName)
+INLINE  XActionEx *XActionExManager::getPAction(const char *actionName)
 {
 	int ret = getActionHandle(actionName);
 	if(ret < 0) return NULL;
 	return m_pActions[ret].pAction;
 }
-inline _XActionEx *_XActionExManager::getPAction(_XActionExHandle actionHandle)
+INLINE  XActionEx *XActionExManager::getPAction(XActionExHandle actionHandle)
 {
 	if(actionHandle >= 0 && actionHandle < m_pActions.size()
 		&& m_pActions[actionHandle].actionIsEnable) return m_pActions[actionHandle].pAction;
 	return NULL;
 }
-inline _XBool _XActionExManager::getIsActionEnd(const char *actionName)
+INLINE  XBool XActionExManager::getIsActionEnd(const char *actionName)
 {
-	_XActionEx * temp = getPAction(actionName);
+	XActionEx * temp = getPAction(actionName);
 	if(temp == NULL) return XTrue;
 	return temp->getIsEnd();
 }
-inline _XBool _XActionExManager::getIsActionEnd(_XActionExHandle actionHandle)
+INLINE  XBool XActionExManager::getIsActionEnd(XActionExHandle actionHandle)
 {
 	if(actionHandle >= 0 && actionHandle < m_pActions.size()
 		&& m_pActions[actionHandle].actionIsEnable) 
 		return m_pActions[actionHandle].pAction->getIsEnd();
 	return XTrue;
 }
-inline _XBool _XActionExManager::moveToBottom(const char *actionName)			//移动到最下面
+INLINE  XBool XActionExManager::moveToBottom(const char *actionName)			//移动到最下面
 {
 	if(actionName == NULL) return XFalse;
 	return moveToBottom(getActionHandle(actionName));
 }
-inline _XBool _XActionExManager::moveToTop(const char *actionName)				//移动到最上面
+INLINE  XBool XActionExManager::moveToTop(const char *actionName)				//移动到最上面
 {
 	if(actionName == NULL) return XFalse;
 	return moveToTop(getActionHandle(actionName));
 }
-inline _XBool _XActionExManager::moveUp(const char *actionName)					//向上移动一层,与上一层进行交换
+INLINE  XBool XActionExManager::moveUp(const char *actionName)					//向上移动一层,与上一层进行交换
 {
 	if(actionName == NULL) return XFalse;
 	return moveUp(getActionHandle(actionName));
 }
-inline _XBool _XActionExManager::moveDown(const char *actionName)					//向下移动一层
+INLINE  XBool XActionExManager::moveDown(const char *actionName)					//向下移动一层
 {
 	if(actionName == NULL) return XFalse;
 	return moveDown(getActionHandle(actionName));
 }
-inline _XBool _XActionExManager::moveUpTo(const char *s,const char *d)			//s移动到d上面
+INLINE  XBool XActionExManager::moveUpTo(const char *s,const char *d)			//s移动到d上面
 {
 	if(s == NULL || d == NULL) return XFalse;
 	return moveUpTo(getActionHandle(s),getActionHandle(d));
 }
-inline _XBool _XActionExManager::moveDownTo(const char *s,const char *d)			//s移动到d上面
+INLINE  XBool XActionExManager::moveDownTo(const char *s,const char *d)			//s移动到d上面
 {
 	if(s == NULL || d == NULL) return XFalse;
 	return moveDownTo(getActionHandle(s),getActionHandle(d));
 }
-inline int _XActionExManager::getLayerIndex(const char *actionName)			//获取当前的在哪一层
+INLINE  int XActionExManager::getLayerIndex(const char *actionName)			//获取当前的在哪一层
 {
 	if(actionName == NULL) return -1;
 	return getLayerIndex(getActionHandle(actionName));
 }
-inline int _XActionExManager::getLayerIndex(_XActionExHandle actionHandle)
+INLINE  int XActionExManager::getLayerIndex(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size()) return -1;
 	return m_actionOrder[actionHandle];
 }
-inline _XBool _XActionExManager::releaseAction(_XActionSimpleHandle actionHandle)
+INLINE  XBool XActionExManager::releaseAction(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size() ||
 		!m_pActions[actionHandle].actionIsEnable) return XFalse;
@@ -136,7 +136,7 @@ inline _XBool _XActionExManager::releaseAction(_XActionSimpleHandle actionHandle
 	m_pActions[actionHandle].pAction = NULL;
 	return XTrue;
 }
-inline _XBool _XActionExManager::popAction(_XActionExHandle actionHandle)
+INLINE  XBool XActionExManager::popAction(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size() ||
 		!m_pActions[actionHandle].actionIsEnable) return XFalse;

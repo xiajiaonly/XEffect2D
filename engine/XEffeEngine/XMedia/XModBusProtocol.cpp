@@ -1,14 +1,16 @@
+#include "XStdHead.h"
 #include "XModBusProtocol.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		2013.9.25
 //--------------------------------
-#include "XLogBook.h"
 #include "XTimer.h"
 #include "XMath/XMath.h"
 
-inline void showData(const _XModBusData &data,const std::string &title)
+#include "../XMath/XByteFun.h"
+namespace XE{
+inline void showData(const XModBusData &data,const std::string &title)
 {
 	std::string tmp = title + "data:";
 	char tmpStr[32];
@@ -19,13 +21,13 @@ inline void showData(const _XModBusData &data,const std::string &title)
 	}
 	LogStr(tmp.c_str());
 }
-void recvCallback(void *pClass,unsigned char * data,int len)
+void XModBusProtocol::recvCallback(void *pClass,unsigned char * data,int len)
 {
-	_XModBusProtocol &pPar = *(_XModBusProtocol *)pClass;
+	XModBusProtocol &pPar = *(XModBusProtocol *)pClass;
 	if(pPar.m_sendThreadState == STATE_SET_TO_END ||
 		pPar.m_sendThreadState == STATE_END) return;	//Êý¾ÝÖ±½Ó¶ªÆú
-	_XModBusData tempData;
-	tempData.data = createArrayMem<unsigned char>(len);
+	XModBusData tempData;
+	tempData.data = XMem::createArrayMem<unsigned char>(len);
 	if(tempData.data == NULL) return;
 	memcpy(tempData.data,data,len);
 //	tempData.data = data;
@@ -37,16 +39,16 @@ void recvCallback(void *pClass,unsigned char * data,int len)
 		{
 			LogStr(" - data ERROR");
 			showData(tempData,"½ÓÊÕ: ");
-			XDELETE_ARRAY(tempData.data);
+			XMem::XDELETE_ARRAY(tempData.data);
 			return;
 		}
-		unsigned short crcCheck = CRC16_Modbus(tempData.data,tempData.dataLen - 2);
+		unsigned short crcCheck = XMath::CRC16_Modbus(tempData.data,tempData.dataLen - 2);
 		if(tempData.data[tempData.dataLen - 1] != (crcCheck >> 8)
 			|| tempData.data[tempData.dataLen - 2] != (crcCheck & 0xff))
 		{
 			LogStr(" - CRC ERROR");
 			showData(tempData,"½ÓÊÕ: ");
-			XDELETE_ARRAY(tempData.data);
+			XMem::XDELETE_ARRAY(tempData.data);
 			return;
 		}
 #if WITH_LOG
@@ -55,13 +57,13 @@ void recvCallback(void *pClass,unsigned char * data,int len)
 		if(pPar.m_modbusState.workType == TYPE_MASTER)
 		{//Ö÷µÄ·½Ê½
 			pPar.m_recvMutex.Lock();
-			switch(pPar.m_nowSendData.data[1])
+			switch(pPar.m_curSendData.data[1])
 			{
 			case CMD_READ_COIL_VOLUME:
 			case CMD_READ_INPUT:
 			case CMD_READ_HOLD_REGISTER:
 			case CMD_READ_INPUT_REGISTER:
-				tempData.addr = (pPar.m_nowSendData.data[2] << 8) + pPar.m_nowSendData.data[3];
+				tempData.addr = (pPar.m_curSendData.data[2] << 8) + pPar.m_curSendData.data[3];
 				break;
 			case CMD_SET_ONE_COIL:
 			case CMD_SET_ONE_REGISTER:
@@ -72,38 +74,37 @@ void recvCallback(void *pClass,unsigned char * data,int len)
 			}
 			if(pPar.m_withStatistics) 
 			{
-				++ pPar.m_comunicateTimesNow;
-				pPar.m_delayTimeNow += tempData.delayTime;
+				++ pPar.m_comunicateTimesCur;
+				pPar.m_delayTimeCur += tempData.delayTime;
 			}
 			pPar.m_recvData.push_back(tempData);
 			pPar.m_recvMutex.Unlock();
 			pPar.m_sendMutex.Lock();	//·¢ËÍËøÌáÇ°ºÃÏñ²»±ØÒª£¬ÐèÒª½øÒ»²½¿¼²ì
 			pPar.m_needRecv = XFalse;
 			pPar.m_delaySendTime = 0;
-			XDELETE_ARRAY(pPar.m_nowSendData.data);
+			XMem::XDELETE_ARRAY(pPar.m_curSendData.data);
 			pPar.m_sendMutex.Unlock();
 		}else
 		{//´ÓµÄ·½Ê½
 			pPar.answerProc(tempData);
-			XDELETE_ARRAY(tempData.data);	
+			XMem::XDELETE_ARRAY(tempData.data);	
 		}
 	}else
 	{//±ðÈËµÄÊý¾Ý
 #if WITH_LOG
 		if(pPar.m_withLog)  showData(tempData,"½ÓÊÕ:±ðÈËµÄÊý¾Ý ");
 #endif
-		XDELETE_ARRAY(tempData.data);	//ÊÍ·ÅÊý¾Ý
+		XMem::XDELETE_ARRAY(tempData.data);	//ÊÍ·ÅÊý¾Ý
 	}
 }
-_XBool _XModBusProtocol::openDevice(_XModbusState &modbusState)
+XBool XModBusProtocol::openDevice(XModbusState &modbusState)
 {
 	if(m_isInited) return XFalse;
 	m_modbusState = modbusState;
 
 	//if(!m_serialPort.open(m_modbusState.nPort,m_modbusState.nBaud,m_modbusState.nParity)) return XFalse;
-	if(!m_serialPort.open(m_modbusState.nPort,m_modbusState.nBaud,m_modbusState.nParity,SP_MODE_AUTO)) return XFalse;
+	if(!m_serialPort.open(m_modbusState.serialPortInfo)) return XFalse;
 	m_serialPort.setCallBackFun(recvCallback,this);
-	m_serialPort.setWaitingDataTime(modbusState.maxWaitingDataTime);
 	//ÏÂÃæ¿ªÆô½ÓÊÜÏß³ÌºÍ·¢ËÍÏß³Ì
 //	m_recvThreadState = STATE_BEFORE_START;
 	m_sendThreadState = STATE_BEFORE_START;
@@ -121,12 +122,12 @@ _XBool _XModBusProtocol::openDevice(_XModbusState &modbusState)
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XModBusProtocol::pushAData(_XModBusData &data)
+XBool XModBusProtocol::pushAData(XModBusData &data)
 {
 	if(data.data == NULL || data.dataLen <= 0) return XFalse;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.dataLen = data.dataLen;
-	tempData.data = createArrayMem<unsigned char>(data.dataLen);
+	tempData.data = XMem::createArrayMem<unsigned char>(data.dataLen);
 	if(tempData.data == NULL) return XFalse;
 	memcpy(tempData.data,data.data,data.dataLen);
 	m_sendMutex.Lock();
@@ -134,7 +135,7 @@ _XBool _XModBusProtocol::pushAData(_XModBusData &data)
 	m_sendMutex.Unlock();
 	return XTrue;
 }
-void _XModBusProtocol::answerProc(_XModBusData &data)
+void XModBusProtocol::answerProc(XModBusData &data)
 {
 	switch(data.data[1])
 	{
@@ -144,7 +145,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.coilsBuffSize == 0 || m_modbusState.coilsBuffSize < start + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x81,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -155,8 +156,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				int len = 0;
 				if(sum % 8 == 0) len = sum / 8;
 				else len = sum / 8 + 1;
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(len + 5);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(len + 5);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x81,0x01,0x00,0x00};
@@ -174,11 +175,11 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				int temp = 0;
 				for(int i = 0;i < sum;++ i)
 				{
-					temp = getBit(m_modbusState.coilsBuff[(i + start) >> 3],(i + start) % 8);
-					setBit(tempData.data[3 + (i >> 3)],i % 8,temp);
+					temp = XByte::getBit(m_modbusState.coilsBuff[(i + start) >> 3],(i + start) % 8);
+					XByte::setBit(tempData.data[3 + (i >> 3)],i % 8,temp);
 				}
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -190,7 +191,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.inputBuffSize == 0 || m_modbusState.inputBuffSize < start + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x82,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -201,8 +202,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				int len = 0;
 				if(sum % 8 == 0) len = sum / 8;
 				else len = sum / 8 + 1;
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(len + 5);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(len + 5);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x82,0x01,0x00,0x00};
@@ -220,11 +221,11 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				int temp = 0;
 				for(int i = 0;i < sum;++ i)
 				{
-					temp = getBit(m_modbusState.inputBuff[(i + start) >> 3],(i + start) % 8);
-					setBit(tempData.data[3 + (i >> 3)],i % 8,temp);
+					temp = XByte::getBit(m_modbusState.inputBuff[(i + start) >> 3],(i + start) % 8);
+					XByte::setBit(tempData.data[3 + (i >> 3)],i % 8,temp);
 				}
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -235,7 +236,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.hRegisterBuffSize == 0 || m_modbusState.hRegisterBuffSize < start + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x83,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -243,8 +244,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(sum * 2 + 5);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(sum * 2 + 5);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x83,0x01,0x00,0x00};
@@ -267,7 +268,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 					tempData.data[3 + (i << 1) + 1] = m_modbusState.hRegisterBuff[start + i] & 0xff;
 				}
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -279,7 +280,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.iRegisterBuffSize == 0 || m_modbusState.iRegisterBuffSize < start + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x84,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -287,8 +288,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(sum * 2 + 5);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(sum * 2 + 5);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x84,0x01,0x00,0x00};
@@ -311,7 +312,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 					tempData.data[3 + (i << 1) + 1] = m_modbusState.iRegisterBuff[start + i] & 0xff;
 				}
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = start;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -323,7 +324,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short value = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.coilsBuffSize == 0 || m_modbusState.coilsBuffSize < pos)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x85,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -331,8 +332,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(8);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(8);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x85,0x01,0x00,0x00};
@@ -342,9 +343,9 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 					pushAData(tempData);
 					return;
 				}
-				if(value == 0x0000) setBit(m_modbusState.coilsBuff[pos >> 3],pos % 8,0);
-				if(value == 0xff00) setBit(m_modbusState.coilsBuff[pos >> 3],pos % 8,1);
-				value = getBit(m_modbusState.coilsBuff[pos >> 3],pos % 8);
+				if(value == 0x0000) XByte::setBit(m_modbusState.coilsBuff[pos >> 3],pos % 8,0);
+				if(value == 0xff00) XByte::setBit(m_modbusState.coilsBuff[pos >> 3],pos % 8,1);
+				value = XByte::getBit(m_modbusState.coilsBuff[pos >> 3],pos % 8);
 				if(value != 0) value = 0xff00;
 				tempData.dataLen = 8;
 				tempData.data[0] = m_modbusState.deviceID;
@@ -355,7 +356,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[4] = value >> 8;
 				tempData.data[5] = value & 0xff;
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
 		}
@@ -366,7 +367,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short value = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.hRegisterBuffSize == 0 || m_modbusState.hRegisterBuffSize < pos)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x86,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -374,8 +375,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(8);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(8);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x86,0x01,0x00,0x00};
@@ -396,7 +397,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[4] = value >> 8;
 				tempData.data[5] = value & 0xff;
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -408,7 +409,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.coilsBuffSize == 0 || m_modbusState.coilsBuffSize < pos + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x8f,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -416,8 +417,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(8);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(8);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x8f,0x01,0x00,0x00};
@@ -431,8 +432,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				int temp = 0;
 				for(int i = 0;i < sum;++ i)
 				{
-					temp = getBit(data.data[7 + (i >> 3)],i % 8);
-					setBit(m_modbusState.coilsBuff[(i + pos) >> 3],(i + pos) % 8,temp);
+					temp = XByte::getBit(data.data[7 + (i >> 3)],i % 8);
+					XByte::setBit(m_modbusState.coilsBuff[(i + pos) >> 3],(i + pos) % 8,temp);
 				}
 
 				tempData.dataLen = 8;
@@ -444,7 +445,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[4] = sum >> 8;
 				tempData.data[5] = sum & 0xff;
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -456,7 +457,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 			unsigned short sum = (data.data[4] << 8) + data.data[5];
 			if(m_modbusState.hRegisterBuffSize == 0 || m_modbusState.hRegisterBuffSize < pos + sum)
 			{//Ö±½Ó·µ»Ø´íÎó
-				_XModBusData tempData;
+				XModBusData tempData;
 				unsigned char retData[] = {0x00,0x90,0x01,0x00,0x00};
 				retData[0] = m_modbusState.deviceID;
 				tempData.data = retData;
@@ -464,8 +465,8 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				pushAData(tempData);
 			}else
 			{//·µ»ØÊý¾Ý
-				_XModBusData tempData;
-				tempData.data = createArrayMem<unsigned char>(8);
+				XModBusData tempData;
+				tempData.data = XMem::createArrayMem<unsigned char>(8);
 				if(tempData.data == NULL)
 				{//·µ»ØÊ§°Ü
 					unsigned char retData[] = {0x00,0x90,0x01,0x00,0x00};
@@ -492,7 +493,7 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 				tempData.data[4] = sum >> 8;
 				tempData.data[5] = sum & 0xff;
 				pushAData(tempData);
-				XDELETE_ARRAY(tempData.data);
+				XMem::XDELETE_ARRAY(tempData.data);
 				data.addr = pos;	//add by xiajia
 				if(m_callBackFun != NULL) m_callBackFun(data,m_pClass);
 			}
@@ -500,9 +501,9 @@ void _XModBusProtocol::answerProc(_XModBusData &data)
 		break;
 	}
 }
-_XModBusData _XModBusProtocol::popData()
+XModBusData XModBusProtocol::popData()
 {
-	_XModBusData tempData;
+	XModBusData tempData;
 	if(m_modbusState.workType == TYPE_MASTER)
 	{
 		m_recvMutex.Lock();
@@ -515,7 +516,7 @@ _XModBusData _XModBusProtocol::popData()
 	}
 	return tempData;
 }
-void _XModBusProtocol::release()
+void XModBusProtocol::release()
 {
 	if(!m_isInited) return;
 	//µÈ´ýÏß³ÌÍË³ö
@@ -530,24 +531,24 @@ void _XModBusProtocol::release()
 	//}
 	waitThreadEnd(m_sendThreadState);
 	//Çå³ýËùÓÐµÄÊý¾Ý
-	for(int i = 0;i < m_sendData.size();++ i)
+	for(unsigned int i = 0;i < m_sendData.size();++ i)
 	{
-		XDELETE_ARRAY(m_sendData[i].data);
+		XMem::XDELETE_ARRAY(m_sendData[i].data);
 	}
 	m_sendData.clear();
-	for(int i = 0;i < m_sendData.size();++ i)
+	for(unsigned int i = 0;i < m_sendData.size();++ i)
 	{
-		XDELETE_ARRAY(m_recvData[i].data);
+		XMem::XDELETE_ARRAY(m_recvData[i].data);
 	}
 	m_recvData.clear();
-//	XDELETE_ARRAY(m_tempDataBuff);
+//	XMem::XDELETE_ARRAY(m_tempDataBuff);
 //	m_tempDataLen = 0;
 
 	m_serialPort.close();
 	m_isInited = XFalse;
 }
 //#define MODBUS_MAX_DATA_LEN (1024)
-//void _XModBusProtocol::recvDataProc(unsigned char * data,int len)
+//void XModBusProtocol::recvDataProc(unsigned char * data,int len)
 //{
 //	if(len == 0) return;
 //
@@ -609,7 +610,7 @@ void _XModBusProtocol::release()
 //				}
 //			}
 //
-//			m_tempDataBuff = createArrayMem<unsigned char>(m_tempDataLen);
+//			m_tempDataBuff = XMem::XMem::createArrayMem<unsigned char>(m_tempDataLen);
 //			if(m_tempDataBuff == NULL)
 //			{//¶ªÆúÊý¾Ý
 //				m_tempDataLen = 0;
@@ -635,9 +636,9 @@ void _XModBusProtocol::release()
 //			{//ÊÇ·¢¸øÎÒµÄÊý¾Ý°üÔò½«°üÍÆÈë¶ÓÁÐ
 //				if(m_modbusState.workType == TYPE_MASTER)
 //				{//Ö÷µÄ·½Ê½
-//					if(m_needRecv && (m_nowSendData.data[1] == m_tempDataBuff[1] || m_nowSendData.data[1] == m_tempDataBuff[1] + 0x80))
+//					if(m_needRecv && (m_curSendData.data[1] == m_tempDataBuff[1] || m_curSendData.data[1] == m_tempDataBuff[1] + 0x80))
 //					{//ÕýÈ·µÄÓ¦´ð(ÕâÀïÂß¼­²»ÑÏÃÜ)
-//						_XModBusData tempData;
+//						XModBusData tempData;
 //						tempData.data = m_tempDataBuff;
 //						tempData.dataLen = m_tempDataLen;
 //						tempData.delayTime = m_delayTime;
@@ -646,7 +647,7 @@ void _XModBusProtocol::release()
 //						if(tempData.data[tempData.dataLen - 1] != (crcCheck >> 8)
 //							|| tempData.data[tempData.dataLen - 2] != (crcCheck & 0xff))
 //						{//Ð£ÑéÊ§°Ü¶ªÆúÊý¾Ý
-//							XDELETE_ARRAY(m_tempDataBuff);
+//							XMem::XDELETE_ARRAY(m_tempDataBuff);
 //						}else
 //						{//Ð£Ñé³É¹¦
 //							m_recvMutex.Lock();
@@ -654,16 +655,16 @@ void _XModBusProtocol::release()
 //							m_recvMutex.Unlock();
 //							m_sendMutex.Lock();
 //							m_needRecv = XFalse;
-//							XDELETE_ARRAY(m_nowSendData.data);
+//							XMem::XDELETE_ARRAY(m_curSendData.data);
 //							m_sendMutex.Unlock();
 //						}
 //					}else
 //					{//¶àÓàµÄ»Ø´ðÖ±½Ó¶ªÆúÊý¾Ý
-//						XDELETE_ARRAY(m_tempDataBuff);
+//						XMem::XDELETE_ARRAY(m_tempDataBuff);
 //					}
 //				}else
 //				{//´ÓµÄ·½Ê½(Ö±½Ó´¦Àí½ÓÊÕµ½µÄÊý¾Ý£¬²»ÍÆÈë¶ÓÁÐ)(ÉÐÎ´Íê³É)
-//					_XModBusData tempData;
+//					XModBusData tempData;
 //					tempData.data = m_tempDataBuff;
 //					tempData.dataLen = m_tempDataLen;
 //					tempData.delayTime = m_delayTime;
@@ -674,11 +675,11 @@ void _XModBusProtocol::release()
 //					printf(" - \n");
 //					answerProc(tempData);
 //					//ÊÍ·ÅÄÚ´æ¿Õ¼ä
-//					XDELETE_ARRAY(m_tempDataBuff);
+//					XMem::XDELETE_ARRAY(m_tempDataBuff);
 //				}
 //			}else
 //			{//¶ªÆúÊý¾Ý°ü
-//				XDELETE_ARRAY(m_tempDataBuff);
+//				XMem::XDELETE_ARRAY(m_tempDataBuff);
 //			}
 //			//¼ÌÐø´¦ÀíÓàÏÂµÄÊý¾Ý
 //			len -= need;
@@ -696,9 +697,9 @@ void _XModBusProtocol::release()
 //		}
 //	}
 //}
-//DWORD WINAPI _XModBusProtocol::recvThread(void * pParam)
+//DWORD WINAPI XModBusProtocol::recvThread(void * pParam)
 //{
-//	_XModBusProtocol &pPar = *(_XModBusProtocol *)pParam;
+//	XModBusProtocol &pPar = *(XModBusProtocol *)pParam;
 //	pPar.m_recvThreadState = STATE_START;
 //	unsigned char tempBuff[MODBUS_MAX_DATA_LEN];	//¼ÙÉèÊý¾Ý³¤¶È²»»á³¬¹ý
 //	int ret = 0;
@@ -722,26 +723,26 @@ void _XModBusProtocol::release()
 //	pPar.m_recvThreadState = STATE_END;
 //	return 0;
 //}
-void _XModBusProtocol::sendNowData()
+void XModBusProtocol::sendCurData()
 {
-	if(m_nowSendData.data == NULL) return;
+	if(m_curSendData.data == NULL) return;
 	++ m_sendTime;
-	unsigned short crcCheck = CRC16_Modbus(m_nowSendData.data,m_nowSendData.dataLen - 2);	//×îºóÁ½¸ö×Ö½ÚÎªÐ£ÑéÎ»
-//	m_nowSendData.data[0] = m_modbusState.deviceID;
-	m_nowSendData.data[m_nowSendData.dataLen - 1] = (crcCheck >> 8);
-	m_nowSendData.data[m_nowSendData.dataLen - 2] = (crcCheck & 0xff);
+	unsigned short crcCheck = XMath::CRC16_Modbus(m_curSendData.data,m_curSendData.dataLen - 2);	//×îºóÁ½¸ö×Ö½ÚÎªÐ£ÑéÎ»
+//	m_curSendData.data[0] = m_modbusState.deviceID;
+	m_curSendData.data[m_curSendData.dataLen - 1] = (crcCheck >> 8);
+	m_curSendData.data[m_curSendData.dataLen - 2] = (crcCheck & 0xff);
 #if WITH_LOG
-	if(m_withLog)  showData(m_nowSendData,std::string("·¢ËÍ:T-") + toString(m_sendTime) + " ");
+	if(m_withLog)  showData(m_curSendData,std::string("·¢ËÍ:T-") + XString::toString(m_sendTime) + " ");
 #endif
-	m_serialPort.sendData(m_nowSendData.data,m_nowSendData.dataLen);
+	m_serialPort.sendData(m_curSendData.data,m_curSendData.dataLen);
 	if(m_modbusState.workType == TYPE_MASTER) m_needRecv = XTrue;	//Ö»ÓÐ×öÖ÷Ê±²Å±ê¼ÇÐèÒªµÈ´ý½ÓÊÕ
 	m_delayTime = 0;
 }
-DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
+DWORD WINAPI XModBusProtocol::sendThread(void * pParam)
 {
-	_XModBusProtocol &pPar = *(_XModBusProtocol *)pParam;
+	XModBusProtocol &pPar = *(XModBusProtocol *)pParam;
 	pPar.m_sendThreadState = STATE_START;
-	int upTime = getCurrentTicks();
+	int upTime = XTime::getCurrentTicks();
 	while(pPar.m_sendThreadState != STATE_SET_TO_END)
 	{
 		if(pPar.m_modbusState.workType == TYPE_MASTER)
@@ -749,8 +750,8 @@ DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
 			pPar.m_sendMutex.Lock();
 			if(pPar.m_needRecv)  
 			{
-				pPar.m_delayTime += getCurrentTicks() - upTime;
-				upTime = getCurrentTicks();
+				pPar.m_delayTime += XTime::getCurrentTicks() - upTime;
+				upTime = XTime::getCurrentTicks();
 
 				if(pPar.m_delayTime >= pPar.m_modbusState.outTime)
 				{//Èç¹û³¬Ê±ÔòÖØÐÂ·¢ËÍ,£¨Ä¿Ç°µÄÖØ·¢»úÖÆ»òÕßÅ×Æú»úÖÆ¶¼»áÔì³ÉÂß¼­ÎÊÌâ£¬ÐèÒªÔÚ¿¼ÂÇ£©
@@ -762,20 +763,20 @@ DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
 					//	break;
 						//·½°¸2¡¢¶ªÆúµ±Ç°ÐèÒª·¢ËÍµÄÊý¾Ý£¬ÈÎÈ»¿ÉÒÔ¼ÌÐø¹¤×÷
 						pPar.m_needRecv = XFalse;
-						XDELETE_ARRAY(pPar.m_nowSendData.data);
+						XMem::XDELETE_ARRAY(pPar.m_curSendData.data);
 					}else
 					{//ÖØ·¢
-						pPar.sendNowData();
+						pPar.sendCurData();
 					}
 				}
 				pPar.m_sendMutex.Unlock();
 				continue;
 			}else
 			{
-				pPar.m_delaySendTime += getCurrentTicks() - upTime;
+				pPar.m_delaySendTime += XTime::getCurrentTicks() - upTime;
 				pPar.m_sendMutex.Unlock();
 
-				upTime = getCurrentTicks();
+				upTime = XTime::getCurrentTicks();
 			}
 		}
 		//ÕâÀï·¢ËÍÊý¾Ý
@@ -788,13 +789,13 @@ DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
 			{//½ÓÊÕºÍ·¢ËÍÖ®¼äµÄÊ±¼ä²îÐèÒªÎª5ºÁÃëÒÔÉÏ
 			}else
 			{
-				pPar.m_nowSendData = pPar.m_sendData[0];
+				pPar.m_curSendData = pPar.m_sendData[0];
 				pPar.m_sendData.pop_front();
 				pPar.m_sendTime = 0;
-				pPar.sendNowData();
+				pPar.sendCurData();
 				if(pPar.m_modbusState.workType == TYPE_SLAVE)
 				{//×ö´ÓÊ±·¢ËÍÒ»´Î¾Í¶ªÆúÊý¾Ý
-					XDELETE_ARRAY(pPar.m_nowSendData.data);
+					XMem::XDELETE_ARRAY(pPar.m_curSendData.data);
 				}
 			}
 		}
@@ -804,7 +805,8 @@ DWORD WINAPI _XModBusProtocol::sendThread(void * pParam)
 	pPar.m_sendThreadState = STATE_END;
 	return 0;
 }
-int getModbusCMDDataSum(const _XModBusData &CMD)	//´ÓÃüÁîÖÐ½âÎöÊý¾ÝÊýÁ¿
+namespace XModBus{
+int getModbusCMDDataSum(const XModBusData &CMD)	//´ÓÃüÁîÖÐ½âÎöÊý¾ÝÊýÁ¿
 {
 	if(CMD.dataLen <= 0) return 0;
 	switch(CMD.data[1])
@@ -824,7 +826,7 @@ int getModbusCMDDataSum(const _XModBusData &CMD)	//´ÓÃüÁîÖÐ½âÎöÊý¾ÝÊýÁ¿
 	}
 	return 0;
 }
-bool getModbusCMDData(const _XModBusData &CMD,int index,unsigned int &data)
+bool getModbusCMDData(const XModBusData &CMD,int index,unsigned int &data)
 {//¸ù¾ÝÐ­Òé»ñÈ¡ÃüÁîµÄ²Ù×÷µØÖ·
 	if(CMD.dataLen <= 0) return false;
 	if(index < 0 || index >= getModbusCMDDataSum(CMD)) return false;
@@ -834,7 +836,7 @@ bool getModbusCMDData(const _XModBusData &CMD,int index,unsigned int &data)
 	case CMD_READ_COIL_VOLUME:
 	case CMD_READ_INPUT:
 		len = index >> 3;
-		data = getBit(CMD.data[3 + len],index % 8);
+		data = XByte::getBit(CMD.data[3 + len],index % 8);
 		break;
 	case CMD_READ_HOLD_REGISTER:
 	case CMD_READ_INPUT_REGISTER:
@@ -850,7 +852,8 @@ bool getModbusCMDData(const _XModBusData &CMD,int index,unsigned int &data)
 	}
 	return true;
 }
-void _XModBusProtocol::readCoilState(int startAddr,int sum,int arm)
+}
+void XModBusProtocol::readCoilState(int startAddr,int sum,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0) return;
@@ -861,12 +864,12 @@ void _XModBusProtocol::readCoilState(int startAddr,int sum,int arm)
 	data[3] = startAddr % 256;
 	data[4] = (sum >> 8) % 256;
 	data[5] = sum % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-void _XModBusProtocol::readInputState(int startAddr,int sum,int arm)
+void XModBusProtocol::readInputState(int startAddr,int sum,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0) return;
@@ -877,12 +880,12 @@ void _XModBusProtocol::readInputState(int startAddr,int sum,int arm)
 	data[3] = startAddr % 256;
 	data[4] = (sum >> 8) % 256;
 	data[5] = sum % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-void _XModBusProtocol::writeOneCoilState(int addr,int value,int arm)
+void XModBusProtocol::writeOneCoilState(int addr,int value,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	unsigned char data[8];
@@ -892,18 +895,18 @@ void _XModBusProtocol::writeOneCoilState(int addr,int value,int arm)
 	data[3] = addr % 256;
 	data[4] = (value >> 8) % 256;
 	data[5] = value % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-void _XModBusProtocol::writeCoilsState(int startAddr,int sum,unsigned char *value,int arm)
+void XModBusProtocol::writeCoilsState(int startAddr,int sum,unsigned char *value,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0 || value == NULL) return;
 	int len = sum >> 3;
 	if(sum % 8 != 0) ++ len;
-	unsigned char *data = createArrayMem<unsigned char>(6 + 1 + len + 2);
+	unsigned char *data = XMem::createArrayMem<unsigned char>(6 + 1 + len + 2);
 	data[0] = arm;//m_modbusState.deviceID;
 	data[1] = CMD_SET_REGISTERS;
 	data[2] = (startAddr >> 8) % 256;
@@ -914,15 +917,15 @@ void _XModBusProtocol::writeCoilsState(int startAddr,int sum,unsigned char *valu
 	//ÏÂÃæ¸³Öµ
 	for(int i = 0;i < len;++ i)
 	{
-		data[7 + i] =  value[i];
+		data[7 + i] = value[i];
 	}
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = (6 + 1 + len + 2);
 	pushData(tempData);
-	XDELETE_ARRAY(data);
+	XMem::XDELETE_ARRAY(data);
 }
-void _XModBusProtocol::readHoldRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶à¸ö±£³Ö¼Ä´æÆ÷
+void XModBusProtocol::readHoldRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶à¸ö±£³Ö¼Ä´æÆ÷
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0) return;
@@ -933,12 +936,12 @@ void _XModBusProtocol::readHoldRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶à
 	data[3] = startAddr % 256;
 	data[4] = (sum >> 8) % 256;
 	data[5] = sum % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-void _XModBusProtocol::readInputRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶à¸ö±£³Ö¼Ä´æÆ÷
+void XModBusProtocol::readInputRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶à¸ö±£³Ö¼Ä´æÆ÷
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0) return;
@@ -949,16 +952,16 @@ void _XModBusProtocol::readInputRegisters(int startAddr,int sum,int arm)	//¶ÁÈ¡¶
 	data[3] = startAddr % 256;
 	data[4] = (sum >> 8) % 256;
 	data[5] = sum % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-void _XModBusProtocol::writeRegisters(int startAddr,int sum,const unsigned short *value,int arm)
+void XModBusProtocol::writeRegisters(int startAddr,int sum,const unsigned short *value,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	if(sum <= 0 || value == NULL) return;
-	unsigned char *data = createArrayMem<unsigned char>(6 + 1 + (sum << 1) + 2);
+	unsigned char *data = XMem::createArrayMem<unsigned char>(6 + 1 + (sum << 1) + 2);
 	data[0] = arm;//m_modbusState.deviceID;
 	data[1] = CMD_SET_REGISTERS;
 	data[2] = (startAddr >> 8) % 256;
@@ -971,13 +974,13 @@ void _XModBusProtocol::writeRegisters(int startAddr,int sum,const unsigned short
 		data[7 + (i << 1)] = (value[i] >> 8) % 256;
 		data[8 + (i << 1)] = value[i] % 256;
 	}
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = (6 + 1 + (sum << 1) + 2);
 	pushData(tempData);
-	XDELETE_ARRAY(data);
+	XMem::XDELETE_ARRAY(data);
 }
-void _XModBusProtocol::writeOneRegister(int addr,int value,int arm)
+void XModBusProtocol::writeOneRegister(int addr,int value,int arm)
 {
 	if(m_modbusState.workType == TYPE_SLAVE) return;
 	unsigned char data[8];
@@ -987,27 +990,27 @@ void _XModBusProtocol::writeOneRegister(int addr,int value,int arm)
 	data[3] = addr % 256;
 	data[4] = (value >> 8) % 256;
 	data[5] = value % 256;
-	_XModBusData tempData;
+	XModBusData tempData;
 	tempData.data = data;
 	tempData.dataLen = sizeof(data);
 	pushData(tempData);
 }
-#include "XBasicWindow.h"
-void _XModBusProtocol::update()
+void XModBusProtocol::update()
 {
 	if(!m_withStatistics) return;
-	m_statisticsTimer += XEE::frameTime;
+	m_statisticsTimer += XEG.getLastFrameTime();
 	if(m_statisticsTimer >= 5000)
 	{
-		if(m_comunicateTimesNow > 0.0f)
+		if(m_comunicateTimesCur > 0.0f)
 		{
-			float tmp = m_comunicateTimesNow;
-			m_delayTimeAvg = m_delayTimeNow / tmp;	//Æ½¾ù¼ÆÊý
+			float tmp = m_comunicateTimesCur;
+			m_delayTimeAvg = m_delayTimeCur / tmp;	//Æ½¾ù¼ÆÊý
 		}
 		//ÖØÐÂÍ³¼Æ
-		m_delayTimeNow = 0;
-		m_comunicateTimesNow = 0;
+		m_delayTimeCur = 0;
+		m_comunicateTimesCur = 0;
 		m_statisticsTimer = 0;
 	}
 	m_serialPort.update();
+}
 }

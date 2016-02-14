@@ -6,26 +6,19 @@
 //Date:		2011.4.9
 //目前这里个类里面存在问题
 //--------------------------------
-
 #include "XOSDefine.h"
-#include "XBasicFun.h"
+#include "XCommonDefine.h"
+#include "XMemory.h"
 
 #include "stdio.h"
 #include <memory>
 #include "string.h"
-
-class _XTextureInfo;
-
-using namespace std;
-
-#define MAX_FILE_SUM (3000)			//资源包中最多能包含的资源数量
-//#define MAX_FILE_NAME_LENGTH (256)	//文件名的长度
-#define LOCK_CODE_LENGTH (32)			//密钥的长度，密钥分成四个部分，每个部分32个bytes
-#define ALL_LOCK_CODE_LENGTH (128)	//密钥总长度
+namespace XE{
+class XTextureInfo;
 
 #pragma pack(push)
 #pragma pack(1)
-struct _XResourceFileStruct
+struct XResourceFileStruct
 {
 	char fileName[MAX_FILE_NAME_LENGTH];		//文件名称
 	int fileLength;								//文件长度
@@ -33,18 +26,21 @@ struct _XResourceFileStruct
 };
 #pragma pack(pop)
 
-class _XResourcePack
+class XResourcePack
 {
-	//+++++++++++++++++++++++++++++++++++++++++++
-	//下面需要将其设计为Singleton模式
-protected:
-	_XResourcePack();
-	_XResourcePack(const _XResourcePack&);
-	_XResourcePack &operator= (const _XResourcePack&);
-	virtual ~_XResourcePack(); 
+private:
+	static const int m_maxFileSum = 3000;	//资源包中最多能包含的资源数量
+	static const int m_lockCodeLength = 32;	//密钥的长度，密钥分成四个部分，每个部分32个bytes
+	static const int m_allLockCodeLength = 128;	//密钥总长度
+
+	static const int m_memoryChangeTimes = 36;
+	static const int m_md5CodeSize = 16;
 public:
-	static _XResourcePack& GetInstance();
-	//-------------------------------------------
+	XResourcePack();
+	virtual ~XResourcePack(); 
+protected:
+	XResourcePack(const XResourcePack&);
+	XResourcePack &operator= (const XResourcePack&);
 	//+++++++++++++++++++++++++++++++++++++++++++
 	//2011年这里添加内存混乱技术
 private:
@@ -53,23 +49,23 @@ private:
 	int m_fileDataPoint;
 	//-------------------------------------------
 public:
-	_XResourceFileStruct *m_fileInfo;						//最多能打包MAX_FILE_SUM个文件
+	XResourceFileStruct *m_fileInfo;						//最多能打包m_maxFileSum个文件
 	int m_fileSum;											//资源包中的文件数量
 	int m_normalFileSum;									//普通文件的数量
-	_XBool m_haveReadedFileList;								//是否已经读取索引信息
-	_XBool m_haveReadedNormalFileList;						//是否已经读取了普通文件索引信息
+	XBool m_haveReadedFileList;								//是否已经读取索引信息
+	XBool m_haveReadedNormalFileList;						//是否已经读取了普通文件索引信息
 	long m_headLength;										//资源包中文件头的长度
-	unsigned char tempCode[LOCK_CODE_LENGTH];				//资源包中的加密码
-	unsigned char m_lockKey[ALL_LOCK_CODE_LENGTH];			//掩码
-	unsigned char m_hardLockKey[LOCK_CODE_LENGTH];			//密钥部分中来自硬件的加密密钥
+	unsigned char tempCode[m_lockCodeLength ];				//资源包中的加密码
+	unsigned char m_lockKey[m_allLockCodeLength];			//掩码
+	unsigned char m_hardLockKey[m_lockCodeLength ];			//密钥部分中来自硬件的加密密钥
 
 	char m_outFileName[MAX_FILE_NAME_LENGTH];				//输出文件的名字
 	void setOutFileName(const char *temp = NULL);			//设置输出文件的名字
 private:
-	_XBool m_isGetOptimizeInfo;
-	_XBool getOptimizeInfo();
-	_XBool releaseOptimizeInfo();
-	_XTextureInfo *m_texInfo;
+	XBool m_isGetOptimizeInfo;
+	XBool getOptimizeInfo();
+	XBool releaseOptimizeInfo();
+	XTextureInfo *m_texInfo;
 	int *m_targetOrder;	//贴图与目标贴图之间的对应关系
 	char *m_targetName;	//资源优化之后的目标名称
 	int m_texInfoSum;
@@ -95,7 +91,7 @@ public:
 	unsigned char *getFileData(const char *filename);		//获取指定文件的文件内容
 
 	int writeCheckData();	//向资源文件中写入校验和
-	_XBool checkCheckData();	//校验资源文件的校验和
+	XBool checkCheckData();	//校验资源文件的校验和
 
 	void lockOrUnlockProc(unsigned char *p,int startPoint,int length) const;	//对子数据p进行加密或者解密 startPoint为起始位置 length为数据长度
 	void getlockKey();		//计算掩码
@@ -103,40 +99,29 @@ public:
 	int isOptimized(const char *p) const;	//判断这个文件是否被优化 0:没有参与优化 1:已经参与优化
 	void release();	//释放资源
 };
-
-inline int _XResourcePack::getStringLength(const char *p) const
+inline int XResourcePack::getStringLength(const char *p) const
 {
-	if(strlen(p) >= MAX_FILE_NAME_LENGTH) 
-	{
-		return 0;
-	}else
-	{
-		return (int)(strlen(p));
-	}
+	if(strlen(p) >= MAX_FILE_NAME_LENGTH) return 0;
+	else return (int)(strlen(p));
 //	for(int i=0;i < MAX_FILE_NAME_LENGTH;++ i)
 //	{
 //		if(p[i] == '\0') return i;
 //	}
 //	return 0;
 }
-inline void _XResourcePack::setHardLockKey(const unsigned char *p)
+inline void XResourcePack::setHardLockKey(const unsigned char *p)
 {
 	memcpy(m_hardLockKey,p,32);
 }
-inline _XResourcePack::~_XResourcePack()
+inline XResourcePack::~XResourcePack()
 {
 	release();
 }
-inline _XResourcePack& _XResourcePack::GetInstance()
+inline void XResourcePack::release()
 {
-	static _XResourcePack m_instance;
-	return m_instance;
-}
-inline void _XResourcePack::release()
-{
-	XDELETE_ARRAY(m_fileInfo);
-	XDELETE_ARRAY(m_fileData);
+	XMem::XDELETE_ARRAY(m_fileInfo);
+	XMem::XDELETE_ARRAY(m_fileData);
 	m_haveReadedFileList = XFalse;
 }
-
+}
 #endif

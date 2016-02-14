@@ -1,14 +1,15 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XArcBall.h"
-
-void _XArcBall::mapToSphere(const _XVector2 &point,_XVector3& vec) const	//½«2D×ø±êÓ³Éä³É3D×ø±ê
+namespace XE{
+void XArcBall::mapToSphere(const XVector2 &point,XVector3& vec) const	//½«2D×ø±êÓ³Éä³É3D×ø±ê
 {
 	//Adjust point coords and scale down to range of [-1 ... 1]
-	_XVector2 tmpPoint((point.x * m_sizeWRate) - 1.0f,
+	XVector2 tmpPoint((point.x * m_sizeWRate) - 1.0f,
 		1.0f - (point.y * m_sizeHRate));
 	//Compute the square of the length of the vector to the point from the center
 	float length = tmpPoint.getLengthSqure();
@@ -28,11 +29,11 @@ void _XArcBall::mapToSphere(const _XVector2 &point,_XVector3& vec) const	//½«2D×
 		vec.z = sqrtf(1.0f - length);
 	}
 }
-void _XArcBall::drag(const _XVector2 &point,_XVector4& rotate)
+void XArcBall::drag(const XVector2 &point,XVector4& rotate)
 {
 	mapToSphere(point,m_dragVector);	//Map the point to the sphere
 	//Return the quaternion equivalent to the rotation
-	_XVector3 perp = m_clickVector * m_dragVector;	//Compute the vector perpendicular to the begin and end vectors
+	XVector3 perp = m_clickVector * m_dragVector;	//Compute the vector perpendicular to the begin and end vectors
 	//Compute the length of the perpendicular vector
 	if(perp.getLength() > (1.0e-5))    //if its non-zero
 	//if(perp.getLength() >= 0.0f)    //if its non-zero
@@ -50,4 +51,5 @@ void _XArcBall::drag(const _XVector2 &point,_XVector4& rotate)
 		rotate.w = 0.0f;
 		printf("Error!\n");
 	}
+}
 }

@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XEffectEngine_lib", "..\..\engine\XEffeEngine_lib\XEffectEngine_lib.vcproj", "{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XEE_Example", "XEE_Example3D.vcproj", "{8970D3F2-6B4D-4C7D-B1F6-AA9D03127561}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}.Debug|Win32.Build.0 = Debug|Win32
+		{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}.Release|Win32.ActiveCfg = Release|Win32
+		{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}.Release|Win32.Build.0 = Release|Win32
+		{8970D3F2-6B4D-4C7D-B1F6-AA9D03127561}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8970D3F2-6B4D-4C7D-B1F6-AA9D03127561}.Debug|Win32.Build.0 = Debug|Win32
+		{8970D3F2-6B4D-4C7D-B1F6-AA9D03127561}.Release|Win32.ActiveCfg = Release|Win32
+		{8970D3F2-6B4D-4C7D-B1F6-AA9D03127561}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

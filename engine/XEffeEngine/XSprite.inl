@@ -1,6 +1,6 @@
-//inline 函数
-#if WITH_XSPRITE_EX
-inline void _XSprite::setAngle(float angle)		//[0-360]
+//INLINE 函数
+#if WITHXSPRITE_EX
+INLINE void XSprite::setAngle(float angle)		//[0-360]
 {
 	m_angle = angle;	//反一下方向
 	//m_sinAngle = sinf((360.0f - m_angle) * DEGREE2RADIAN);				//角度的零时变量
@@ -10,48 +10,39 @@ inline void _XSprite::setAngle(float angle)		//[0-360]
 	updateChildAngle();
 	m_needUpdateData = XTrue;
 }
-inline float _XSprite::getAngle() const
+INLINE float XSprite::getAngle() const{return m_angle;}
+INLINE void XSprite::setScale(float x,float y)	//设置精灵的缩放比例
 {
-	return m_angle;
-}
-inline void _XSprite::setSize(float x,float y)	//设置精灵的缩放比例
-{
-	m_size.set(x,y);
-	updateChildSize();
+	m_scale.set(x,y);
+	updateChildScale();
 	m_needUpdateData = XTrue;
 }
-inline _XVector2 _XSprite::getSize() const
-{
-	return m_size;
-}
-inline void _XSprite::setPosition(float x,float y)			//设置精灵的坐标
+INLINE XVector2 XSprite::getScale() const{return m_scale;}
+INLINE void XSprite::setPosition(float x,float y)			//设置精灵的坐标
 {
 	m_position.set(x,y);
 	updateChildPos();
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::setPositionX(float x)
+INLINE void XSprite::setPositionX(float x)
 {
 	m_position.x = x;
 	updateChildPos();
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::setPositionY(float y)
+INLINE void XSprite::setPositionY(float y)
 {
 	m_position.y = y;
 	updateChildPos();
 	m_needUpdateData = XTrue;
 }
-inline _XVector2 _XSprite::getPosition() const
-{
-	return m_position;
-}
-inline void _XSprite::setTurnOverMode(_XTurnOverMode mode)
+INLINE XVector2 XSprite::getPosition() const{return m_position;}
+INLINE void XSprite::setTurnOverMode(XTurnOverMode mode)
 {
 	m_turnOverMode = mode;
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::setClipRect(const _XRect& clipRect)
+INLINE void XSprite::setClipRect(const XRect& clipRect)
 {
 	//if(m_textureData.isEnableInsideClip == 0)
 	//{
@@ -67,11 +58,11 @@ inline void _XSprite::setClipRect(const _XRect& clipRect)
 	m_needClip = XTrue;
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::setClipRect(float left,float top,float right,float bottom)
+INLINE void XSprite::setClipRect(float left,float top,float right,float bottom)
 {
-	setClipRect(_XRect(left,top,right,bottom));
+	setClipRect(XRect(left,top,right,bottom));
 }
-inline void _XSprite::disClip()
+INLINE void XSprite::disClip()
 {
 	if(m_textureData.isEnableInsideClip == 0)
 	{
@@ -87,36 +78,33 @@ inline void _XSprite::disClip()
 	}
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::setChangeCenter(const _XVector2& center)
+INLINE void XSprite::setChangeCenter(const XVector2& center)
 {
 	m_changeCenter = center;
 	m_needUpdateData = XTrue;
 }
-inline _XBool _XSprite::isInRect(float x,float y)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XSprite::isInRect(float x,float y)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-inline _XVector2 _XSprite::getBox(int order)
+INLINE XVector2 XSprite::getBox(int order)
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	updateData();
 	//if(order >= 0 && order < 4) return m_vPoint[order];
 	if(order >= 0 && order < 4) return m_rectPoint[order];
-	else return _XVector2::zero;
+	else return XVector2::zero;
 }
-inline void _XSprite::setAlpha(float temp)
+INLINE void XSprite::setAlpha(float temp)
 {
 	if(temp > 1.0f) temp = 1.0f;
 	if(temp <0.0f) temp = 0.0f;
 	m_color.fA = temp;
 	updateChildAlpha();
 }
-inline float _XSprite::getAlpha() const
-{
-	return m_color.fA;
-}
-inline void _XSprite::setColor(float r,float g,float b,float a)		//小于0不会改变这一元素
+INLINE float XSprite::getAlpha() const{return m_color.fA;}
+INLINE void XSprite::setColor(float r,float g,float b,float a)		//小于0不会改变这一元素
 {
 	if(r >= 0) m_color.fR = r;
 	if(g >= 0) m_color.fG = g;
@@ -124,21 +112,18 @@ inline void _XSprite::setColor(float r,float g,float b,float a)		//小于0不会改变
 	if(a >= 0) m_color.fA = a;
 	updateChildColor();
 }
-inline void _XSprite::setVisible() 
+INLINE void XSprite::setVisible() 
 {
 	m_isVisible = XTrue;
 	updateChildVisible();
 }					//设置物件可见
-inline void _XSprite::disVisible() 
+INLINE void XSprite::disVisible() 
 {
 	m_isVisible = XFalse;
 	updateChildVisible();
 }						//设置物件不可见
-inline _XBool _XSprite::getVisible() const 
-{
-	return m_isVisible;
-}	
-inline void _XSprite::setBlendType(int typeScr,int typeDst)
+INLINE XBool XSprite::getVisible() const {return m_isVisible;}	
+INLINE void XSprite::setBlendType(int typeScr,int typeDst)
 {
 	if(typeScr < 0) typeScr = 0;
 	if(typeDst < 0) typeDst = 0;
@@ -147,7 +132,7 @@ inline void _XSprite::setBlendType(int typeScr,int typeDst)
 	m_blendTypeScr = typeScr;
 	m_blendTypeDst = typeDst;
 }
-inline void _XSprite::setBlendType(int rgbScr,int rgbDst,int aScr,int aDst)
+INLINE void XSprite::setBlendType(int rgbScr,int rgbDst,int aScr,int aDst)
 {
 	if(rgbScr < 0) rgbScr = 0;
 	if(rgbScr >= 9 ) rgbScr = 8;
@@ -163,35 +148,23 @@ inline void _XSprite::setBlendType(int rgbScr,int rgbDst,int aScr,int aDst)
 	m_blendAScr = aScr;
 	m_blendADst = aDst;
 }
-inline void _XSprite::setBlendMode(_XBlendType mode) 
-{
-	m_blendType = mode;
-}
+INLINE void XSprite::setBlendMode(XGL::XBlendType mode) {m_blendType = mode;}
 //shader的接口
-inline void _XSprite::setShaderClass(_XShaderGLSL * shader)
-{
-	m_pShader = shader;
-}
-inline _XTexture * _XSprite::getTexture()
-{
-	return &(m_textureData.texture);
-}
-inline _XTextureData * _XSprite::getTextureData()
-{
-	return &m_textureData;
-}
-inline void _XSprite::setAngleClip(float angle)
+INLINE void XSprite::setShaderClass(XShaderGLSL * shader){m_pShader = shader;}
+INLINE XTexture * XSprite::getTexture(){return &(m_textureData.texture);}
+INLINE XTextureData * XSprite::getTextureData(){return &m_textureData;}
+INLINE void XSprite::setAngleClip(float angle)
 {
 	m_needAngleClip = XTrue;
 	m_clipAngle = angle;	//这个角度需要化简
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::disAngleClip()
+INLINE void XSprite::disAngleClip()
 {
 	m_needAngleClip = XFalse;
 	m_needUpdateData = XTrue;
 }
-inline void _XSprite::drawInside()
+INLINE void XSprite::drawInside()
 {
 	glEnableClientState(GL_VERTEX_ARRAY);	
 	glVertexPointer(2, GL_FLOAT, 0, m_vPointer);	//2表示每个顶点由两个量组成，GL_FLOAT表示每个量都是	
@@ -201,24 +174,23 @@ inline void _XSprite::drawInside()
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
-inline _XSprite::_XSprite(const _XSprite& temp)
+INLINE XSprite::XSprite(const XSprite& temp)
 {
 	if(& temp == this) return;
 }
-
 #else
-inline void _XSprite::setAlpha(float temp)
+INLINE void XSprite::setAlpha(float temp)
 {
 	alpha = temp;
 #if IS_USE_SOLIDIFY
 	m_needSolidify = 1;
 #endif
 }
-inline float _XSprite::getAlpha() const
+INLINE float XSprite::getAlpha() const
 {
 	return alpha;
 }
-inline void _XSprite::setAngle(float temp)
+INLINE void XSprite::setAngle(float temp)
 {
 	angle = temp;
 	sinAngle = sin(angle * DEGREE2RADIAN);
@@ -229,16 +201,16 @@ inline void _XSprite::setAngle(float temp)
 #endif
 //	setPosition(m_setPosition);
 }
-inline int _XSprite::getW() const
+INLINE int XSprite::getW() const
 {
 	return m_textureData.texture.m_w;
 }
-inline int _XSprite::getH() const
+INLINE int XSprite::getH() const
 {
 	return m_textureData.texture.m_h;
 }
 #if IS_USE_SOLIDIFY
-inline void _XSprite::setIsUseSolidify(int temp)
+INLINE void XSprite::setIsUseSolidify(int temp)
 {
 	if(temp == 0)
 	{
@@ -250,15 +222,15 @@ inline void _XSprite::setIsUseSolidify(int temp)
 	}
 };
 #endif
-inline _XTexture * _XSprite::getTexture()
+INLINE XTexture * XSprite::getTexture()
 {
 	return &(m_textureData.texture);
 }
-inline _XTextureData * _XSprite::getTextureData()
+INLINE XTextureData * XSprite::getTextureData()
 {
 	return &m_textureData;
 }
-inline void _XSprite::setColor(const _XFColor& color)
+INLINE void XSprite::setColor(const XFColor& color)
 {
 	colorRed = color.getR();
 	colorGreen = color.getG();
@@ -268,7 +240,7 @@ inline void _XSprite::setColor(const _XFColor& color)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setColor(float r,float g,float b,float a)
+INLINE void XSprite::setColor(float r,float g,float b,float a)
 {
 	if(r >= 0) colorRed = r;
 	if(g >= 0) colorGreen = g;
@@ -278,15 +250,15 @@ inline void _XSprite::setColor(float r,float g,float b,float a)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setPosition(const _XVector2& position)
+INLINE void XSprite::setPosition(const XVector2& position)
 {
 	setPosition(position.x,position.y);
 }
-inline void _XSprite::resetLeftRightUpDown()
+INLINE void XSprite::resetLeftRightUpDown()
 {
 	m_turnOverMode = TURN_OVER_MODE_NULL;
 }
-inline void _XSprite::setPosition(float a,float b)
+INLINE void XSprite::setPosition(float a,float b)
 {
 	m_setPosition.set(a,b);
 	m_needUpdateInsideData = 1;
@@ -295,7 +267,7 @@ inline void _XSprite::setPosition(float a,float b)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setPositionX(float x)
+INLINE void XSprite::setPositionX(float x)
 {
 	m_setPosition.x = x;
 	m_needUpdateInsideData = 1;
@@ -304,7 +276,7 @@ inline void _XSprite::setPositionX(float x)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setPositionY(float y)
+INLINE void XSprite::setPositionY(float y)
 {
 	m_setPosition.y = y;
 	m_needUpdateInsideData = 1;
@@ -313,11 +285,11 @@ inline void _XSprite::setPositionY(float y)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setSize(const _XVector2& size)
+INLINE void XSprite::setScale(const XVector2& size)
 {
-	setSize(size.x,size.y);
+	setScale(size.x,size.y);
 }
-inline void _XSprite::setSize(float a,float b)
+INLINE void XSprite::setScale(float a,float b)
 {
 	xsize = a;
 	ysize = b;
@@ -327,7 +299,7 @@ inline void _XSprite::setSize(float a,float b)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setSize(float s)
+INLINE void XSprite::setSize(float s)
 {
 	xsize = s;
 	ysize = s;
@@ -337,7 +309,7 @@ inline void _XSprite::setSize(float s)
 	m_needSolidify = 1;
 #endif
 }
-inline void _XSprite::setOverturn(char temp)
+INLINE void XSprite::setOverturn(char temp)
 {
 	if(temp == 0)
 	{
@@ -347,21 +319,21 @@ inline void _XSprite::setOverturn(char temp)
 		setLeft2Right();
 	}
 }
-inline void _XSprite::disClip()
+INLINE void XSprite::disClip()
 {
 	setClipRect(0.0f,0.0f,m_textureData.textureSize.x,m_textureData.textureSize.y);
 	m_isEnableOutsideChip = 0;
 }
-inline void _XSprite::setClipRect(const _XRect &temp)
+INLINE void XSprite::setClipRect(const XRect &temp)
 {//设置在精灵内部进行裁减
 	setClipRect(temp.left,temp.top,temp.right,temp.bottom);
 }
-inline int _XSprite::isInRect(float x,float y)
+INLINE int XSprite::isInRect(float x,float y)
 {
 	if(m_isInited == 0) return 0;
 	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-inline void _XSprite::drawInside()
+INLINE void XSprite::drawInside()
 {
 	////glBegin(GL_QUADS);
 	//glBegin(GL_POLYGON);

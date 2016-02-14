@@ -6,8 +6,9 @@
 //Date:		2013.10.1
 //--------------------------------
 #include "X3DWorld.h"
+namespace XE{
 //这是一个基础模型的类，就是简单的顶点和引用的类，完善之后加入V N C T
-class _XBasicModel
+class XBasicModel
 {
 private:
 	bool m_isInited;	//是否已经初始化
@@ -17,11 +18,11 @@ private:
 
 	int m_iSum;	//引用数量
 	unsigned int *m_i;	//引用数据
-	_XVector3 m_position;	//位置
-	_XVector3 m_size;		//尺寸
-	_XVector3 m_angle;		//角度
+	XVector3 m_position;	//位置
+	XVector3 m_scale;		//尺寸
+	XVector3 m_angle;		//角度
 
-	_XVBO m_vbo;
+	XVBO m_vbo;
 public:
 	//iSum为索引数量，索引数量为绘图元素数量 * 每个元素需要的顶点数
 	bool init(int vSum,float *v,float *c,int iSum,int *i)
@@ -31,11 +32,11 @@ public:
 		m_vSum = vSum;
 		m_iSum = iSum;
 
-		m_v = createArrayMem<float>(m_vSum * 3);
+		m_v = XMem::createArrayMem<float>(m_vSum * 3);
 		memcpy(m_v,v,m_vSum * 3 * sizeof(float));	//每个顶点有三个数据
-		m_c = createArrayMem<float>(m_vSum * 4);
+		m_c = XMem::createArrayMem<float>(m_vSum * 4);
 		memcpy(m_c,c,m_vSum * 4 * sizeof(float));	//每个顶点有三个数据
-		m_i = createArrayMem<unsigned int>(m_iSum * 3);
+		m_i = XMem::createArrayMem<unsigned int>(m_iSum * 3);
 		memcpy(m_i,i,m_iSum * sizeof(int));
 
 		m_vbo.init(m_vSum,m_v,NULL,NULL,m_c,m_iSum,m_i);
@@ -45,11 +46,11 @@ public:
 	}
 	void draw();
 	void setPosition(float x,float y,float z) {m_position.set(x,y,z);}
-	void setPosition(const _XVector3 &pos) {m_position = pos;}
-	void setSize(float x,float y,float z) {m_size.set(x,y,z);}
-	void setSize(const _XVector3 &size) {m_size = size;}
+	void setPosition(const XVector3 &pos) {m_position = pos;}
+	void setScale(float x,float y,float z) {m_scale.set(x,y,z);}
+	void setScale(const XVector3 &scale) {m_scale = scale;}
 	void setAngle(float x,float y,float z) {m_angle.set(x,y,z);}
-	void setAngle(const _XVector3 &angle) {m_angle = angle;}
+	void setAngle(const XVector3 &angle) {m_angle = angle;}
 
 	void updateV(float *v)	//更新顶点数据
 	{
@@ -72,21 +73,21 @@ public:
 	void release()
 	{
 		if(!m_isInited) return;
-		XDELETE_ARRAY(m_v);
-		XDELETE_ARRAY(m_i);
+		XMem::XDELETE_ARRAY(m_v);
+		XMem::XDELETE_ARRAY(m_i);
 		m_isInited = false;
 	}
-	_XBasicModel()
+	XBasicModel()
 		:m_isInited(false)
 		,m_vSum(0)
 		,m_v(NULL)
 		,m_iSum(0)
 		,m_i(NULL)
 		,m_position(0.0f,0.0f,0.0f)
-		,m_size(1.0f,1.0f,1.0f)
+		,m_scale(1.0f,1.0f,1.0f)
 		,m_angle(0.0f,0.0f,0.0f)
-	{
-	}
-	~_XBasicModel() {release();}
+	{}
+	~XBasicModel() {release();}
 };
+}
 #endif

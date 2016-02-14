@@ -66,11 +66,17 @@ public:
 	virtual void ProcessPacket( const char *data, int size, 
 			const IpEndpointName& remoteEndpoint )
     {
-        osc::ReceivedPacket p( data, size );
-        if( p.IsBundle() )
-            ProcessBundle( ReceivedBundle(p), remoteEndpoint );
-        else
-            ProcessMessage( ReceivedMessage(p), remoteEndpoint );
+		try	//modify by xiajia 20150707
+		{
+			osc::ReceivedPacket p( data, size );
+			if( p.IsBundle() )
+				ProcessBundle( ReceivedBundle(p), remoteEndpoint );
+			else
+				ProcessMessage( ReceivedMessage(p), remoteEndpoint );
+		}catch(...)
+		{//遇到异常则直接丢弃数据，当收到非法数据时，这里直接将数据丢弃
+			return;
+		}
     }
 };
 

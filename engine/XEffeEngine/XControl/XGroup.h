@@ -6,66 +6,75 @@
 //Date:		2013.3.5
 //--------------------------------
 #include "XButton.h"
-
+namespace XE{
 //目前尚未实现，但是建议添加的功能
 //1、锁定：锁定之后组内的成员状态不会被改变
 //2、回退：回退到上一次操作的数值，如果可能可以回退一直到最初的状态
 //3、键盘操作：所有的内容都可以通过键盘操作来完成
 
-enum _XGroupState
-{
-	STATE_NORMAL,		//常规状态
-	STATE_MINISIZE,		//最小化状态
-};
-#define XGROUP_STATE_BTN_SIZE (32.0f)
 //这是一个群组的空间，比较假单的一个控件
-class _XGroup:public _XControlBasic
+class XGroup:public XControlBasic
 {
+public:
+	enum XGroupState
+	{
+		STATE_NORMAL,		//常规状态
+		STATE_MINISIZE,		//最小化状态
+	};
 private:
-	_XBool m_isInited;
-//	_XVector2 m_position;	//控件的位置
-//	_XVector2 m_size;		//大小
-	_XRect m_rect;			//控件的范围
-	_XRect m_drawRect;		//当前空间的范围
+	static const int m_groupStateBtnSize = 32;
+	XBool m_isInited;
+//	XVector2 m_position;	//控件的位置
+//	XVector2 m_scale;		//大小
+	XRect m_rect;			//控件的范围
+	XRect m_drawRect;		//当前空间的范围
+	bool m_withRect;
 
-	_XFontUnicode m_caption;
-	_XVector2 m_textSize;
+	XFontUnicode m_caption;
+	XVector2 m_textSize;
 
-	_XGroupState m_state;
-	_XButton m_stateBotton;
+	XGroupState m_state;
+	XButton m_stateBotton;
+public:
+	enum XGroupEvent
+	{
+		GRP_STATE_CHANGE,
+	};
+	void setWithRect(bool flag){m_withRect = flag;}
+	bool getWithRect()const{return m_withRect;}
+private:
+//	void (*m_funStateChange)(void *,int ID);	//状态发生改变时调用的函数
+//	void *m_pClass;
 
-	void (*m_funStateChange)(void *,int ID);	//状态发生改变时调用的函数
-	void *m_pClass;
-
-	friend void funXGroupStateBtn(void *pClass,int objectID);
+	static void ctrlProc(void *,int,int);
 	void updateData();		//更新内部数据
 public:
-	_XBool init(const _XVector2& position,
-		const _XRect &rect,
-		const char *caption,const _XFontUnicode &font,float captionSize = 1.0f);
-	_XBool initWithoutTex(const _XVector2& position,
-		const _XRect &rect,
-		const char *caption) {return init(position,rect,caption,XEE::systemFont,1.0f);}
-	_XBool initWithoutTex(const _XVector2& position,
-		const _XVector2 &pixelSize,
+	XBool init(const XVector2& position,
+		const XRect &rect,
+		const char *caption,const XFontUnicode &font,float captionSize = 1.0f);
+	XBool initWithoutSkin(const XVector2& position,
+		const XRect &rect,
+		const char *caption) {return init(position,rect,caption,getDefaultFont(),1.0f);}
+	XBool initWithoutSkin(const XVector2& position,
+		const XVector2 &pixelSize,
 		const char *caption) 
 	{
-		return init(position,_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
-			caption,XEE::systemFont,1.0f);
+		return init(position,XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+			caption,getDefaultFont(),1.0f);
 	}
-	void setState(_XGroupState state);
-	_XGroupState getState(){return m_state;}	//获取控件的状态
-	void setCallbackFun(void (* funStateChange)(void *,int),
-		void *pClass = NULL);
-	void resetSize(const _XVector2 &size);
+	void setState(XGroupState state);
+	XGroupState getState(){return m_state;}	//获取控件的状态
+//	void setCallbackFun(void (* funStateChange)(void *,int),
+//		void *pClass = NULL);
+	void resetSize(const XVector2 &size);
 public:
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
+	using XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
 
-	using _XObjectBasic::setSize;		//避免覆盖的问题
-	void setSize(float x,float y);
+	using XObjectBasic::setScale;		//避免覆盖的问题
+	void setScale(float x,float y);
 
-	using _XObjectBasic::setColor;		//避免覆盖的问题
+	using XObjectBasic::setColor;		//避免覆盖的问题
 	void setColor(float r,float g,float b,float a);
 	void setAlpha(float a);
 
@@ -79,16 +88,21 @@ protected:
 	//		!m_isVisible) return ;	//如果没有初始化直接退出
 	//	m_stateBotton.drawUp();
 	}
-	void update(int stepTime)
+	void update(float)
 	{
 		//m_stateBotton.update(stepTime);
 	}
-	_XBool mouseProc(float x,float y,_XMouseState mouseState);		//do nothing
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState);		//do nothing
-	_XBool canGetFocus(float,float){return XFalse;}	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
-	_XBool canLostFocus(float,float){return XTrue;}	//do nothing
+	XBool mouseProc(float x,float y,XMouseState mouseState);		//do nothing
+	XBool keyboardProc(int keyOrder,XKeyState keyState);		//do nothing
+	XBool canGetFocus(float,float){return XFalse;}	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
+	XBool canLostFocus(float,float){return XTrue;}	//do nothing
 public:
-	void setLostFocus() {;}							//do nothing
+	void drawBG()//描绘一个浅色的背景
+	{
+		XRender::drawFillBoxA(XVector2(m_drawRect.left,m_drawRect.top),XVector2(m_drawRect.getWidth(),m_drawRect.getHeight()),
+			XFColor(m_color.fR * 0.5f,m_color.fG * 0.5f,m_color.fB * 0.5f,m_color.fA * 0.5f),true);
+	}
+	void setLostFocus() {}							//do nothing
 	void disable()
 	{
 		m_isEnable = XFalse;
@@ -97,29 +111,32 @@ public:
 	void enable(){m_isEnable = XTrue;}
 	void release();
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	_XBool setACopy(const _XGroup & temp);
+	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool setACopy(const XGroup & temp);
 
 	void setVisible();
 	void disVisible();	//设置控件不可见
 
-	_XGroup()
+	XGroup()
 		:m_isInited(XFalse)
 //		,m_position(0.0f,0.0f)
-//		,m_size(1.0f,1.0f)
+//		,m_scale(1.0f,1.0f)
 		,m_state(STATE_NORMAL)
-		,m_funStateChange(NULL)
-		,m_pClass(NULL)
+//		,m_funStateChange(NULL)
+//		,m_pClass(NULL)
+		,m_withRect(true)
 	{
 		m_ctrlType = CTRL_OBJ_GROUP;
 	}
-	~_XGroup(){release();}
+	~XGroup(){release();}
 	//virtual void justForTest() {;}
 private://下面为了防止错误，重载赋值操作符，复制构造函数
-	_XGroup(const _XGroup &temp);
-	_XGroup& operator = (const _XGroup& temp);
+	XGroup(const XGroup &temp);
+	XGroup& operator = (const XGroup& temp);
 };
+#if WITH_INLINE_FILE
 #include "XGroup.inl"
-
+#endif
+}
 #endif

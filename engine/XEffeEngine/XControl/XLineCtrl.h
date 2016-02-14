@@ -7,50 +7,55 @@
 //--------------------------------
 //这是一个基本原控件线
 #include "XControlBasic.h"
-
-#define XLINE_CTRL_LINE_SUM (10)
-
-enum _XLineCtrlType
+#include "../XXml.h"
+namespace XE{
+class XLineCtrl:public XControlBasic
 {
-	LINE_CTRL_TYPE_X_D,
-	LINE_CTRL_TYPE_X_U,
-	LINE_CTRL_TYPE_Y_R,
-	LINE_CTRL_TYPE_Y_L,
-};
-class _XLineCtrl:public _XControlBasic
-{
+public:
+	enum XLineCtrlType
+	{
+		LINE_CTRL_TYPEX_D,
+		LINE_CTRL_TYPEX_U,
+		LINE_CTRL_TYPE_Y_R,
+		LINE_CTRL_TYPE_Y_L,
+	};
 private:
-	_XBool m_isInited;		//是否初始化
-//	_XVector2 m_position;	//控件的位置
-//	_XVector2 m_size;		//大小
-	_XVector2 m_pixelSize;	//像素大小
-	_XVector2 m_truePixelSize;	//真实的像素尺寸
-	_XFontUnicode m_font;
+	static const int m_lineCtrlLineSum = 10;
+//	XVector2 m_position;	//控件的位置
+//	XVector2 m_scale;		//大小
+	XVector2 m_pixelSize;	//像素大小
+	XVector2 m_truePixelSize;	//真实的像素尺寸
+	XFontUnicode m_font;
 	char m_textStr[64];		//显示的字符串
 
-	_XLineCtrlType m_type;
+	XLineCtrlType m_type;
+	XBool m_isInited;		//是否初始化
 	bool m_withFont;
 	bool m_isDown;		//是否被鼠标拾取
-	void updateData();
-
-	void (*m_funDataChange)(void *,int ID);
-	void *m_pClass;	
-
 	bool m_withRange;	//范围设置是否有效
-	_XVector2 m_range;	//可以移动的范围
 	bool m_withMap;		//是否进行映射
-	_XVector2 m_mapRange;	//映射的范围
-	float m_mapValue;
-
-	_XCtrlMode m_ctrlMode;		//控件的模式
-	
 	bool m_withString;			//是否有字符串
-	string m_showString;		//需要显示的字符串
-	_XFontUnicode m_stringFont;	//字符串的字体
+	XVector2 m_range;	//可以移动的范围
+	XVector2 m_mapRange;	//映射的范围
+	float m_mapValue;
+	std::string m_showString;		//需要显示的字符串
+	XFontUnicode m_stringFont;	//字符串的字体
+
+	void updateData();
+public:
+	enum XLineCtrlEvent
+	{
+		LNCTRL_DATA_CHANGE,
+	};
+//	void (*m_funDataChange)(void *,int ID);
+//	void *m_pClass;	
+
+private:
+	XCtrlMode m_ctrlMode;		//控件的模式
 public:
 	void setString(const char * str);
 
-	void setCtrlMode(_XCtrlMode mode){m_ctrlMode = mode;}
+	void setCtrlMode(XCtrlMode mode){m_ctrlMode = mode;}
 	void setRange(float min,float max);
 	void disRange(){m_withRange = false;}
 	float getValue();
@@ -58,23 +63,23 @@ public:
 	void setMapRange(float min,float max);
 	void disMapRange(){m_withMap = false;}
 public:
-	_XBool init(const _XVector2& position,_XLineCtrlType type = LINE_CTRL_TYPE_X_D,const _XFontUnicode *font = NULL);
+	XBool init(const XVector2& position,XLineCtrlType type = LINE_CTRL_TYPEX_D,const XFontUnicode *font = NULL);
 	void draw();
 	void drawUp(){;}
-	void setCallbackFun(void (* funDataChange)(void *,int),void *pClass = NULL);
+//	void setCallbackFun(void (* funDataChange)(void *,int),void *pClass = NULL);
 
-	_XBool mouseProc(float x,float y,_XMouseState mouseState);
-	_XBool keyboardProc(int,_XKeyState){return XTrue;}		//do nothing
-	_XBool canGetFocus(float x,float y);	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
-	_XBool canLostFocus(float,float){return XTrue;}	//do nothing
+	XBool mouseProc(float x,float y,XMouseState mouseState);
+	XBool keyboardProc(int,XKeyState){return XTrue;}		//do nothing
+	XBool canGetFocus(float x,float y);	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
+	XBool canLostFocus(float,float){return XTrue;}	//do nothing
 
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
+	using XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);
 
-	using _XObjectBasic::setSize;		//避免覆盖的问题
-	void setSize(float x,float y);
+	using XObjectBasic::setScale;		//避免覆盖的问题
+	void setScale(float x,float y);
 
-	using _XObjectBasic::setColor;		//避免覆盖的问题
+	using XObjectBasic::setColor;		//避免覆盖的问题
 	void setColor(float r,float g,float b,float a);
 	void setAlpha(float a);
 
@@ -85,33 +90,54 @@ public:
 	void enable(){m_isEnable = XTrue;}
 	void release();
 
-	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	_XBool setACopy(const _XLineCtrl & temp);
+	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool setACopy(const XLineCtrl & temp);
 
 	//virtual void justForTest() {;}
 
-	_XLineCtrl()
+	XLineCtrl()
 		:m_isInited(XFalse)
 	//	,m_position(0.0f,0.0f)
-	//	,m_size(1.0f,1.0f)
+	//	,m_scale(1.0f,1.0f)
 		,m_withFont(false)
 		,m_pixelSize(10.0f,10.0f)
 		,m_isDown(false)
-		,m_type(LINE_CTRL_TYPE_X_D)
+		,m_type(LINE_CTRL_TYPEX_D)
 		,m_range(0.0f,100.0f)
 		,m_withRange(false)
 		,m_withMap(false)		//是否进行映射
 		,m_mapRange(0.0f,100.0f)	//映射的范围
 		,m_mapValue(0.0f)
-		,m_funDataChange(NULL)
-		,m_pClass(NULL)
+//		,m_funDataChange(NULL)
+//		,m_pClass(NULL)
 		,m_ctrlMode(CTRL_MODE_SIMPLE)
 		,m_withString(false)
 	{
 		m_ctrlType = CTRL_OBJ_LINECTRL;
 	}
-	~_XLineCtrl(){release();}
+	~XLineCtrl(){release();}
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面实现界面控件的自身状态的保存(完成)
+public:
+	virtual XBool saveState(TiXmlNode &e)
+	{
+		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		if(!XXml::addLeafNode(e,m_ctrlName.c_str(),XString::toString(getValue()))) return XFalse; 
+		return XTrue;
+	}
+	virtual XBool loadState(TiXmlNode *e)
+	{
+		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		float tmp;
+		if(XXml::getXmlAsFloat(e,m_ctrlName.c_str(),tmp) == NULL) return XFalse;
+		setValue(tmp);
+		return XTrue;
+	}
+	//---------------------------------------------------------
 };
+#if WITH_INLINE_FILE
 #include "XLineCtrl.inl"
+#endif
+}
 #endif

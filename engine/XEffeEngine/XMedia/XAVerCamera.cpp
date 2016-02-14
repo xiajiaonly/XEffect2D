@@ -1,13 +1,14 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XAVerCamera.h"
-
+namespace XE{
 BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO/*VideoInfo*/, BYTE *pbData,LONG lLength, __int64/*tRefTime*/,LONG lUserData)
 {
-	_XAVerCamera &pPar = *(_XAVerCamera *)lUserData;
+	XAVerCamera &pPar = *(XAVerCamera *)lUserData;
 	if(pPar.m_isInited && pPar.m_isWork)
 	{
 		pPar.m_isNewFrame = XTrue;
@@ -15,7 +16,7 @@ BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO/*VideoInfo*/, BYTE *pbData,LONG lLength
 	}
 	return TRUE;
 }
-_XBool _XAVerCamera::setPixels(const _XCameraData &data)
+XBool XAVerCamera::setPixels(const XCameraInfo &data)
 {
 	DWORD sum = VIDEORESOLUTION_640X480;
 	if(data.w == 640 && data.h == 480) sum = VIDEORESOLUTION_640X480;else
@@ -60,7 +61,7 @@ _XBool _XAVerCamera::setPixels(const _XCameraData &data)
 	if(AVerSetVideoResolution(m_hHDCaptureDevice,sum) != CAP_EC_SUCCESS) return XFalse;
 	return XTrue;
 }
-_XBool _XAVerCamera::init(_XCameraData &data)
+XBool XAVerCamera::init(XCameraInfo &data)
 {
 	if(m_isInited) return XTrue;
 	DWORD sum;
@@ -107,25 +108,25 @@ _XBool _XAVerCamera::init(_XCameraData &data)
 	info.lCallbackUserData = (long)this;
 	if(AVerCaptureVideoSequenceStart(m_hHDCaptureDevice,info) != CAP_EC_SUCCESS) return XFalse;
 
-	m_frameDataBuff = createArrayMem<unsigned char>(m_buffSize);
+	m_frameDataBuff = XMem::createArrayMem<unsigned char>(m_buffSize);
 	if(m_frameDataBuff == NULL) return XFalse;
-	m_frameDataBuff1 = createArrayMem<unsigned char>(m_buffSize);
+	m_frameDataBuff1 = XMem::createArrayMem<unsigned char>(m_buffSize);
 	if(m_frameDataBuff1 == NULL)
 	{
-		XDELETE_ARRAY(m_frameDataBuff);
+		XMem::XDELETE_ARRAY(m_frameDataBuff);
 		return XFalse;
 	}
 	if(m_cameraSprite.init(m_cameraWidth,m_cameraHeight) == 0) return XFalse;
 	//ÅÐ¶ÏÌùÍ¼³ß´ç
-	if(isNPOT(m_cameraWidth,m_cameraHeight))
+	if(XMath::isNPOT(m_cameraWidth,m_cameraHeight))
 	{
-		m_cameraTexWidth = getMinWellSize2n(m_cameraWidth);
- 		m_cameraTexHeight = getMinWellSize2n(m_cameraHeight);
-		m_texDataBuff = createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
+		m_cameraTexWidth = XMath::getMinWellSize2n(m_cameraWidth);
+ 		m_cameraTexHeight = XMath::getMinWellSize2n(m_cameraHeight);
+		m_texDataBuff = XMem::createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
 		if(m_texDataBuff == NULL)
 		{
-			XDELETE_ARRAY(m_frameDataBuff);
-			XDELETE_ARRAY(m_frameDataBuff1);
+			XMem::XDELETE_ARRAY(m_frameDataBuff);
+			XMem::XDELETE_ARRAY(m_frameDataBuff1);
 			return XFalse;
 		}
 		memset(m_texDataBuff,0,m_cameraTexHeight * m_cameraTexHeight * 3);
@@ -142,19 +143,19 @@ _XBool _XAVerCamera::init(_XCameraData &data)
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XAVerCamera::release()
+void XAVerCamera::release()
 {
 	if(!m_isInited) return;
 	AVerCaptureVideoSequenceStop(m_hHDCaptureDevice);
 	AVerStopStreaming(m_hHDCaptureDevice);
 	AVerDeleteCaptureObject(m_hHDCaptureDevice);
 
-	XDELETE_ARRAY(m_frameDataBuff1);
-	XDELETE_ARRAY(m_frameDataBuff);
-	XDELETE_ARRAY(m_texDataBuff);
+	XMem::XDELETE_ARRAY(m_frameDataBuff1);
+	XMem::XDELETE_ARRAY(m_frameDataBuff);
+	XMem::XDELETE_ARRAY(m_texDataBuff);
 	m_isInited = XFalse;
 }
-_XBool _XAVerCamera::upDateFrame()
+XBool XAVerCamera::updateFrame()
 {
 	if(!m_isInited) return XFalse;
 	if(m_isNewFrame)
@@ -223,4 +224,5 @@ _XBool _XAVerCamera::upDateFrame()
 		}
 	}
 	return m_isNewFrame;
+}
 }

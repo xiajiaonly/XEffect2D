@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -6,8 +7,8 @@
 #include "XPointCtrl.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-
-_XBool _XPointCtrl::init(const _XVector2& position,const _XFontUnicode *font)
+namespace XE{
+XBool XPointCtrl::init(const XVector2& position,const XFontUnicode *font)
 {
 	if(m_isInited) return XFalse;
 	m_position = position;
@@ -21,12 +22,12 @@ _XBool _XPointCtrl::init(const _XVector2& position,const _XFontUnicode *font)
 		m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 		m_font.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_font);
+		XObjManager.decreaseAObject(&m_font);
 #endif
 	}
-	_XCtrlManger.addACtrl(this);
+	XCtrlManager.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	updateData();
 
@@ -37,7 +38,7 @@ _XBool _XPointCtrl::init(const _XVector2& position,const _XFontUnicode *font)
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XPointCtrl::draw()
+void XPointCtrl::draw()
 {
 	if(!m_isInited ||
 		!m_isVisible) return;	//如果不可见直接退出
@@ -48,33 +49,33 @@ void _XPointCtrl::draw()
 		//描绘网格
 		if(m_withRange)
 		{
-			float w = m_range.getWidth() / XPOINT_CTRL_LINE_SUM;
-			float h = m_range.getHeight() / XPOINT_CTRL_LINE_SUM;
-			for(int i = 1;i < XPOINT_CTRL_LINE_SUM;++ i)
+			float w = m_range.getWidth() / m_pointCtrlLineSum;
+			float h = m_range.getHeight() / m_pointCtrlLineSum;
+			for(int i = 1;i < m_pointCtrlLineSum;++ i)
 			{
-				drawLine(m_range.left + w * i,m_range.top + 12.0f,m_range.left + w * i,m_range.bottom - 12.0f,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,0.5f * m_color.fA,1);
-				drawLine(m_range.left + 12.0f,m_range.top + h * i,m_range.right - 12.0f,m_range.top + h * i,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,0.5f * m_color.fA,1);
+				XRender::drawLine(m_range.left + w * i,m_range.top + 12.0f,m_range.left + w * i,m_range.bottom - 12.0f,1.0f,
+					m_color.fR, m_color.fG, m_color.fB, 0.5f * m_color.fA, XRender::LS_DASHES);
+				XRender::drawLine(m_range.left + 12.0f,m_range.top + h * i,m_range.right - 12.0f,m_range.top + h * i,1.0f,
+					m_color.fR, m_color.fG, m_color.fB, 0.5f * m_color.fA, XRender::LS_DASHES);
 			}
 		}
 	case CTRL_MODE_NORMAL:
 		//描绘边框和标尺
 		if(m_withRange) 
 		{
-			drawRect(m_range);
-			float w = m_range.getWidth() / XPOINT_CTRL_LINE_SUM;
-			float h = m_range.getHeight() / XPOINT_CTRL_LINE_SUM;
-			for(int i = 1;i < XPOINT_CTRL_LINE_SUM;++ i)
+			XRender::drawRect(m_range);
+			float w = m_range.getWidth() / m_pointCtrlLineSum;
+			float h = m_range.getHeight() / m_pointCtrlLineSum;
+			for(int i = 1;i < m_pointCtrlLineSum;++ i)
 			{
-				drawLine(m_range.left + w * i,m_range.top,m_range.left + w * i,m_range.top + 10.0f,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_range.left + w * i,m_range.bottom,m_range.left + w * i,m_range.bottom - 10.0f,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_range.left,m_range.top + h * i,m_range.left + 10.0f,m_range.top + h * i,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_range.right,m_range.top + h * i,m_range.right - 10.0f,m_range.top + h * i,1.0f,
-					m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				XRender::drawLine(m_range.left + w * i,m_range.top,m_range.left + w * i,m_range.top + 10.0f,1.0f,
+					m_color);
+				XRender::drawLine(m_range.left + w * i,m_range.bottom,m_range.left + w * i,m_range.bottom - 10.0f,1.0f,
+					m_color);
+				XRender::drawLine(m_range.left,m_range.top + h * i,m_range.left + 10.0f,m_range.top + h * i,1.0f,
+					m_color);
+				XRender::drawLine(m_range.right,m_range.top + h * i,m_range.right - 10.0f,m_range.top + h * i,1.0f,
+					m_color);
 			}
 		}
 	case CTRL_MODE_SIMPLE:
@@ -83,20 +84,22 @@ void _XPointCtrl::draw()
 	//描绘点原的位置
 	if(m_isDown)
 	{
-		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,2,
-			m_color.fR,0.0f,0.0f,m_color.fA);
-		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,2,
-			m_color.fR,0.0f,0.0f,m_color.fA);
+	//	XRender::drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,2,
+	//		m_color.fR,0.0f,0.0f,m_color.fA);
+	//	XRender::drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,2,
+	//		m_color.fR,0.0f,0.0f,m_color.fA);
+		XRender::drawLineAntiColor(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,2);
+		XRender::drawLineAntiColor(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,2);
 	}else
 	{
-		drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,1,
-			m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-		drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,1,
-			m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		XRender::drawLine(m_position.x - m_truePixelSize.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y,1,
+			m_color);
+		XRender::drawLine(m_position.x,m_position.y - m_truePixelSize.y,m_position.x,m_position.y + m_truePixelSize.y,1,
+			m_color);
 	}
 	if(m_withFont) m_font.draw();	//显示文字提示
 }
-_XBool _XPointCtrl::mouseProc(float x,float y,_XMouseState mouseState)
+XBool XPointCtrl::mouseProc(float x,float y,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -105,16 +108,15 @@ _XBool _XPointCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 	switch(mouseState)
 	{
 	case MOUSE_MOVE:
-		if(m_isDown) 
-		{
-			setPosition(x,y);
-			if(m_funDataChange != NULL) m_funDataChange(m_pClass,m_objectID);
-		}
+		if(!m_isDown) break;
+		setPosition(x,y);
+		if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,PITCTRL_DATA_CHANGE);
+		else XCtrlManager.eventProc(m_objectID,PITCTRL_DATA_CHANGE);
 		break;
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
 		//鼠标按下
-		if(_XVector2(x,y).getLengthSqure(m_position) < 100.0f)
+		if(m_position.getLengthSqure(x,y) < 100.0f)
 		{
 			m_isDown = true;
 			m_isBeChoose = XTrue;
@@ -126,27 +128,63 @@ _XBool _XPointCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 	}
 	return XTrue;
 }
-_XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
+XBool XPointCtrl::keyboardProc(int keyOrder,XKeyState keyState)
+{
+	if(!m_isInited ||	//如果没有初始化直接退出
+		!m_isActive ||		//没有激活的控件不接收控制
+		!m_isVisible ||	//如果不可见直接退出
+		!m_isEnable ||
+		!m_isBeChoose) return XFalse;		//如果无效则直接退出
+	if(m_withAction && m_isInAction) return XFalse;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
+	if(keyState == KEY_STATE_UP && !m_isDown)
+	{
+		switch(keyOrder)
+		{
+		case XKEY_UP:
+			setPosition(m_position.x,m_position.y - 1);
+			if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,PITCTRL_DATA_CHANGE);
+			else XCtrlManager.eventProc(m_objectID,PITCTRL_DATA_CHANGE);
+			break;
+		case XKEY_DOWN:
+			setPosition(m_position.x,m_position.y + 1);
+			if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,PITCTRL_DATA_CHANGE);
+			else XCtrlManager.eventProc(m_objectID,PITCTRL_DATA_CHANGE);
+			break;
+		case XKEY_LEFT:
+			setPosition(m_position.x - 1,m_position.y);
+			if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,PITCTRL_DATA_CHANGE);
+			else XCtrlManager.eventProc(m_objectID,PITCTRL_DATA_CHANGE);
+			break;
+		case XKEY_RIGHT:
+			setPosition(m_position.x + 1,m_position.y);
+			if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,PITCTRL_DATA_CHANGE);
+			else XCtrlManager.eventProc(m_objectID,PITCTRL_DATA_CHANGE);
+			break;
+		}
+	}
+	return XFalse;
+}
+XBool XPointCtrl::setACopy(const XPointCtrl & temp)
 {
 	if(& temp == this) return XTrue;	//防止自身赋值
 	if(!temp.m_isInited) return XFalse;
-	if(!_XControlBasic::setACopy(temp)) return XFalse;
+	if(!XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+		XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.addAObject(this);
+		XObjManager.addAObject(this);
 #endif
 	}
 
 	m_isInited = temp.m_isInited;
 	m_position = temp.m_position;	//控件的位置
-	m_size = temp.m_size;		//大小
+	m_scale = temp.m_scale;		//大小
 	m_pixelSize = temp.m_pixelSize;	//像素大小
 	m_truePixelSize = temp.m_truePixelSize;	//真实的像素尺寸
 	if(!m_font.setACopy(temp.m_font))	 return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_font);
+	XObjManager.decreaseAObject(&m_font);
 #endif
 	memcpy(m_textStr,temp.m_textStr,64);		//显示的字符串
 
@@ -160,29 +198,26 @@ _XBool _XPointCtrl::setACopy(const _XPointCtrl & temp)
 
 	m_ctrlMode = temp.m_ctrlMode;	//控件模式
 
-	m_funDataChange = temp.m_funDataChange;
-	m_pClass = temp.m_pClass;	
-
 	if(temp.m_withFont)
 	{
 		m_font.setACopy(temp.m_font);
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_font);
+		XObjManager.decreaseAObject(&m_font);
 #endif
 	}
 
 	return XTrue;
 }
-void _XPointCtrl::release()
+void XPointCtrl::release()
 {
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif
 }
-void _XPointCtrl::updateData()
+void XPointCtrl::updateData()
 {
-	m_truePixelSize = m_pixelSize * m_size;
+	m_truePixelSize = m_pixelSize * m_scale;
 	if(m_withRange)
 	{//控制在范围内
 		if(m_position.x < m_range.left) m_position.x = m_range.left;
@@ -192,21 +227,45 @@ void _XPointCtrl::updateData()
 	}
 	if(m_withMap)
 	{//这里进行映射
-		m_mapValue.x = maping1D(m_position.x,m_range.left,m_range.right,m_mapRange.left,m_mapRange.right);
-		m_mapValue.y = maping1D(m_position.y,m_range.top,m_range.bottom,m_mapRange.top,m_mapRange.bottom);
+		m_mapValue.x = XMath::maping1D(m_position.x,m_range.left,m_range.right,m_mapRange.left,m_mapRange.right);
+		m_mapValue.y = XMath::maping1D(m_position.y,m_range.top,m_range.bottom,m_mapRange.top,m_mapRange.bottom);
 		if(m_withFont)
 		{
-			sprintf(m_textStr,"(%.0f,%.0f)",m_mapValue.x,m_mapValue.y);
-			m_font.setString(m_textStr);
+			if(m_autoString)
+			{
+				sprintf(m_textStr,"(%.0f,%.0f)",m_mapValue.x,m_mapValue.y);
+				m_font.setString(m_textStr);
+			}
 			m_font.setPosition(m_position);
 		}
 	}else
 	{
 		if(m_withFont)
 		{
-			sprintf(m_textStr,"(%.0f,%.0f)",m_position.x,m_position.y);
-			m_font.setString(m_textStr);
+			if(m_autoString)
+			{
+				sprintf(m_textStr,"(%.0f,%.0f)",m_position.x,m_position.y);
+				m_font.setString(m_textStr);
+			}
 			m_font.setPosition(m_position);
 		}
 	}
+}
+XBool XPointCtrl::setFontString(const char *str)
+{
+	if(!m_withFont) return false;
+	if(str == NULL)
+	{
+		m_autoString = true;
+		return true;
+	}else
+	{
+		m_autoString = false;
+		m_font.setString(str);
+		return true;
+	}
+}
+#if !WITH_INLINE_FILE
+#include "XPointCtrl.inl"
+#endif
 }

@@ -1,61 +1,67 @@
-//inline 函数
-inline void _XFrame::setPosition(const _XVector2& position)
+//INLINE  函数
+INLINE  void XFrame::setPosition(const XVector2& position)
 {
 	x = position.x;
 	y = position.y;
 }
-inline void _XFrame::setPosition(float a,float b)
+INLINE  void XFrame::setPosition(float a,float b)
 {
 	x = a;
 	y = b;
 }
-inline _XVector2 _XFrame::getPosition() const
+INLINE  XVector2 XFrame::getPosition() const
 {
-	return _XVector2(x,y);
+	return XVector2(x,y);
 }
-inline int _XFrame::getNowX() const
+INLINE  int XFrame::getCurX() const
 {
-	return (int)(x + m_keyFramePosition[(int)m_nowFramesNumble].x);
+	int keyFrameIndex = m_keyFrameArray[(int)(m_curFramesNumble)];
+	if(keyFrameIndex < 0 || keyFrameIndex >= m_allKeyFramesSum) return 0;
+	return (int)(x + m_keyFramePosition[keyFrameIndex].x);
 }
-inline int _XFrame::getNowY() const
+INLINE  int XFrame::getCurY() const
 {
-	return (int)(y + m_keyFramePosition[(int)m_nowFramesNumble].y);
+	int keyFrameIndex = m_keyFrameArray[(int)(m_curFramesNumble)];
+	if(keyFrameIndex < 0 || keyFrameIndex >= m_allKeyFramesSum) return 0;
+	return (int)(y + m_keyFramePosition[(int)m_curFramesNumble].y);
 }
-inline int _XFrame::getNowWidth() const
+INLINE  int XFrame::getCurWidth() const
 {
-	return m_texnum[(int)m_nowFramesNumble].m_w;
+	return m_texnum[(int)m_curFramesNumble].m_w;
 }
-inline int _XFrame::getNowHeight() const
+INLINE  int XFrame::getCurHeight() const
 {
-	return m_texnum[(int)m_nowFramesNumble].m_h;
+	int keyFrameIndex = m_keyFrameArray[(int)(m_curFramesNumble)];
+	if(keyFrameIndex < 0 || keyFrameIndex >= m_allKeyFramesSum) return 0;
+	return m_texnum[(int)m_curFramesNumble].m_h;
 }
-inline int _XFrame::getInitHalfWidth() const
+INLINE  int XFrame::getInitHalfWidth() const
 {
 	return (int)(m_centerX);
 }
-inline int _XFrame::getInitHalfHeight() const
+INLINE  int XFrame::getInitHalfHeight() const
 {
 	return (int)(m_centerY);
 }
-inline void _XFrame::setSize(const _XVector2& size)
+INLINE  void XFrame::setSize(const XVector2& size)
 {
 	xsize = size.x;
 	ysize = size.y;
 }
-inline void _XFrame::setSize(float x,float y)
+INLINE  void XFrame::setSize(float a,float b)
 {
-	xsize = x;
-	ysize = y;
+	xsize = a;
+	ysize = b;
 }
-inline _XVector2 _XFrame::getSize()
+INLINE  XVector2 XFrame::getSize()
 {
-	return _XVector2(xsize,ysize);
+	return XVector2(xsize,ysize);
 }
-inline _XBool _XFrame::getIsEnd() const
+INLINE  XBool XFrame::getIsEnd() const
 {
 	return m_isEnd;
 }
-inline void _XFrame::setEnd()
+INLINE  void XFrame::setEnd()
 {
 	if(!m_isEndImmediately)
 	{
@@ -66,26 +72,25 @@ inline void _XFrame::setEnd()
 		m_isEnd = XTrue;
 	}
 }
-inline void _XFrame::reset()	//设置已经播放完成的序列帧动画重新播放
+INLINE  void XFrame::reset()	//设置已经播放完成的序列帧动画重新播放
 {
-	if(m_isEnd)
-	{
-		m_isEnd = XFalse;
-		m_isSetEnd = XFalse;
-		m_nowFramesNumble = (float)m_startFrame;
-	}
+	if(!m_isEnd) return;
+	m_isEnd = XFalse;
+	m_isSetEnd = XFalse;
+	m_curFramesNumble = (float)m_startFrame;
 }
-inline _XTexture * _XFrame::getTexture(int frameFlag)
+INLINE  XTexture * XFrame::getTexture(bool isAllFrames)
 {
-	if(frameFlag == 0)
-	{
-		return &(m_texnum[(int)(m_nowFramesNumble)]);
-	}else
-	{
+	if(isAllFrames)
 		return m_texnum;
+	else
+	{
+		int keyFrameIndex = m_keyFrameArray[(int)(m_curFramesNumble)];
+		if(keyFrameIndex < 0 || keyFrameIndex >= m_allKeyFramesSum) return 0;
+		return &(m_texnum[(int)(m_curFramesNumble)]);
 	}
 }
-inline void _XFrame::setAngle(float temp)
+INLINE  void XFrame::setAngle(float temp)
 {
 	angle = temp;
 	//序列帧才需要这些值
@@ -93,34 +98,34 @@ inline void _XFrame::setAngle(float temp)
 	sinAngle = sin(angleRadian);
 	cosAngle = cos(angleRadian);
 }
-inline float _XFrame::getAngleDegree()	//获得角度
+INLINE  float XFrame::getAngleDegree()	//获得角度
 {
 	return angle;
 }
-inline float _XFrame::getAngleRadian()	//获得弧度
+INLINE  float XFrame::getAngleRadian()	//获得弧度
 {
 	return angleRadian;
 }
-inline void _XFrame::setAlpha(float a)
+INLINE  void XFrame::setAlpha(float a)
 {
 	if(a >= 0) alpha = a;
 }
-inline float _XFrame::getAlpha() const
+INLINE  float XFrame::getAlpha() const
 {
 	return alpha;
 }
-inline void _XFrame::setColor(float r,float g,float b,float a)
+INLINE  void XFrame::setColor(float r,float g,float b,float a)
 {
 	if(r >= 0) colorRed = r;
 	if(g >= 0) colorGreen = g;
 	if(b >= 0) colorBlue = b;
 	if(a >= 0) alpha = a;
 }
-inline void _XFrame::setActionSpeed(float actionSpeed)	//设置序列帧播放的速度
+INLINE  void XFrame::setActionSpeed(float actionSpeed)	//设置序列帧播放的速度
 {
 	m_actionSpeed = actionSpeed;
 }
-inline void _XFrame::setRestart()
+INLINE  void XFrame::setRestart()
 {
-	m_nowFramesNumble = (float)(m_startFrame);
+	m_curFramesNumble = (float)(m_startFrame);
 }

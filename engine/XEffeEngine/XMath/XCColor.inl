@@ -1,19 +1,19 @@
-//inline 函数的定义
-inline void _XCColor::setColor(unsigned char cr,unsigned char cg,unsigned char cb,unsigned char ca)
+//INLINE 函数的定义
+INLINE void XCColor::setColor(unsigned char cr,unsigned char cg,unsigned char cb,unsigned char ca)
 {
 	 r = cr;
 	g = cg;
 	b = cb;
 	a = ca;
 }
-inline void _XCColor::randColor()
+INLINE void XCColor::randColor()
 {
-	r = randomf(127);
-	g = randomf(127);
-	b = randomf(127);
-	a = randomf(127);
+	r = XRand::randomf(127);
+	g = XRand::randomf(127);
+	b = XRand::randomf(127);
+	a = XRand::randomf(127);
 }
-inline void _XCColor::getHsb(float& hue, float& saturation, float& brightness) const 
+INLINE void XCColor::getHsb(float& hue, float& saturation, float& brightness) const 
 {
 	float tempMax = XEE_Max(r,XEE_Max(g,b));
 	float tempMin = XEE_Min(r,XEE_Min(g,b));
@@ -39,7 +39,7 @@ inline void _XCColor::getHsb(float& hue, float& saturation, float& brightness) c
 	saturation = limit() * (tempMax - tempMin) / tempMax;
 	brightness = tempMax;
 }
-inline float _XCColor::getHue() const 
+INLINE float XCColor::getHue() const 
 {
 	float hue,saturation,brightness;
 	getHsb(hue,saturation,brightness);

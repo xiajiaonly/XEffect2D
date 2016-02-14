@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="gb2312" standalone="yes" ?>
+<root>
+    <tabTitileStr>Sender set;Data set;Key&mouse set;Receiver set;System set;</tabTitileStr>
+    <openBtnOpenStr>Open</openBtnOpenStr>
+    <openBtnCloseStr>Close</openBtnCloseStr>
+    <addKMBtnStr>Add</addKMBtnStr>
+    <delKMBtnStr>Del</delKMBtnStr>
+    <clearKMBtnStr>Clr</clearKMBtnStr>
+    <modifyKMBtnStr>Mdf</modifyKMBtnStr>
+    <oscDataTxtStr>Data:</oscDataTxtStr>
+    <oscTypeStr>Type:</oscTypeStr>
+    <oscAddressStr>Address:</oscAddressStr>
+    <addBtnStr>Add</addBtnStr>
+    <delBtnStr>Del</delBtnStr>
+    <clearBtnStr>Clr</clearBtnStr>
+    <modifyBtnStr>Mdf</modifyBtnStr>
+    <textDataStr>Data:</textDataStr>
+    <textTypeStr>Type:</textTypeStr>
+    <textAddressStr>Address:</textAddressStr>
+    <textTimesStr>Times:</textTimesStr>
+    <textSpacingStr>Spacing:</textSpacingStr>
+    <sendBtnOpenStr>Start Send</sendBtnOpenStr>
+    <sendBtnCloseStr>Stop Send</sendBtnCloseStr>
+    <sendModeCmbStr>Send choose addr;Send choose data;Send blank data;Send edit data;Send all datas;</sendModeCmbStr>
+    <sendAsMsgStr>Send as Massage</sendAsMsgStr>
+    <supportACKModeStr>Is ACK mode</supportACKModeStr>
+    <clearRecvBtnStr>Clear recv</clearRecvBtnStr>
+    <openRBtnOpenStr>Stop Recv</openRBtnOpenStr>
+    <openRBtnCloseStr>Start Recv</openRBtnCloseStr>
+    <saveBtnStr>Save</saveBtnStr>
+    <readBtnStr>Read</readBtnStr>
+    <textIPEdtCommentStr>The OSC sender IP,the local IP 127.0.0.1.</textIPEdtCommentStr>
+    <textPortEdtCommentStr>The OSC sender port number,the default is 12345.</textPortEdtCommentStr>
+    <openBtnCommentStr>OSC transmitter turned on or off , make sure the correct IP and port.</openBtnCommentStr>
+    <addBtnCommentStr>Add the OSC data to list on the right.</addBtnCommentStr>
+    <delBtnCommentStr>Delete the selected data on the left.</delBtnCommentStr>
+    <clearBtnCommentStr>Clear all datas of the right list.</clearBtnCommentStr>
+    <modifyBtnCommentStr>Update data to the right of the selected row.</modifyBtnCommentStr>
+    <textDataEdtCommentStr>OSC data,make sure that the data and the type match.</textDataEdtCommentStr>
+    <textDataCmbCommentStr>OSC data type.</textDataCmbCommentStr>
+    <textAddressEdtCommentStr>OSC address.</textAddressEdtCommentStr>
+    <textTimesEdtCommentStr>The times of OSC massages sent cycles.</textTimesEdtCommentStr>
+    <textSpacingEdtCommentStr>The interval between the two sent in milliseconds (ms).</textSpacingEdtCommentStr>
+    <sendModeCmbCommentStr>Select the desired transmission mode ,there are four transmission modes.</sendModeCmbCommentStr>
+    <sendAsMsgCommentStr>Checked, the data to be sent as a message, otherwise it is sent as a bundle.</sendAsMsgCommentStr>
+    <sendBtnCommentStr>Send or stop sending,please make sure the OSC sender has been opened.</sendBtnCommentStr>
+    <textRPortEdtCommentStr>The OSC receiver port number,the default is 12345.</textRPortEdtCommentStr>
+    <openRBtnCommentStr>OSC receiver on or off.</openRBtnCommentStr>
+    <supportACKModeCommentStr>ACK mode,receives data in the address blank will return data that address.</supportACKModeCommentStr>
+    <clearRecvBtnCommentStr>Clear the reception list.</clearRecvBtnCommentStr>
+    <languageCmbCommentStr>Choose language.</languageCmbCommentStr>
+    <codeModeCmbCommentStr>Choose unicode mode.</codeModeCmbCommentStr>
+    <saveBtnCommentStr>Save all datas to "config.xml".</saveBtnCommentStr>
+    <readBtnCommentStr>Read the last saved configuration data from "config.xml".</readBtnCommentStr>
+    <addKMBtnCommentStr>Add the map to the map list.</addKMBtnCommentStr>
+    <delKMBtnCommentStr>Delete selected row in the map list.</delKMBtnCommentStr>
+    <clearKMBtnCommentStr>Clear map list on the left.</clearKMBtnCommentStr>
+    <modifyKMBtnCommentStr>Update data to the left row selected in the list.</modifyKMBtnCommentStr>
+    <keySelectCmbCommentStr>Key or mouse button.</keySelectCmbCommentStr>
+    <keyStateCmbCommentStr>Key or button state.</keyStateCmbCommentStr>
+    <oscDataEdtCommentStr>OSC data.</oscDataEdtCommentStr>
+    <oscDataCmbCommentStr>OSC data type.</oscDataCmbCommentStr>
+    <oscAddressEdtCommentStr>OSC address.</oscAddressEdtCommentStr>
+</root>

@@ -1,12 +1,13 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XVideoStream.h"
-#include "XBasicFun.h"
-
-_XBool _XVideoEncode::open(int w,int h,int rate)
+#include "../XTimer.h"
+namespace XE{
+XBool XVideoEncode::open(int w,int h,int rate)
 {
 	if(m_isOpen) return XFalse;
 	av_register_all();
@@ -54,14 +55,14 @@ _XBool _XVideoEncode::open(int w,int h,int rate)
 
     if(avcodec_open2(m_videoCodec,codec,NULL) < 0) return XFalse;
 
-	m_pFrameRGB = avcodec_alloc_frame();
+	m_pFrameRGB = av_frame_alloc();
 	if(m_pFrameRGB == NULL) return XFalse;
 	m_pFrameRGB->linesize[0] = w * 3;
-	m_pFrameYUV = avcodec_alloc_frame();
+	m_pFrameYUV = av_frame_alloc();
 	if(m_pFrameYUV == NULL) return XFalse;
-//	m_pFrameYUV->data[0] = createArrayMem<uint8_t>(w * h);
-//	m_pFrameYUV->data[1] = createArrayMem<uint8_t>(w * h);
-//	m_pFrameYUV->data[2] = createArrayMem<uint8_t>(w * h);
+//	m_pFrameYUV->data[0] = XMem::createArrayMem<uint8_t>(w * h);
+//	m_pFrameYUV->data[1] = XMem::createArrayMem<uint8_t>(w * h);
+//	m_pFrameYUV->data[2] = XMem::createArrayMem<uint8_t>(w * h);
 //	m_pFrameYUV->linesize[0] = w;  
 //	m_pFrameYUV->linesize[1] = w >> 1;  
 //	m_pFrameYUV->linesize[2] = w >> 1;  
@@ -76,7 +77,7 @@ _XBool _XVideoEncode::open(int w,int h,int rate)
 	m_packet.size = 0;
 
 	m_videoOutbufSize = w * h * 4;
-    m_videoOutbuf = createArrayMem<uint8_t>(m_videoOutbufSize);
+    m_videoOutbuf = XMem::createArrayMem<uint8_t>(m_videoOutbufSize);
 	m_pSwsContext = sws_getContext(w,h,PIX_FMT_RGB24,   
 									w,h,PIX_FMT_YUV420P,  
 									SWS_POINT,NULL,NULL,NULL);//SWS_BICUBIC
@@ -86,7 +87,7 @@ _XBool _XVideoEncode::open(int w,int h,int rate)
 	m_isOpen = XTrue;
 	return XTrue;
 }
-_XBool _XVideoEncode::encodeDataRGB(unsigned char *in)
+XBool XVideoEncode::encodeDataRGB(unsigned char *in)
 {
 	if(!m_isOpen) return XFalse;
 	if(in == NULL) return XFalse;
@@ -126,19 +127,19 @@ _XBool _XVideoEncode::encodeDataRGB(unsigned char *in)
 
 	return XFalse;
 }
-void _XVideoEncode::release()
+void XVideoEncode::release()
 {
 	if(!m_isOpen) return;
-//	XDELETE_ARRAY(m_pFrameYUV->data[0]);
-//	XDELETE_ARRAY(m_pFrameYUV->data[1]);
-//	XDELETE_ARRAY(m_pFrameYUV->data[2]);
+//	XMem::XDELETE_ARRAY(m_pFrameYUV->data[0]);
+//	XMem::XDELETE_ARRAY(m_pFrameYUV->data[1]);
+//	XMem::XDELETE_ARRAY(m_pFrameYUV->data[2]);
 	av_freep(&m_pFrameYUV->data[0]);
-	avcodec_free_frame(&m_pFrameRGB);
-	avcodec_free_frame(&m_pFrameYUV);
+	av_frame_free(&m_pFrameRGB);
+	av_frame_free(&m_pFrameYUV);
 	av_free(m_videoCodec);
 	m_isOpen = XFalse;
 }
-_XBool _XVideoDecode::open(int w,int h)
+XBool XVideoDecode::open(int w,int h)
 {
 	if(m_isOpen) return XFalse;
 	//根据视频流信息寻找释放的解码器
@@ -163,8 +164,8 @@ _XBool _XVideoDecode::open(int w,int h)
 	if(pCodec->capabilities & CODEC_CAP_TRUNCATED) m_videoCodec->flags|= CODEC_FLAG_TRUNCATED;
 	if(avcodec_open2(m_videoCodec,pCodec,NULL) < 0) return XFalse;
 	//分配零时数据
-	if((m_pFrame = avcodec_alloc_frame()) == NULL) return XFalse;
-	m_pixelData = createArrayMem<unsigned char>(m_videoCodec->width * m_videoCodec->height * 3);	//存储像素数据
+	if((m_pFrame = av_frame_alloc()) == NULL) return XFalse;
+	m_pixelData = XMem::createArrayMem<unsigned char>(m_videoCodec->width * m_videoCodec->height * 3);	//存储像素数据
 	if(m_pixelData == NULL) return XFalse;
 	avpicture_fill(&m_frameData,m_pixelData,PIX_FMT_RGB24,m_videoCodec->width,m_videoCodec->height);
 
@@ -176,19 +177,31 @@ _XBool _XVideoDecode::open(int w,int h)
 	m_isOpen = XTrue;
 	return XTrue;
 }
-_XBool _XVideoDecode::decodeData(void * data,int len)
+XBool XVideoDecode::decodeData(void * data,int len)
 {
 	if(!m_isOpen) return XFalse;
-	if(data == NULL) return XFalse;
+	if(data == NULL || len <= 0) return XFalse;
+//	if(len % 32 != 0 || ((char *)data)[len - 1] != 0)
+//	{
+//		//LogStr("size Error!\n");
+//	}
 	m_packet.data = (uint8_t *)data;
 	m_packet.size = len;
-	_XBool flag = XFalse;
+	XBool flag = XFalse;
 	int isFinished = 0;
 	int ret;
+	int time = XTime::getCurrentTicks();
 	while(true)
-	{
+	{//avcodec_decode_video2这个函数有两个警告，不知道是否会造成问题
 		ret = avcodec_decode_video2(m_videoCodec,m_pFrame,&isFinished,&m_packet);
 		if(ret < 0) return XFalse;	//解码失败
+		if(ret > 0) time = XTime::getCurrentTicks();
+		else
+		if(XTime::getCurrentTicks() - time > 1000)
+		{
+			LogStr("视频流解码造成死锁!");
+			return XFalse;	//2014年10月3日为了防止死循环在这里加入时间判断
+		}
 		if(isFinished != 0)
 		{//解码完成
 			//img_convert(&m_frameData,PIX_FMT_RGB24,(AVPicture *)m_pFrame,m_videoCodec->pix_fmt,
@@ -202,12 +215,13 @@ _XBool _XVideoDecode::decodeData(void * data,int len)
 	}
 	return flag;
 }
-void _XVideoDecode::release()
+void XVideoDecode::release()
 {
 	if(!m_isOpen) return;
-	avcodec_free_frame(&m_pFrame);
-	XDELETE_ARRAY(m_pixelData);
+	av_frame_free(&m_pFrame);
+	XMem::XDELETE_ARRAY(m_pixelData);
 	av_free(m_videoCodec);
 	sws_freeContext(m_pSwsContext);
 	m_isOpen = XFalse;
+}
 }

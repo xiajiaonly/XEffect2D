@@ -19,7 +19,7 @@ extern "C"
 {
 	DECLDIR bool startHook();	//初始化钩子
 	DECLDIR void stopHook();	//结束钩子
-	DECLDIR bool popAInputEvent(_XInputEvent & e);	//从列表中弹出一个输入时间
+	DECLDIR bool popAInputEvent(XE::XInputEvent & e);	//从列表中弹出一个输入时间
 	DECLDIR std::string getCurWindowTitle();
 }
 

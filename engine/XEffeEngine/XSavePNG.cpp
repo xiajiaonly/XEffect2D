@@ -1,41 +1,33 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	未知(这部分代码从网上获取)
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <SDL.h>
 #include <SDL_byteorder.h>
 #include <png.h>
 #include "XSavePNG.h"
-
+namespace XE{
 static void pngWriteData(png_structp pStruct,png_bytep pData, png_size_t length)
 {
-	SDL_RWops *rp = (SDL_RWops*) png_get_io_ptr(pStruct);
-	SDL_RWwrite(rp,pData,1,length);
+	SDL_RWwrite((SDL_RWops*) png_get_io_ptr(pStruct),pData,1,length);
 }
 int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression)
 {
-	png_structp png_ptr;
-	png_infop info_ptr;
+	if(src == NULL || surf == NULL) return -1;//传入参数错误
+	png_structp png_ptr = NULL;
+	png_infop info_ptr = NULL;
 	SDL_PixelFormat *fmt = NULL;
 	SDL_Surface *tempsurf = NULL;
-	int ret,funky_format,used_alpha;
-	int i;
+	int ret = -1;
+	int funky_format = 0;
+	int used_alpha,i;
 	unsigned int temp_alpha;
-	png_colorp palette;
+	png_colorp palette = NULL;
 	Uint8 *palette_alpha = NULL;
 	png_byte **row_pointers = NULL;
-	png_ptr = NULL;
-	info_ptr = NULL;
-	palette = NULL;
-	ret = -1;
-	funky_format = 0;
-	
-	if(src == NULL || surf == NULL) 
-	{//传入参数错误
-		return ret;
-	}
 
 	row_pointers = (png_byte **)malloc(surf->h * sizeof(png_byte*));
 	if(row_pointers == NULL) 
@@ -64,7 +56,7 @@ int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression)
 	/* setup custom writer functions */
 	png_set_write_fn(png_ptr,(png_voidp)src,pngWriteData,NULL);
 
-	if (_setjmp(png_jmpbuf(png_ptr)))
+	if(_setjmp(png_jmpbuf(png_ptr)))
 	{
 		SDL_SetError("Unknown error writing PNG");
 		goto savedone;
@@ -141,15 +133,9 @@ int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression)
 		{
 			row_pointers[i] = ((png_byte*)surf->pixels) + i * surf->pitch;
 		}
-		if(SDL_MUSTLOCK(surf))
-		{
-			SDL_LockSurface(surf);
-		}
+		if(SDL_MUSTLOCK(surf)) SDL_LockSurface(surf);
 		png_write_image(png_ptr, row_pointers);
-		if(SDL_MUSTLOCK(surf))
-		{
-			SDL_UnlockSurface(surf);
-		}
+		if(SDL_MUSTLOCK(surf)) SDL_UnlockSurface(surf);
 	}else
 	{ /* Truecolor */
 		if(fmt->BytesPerPixel == 3)
@@ -244,23 +230,14 @@ int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression)
 				tempsurf = NULL;
 				goto savedone;
 			}
-			if(used_alpha)
-			{
-				SDL_SetAlpha(surf,SDL_SRCALPHA,(Uint8)temp_alpha); /* Restore alpha settings*/
-			}
+			if(used_alpha) SDL_SetAlpha(surf,SDL_SRCALPHA,(Uint8)temp_alpha); /* Restore alpha settings*/
 			for(i = 0;i < tempsurf->h;++ i)
 			{
 				row_pointers[i] = ((png_byte*)tempsurf->pixels) + i * tempsurf->pitch;
 			}
-			if(SDL_MUSTLOCK(tempsurf))
-			{
-				SDL_LockSurface(tempsurf);
-			}
+			if(SDL_MUSTLOCK(tempsurf)) SDL_LockSurface(tempsurf);
 			png_write_image(png_ptr, row_pointers);
-			if(SDL_MUSTLOCK(tempsurf))
-			{
-				SDL_UnlockSurface(tempsurf);
-			}
+			if(SDL_MUSTLOCK(tempsurf)) SDL_UnlockSurface(tempsurf);
 			SDL_FreeSurface(tempsurf);
 			tempsurf = NULL;
 		}else
@@ -269,15 +246,9 @@ int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression)
 			{
 				row_pointers[i] = ((png_byte*)surf->pixels) + i * surf->pitch;
 			}
-			if(SDL_MUSTLOCK(surf))
-			{
-				SDL_LockSurface(surf);
-			}
+			if(SDL_MUSTLOCK(surf)) SDL_LockSurface(surf);
 			png_write_image(png_ptr, row_pointers);
-			if(SDL_MUSTLOCK(surf))
-			{
-				SDL_UnlockSurface(surf);
-			}
+			if(SDL_MUSTLOCK(surf)) SDL_UnlockSurface(surf);
 		}
 	}
 
@@ -303,157 +274,155 @@ savedone: /* clean up and return */
 	}
 	return ret;
 }
-int savePNG(const char *fileName, SDL_Surface *surf,int compression)
+namespace XPng
 {
-	SDL_RWops *fp;
-	int ret;
-
-	if((fp = SDL_RWFromFile(fileName,"wb")) == NULL) 
+	int savePNG(const char *fileName, SDL_Surface *surf,int compression)
 	{
-		return (-1);
-	}
+		SDL_RWops *fp = NULL;
+		if((fp = SDL_RWFromFile(fileName,"wb")) == NULL) return (-1);
 
-	ret = IMG_SavePNG_RW(fp,surf,compression);
-	SDL_RWclose(fp);
-	return ret;
-}
-_XBool savePngRGB2RGB(const char *fileName,
-			const unsigned char * data,
-			int w,int h,
-			int compression)
-{
-	if(data == NULL) return XFalse;
-	//将数据保存成图片
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
-#else
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
-#endif
-	//这里可以考虑保存成24位色提升效率
-	unsigned char *pData1 = (unsigned char *)picArm->pixels;
-	memcpy(pData1,data,w * h * 3);
-	savePNG(fileName,picArm,compression);
-	//释放资源
-	SDL_FreeSurface(picArm);
-	picArm = NULL;
-	return XTrue;
-}
-_XBool savePngRGBA2RGBA(const char *fileName,
-			const unsigned char * data,
-			int w,int h,
-			int compression)
-{
-	if(data == NULL) return XFalse;
-	//将数据保存成图片
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-#else
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-#endif
-	//这里可以考虑保存成32位色提升效率
-	unsigned char *pData1 = (unsigned char *)picArm->pixels;
-	memcpy(pData1,data,w * h * 4);
-	savePNG(fileName,picArm,compression);
-	//释放资源
-	SDL_FreeSurface(picArm);
-	picArm = NULL;
-	return XTrue;
-}
-_XBool savePngRGB2RGBA(const char *fileName,
-			const unsigned char * data,
-			int w,int h,
-			int compression)
-{
-	if(data == NULL) return XFalse;
-	//将数据保存成图片
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-#else
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-#endif
-	//这里可以考虑保存成24位色提升效率
-	unsigned char *pData1 = (unsigned char *)picArm->pixels;
-	//int tempData1 = 0;
-	int maxIndex = w * h;
-	for(int i = 0,id = 0,is = 0;i < maxIndex;++ i,id += 4,is += 3)
-	{
-		*(pData1 + id + 0) = *(data + is + 0);
-		*(pData1 + id + 1) = *(data + is + 1);
-		*(pData1 + id + 2) = *(data + is + 2);
-		*(pData1 + id + 3) = 255;
+		int ret = IMG_SavePNG_RW(fp,surf,compression);
+		SDL_RWclose(fp);
+		return ret;
 	}
-	savePNG(fileName,picArm,compression);
-	//释放资源
-	SDL_FreeSurface(picArm);
-	picArm = NULL;
-	return XTrue;
-}
-_XBool savePngRGBA2RGB(const char *fileName,
-			const unsigned char * data,
-			int w,int h,
-			int compression)
-{
-	if(data == NULL) return XFalse;
-	//将数据保存成图片
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
-#else
-	SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
-#endif
-	//这里可以考虑保存成24位色提升效率
-	unsigned char *pData1 = (unsigned char *)picArm->pixels;
-	//int tempData1 = 0;
-	int maxIndex = w * h;
-	for(int i = 0,id = 0,is = 0;i < maxIndex;++ i,id += 3,is += 4)
+	XBool savePngRGB2RGB(const char *fileName,
+				const unsigned char * data,
+				int w,int h,
+				int compression)
 	{
-		*(pData1 + id + 0) = *(data + is + 0);
-		*(pData1 + id + 1) = *(data + is + 1);
-		*(pData1 + id + 2) = *(data + is + 2);
+		if(data == NULL) return XFalse;
+		//将数据保存成图片
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
+	#else
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+	#endif
+		//这里可以考虑保存成24位色提升效率
+		unsigned char *pData1 = (unsigned char *)picArm->pixels;
+		memcpy(pData1,data,w * h * 3);
+		savePNG(fileName,picArm,compression);
+		//释放资源
+		SDL_FreeSurface(picArm);
+		picArm = NULL;
+		return XTrue;
 	}
-	savePNG(fileName,picArm,compression);
-	//释放资源
-	SDL_FreeSurface(picArm);
-	picArm = NULL;
-	return XTrue;
-}
-int savePNG(const std::string &filename,
-			const unsigned char * data,int w,int h,_XColorMode color,
-			int compression)
-{
-	if(data == NULL) return XFalse;
-	SDL_RWops *fp;
-	int ret;
+	XBool savePngRGBA2RGBA(const char *fileName,
+				const unsigned char * data,
+				int w,int h,
+				int compression)
+	{
+		if(data == NULL) return XFalse;
+		//将数据保存成图片
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+		//这里可以考虑保存成32位色提升效率
+		unsigned char *pData1 = (unsigned char *)picArm->pixels;
+		memcpy(pData1,data,w * h * 4);
+		savePNG(fileName,picArm,compression);
+		//释放资源
+		SDL_FreeSurface(picArm);
+		picArm = NULL;
+		return XTrue;
+	}
+	XBool savePngRGB2RGBA(const char *fileName,
+				const unsigned char * data,
+				int w,int h,
+				int compression)
+	{
+		if(data == NULL) return XFalse;
+		//将数据保存成图片
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+		//这里可以考虑保存成24位色提升效率
+		unsigned char *pData1 = (unsigned char *)picArm->pixels;
+		//int tempData1 = 0;
+		int maxIndex = w * h;
+		for(int i = 0,id = 0,is = 0;i < maxIndex;++ i,id += 4,is += 3)
+		{
+			*(pData1 + id + 0) = *(data + is + 0);
+			*(pData1 + id + 1) = *(data + is + 1);
+			*(pData1 + id + 2) = *(data + is + 2);
+			*(pData1 + id + 3) = 255;
+		}
+		savePNG(fileName,picArm,compression);
+		//释放资源
+		SDL_FreeSurface(picArm);
+		picArm = NULL;
+		return XTrue;
+	}
+	XBool savePngRGBA2RGB(const char *fileName,
+				const unsigned char * data,
+				int w,int h,
+				int compression)
+	{
+		if(data == NULL) return XFalse;
+		//将数据保存成图片
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
+	#else
+		SDL_Surface * picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+	#endif
+		//这里可以考虑保存成24位色提升效率
+		unsigned char *pData1 = (unsigned char *)picArm->pixels;
+		//int tempData1 = 0;
+		int maxIndex = w * h;
+		for(int i = 0,id = 0,is = 0;i < maxIndex;++ i,id += 3,is += 4)
+		{
+			*(pData1 + id + 0) = *(data + is + 0);
+			*(pData1 + id + 1) = *(data + is + 1);
+			*(pData1 + id + 2) = *(data + is + 2);
+		}
+		savePNG(fileName,picArm,compression);
+		//释放资源
+		SDL_FreeSurface(picArm);
+		picArm = NULL;
+		return XTrue;
+	}
+	int savePNG(const std::string &filename,
+				const unsigned char * data,int w,int h,XColorMode color,
+				int compression)
+	{
+		if(data == NULL) return XFalse;
+		SDL_RWops *fp;
+		int ret;
 
-	if((fp = SDL_RWFromFile(filename.c_str(),"wb")) == NULL) return -1;
-	SDL_Surface * picArm = NULL;
-	switch(color)
-	{
-	case COLOR_RGB:
-	case COLOR_BGR:
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
-#else
-		picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
-#endif
-		break;
-	case COLOR_RGBA:
-	case COLOR_BGRA:
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
-#else
-		picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
-#endif
-		break;
-	default:	//其他格式不支持
-		return -1;
-		break;
-	}
-	//这里可以考虑保存成24位色提升效率
-	memcpy(picArm->pixels,data,w * h * picArm->format->BytesPerPixel);
+		if((fp = SDL_RWFromFile(filename.c_str(),"wb")) == NULL) return -1;
+		SDL_Surface * picArm = NULL;
+		switch(color)
+		{
+		case COLOR_RGB:
+		case COLOR_BGR:
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
+	#else
+			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,24,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+	#endif
+			break;
+		case COLOR_RGBA:
+		case COLOR_BGRA:
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0xff000000, 0x00ff0000, 0x0000ff00, 0x00000000);
+	#else
+			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+	#endif
+			break;
+		default:	//其他格式不支持
+			return -1;
+		}
+		//这里可以考虑保存成24位色提升效率
+		memcpy(picArm->pixels,data,w * h * picArm->format->BytesPerPixel);
 
-	ret = IMG_SavePNG_RW(fp,picArm,compression);
-	SDL_FreeSurface(picArm);
-	picArm = NULL;
-	SDL_RWclose(fp);
-	return ret;
+		ret = IMG_SavePNG_RW(fp,picArm,compression);
+		SDL_FreeSurface(picArm);
+		picArm = NULL;
+		SDL_RWclose(fp);
+		return ret;
+	}
+}
 }

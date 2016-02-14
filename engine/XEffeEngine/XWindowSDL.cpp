@@ -1,11 +1,12 @@
+#include "XStdHead.h"
 #include "XWindowSDL.h"
-#include "XLogBook.h"
-
-//bool _XWindowSDL::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
-bool _XWindowSDL::createWindow(int width,int height,const char *,int isFullScreen,int withFrame)
+#include "XMouseAndKeyBoardDefine.h"
+namespace XE{
+//bool XWindowSDL::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
+bool XWindowSDL::createWindow(int width,int height,const char *,int isFullScreen,int withFrame)
 {
-	const SDL_VideoInfo* info = NULL;	//显示设备信息
-	int bpp = 0;			//窗口色深
+//	const SDL_VideoInfo* info = NULL;	//显示设备信息
+//	int bpp = 0;			//窗口色深
 	int flags = 0;			//某个标记
 
 	// ----- SDL init --------------- 
@@ -18,15 +19,20 @@ bool _XWindowSDL::createWindow(int width,int height,const char *,int isFullScree
 	}
 	atexit(SDL_Quit);				//退出时退出SDL
 	
-	info = SDL_GetVideoInfo();		//获得窗口设备信息
-	bpp = info->vfmt->BitsPerPixel;	//获得显示色深
+	const SDL_VideoInfo* info = SDL_GetVideoInfo();		//获得窗口设备信息
+	int bpp = info->vfmt->BitsPerPixel;	//获得显示色深
 	
 	// ----- OpenGL attribute setting via SDL --------------- 
-	//SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	//SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);		//设置蓝色位宽
-	//bpp = 24;
+	if (gFrameworkData.pFrameWork != NULL && 
+		gFrameworkData.pFrameWork->m_windowData.withAlphaBG)
+	{
+		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);		//设置蓝色位宽
+		SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);	//设置颜色位宽
+		bpp = 32;
+	}
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);	//使得STENCIL生效，能产生镜面效果。
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);	//设置双缓存
@@ -34,8 +40,8 @@ bool _XWindowSDL::createWindow(int width,int height,const char *,int isFullScree
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,4);
 
 	//SDL_NOFRAME没有边框的 |SDL_RESIZABLE
-	if(isFullScreen != 0) flags = SDL_RESIZABLE | SDL_OPENGL | SDL_FULLSCREEN;			//设置为全屏
-	else flags = SDL_RESIZABLE | SDL_OPENGL | SDL_DOUBLEBUF;
+	if(isFullScreen != 0) flags = SDL_OPENGL | SDL_FULLSCREEN | SDL_DOUBLEBUF;			//设置为全屏
+	else flags = SDL_OPENGL | SDL_DOUBLEBUF;	//SDL_RESIZABLE
 	if(withFrame == 0) flags |= SDL_NOFRAME;
 	//窗口标志符
 	if((m_screen = SDL_SetVideoMode(width, height, bpp, flags)) == NULL) 
@@ -194,8 +200,7 @@ bool _XWindowSDL::createWindow(int width,int height,const char *,int isFullScree
 //	/*XKEY_EURO = */SDLK_EURO,			//Some european keyboards
 //	/*XKEY_UNDO = */SDLK_UNDO,			//Atari keyboard has Undo
 //};
-#include "XMouseAndKeyBoardDefine.h"
-int _XWindowSDL::mapKey(int key)
+int XWindowSDL::mapKey(int key)
 {
 	//方案1:遍历
 	//for(int i = 0;i < XKEY_MAX;++ i)
@@ -352,4 +357,5 @@ int _XWindowSDL::mapKey(int key)
 	default:
 		return XKEY_UNKNOWN;
 	}
+}
 }

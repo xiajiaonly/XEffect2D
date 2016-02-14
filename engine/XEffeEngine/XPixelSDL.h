@@ -6,35 +6,32 @@
 //Date:		2014.3.25
 //--------------------------------
 #include "XPixelCore.h"
-#include "XBasicWindow.h"
-
-class _XPixelSDL:public _XPixelCore
+//
+namespace XE{
+class XPixelSDL:public XPixelCore
 {
 public:
-	_XPixelSDL(){}
-	virtual ~_XPixelSDL() {release();}
+	XPixelSDL(){}
+	virtual ~XPixelSDL() {release();}
 	virtual void release()
 	{
 		if(!isInited) return;
-		XDELETE_ARRAY(m_pPixels);
+		XMem::XDELETE_ARRAY(m_pPixels);
 		isInited = false;
 	}
 	virtual unsigned char * getPixel() {return m_pPixels;}
 	virtual int getWidth() const {return w;}
 	virtual int getHeight() const {return h;}
-	virtual _XColorMode getColorMode() const {return m_colorMode;}
+	virtual XColorMode getColorMode() const {return m_colorMode;}
 	virtual bool getIsInited() const {return isInited;}
 
-	virtual bool load(const std::string &filename,_XResourcePosition resPos = RESOURCE_SYSTEM_DEFINE);
-	//virtual bool loaf(const unsigned char * data)
-	//{
-	//	return true;
-	//}
+	virtual bool load(const std::string &filename,XResourcePosition resPos = RESOURCE_SYSTEM_DEFINE);
+	virtual bool load(const XBuffer &buff);
 	virtual bool fitNPot();
-	virtual bool create(int width,int height,_XColorMode mode = COLOR_RGB)
+	virtual bool create(int width,int height,XColorMode mode = COLOR_RGB)
 	{
-		if(isInited) return false;
-		if(width <= 0 || height <= 0) return false;
+		if(isInited ||
+			width <= 0 || height <= 0) return false;
 		w = width;
 		h = height;
 		m_colorMode = mode;
@@ -43,14 +40,17 @@ public:
 		{
 		case COLOR_RGBA:
 		case COLOR_BGRA:
-			m_pPixels = createArrayMem<unsigned char>(w * h * 4);	//像素数据
+			m_pPixels = XMem::createArrayMem<unsigned char>((w * h) << 2);	//像素数据
 			break;
 		case COLOR_RGB:
 		case COLOR_BGR:
-			m_pPixels = createArrayMem<unsigned char>(w * h * 3);	//像素数据
+			m_pPixels = XMem::createArrayMem<unsigned char>(w * h * 3);	//像素数据
 			break;
 		case COLOR_GRAY:
-			m_pPixels = createArrayMem<unsigned char>(w * h);	//像素数据
+			m_pPixels = XMem::createArrayMem<unsigned char>(w * h);	//像素数据
+			break;
+		default:	//其他格式不支持
+			return false;
 			break;
 		}
 		if(m_pPixels == NULL) return false;
@@ -59,5 +59,5 @@ public:
 		return true;
 	}
 };
-
+}
 #endif

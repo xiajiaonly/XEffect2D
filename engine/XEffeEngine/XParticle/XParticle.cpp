@@ -1,15 +1,15 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file.
 //--------------------------------
-#include "glew.h"
 #include "XParticle.h"
-
-_XParentParticle::_XParentParticle()
+namespace XE{
+XParentParticle::XParentParticle()
 :m_stage(STAGE_SLEEP)
 {}
-int _XAloneParticles::init(const _XTexture *texture)
+int XAloneParticles::init(const XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
 	if(texture == NULL || !glIsTexture(texture->m_texture)) return 0;
@@ -30,10 +30,10 @@ int _XAloneParticles::init(const _XTexture *texture)
 	m_dAngle = 0;			
 	m_dColor.setColor(1.0,1.0,1.0,1.0);		
 
-	m_nowPosition.set(0,0);	
-	m_nowSize.set(1.0,1.0);		
-	m_nowAngle = 0;		
-	m_nowColor.setColor(1.0,1.0,1.0,1.0);	
+	m_curPosition.set(0,0);	
+	m_curSize.set(1.0,1.0);		
+	m_curAngle = 0;		
+	m_curColor.setColor(1.0,1.0,1.0,1.0);	
 
 	if(m_glListOrder <= 0)
 	{
@@ -55,25 +55,25 @@ int _XAloneParticles::init(const _XTexture *texture)
 	glPopMatrix();
 //	glMatrixMode(GL_TEXTURE);
 //	glPopMatrix();
-//#if WITH_XSPRITE_EX
+//#if WITHXSPRITE_EX
 //	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   
 //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 //#endif
-	glDisable(GL_BLEND);	
+	XGL::DisableBlend();
 	glEndList();
 
 	m_isInited = 1;
 	return 1;
 }
-void _XAloneParticles::draw() const
+void XAloneParticles::draw() const
 {
 	if(m_isInited == 0) return;
 	if(m_stage == STAGE_SLEEP) return;
-	glEnable(GL_TEXTURE_2D);		
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D,m_texture->m_texture);
-//#if WITH_XSPRITE_EX
+	XGL::EnableTexture2D();
+	XGL::BindTexture2D(m_texture->m_texture);
+	XGL::EnableBlend();
+	XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//#if WITHXSPRITE_EX
 //	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
 //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
 //#endif
@@ -85,15 +85,16 @@ void _XAloneParticles::draw() const
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_nowPosition.x + halfW,m_nowPosition.y + halfH, 0);
+	glTranslatef(m_curPosition.x + halfW,m_curPosition.y + halfH, 0);
 
-	glScalef(m_nowSize.x,m_nowSize.x, 0);
-	glColor4fv(m_nowColor);
+	glScalef(m_curSize.x,m_curSize.x, 0);
+	glColor4fv(m_curColor);
 
 	glCallList(m_glListOrder);																
 }
-_XAloneParticles::_XAloneParticles()
+XAloneParticles::XAloneParticles()
 :m_isInited(0)
 ,m_glListOrder(0)
 ,m_texture(NULL)
 {}
+}

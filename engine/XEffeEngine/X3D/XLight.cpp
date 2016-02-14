@@ -1,12 +1,12 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
-#include "XEffeEngine.h"
 #include "XLight.h"
-
-_XLight::_XLight()
+namespace XE{
+XLight::XLight()
 	:m_index(1)
 	,m_needCalculate(XFalse)
 {
@@ -15,7 +15,7 @@ _XLight::_XLight()
 	m_diffuse.set(1.0f,1.0f,1.0f,1.0f);
 	m_specular.set(0.2f,0.2f,0.2f,1.0f);
 }
-void _XLight::useLight()	//使用灯光
+void XLight::useLight()	//使用灯光
 {
 	calculate();
 	unsigned int lightName = GL_LIGHT0;
@@ -37,7 +37,7 @@ void _XLight::useLight()	//使用灯光
 	glEnable(lightName);
 	glEnable(GL_LIGHTING);
 }
-void _XLight::disLight()
+void XLight::disLight()
 {
 	unsigned int lightName = GL_LIGHT0;
 	switch(m_index)
@@ -52,7 +52,7 @@ void _XLight::disLight()
 	}
 	glDisable(lightName);
 }
-void _XLight::calculate()
+void XLight::calculate()
 {
 	if(m_needCalculate) m_needCalculate = XFalse;
 	else return;
@@ -63,8 +63,8 @@ void _XLight::calculate()
 	m_direction.y = cos(m_angle.x * DEGREE2RADIAN);
 	m_direction.x = -sin(m_angle.x * DEGREE2RADIAN) * sin(m_angle.y * DEGREE2RADIAN);
 	//这里计算灯的世界矩阵和观察矩阵
-	m_projectMatrix = calPerspectiveMatrix(XEE::viewAngle3D,1.0f,1000.0f,2000.0f);
-	m_viewMatrix = calLookAtMatrix(_XVector3(m_position.x,m_position.y,m_position.z),m_lookAtPosition,m_direction);
+	m_projectMatrix = XMath::calPerspectiveMatrix(XEG.getViewAngle(),1.0f,1000.0f,2000.0f);
+	m_viewMatrix = XMath::calLookAtMatrix(XVector3(m_position.x,m_position.y,m_position.z),m_lookAtPosition,m_direction);
 
 	//glMatrixMode(GL_MODELVIEW);
 	//glPushMatrix();
@@ -77,4 +77,5 @@ void _XLight::calculate()
 	//	m_direction.x,m_direction.y,m_direction.z);
 	//glGetFloatv(GL_MODELVIEW_MATRIX,m_viewMatrix);		//获取摄像头的观察矩阵
 	//glPopMatrix();
+}
 }

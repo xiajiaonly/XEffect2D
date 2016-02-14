@@ -6,34 +6,35 @@
 //Date:		2013.3.15
 //--------------------------------
 #include "XCameraBasic.h"
-class _XCameraFactory
+namespace XE{
+class XCameraFactory
 {
 	//+++++++++++++++++++++++++++++++++++++++++++
 	//下面需要将其设计为Singleton模式
 protected:
-	_XCameraFactory(){}
-	_XCameraFactory(const _XCameraFactory&);
-	_XCameraFactory &operator= (const _XCameraFactory&);
-	virtual ~_XCameraFactory(){} 
+	XCameraFactory(){}
+	XCameraFactory(const XCameraFactory&);
+	XCameraFactory &operator= (const XCameraFactory&);
+	virtual ~XCameraFactory(){} 
 public:
-	static _XCameraFactory& GetInstance()
+	static XCameraFactory& GetInstance()
 	{
-		static _XCameraFactory m_instance;
+		static XCameraFactory m_instance;
 		return m_instance;
 	}
 	//-------------------------------------------
 public:
 	template<typename T>
-	T * create(_XCameraData & data)
+	T * create(XCameraInfo & data)
 	{
 		T *pCamera = NULL;
-		pCamera = createMem<T>();
+		pCamera = XMem::createMem<T>();
 		if(pCamera != NULL) 
 		{
-			if(!pCamera->init(data)) XDELETE(pCamera);//初始化失败
+			if(!pCamera->init(data)) XMem::XDELETE(pCamera);//初始化失败
 		}
 		return pCamera;
 	}
 };
-
+}
 #endif //_JIA_XCAMERAFACTORY

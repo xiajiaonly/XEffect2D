@@ -40,72 +40,110 @@
 //鼠标双击全选
 
 #include "XMouseRightButtonMenu.h"
-
-class _XEditTexture
+#include "../XXml.h"
+namespace XE{
+class XEditSkin
 {
 private:
-	_XBool m_isInited;
+	XBool m_isInited;
 	void releaseTex();
 public:
-	_XTextureData *editNormal;			//输入框普通状态
-	_XTextureData *editDisable;			//输入框无效状态
-	_XTextureData *editSelect;			//输入框片选颜色
-	_XTextureData *editInsert;			//输入框插入标记
-	_XTextureData *editUpon;			//上层的颜色
+	XTextureData *editNormal;			//输入框普通状态
+	XTextureData *editDisable;			//输入框无效状态
+	XTextureData *editSelect;			//输入框片选颜色
+	XTextureData *editInsert;			//输入框插入标记
+	XTextureData *editUpon;			//上层的颜色
 
-	_XRect m_mouseRect;			//鼠标的响应范围
+	XRect m_mouseRect;			//鼠标的响应范围
 
-	_XEditTexture();
-	~_XEditTexture(){release();}
-	_XBool init(const char *normal,const char *disable,const char *select,const char *insert,
-		const char *upon = NULL,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	_XBool initEx(const char *filename,_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XEditSkin();
+	~XEditSkin(){release();}
+	XBool init(const char *normal,const char *disable,const char *select,const char *insert,
+		const char *upon = NULL,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
 	void release();
+private:
+	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
 };
 
-#define MAX_INPUT_STRING_LENGTH 256	//可以最大输入字符串的长度
-#define TEXT_EDGE_WIDTH (5)		//输入字体的边界宽度
-
-class _XDirectoryList;
-class _XEdit:public _XControlBasic
+class XDirectoryList;
+class XPropertyLine;
+class XEdit:public XControlBasic
 {
-	friend _XDirectoryList;
+	friend XDirectoryList;
+	friend XPropertyLine;
 private:
-	_XBool m_isInited;	//是否初始化
-	_XMouseRightButtonMenu *m_mouseRightButtonMenu;	//鼠标右键菜单
+	static const int m_maxInputStringLength = 256;	//可以最大输入字符串的长度
+	static const int m_textEdgeWidth = 5;			//输入字体的边界宽度
+	static char m_copyString[m_maxInputStringLength]; //这一段是在Edit内部公用的内存空间，主要用于类实体之间的复制粘贴时的内存调用问题
+	XBool m_isInited;	//是否初始化
+	XBool m_haveSelect;		//是否在字符串中有选择
+	XBool m_selectMouseDown;	//鼠标是否按下准备片选
+	bool m_isPassword;	//是否为密码输入
+	XMouseRightButtonMenu *m_mouseRightButtonMenu;	//鼠标右键菜单
 
-	_XFontUnicode m_caption;			//显示当前输入的字符串
-//	_XFontUnicode m_selectText;			//显示被选中的字符串(目前这个没有被使用到，可以屏蔽)
+	XFontUnicode m_caption;			//显示当前输入的字符串
+//	XFontUnicode m_selectText;			//显示被选中的字符串(目前这个没有被使用到，可以屏蔽)
 
-	char *m_nowString;		//当前输入的字符串
-	char *m_tempNowString;	//这个字符串主要用于辅助使用
+	char *m_curString;		//当前输入的字符串
+	char *m_tempCurString;	//这个字符串主要用于辅助使用
 //	char *m_insertString;	//插入的字符串
 //	char *m_selectString;	//选取的字符串
-	int m_nowInsertPoint;	//当前选择输入的位置,整个字符串的整体位置
-	int m_nowStringLength;	//当前输入字符串的长度
-	_XBool m_haveSelect;		//是否在字符串中有选择
-	_XBool m_selectMouseDown;	//鼠标是否按下准备片选
+	int m_curInsertPoint;	//当前选择输入的位置,整个字符串的整体位置
+	int m_curStringLength;	//当前输入字符串的长度
 	int m_selectStart;		//选择的起始位置
 	int m_selectEnd;		//选择的结束位置
 
-	const _XTextureData *m_editNormal;		//输入框普通状态
-	const _XTextureData *m_editDisable;		//输入框无效状态
-	const _XTextureData *m_editSelect;		//输入框片选颜色
-	const _XTextureData *m_editInsert;		//输入框插入标记
-	const _XTextureData *m_editUpon;
+	const XTextureData *m_editNormal;		//输入框普通状态
+	const XTextureData *m_editDisable;		//输入框无效状态
+	const XTextureData *m_editSelect;		//输入框片选颜色
+	const XTextureData *m_editInsert;		//输入框插入标记
+	const XTextureData *m_editUpon;
 
-	_XSprite m_spriteBackGround;	//用于显示输入框的背景贴图
-	_XSprite m_spriteSelect;		//用于显示选择内容的背景颜色
-	_XSprite m_spriteInsert;		//用于显示插入符号
-	_XVector2 m_textPosition;			//文字显示的位置，是相对于控件的位置来定的
-	_XVector2 m_textSize;				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
-	_XFColor m_textColor;		//文字的颜色
-	float m_nowTextWidth;		//当前字体的宽度，这个数值在字体的尺寸改变时需要更新
-	float m_nowTextHeight;		//当前字体的高度
-
-	void (*m_funInputChenge)(void *,int);		//输入内容发生改变的时候调用
-	void (*m_funInputOver)(void *,int);		//确认输入结束之后的时候调用
-	void *m_pClass;
+	XSprite m_spriteBackGround;	//用于显示输入框的背景贴图
+	XSprite m_spriteSelect;		//用于显示选择内容的背景颜色
+	XSprite m_spriteInsert;		//用于显示插入符号
+	XVector2 m_textPosition;			//文字显示的位置，是相对于控件的位置来定的
+	XVector2 m_textSize;				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
+	XFColor m_textColor;		//文字的颜色
+	float m_curTextWidth;		//当前字体的宽度，这个数值在字体的尺寸改变时需要更新
+	float m_curTextHeight;		//当前字体的高度
+public:
+	enum XEditEvent
+	{
+		EDT_INPUT_CHANGE,		//输入数据发生变化的时候调用
+		EDT_INPUT_OVER,			//输入数据结束的时候调用
+	};
+	enum XEditType
+	{
+		TYPE_STRING,		//字符串
+		TYPE_UNSIGNED_INT,	//无符号整形数
+		TYPE_INT,			//整形数
+		TYPE_HEX,			//16进制数
+		TYPE_FLOAT,			//浮点数
+	};
+	void setEditType(XEditType type){m_editType = type;}
+	XEditType getEditType(){return m_editType;}
+private:
+	XEditType m_editType;	//输入框的类型	(相关功能尚未实现，需要修改insertChar和keyProc函数，判断是否能进行相关操作)
+	XBool isStringPassable()	//判断当前字符串是否符合要求
+	{
+		if(m_curString[0] == '\0') return XTrue;	//空字符串是允许的
+		switch(m_editType)
+		{
+		case TYPE_STRING:return XTrue;		//字符串
+		case TYPE_UNSIGNED_INT:return XString::getIsUnsignedInt(m_curString);	//无符号整形数
+		case TYPE_INT:return XString::getIsInt(m_curString);			//整形数
+		case TYPE_HEX:return XString::getIsHexNumber(m_curString);			//16进制数
+		case TYPE_FLOAT:return XString::getIsNumber(m_curString);			//浮点数
+		}
+		return XFalse;
+	}
+//	void (*m_funInputChenge)(void *,int);		//输入内容发生改变的时候调用
+//	void (*m_funInputOver)(void *,int);		//确认输入结束之后的时候调用
+//	void *m_pClass;
 
 	int m_timer;	//这是插入符号闪烁时使用的时间标记，这个时间使用不准确的计时方式
 	//下面是用于按键判断的中间变量
@@ -115,11 +153,11 @@ private:
 	char m_keyCtrlState;		//Ctrl按键的状态 0弹起，1按下
 	
 	int m_canShowLength;		//输入框中可以显示的字符串的长度
-	int m_nowShowStart;			//当前输入框中显示的字符串的起始位置
-	char *m_nowShowString;		//当前显示的字符串 
-	_XResourceInfo *m_resInfo;
-	_XBool m_withoutTex;	//没有贴图的形式
-	_XRect m_selectRect;	//选择的范围
+	int m_curShowStart;			//当前输入框中显示的字符串的起始位置
+	char *m_curShowString;		//当前显示的字符串 
+	XResourceInfo *m_resInfo;
+	XBool m_withoutTex;	//没有贴图的形式
+	XRect m_selectRect;	//选择的范围
 	int keyJudgement(int keyOrder);	//这里是案件判断处理的函数，供内部调用
 public:
 	void upDataShowStr();	//根据显示长度和光标的位置跟新显示的内容
@@ -130,89 +168,96 @@ public:
 	void deleteSelectStr();			//删除选中的字符串并移动光标
 
 public:
-	_XBool init(const _XVector2& position,		//控件的位置
-		const _XRect& Area,					//控件的鼠标响应区间
-		const _XEditTexture &tex,			//控件的贴图
+	XBool init(const XVector2& position,		//控件的位置
+		const XRect& Area,					//控件的鼠标响应区间
+		const XEditSkin &tex,			//控件的贴图
 		const char *str,					//控件的初始化字符串
-		const _XFontUnicode &font,			//控件的字体
+		const XFontUnicode &font,			//控件的字体
 		float strSize = 1.0f,	//控件的字体信息
-		_XMouseRightButtonMenu * mouseMenu = NULL);		//控件的右键菜单
-	_XBool initEx(const _XVector2& position,	//上面接口的简化版本
-		const _XEditTexture &tex,			
+		XMouseRightButtonMenu * mouseMenu = NULL);		//控件的右键菜单
+	XBool initEx(const XVector2& position,	//上面接口的简化版本
+		const XEditSkin &tex,			
 		const char *str,					
-		const _XFontUnicode &font,			
+		const XFontUnicode &font,			
 		float strSize = 1.0f,	
-		_XMouseRightButtonMenu * mouseMenu = NULL);
-	_XBool initPlus(const char * path,			//控件的贴图
+		XMouseRightButtonMenu * mouseMenu = NULL);
+	XBool initPlus(const char * path,			//控件的贴图
 		const char *str,					//控件的初始化字符串
-		const _XFontUnicode &font,			//控件的字体
+		const XFontUnicode &font,			//控件的字体
 		float strSize = 1.0f,	//控件的字体信息
-		_XMouseRightButtonMenu * mouseMenu = NULL,//控件的右键菜单
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	_XBool initWithoutTex(const _XRect& area,
+		XMouseRightButtonMenu * mouseMenu = NULL,//控件的右键菜单
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool initWithoutSkin(const XRect& area,
 		const char *str,					//控件的初始化字符串
-		const _XFontUnicode &font,			//控件的字体
+		const XFontUnicode &font,			//控件的字体
 		float strSize = 1.0f,	//控件的字体信息
-		_XMouseRightButtonMenu * mouseMenu = NULL);
-	_XBool initWithoutTex(const _XRect& area,
+		XMouseRightButtonMenu * mouseMenu = NULL);
+	XBool initWithoutSkin(const XRect& area,
 		const char *str,					//控件的初始化字符串
-		_XMouseRightButtonMenu * mouseMenu = NULL)
+		XMouseRightButtonMenu * mouseMenu = NULL)
 	{
-		return initWithoutTex(area,str,XEE::systemFont,1.0f,mouseMenu);
+		return initWithoutSkin(area,str,getDefaultFont(),1.0f,mouseMenu);
 	}
-	_XBool initWithoutTex(const _XVector2& pixelSize,
+	XBool initWithoutSkin(const XVector2& pixelSize,
 		const char *str,					//控件的初始化字符串
-		_XMouseRightButtonMenu * mouseMenu = NULL)
+		XMouseRightButtonMenu * mouseMenu = NULL)
 	{
-		return initWithoutTex(_XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),str,XEE::systemFont,1.0f,mouseMenu);
+		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),str,getDefaultFont(),1.0f,mouseMenu);
 	}
-	_XBool initWithoutTex(float width,
+	XBool initWithoutSkin(float width,
 		const char *str,					//控件的初始化字符串
-		_XMouseRightButtonMenu * mouseMenu = NULL)
+		XMouseRightButtonMenu * mouseMenu = NULL)
 	{
-		return initWithoutTex(_XRect(0.0f,0.0f,width,32.0f),str,XEE::systemFont,1.0f,mouseMenu);
+		return initWithoutSkin(XRect(0.0f, 0.0f, width, MIN_FONT_CTRL_SIZE), str, getDefaultFont(), 1.0f, mouseMenu);
 	}
 protected:
-	void update(int stepTime);
+	void update(float stepTime);
 	void draw();					//绘图函数
 	void drawUp();				//描绘小菜单
-	_XBool mouseProc(float x,float y,_XMouseState mouseState);					//对于鼠标动作的响应函数
-	_XBool keyboardProc(int keyOrder,_XKeyState keyState);							//返回是否出发按键动作
+	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool keyboardProc(int keyOrder,XKeyState keyState);							//返回是否出发按键动作
 	void insertChar(const char * ch,int len);
-	_XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	_XBool canLostFocus(float x,float y);
+	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(float x,float y);
 	virtual void setLostFocus(); 
+	void setFocus() 
+	{//设置为焦点
+		//printf("设置为焦点\n");
+		m_isBeChoose = XTrue;
+		setImmPos();
+	}	
+	void setImmPos();
 private:
 	//下面是为了实现按键按下之后连续动作而定义的变量
-	_XBool keyProc(int keyOrder);
-	int m_nowKey;
-	int m_nowKeyDownTimer;
-	int m_nowKeyRepTimer;
-	_XBool m_nowKeyDown;
+	XBool keyProc(int keyOrder);
+	int m_curKey;
+	int m_curKeyDownTimer;
+	int m_curKeyRepTimer;
+	XBool m_curKeyDown;
 public:
 	void release();					//资源释放函数
 	void setString(const char *str);		//设置输入的字符串
 
-	using _XObjectBasic::setPosition;	//避免覆盖的问题
+	using XObjectBasic::setPosition;	//避免覆盖的问题
 	void setPosition(float x,float y);		//设置控件的位置
 
-	using _XObjectBasic::setSize;		//避免覆盖的问题
-	void setSize(float x,float y);				//设置控件的缩放比例
-	_XBool getEdtIsNumber();	//输入的数据是否为数值
+	using XObjectBasic::setScale;		//避免覆盖的问题
+	void setScale(float x,float y);				//设置控件的缩放比例
+	XBool getEdtIsNumber();	//输入的数据是否为数值
 	int getAsInt();
-	//_XBool getAsBool();
+	//XBool getAsBool();
 	float getAsFloat();
-	void setTextColor(const _XFColor& color);	//设置字体的颜色
-	_XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	void setTextColor(const XFColor& color);	//设置字体的颜色
+	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
-	using _XObjectBasic::setColor;		//避免覆盖的问题
+	using XObjectBasic::setColor;		//避免覆盖的问题
 	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
 	void setAlpha(float a);	//设置按钮的颜色
 	
-	_XBool setACopy(const _XEdit &temp);				//设置为一个拷贝公用部分资源		
+	XBool setACopy(const XEdit &temp);				//设置为一个拷贝公用部分资源		
 
-	_XEdit();
-	~_XEdit(){release();}
+	XEdit();
+	~XEdit(){release();}
 	//下面是内联函数
 	void disable();					//使无效
 	void enable();					//使能
@@ -220,32 +265,98 @@ public:
 	int getSelectLength() const;				//或得选区的长度
 	int getSelectHead() const;				//获得选取的头
 	int getSelectEnd() const;				//获得选取的尾
-	void setCallbackFun(void (* funInputChenge)(void *,int),void (* funInputOver)(void *,int),void *pClass = NULL);		//设置回调函数
+	//void setCallbackFun(void (* funInputChenge)(void *,int),void (* funInputOver)(void *,int),void *pClass = NULL);		//设置回调函数
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	_XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	_XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	//virtual void justForTest() {;}
 
 	void setInputLen(int len);	//设置输入框的长度
 private:	//为了防止意外调用造成的错误，下面重载赋值构造函数和赋值操作符
-	_XEdit(const _XEdit &temp);
-	_XEdit& operator = (const _XEdit& temp);
+	XEdit(const XEdit &temp);
+	XEdit& operator = (const XEdit& temp);
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面是对控件动态支持而定义的相关属性和方法
 private:
-	//_XMoveData m_actionMoveData;	//动态效果的变量
-	_XVector2 m_oldPos;				//动作播放时的位置
-	_XVector2 m_oldSize;			//动作播放时的大小
-	_XMoveData m_lightMD;
-	_XRect m_lightRect;
+	//XMoveData m_actionMoveData;	//动态效果的变量
+	XVector2 m_oldPos;				//动作播放时的位置
+	XVector2 m_oldSize;			//动作播放时的大小
+	XMoveData m_lightMD;
+	XRect m_lightRect;
 	//插入符的动画
-	_XMoveData m_insertActionMD;	//插入符的动画效果
+	XMoveData m_insertActionMD;	//插入符的动画效果
 	//---------------------------------------------------------
-	bool m_isPassword;	//是否为密码输入
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面为输入框提供输入提示功能
+	std::string m_promptStr;	//提示文字
+	bool m_withPromptStr;
+public:
+	void setPromptStr(const std::string &str)
+	{
+		m_withPromptStr = true;
+		m_promptStr = str;
+	}
+	void disPromptStr(){m_withPromptStr = false;}
+	std::string getPromptStr(){return m_promptStr;}
+	bool withPromptStr(){return m_withPromptStr;}
+	//---------------------------------------------------------
 public:
 	void setIsPassword(bool flag);
 	bool getIsPassword() const{return m_isPassword;}
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	//下面实现界面控件的自身状态的保存(完成)
+public:
+	virtual XBool saveState(TiXmlNode &e)
+	{
+		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		if(!XXml::addLeafNode(e,m_ctrlName.c_str(),getString())) return XFalse; 
+		return XTrue;
+	}
+	virtual XBool loadState(TiXmlNode *e)
+	{
+		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		std::string tmp;
+		if(XXml::getXmlAsString(e,m_ctrlName.c_str(),tmp) == NULL) return XFalse;
+		setString(tmp.c_str());
+		return XTrue;
+	}
+	//---------------------------------------------------------
+private:
+	bool getCopyStrHaveEnd()	//判断拷贝字符串是否有结束符
+	{
+		for(int i = 0;i < m_maxInputStringLength;++ i)
+		{
+			if(m_copyString[i] == '\0')
+				return true;
+		}
+		return false;
+	}
+	bool stringPlaster();	//从剪切板中粘贴数据
+	void stringCopy()		//拷贝字符串到剪切板
+	{
+		if(!m_haveSelect) return;//存在片选，没有片选则什么也不作
+			//拷贝片选的内容
+#ifdef XEE_OS_WINDOWS
+		memcpy(m_copyString,m_curString + getSelectHead(),getSelectLength());
+		m_copyString[getSelectLength()] = '\0';
+		XString::setTextToClipboard(m_copyString);
+#endif
+#ifdef XEE_OS_LINUX
+		memcpy(m_copyString,m_curString + getSelectHead(),getSelectLength());
+		m_copyString[getSelectLength()] = '\0';
+#endif
+	}
+	void chooseAllStr()	//全选
+	{
+		m_haveSelect = XTrue;
+		m_selectEnd = m_curStringLength;
+		m_selectStart = 0;
+		m_selectMouseDown = XFalse;
+		upDataSelectShow();
+	}
 };
+#if WITH_INLINE_FILE
 #include "XEdit.inl"
-
+#endif
+}
 #endif

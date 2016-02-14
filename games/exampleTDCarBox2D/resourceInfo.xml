@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="gb2312" standalone="yes" ?>
+<root>
+    <resource>
+         <filename>ResourcePack\tree\1.obj</filename>
+    </resource>
+    <resource>
+         <filename>ResourcePack\tree\2.obj</filename>
+    </resource>
+    <resource>
+         <filename>ResourcePack\tree\3.obj</filename>
+    </resource>
+</root>

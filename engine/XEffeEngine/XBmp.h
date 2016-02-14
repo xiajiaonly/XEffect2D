@@ -5,14 +5,11 @@
 //Version:	1.0.0
 //Date:		2011.11.20
 //--------------------------------
-
 #include "XOSDefine.h"
-
-#define _XBMP_COLOR_BYTES (3) 
-
+namespace XE{
 #pragma pack(push)
 #pragma pack(1)
-struct _XBMPFileHeader
+struct XBMPFileHeader
 {
     unsigned short bfType;			//位图文件的类型，必须为BM
     int bfSize;						//位图文件的大小，以字节为单位
@@ -25,7 +22,7 @@ struct _XBMPFileHeader
 
 #pragma pack(push)
 #pragma pack(1)
-struct _XBMPInfoHeader
+struct XBMPInfoHeader
 {
     int biSize;                    // 本结构所占用字节数
     int biWidth;                // 位图的宽度，以像素为单位
@@ -43,25 +40,26 @@ struct _XBMPInfoHeader
 #pragma pack(pop)
 
 //这里保存的BMP图像使用24bits RGB_888的格式，暂时不考虑其扩展性
-class _XBMP
+class XBMP
 {
 private:
-    _XBool m_isInited;
+	static const int m_bmpColorBytes = 3;
+    XBool m_isInited;
 public:
     int m_width;
     int m_height;
     unsigned char *m_data;
 public:
-    _XBool init(const char *filename,int needAlpha = 0);    //从一个文件中读取图片数据
-    _XBool init(int width,int height);                        //建立一个空的图片
-    _XBool writeToFile(const char *filename);                //将图片保存到BMP文件中
-    _XBool release();                                        //释放所有的资源
-    _XBMP()
+    XBool init(const char *filename,int needAlpha = 0);    //从一个文件中读取图片数据
+    XBool init(int width,int height);                        //建立一个空的图片
+    XBool writeToFile(const char *filename);                //将图片保存到BMP文件中
+    XBool release();                                        //释放所有的资源
+    XBMP()
     :m_isInited(XFalse)
     ,m_width(0)
     ,m_height(0)
     ,m_data(NULL)
-    {
-    }
+    {}
 };
+}
 #endif

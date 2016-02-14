@@ -1,9 +1,11 @@
+#include "XStdHead.h"
 #include "XInputEventSDL.h"
 #include "XWindowCommon.h"
-
+#include "XTimer.h"
+namespace XE{
 bool isSDLDoubleClick(const SDL_Event &tmpEvent)
 {
-	static int upTime = SDL_GetTicks();
+	static int upTime = XTime::getCurrentTicks();
 	static int counter = 0;	//按下计数器
 	if(tmpEvent.type == SDL_MOUSEBUTTONDOWN)
 	{
@@ -11,33 +13,36 @@ bool isSDLDoubleClick(const SDL_Event &tmpEvent)
 		{
 			if(counter == 0)
 			{//第一次按下
-				upTime = SDL_GetTicks();
+				upTime = XTime::getCurrentTicks();
 				++counter;
 			}else
 			{//第二次按下
-				if(SDL_GetTicks() - upTime < 500)	//连续判断时间为200ms
+				if(XTime::getCurrentTicks() - upTime < 500)	//连续判断时间为200ms
 				{//双击时间成立
 					counter = 0;
 					//printf("鼠标双击事件\n");
 					return true;
 				}else
 				{
-					upTime = SDL_GetTicks();
+					upTime = XTime::getCurrentTicks();
 				}
 			}
 		}else
 		{
 			counter = 0;	//取消记录
+			//printf("取消记录\n");
 		}
 	}else
-	if(tmpEvent.type == SDL_MOUSEMOTION && counter != 0)
+	if(!(tmpEvent.button.button == SDL_BUTTON_LEFT && (tmpEvent.type == SDL_MOUSEBUTTONDOWN || tmpEvent.type == SDL_MOUSEBUTTONUP))
+		&& counter != 0)
 	{
 		counter = 0;	//取消记录
+		//printf("取消记录\n");
 	}
 	return false;
 }
 
-bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL的输入事件转换成XEE的输入事件
+bool SDLEventToInputEvent(XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL的输入事件转换成XEE的输入事件
 {
 	switch(tmpEvent.type)
 	{
@@ -50,13 +55,13 @@ bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL
 	case SDL_KEYDOWN:
 		event.type = EVENT_KEYBOARD;
 		event.keyState = KEY_STATE_DOWN;
-		event.keyValue = (_XKeyValue)_XWindow.mapKey(tmpEvent.key.keysym.sym);
+		event.keyValue = (XKeyValue)XWindow.mapKey(tmpEvent.key.keysym.sym);
 		event.unicode = tmpEvent.key.keysym.unicode;
 		break;
 	case SDL_KEYUP:
 		event.type = EVENT_KEYBOARD;
 		event.keyState = KEY_STATE_UP;
-		event.keyValue = (_XKeyValue)_XWindow.mapKey(tmpEvent.key.keysym.sym);
+		event.keyValue = (XKeyValue)XWindow.mapKey(tmpEvent.key.keysym.sym);
 		event.unicode = tmpEvent.key.keysym.unicode;
 		break;
 	case SDL_MOUSEMOTION:
@@ -64,6 +69,7 @@ bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL
 		event.mouseState = MOUSE_MOVE;
 		event.mouseX = tmpEvent.motion.x;
 		event.mouseY = tmpEvent.motion.y;
+		isSDLDoubleClick(tmpEvent);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		event.type = EVENT_MOUSE;
@@ -85,6 +91,7 @@ bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL
 		break;
 	case SDL_MOUSEBUTTONUP:
 		event.type = EVENT_MOUSE;
+		isSDLDoubleClick(tmpEvent);
 		switch(tmpEvent.button.button)
 		{
 		case SDL_BUTTON_LEFT:event.mouseState = MOUSE_LEFT_BUTTON_UP;break;
@@ -98,4 +105,5 @@ bool SDLEventToInputEvent(_XInputEvent &event,const SDL_Event &tmpEvent)	//将SDL
 		break;
 	}
 	return true;
+}
 }

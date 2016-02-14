@@ -1,18 +1,18 @@
-inline _XBool _XMultiListBasic::addALine()					//ÔÚÄ©Î²¼ÓÈëÒ»ÐÐ
+INLINE XBool XMultiListBasic::addALine()					//ÔÚÄ©Î²¼ÓÈëÒ»ÐÐ
 {
 	return setLineSum(m_tableLineSum + 1);
 }
-inline _XBool _XMultiListBasic::addARow()					//ÔÚÄ©Î²¼ÓÈëÒ»ÁÐ
+INLINE XBool XMultiListBasic::addARow()					//ÔÚÄ©Î²¼ÓÈëÒ»ÁÐ
 {
 	return setRowSum(m_tableRowSum + 1);
 }
-inline _XBool _XMultiListBasic::deleteNowSelectLine()			//É¾³ýÑ¡È¡µÄÒ»ÐÐ
+INLINE XBool XMultiListBasic::deleteCurSelectLine()			//É¾³ýÑ¡È¡µÄÒ»ÐÐ
 {
 	if(!m_isInited) return XFalse;
 	if(!m_haveSelect) return XFalse;
 	return deleteLine(m_selectLineOrder);
 }
-inline _XBool _XMultiListBasic::deleteSelectLines()
+INLINE XBool XMultiListBasic::deleteSelectLines()
 {
 	if(!m_isInited) return XFalse;
 	for(int i = 0;i < m_tableLineSum;++ i)
@@ -27,35 +27,35 @@ inline _XBool _XMultiListBasic::deleteSelectLines()
 	m_selectLineOrder = 0;
 	return XTrue;
 }
-inline _XBool _XMultiListBasic::moveUpLine(int order)		//½«orderÐÐÉÏÒÆ
+INLINE XBool XMultiListBasic::moveUpLine(int order)		//½«orderÐÐÉÏÒÆ
 {
 	return moveDownLine(order - 1);
 }
-inline _XBool _XMultiListBasic::moveLeftRow(int order)		//½«orderÁÐ×óÒÆ
+INLINE XBool XMultiListBasic::moveLeftRow(int order)		//½«orderÁÐ×óÒÆ
 {
 	return moveRightRow(order - 1);
 }
-inline _XBool _XMultiListBasic::getHaveSelectState(int i)
+INLINE XBool XMultiListBasic::getHaveSelectState(int i)
 {
 	if(i < 0 || i >= m_tableLineSum) return XFalse;
 	return m_haveSelectFlag[i];
 }
-inline int _XMultiListBasic::getTableLineSum()
+INLINE int XMultiListBasic::getTableLineSum()
 {
 	return m_tableLineSum;
 }
-inline int _XMultiListBasic::getSelectIndex() const	//·µ»ØÑ¡Ôñ²Ù×÷µÄÐÐºÅ
+INLINE int XMultiListBasic::getSelectIndex() const	//·µ»ØÑ¡Ôñ²Ù×÷µÄÐÐºÅ
 {
 	return m_selectLineOrder;
 }
-inline void _XMultiListBasic::setCallbackFun(void (* funSelectChange)(void *,int),void (* funCheckStateChange)(void *,int),void *pClass)
-{
-	if(!m_isInited) return;
-	m_funCheckStateChange = funCheckStateChange;
-	m_funSelectChange = funSelectChange;
-	m_pClass = pClass;
-}
-inline _XBool _XMultiListBasic::getCheckState(int order,int lineOrder)
+//INLINE void XMultiListBasic::setCallbackFun(void (* funSelectChange)(void *,int),void (* funCheckStateChange)(void *,int),void *pClass)
+//{
+//	if(!m_isInited) return;
+//	m_funCheckStateChange = funCheckStateChange;
+//	m_funSelectChange = funSelectChange;
+//	m_pClass = pClass;
+//}
+INLINE XBool XMultiListBasic::getCheckState(int order,int lineOrder)
 {
 	if(!m_isInited) return XFalse;
 //	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return XFalse;
@@ -65,7 +65,7 @@ inline _XBool _XMultiListBasic::getCheckState(int order,int lineOrder)
 	if(order == 0) return m_check0State[lineOrder];
 	else return m_check1State[lineOrder];
 }
-inline void _XMultiListBasic::setCheckState(int order,int lineOrder,_XBool state)
+INLINE void XMultiListBasic::setCheckState(int order,int lineOrder,XBool state)
 {
 	if(!m_isInited) return;
 //	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return;
@@ -75,7 +75,7 @@ inline void _XMultiListBasic::setCheckState(int order,int lineOrder,_XBool state
 	if(order == 0) m_check0State[lineOrder] = state;
 	else m_check1State[lineOrder] = state;
 	//ÏÂÃæ¸üÐÂÁÐ±í¿òµÄÑ¡Ôñ×´Ì¬µÄÐÅÏ¢
-	if(lineOrder >= m_showStartLine && lineOrder < min(m_showStartLine + m_canShowLineSum,m_tableLineSum))
+	if(lineOrder >= m_showStartLine && lineOrder < XEE_Min(m_showStartLine + m_canShowLineSum,m_tableLineSum))
 	{
 		if(m_check0State[lineOrder]) m_check0[lineOrder - m_showStartLine].setState(XTrue);
 		else m_check0[lineOrder - m_showStartLine].setState(XFalse);
@@ -83,21 +83,21 @@ inline void _XMultiListBasic::setCheckState(int order,int lineOrder,_XBool state
 		else m_check1[lineOrder - m_showStartLine].setState(XFalse);
 	}
 }
-inline _XBool _XMultiListBasic::initEx(const _XVector2& position,		//ÉÏÃæ½Ó¿ÚµÄ¼ò»¯°æ±¾
-	const _XMultiListTexture &tex,		
-	const _XCheckTexture &checktex0,		
-	const _XCheckTexture &checktex1,		
-	const _XFontUnicode &font,			
+INLINE XBool XMultiListBasic::initEx(const XVector2& position,		//ÉÏÃæ½Ó¿ÚµÄ¼ò»¯°æ±¾
+	const XMultiListSkin &tex,		
+	const XCheckSkin &checktex0,		
+	const XCheckSkin &checktex1,		
+	const XFontUnicode &font,			
 	float strSize,						
 	int rowSum,				
 	int lineSum,			
-	//const _XMouseRightButtonMenu& mouseMenu,	//¿Ø¼þÖÐÊ¹ÓÃµÄÓÒ¼ü²Ëµ¥(Ä¿Ç°ÎÞÐ§)
-	const _XSlider &vSlider,	
-	const _XSlider &hSlider)
+	//const XMouseRightButtonMenu& mouseMenu,	//¿Ø¼þÖÐÊ¹ÓÃµÄÓÒ¼ü²Ëµ¥(Ä¿Ç°ÎÞÐ§)
+	const XSlider &vSlider,	
+	const XSlider &hSlider)
 {
 	return init(position,tex.m_mouseRect,tex,checktex0,checktex1,font,strSize,rowSum,lineSum,vSlider,hSlider);
 }
-inline _XBool _XMultiListBasic::keyboardProc(int keyOrder,_XKeyState keyState)
+INLINE XBool XMultiListBasic::keyboardProc(int keyOrder,XKeyState keyState)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
@@ -110,7 +110,7 @@ inline _XBool _XMultiListBasic::keyboardProc(int keyOrder,_XKeyState keyState)
 	}
 	return XTrue;
 }
-inline _XBool _XMultiListBasic::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XMultiListBasic::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
@@ -118,13 +118,13 @@ inline _XBool _XMultiListBasic::canGetFocus(float x,float y)	//ÓÃÓÚÅÐ¶Ïµ±Ç°Îï¼þÊ
 		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline void _XMultiListBasic::setTextColor(const _XFColor& color) 
+INLINE void XMultiListBasic::setTextColor(const XFColor& color) 
 {
 	if(!m_isInited) return;
 	m_textColor = color;
 	m_caption.setColor(m_textColor);
 }
-inline void _XMultiListBasic::setColor(float r,float g,float b,float a) 
+INLINE void XMultiListBasic::setColor(float r,float g,float b,float a) 
 {
 	if(!m_isInited) return;
 	m_color.setColor(r,g,b,a);;
@@ -139,7 +139,7 @@ inline void _XMultiListBasic::setColor(float r,float g,float b,float a)
 	m_horizontalSlider.setColor(m_color);
 	if(m_tableRowSum > 0)
 	{
-		_XMultiListOneRow *tempRow = m_tableRow;
+		XMultiListOneRow *tempRow = m_tableRow;
 		while(true)
 		{
 			if(tempRow->isEnable && tempRow->isShow != 0)
@@ -151,7 +151,7 @@ inline void _XMultiListBasic::setColor(float r,float g,float b,float a)
 		}
 		if(m_tableLineSum > 0)
 		{
-			_XMultiListOneBox *tempBox = m_tableBox;
+			XMultiListOneBox *tempBox = m_tableBox;
 			while(true)
 			{
 				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(a);//ÏÔÊ¾±êÌâÎÄ×Ö
@@ -167,7 +167,7 @@ inline void _XMultiListBasic::setColor(float r,float g,float b,float a)
 	}
 	updateChildColor();
 }	//ÉèÖÃ°´Å¥µÄÑÕÉ«
-inline void _XMultiListBasic::setAlpha(float a) 
+INLINE void XMultiListBasic::setAlpha(float a) 
 {
 	if(!m_isInited) return;
 	m_color.setA(a);
@@ -182,7 +182,7 @@ inline void _XMultiListBasic::setAlpha(float a)
 	m_horizontalSlider.setAlpha(a);
 	if(m_tableRowSum > 0)
 	{
-		_XMultiListOneRow *tempRow = m_tableRow;
+		XMultiListOneRow *tempRow = m_tableRow;
 		while(true)
 		{
 			if(tempRow->isEnable && tempRow->isShow != 0)
@@ -194,7 +194,7 @@ inline void _XMultiListBasic::setAlpha(float a)
 		}
 		if(m_tableLineSum > 0)
 		{
-			_XMultiListOneBox *tempBox = m_tableBox;
+			XMultiListOneBox *tempBox = m_tableBox;
 			while(true)
 			{
 				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(a);//ÏÔÊ¾±êÌâÎÄ×Ö
@@ -210,36 +210,36 @@ inline void _XMultiListBasic::setAlpha(float a)
 	}
 	updateChildAlpha();
 }
-inline _XBool _XMultiListBasic::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XMultiListBasic::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return m_nowMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(x,y);
 }
-inline _XVector2 _XMultiListBasic::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
+INLINE XVector2 XMultiListBasic::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇÐý×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	switch(order)
 	{
-	case 0: return _XVector2(m_nowMouseRect.left,m_nowMouseRect.top);
-	case 1: return _XVector2(m_nowMouseRect.right,m_nowMouseRect.top);
-	case 2: return _XVector2(m_nowMouseRect.right,m_nowMouseRect.bottom);
-	case 3: return _XVector2(m_nowMouseRect.left,m_nowMouseRect.bottom); 
+	case 0: return XVector2(m_curMouseRect.left,m_curMouseRect.top);
+	case 1: return XVector2(m_curMouseRect.right,m_curMouseRect.top);
+	case 2: return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
+	case 3: return XVector2(m_curMouseRect.left,m_curMouseRect.bottom); 
 	}
-	return _XVector2::zero;
+	return XVector2::zero;
 }
-inline _XBool _XMultiListBasic::canLostFocus(float x,float y) 
+INLINE XBool XMultiListBasic::canLostFocus(float x,float y) 
 {
 	if(m_needShowVSlider && !m_verticalSlider.canLostFocus(x,y)) return XFalse;
 	if(m_needShowHSlider && !m_horizontalSlider.canLostFocus(x,y)) return XFalse;
 	return XTrue;
 }
-inline void _XMultiListBasic::setLostFocus() 
+INLINE void XMultiListBasic::setLostFocus() 
 {
 	m_verticalSlider.setLostFocus();
 	m_horizontalSlider.setLostFocus();
 	m_isBeChoose = XFalse;
 }
-inline void _XMultiListBasic::drawUp()
+INLINE void XMultiListBasic::drawUp()
 {
 	if(!m_isInited ||
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -251,7 +251,7 @@ inline void _XMultiListBasic::drawUp()
 		m_check1[i].drawUp();
 	}
 }
-inline void _XMultiListBasic::update(int stepTime)
+INLINE void XMultiListBasic::update(float stepTime)
 {
 	if(m_needShowVSlider) m_verticalSlider.update(stepTime);
 	if(m_needShowHSlider) m_horizontalSlider.update(stepTime);

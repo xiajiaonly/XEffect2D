@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -5,16 +6,17 @@
 //--------------------------------
 #include "XMatrix4x4.h"
 #include "XVector4.h"
-const _XMatrix4x4 _XMatrix4x4::identity(1.0f,0.0f,0.0f,0.0f, 0.0f,1.0f,0.0f,0.0f, 0.0f,0.0f,1.0f,0.0f, 0.0f,0.0f,0.0f,1.0f);	//单位矩阵
+namespace XE{
+const XMatrix4x4 XMatrix4x4::identity(1.0f,0.0f,0.0f,0.0f, 0.0f,1.0f,0.0f,0.0f, 0.0f,0.0f,1.0f,0.0f, 0.0f,0.0f,0.0f,1.0f);	//单位矩阵
 
-_XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
+XMatrix4x4 XMatrix4x4::operator*(const XMatrix4x4 & rhs) const
 {
 	//Optimise for matrices in which bottom row is (0, 0, 0, 1) in both matrices
 	if(data[3] == 0.0f && data[7] == 0.0f && data[11] == 0.0f && data[15] == 1.0f &&
 		rhs.data[3] == 0.0f && rhs.data[7] == 0.0f &&
 		rhs.data[11] == 0.0f && rhs.data[15] == 1.0f)
 	{
-		return _XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
+		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
 							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2],
 							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2],
 							0.0f,
@@ -35,7 +37,7 @@ _XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
 	//Optimise for when bottom row of 1st matrix is (0, 0, 0, 1)
 	if(data[3] == 0.0f && data[7] == 0.0f && data[11] == 0.0f && data[15] == 1.0f)
 	{
-		return _XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
+		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
 							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2]+data[13]*rhs.data[3],
 							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2]+data[14]*rhs.data[3],
 							rhs.data[3],
@@ -57,7 +59,7 @@ _XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
 	if(	rhs.data[3] == 0.0f && rhs.data[7] == 0.0f &&
 		rhs.data[11] == 0.0f && rhs.data[15] == 1.0f)
 	{
-		return _XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
+		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
 							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2],
 							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2],
 							data[3]*rhs.data[0]+data[7]*rhs.data[1]+data[11]*rhs.data[2],
@@ -75,7 +77,7 @@ _XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
 							data[3]*rhs.data[12]+data[7]*rhs.data[13]+data[11]*rhs.data[14]+data[15]);
 	}	
 	
-	return _XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
+	return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
 						data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2]+data[13]*rhs.data[3],
 						data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2]+data[14]*rhs.data[3],
 						data[3]*rhs.data[0]+data[7]*rhs.data[1]+data[11]*rhs.data[2]+data[15]*rhs.data[3],
@@ -92,30 +94,30 @@ _XMatrix4x4 _XMatrix4x4::operator*(const _XMatrix4x4 & rhs) const
 						data[2]*rhs.data[12]+data[6]*rhs.data[13]+data[10]*rhs.data[14]+data[14]*rhs.data[15],
 						data[3]*rhs.data[12]+data[7]*rhs.data[13]+data[11]*rhs.data[14]+data[15]*rhs.data[15]);
 }
-_XVector4 _XMatrix4x4::getRow(int position) const
+XVector4 XMatrix4x4::getRow(int position) const
 {
 	switch(position)
 	{
 	case 0:
-		return _XVector4(data[0],data[4],data[8],data[12]);
+		return XVector4(data[0],data[4],data[8],data[12]);
 		break;
 	case 1:
-		return _XVector4(data[1],data[5],data[9],data[13]);
+		return XVector4(data[1],data[5],data[9],data[13]);
 		break;
 	case 2:
-		return _XVector4(data[2],data[6],data[10],data[14]);
+		return XVector4(data[2],data[6],data[10],data[14]);
 		break;
 	case 3:
-		return _XVector4(data[3],data[7],data[11],data[15]);
+		return XVector4(data[3],data[7],data[11],data[15]);
 		break;
 	default:
-		return _XVector4::zero;
+		return XVector4::zero;
 		break;
 	}
 }
-_XVector4 _XMatrix4x4::operator*(const _XVector4& v) const 
+XVector4 XMatrix4x4::operator*(const XVector4& v) const 
 {
-	return _XVector4((data[0]*v.x + data[1]*v.y + data[2]*v.z + data[3]*v.w),
+	return XVector4((data[0]*v.x + data[1]*v.y + data[2]*v.z + data[3]*v.w),
 				 (data[4]*v.x + data[5]*v.y + data[6]*v.z + data[7]*v.w),
 				 (data[8]*v.x + data[9]*v.y + data[10]*v.z + data[11]*v.w),
 				 (data[12]*v.x + data[13]*v.y + data[14]*v.z + data[15]*v.w)) ;
@@ -134,7 +136,7 @@ inline float det3x3sub(const float *m, int i0, int i1, int i2, int i3, int i4, i
 
 	return det;
 }
-_XMatrix4x4 _XMatrix4x4::inverse()
+XMatrix4x4 XMatrix4x4::inverse()
 {
 	float *m = data;
 	float det = 0.0f;
@@ -144,7 +146,7 @@ _XMatrix4x4 _XMatrix4x4::inverse()
 	det += m[8] * det3x3sub(m, 1, 2, 3, 5, 6, 7, 13, 14, 15);
 	det -= m[12] * det3x3sub(m, 1, 2, 3, 5, 6, 7, 9, 10, 11);
 
-	static _XMatrix4x4 inverse;
+	XMatrix4x4 inverse;
 	det = 1.0f / det; 
 
 	inverse.data[0] = det3x3sub(m, 5, 6, 7, 9, 10, 11, 13, 14, 15) * det;
@@ -166,38 +168,40 @@ _XMatrix4x4 _XMatrix4x4::inverse()
 
 	return inverse;
 }
-inline float getDeta(const _XVector3 &v0,const _XVector3 &v1,const _XVector3 &v2)
+namespace XMath{
+inline float getDeta(const XVector3 &v0,const XVector3 &v1,const XVector3 &v2)
 {
 	return v0.x * v1.y * v2.z + v1.x * v2.y * v0.z + v2.x * v0.y * v1.z
 		- v2.x * v1.y * v0.z - v0.x * v2.y * v1.z - v1.x * v0.y * v2.z;
 }
 //计算三个平面的交点
-_XVector3 getPoint(const _XVector4& v0,const _XVector4& v1,const _XVector4& v2)
+XVector3 getPoint(const XVector4& v0,const XVector4& v1,const XVector4& v2)
 {
-	_XVector3 ret;
-	_XVector3 x0(v0.x,v0.y,v0.z);
-	_XVector3 x1(v1.x,v1.y,v1.z);
-	_XVector3 x2(v2.x,v2.y,v2.z);
-	_XVector3 b(v0.w,v1.w,v2.w);
+	XVector3 ret;
+	XVector3 x0(v0.x,v0.y,v0.z);
+	XVector3 x1(v1.x,v1.y,v1.z);
+	XVector3 x2(v2.x,v2.y,v2.z);
+	XVector3 b(v0.w,v1.w,v2.w);
 	float d = -getDeta(x0,x1,x2);
-	x0 = _XVector3(v0.w,v0.y,v0.z);
-	x1 = _XVector3(v1.w,v1.y,v1.z);
-	x2 = _XVector3(v2.w,v2.y,v2.z);
+	x0 = XVector3(v0.w,v0.y,v0.z);
+	x1 = XVector3(v1.w,v1.y,v1.z);
+	x2 = XVector3(v2.w,v2.y,v2.z);
 	ret.x = getDeta(x0,x1,x2)/d;
-	x0 = _XVector3(v0.x,v0.w,v0.z);
-	x1 = _XVector3(v1.x,v1.w,v1.z);
-	x2 = _XVector3(v2.x,v2.w,v2.z);
+	x0 = XVector3(v0.x,v0.w,v0.z);
+	x1 = XVector3(v1.x,v1.w,v1.z);
+	x2 = XVector3(v2.x,v2.w,v2.z);
 	ret.y = getDeta(x0,x1,x2)/d;
-	x0 = _XVector3(v0.x,v0.y,v0.w);
-	x1 = _XVector3(v1.x,v1.y,v1.w);
-	x2 = _XVector3(v2.x,v2.y,v2.w);
+	x0 = XVector3(v0.x,v0.y,v0.w);
+	x1 = XVector3(v1.x,v1.y,v1.w);
+	x2 = XVector3(v2.x,v2.y,v2.w);
 	ret.z = getDeta(x0,x1,x2)/d;
 	return ret;
 }
-_XVector3 _XMatrix4x4::resolveEquation()
+}
+XVector3 XMatrix4x4::resolveEquation()
 {
-	_XVector3 ret;
-	_XMatrix3x3 m;
+	XVector3 ret;
+	XMatrix3x3 m;
 	m.data[0] = data[0];m.data[1] = data[1];m.data[2] = data[2];
 	m.data[3] = data[4];m.data[4] = data[5];m.data[5] = data[6];
 	m.data[6] = data[8];m.data[7] = data[9];m.data[8] = data[10];
@@ -216,4 +220,8 @@ _XVector3 _XMatrix4x4::resolveEquation()
 	/*m.data[6] = data[8];*/m.data[7] = data[9];m.data[8] = data[11];
 	ret.z = m.getValue() / d;
 	return ret;
+}
+#if !WITH_INLINE_FILE
+#include "XMatrix4x4.inl"
+#endif
 }

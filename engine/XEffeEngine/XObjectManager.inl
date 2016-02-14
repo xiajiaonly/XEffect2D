@@ -1,72 +1,57 @@
-//inline 函数的定义
-inline _XObjectType _XObjectManager::getObjectType(int objectID) const
+//INLINE  函数的定义
+INLINE  XObjectType XObjectManager::getObjectType(unsigned int objectID) const
 {
 //	if(!m_isInited) return OBJ_NULL;
-	if(objectID < 0 || objectID >= m_objInfo.size()) return OBJ_NULL;
+	if(objectID >= m_objInfo.size()) return OBJ_NULL;
 	return m_objInfo[objectID].m_pObject->m_objType;
 }
-
-inline void *_XObjectManager::getObject(int objectID) const
+INLINE  void *XObjectManager::getObject(unsigned int objectID) const
 {
 //	if(!m_isInited) return NULL;
-	if(objectID < 0 || objectID >= m_objInfo.size()) return NULL;
+	if(objectID >= m_objInfo.size()) return NULL;
 	return m_objInfo[objectID].m_pObject;
 }
-
-inline void _XObjectManager::decreaseAObject(const void * object)
+INLINE  void XObjectManager::decreaseAObject(const void * object)
 {
 //	if(!m_isInited) return;
 	decreaseAObject(findObjectID(object));
 }
-
-inline int _XObjectManager::getNowObjectSum() const
+INLINE  int XObjectManager::getCurObjectSum() const
 {
 //	if(!m_isInited) return 0;
 	return m_objInfo.size();
 }
-
-inline int _XObjectManager::getNowMouseOnObjectSum() const
+INLINE  int XObjectManager::getCurMouseOnObjectSum() const
 {
 //	if(!m_isInited) return 0;
-	return m_nowMouseOnObjectSum;
+	return m_curMouseOnObjectSum;
 }
-
-inline int _XObjectManager::getNowChooseObjectSum() const
+INLINE  int XObjectManager::getCurChooseObjectSum() const
 {
 //	if(!m_isInited) return 0;
 	int ret = 0;
-	for(int i = 0;i < m_objInfo.size();++ i)
+	for(unsigned int i = 0;i < m_objInfo.size();++ i)
 	{
 		if(m_objInfo[i].m_objBeSelect) ++ ret;
 	}
 	return ret;
 }
-inline void _XObjectManager::setShow()	
-{
-	m_isShowUI = XTrue;
-	m_mutiList.setVisible();
-}	//设置显示
-inline void _XObjectManager::disShow() 
-{
-	m_isShowUI = XFalse;
-	m_mutiList.disVisible();
-}	//设置不显示
-inline void _XObjectManager::setOption()
+INLINE  void XObjectManager::setOption()
 {
 	m_isOption = XTrue;
 	setShow();
 }
-inline void _XObjectManager::disOption()
+INLINE  void XObjectManager::disOption()
 {
 	m_isOption = XFalse;
 	disShow();
 	//取消掉所有的动作
-	for(int i = 0;i < m_objInfo.size();++ i)
+	for(unsigned int i = 0;i < m_objInfo.size();++ i)
 	{
 		m_objInfo[i].m_objectKeyOption = OBJ_OPTION_NULL;
 	}
 }
-inline void _XObjectManager::chengeCanSelectState()
+INLINE  void XObjectManager::chengeCanSelectState()
 {//改变物件是否可以被点选的标签
 	if(!m_isShowUI) return;
 	m_canSelect = !m_canSelect;
@@ -74,7 +59,7 @@ inline void _XObjectManager::chengeCanSelectState()
 //	else m_canSelect = XFalse;
 }
 #if OBJ_MANAGER_WITH_ID
-inline void _XObjectManager::setShowObjID()
+INLINE  void XObjectManager::setShowObjID()
 {
 	if(!m_isShowUI) return;
 	m_showObjID = 1 - m_showObjID;

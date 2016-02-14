@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:    贾胜华(JiaShengHua)
 //Version:    1.0.0
@@ -5,18 +6,21 @@
 //--------------------------------
 #include "XLoading.h"
 #include "XResourcePack.h"
+//#include "XLogBook.h"
+//#include "XBasicOpenGL.h"
 
-_XBool isLoadingStart = XFalse;
-_XLoading *xLoading = NULL;
-_XLoadingScene *xLoadingScene = NULL;
+namespace XE{
+XBool isLoadingStart = XFalse;
+XLoading *xLoading = NULL;
+XLoadingScene *xLoadingScene = NULL;
 
-_XBool startLoading(_XLoadingScene * scene,
-		_XResourcePosition/*resoursePosition*/)
+XBool startLoading(XLoadingScene * scene,
+		XResourcePosition/*resoursePosition*/)
 {
 	if(isLoadingStart) return XFalse;
 	if(scene == NULL) return XFalse;
 
-	xLoading = createMem<_XLoading>();
+	xLoading = XMem::createMem<XLoading>();
 	if(xLoading == NULL) return XFalse;
 	xLoadingScene = scene;
 
@@ -26,20 +30,20 @@ _XBool startLoading(_XLoadingScene * scene,
 	isLoadingStart = XTrue;
 	return XTrue;
 }
-_XBool endLoading()
+XBool endLoading()
 {
 	if(!isLoadingStart) return XFalse;
 
 	xLoading->setLoadPresent(100.0f);
 	xLoading->setEnd();
-	XDELETE(xLoading);
-	XDELETE(xLoadingScene);
+	XMem::XDELETE(xLoading);
+	XMem::XDELETE(xLoadingScene);
 
 	isLoadingStart = XFalse;
 	return XTrue;
 }
 #ifdef XEE_OS_WINDOWS
-void _XLoading::init(_XLoadingScene * scene,_XResourcePosition resoursePosition)
+void XLoading::init(XLoadingScene * scene,XResourcePosition resoursePosition)
 {
 	m_resoursePosition = resoursePosition;
 
@@ -49,7 +53,7 @@ void _XLoading::init(_XLoadingScene * scene,_XResourcePosition resoursePosition)
 	//m_windowSize = windowSize;
 	m_pScene = scene;
 }
-void _XLoading::setStart()
+void XLoading::setStart()
 {//开启一个线程
 	m_isShow = XTrue;
 	m_isEnd = STATE_BEFORE_START;
@@ -61,26 +65,26 @@ void _XLoading::setStart()
 	{
 		LogStr("多线程开启失败！");
 	}
-	while(true)
+	while(m_isEnd != STATE_START)
 	{
-		if(m_isEnd == STATE_START) break;
-		mySleep(10);
+		XEE::sleep(10);
 	}
 }
-void _XLoading::setEnd()
+void XLoading::setEnd()
 {
 	setLoadPresent(100.0);
-	mySleep(100);
+	XEE::sleep(100);
 	m_isShow = XFalse;
-	while(true)
+	while(m_isEnd != STATE_END)
 	{
-		if(m_isEnd == STATE_END) break;
-		mySleep(10);
+		XEE::sleep(10);
 	}
+	//这里由于多线程的问题，需要恢复GL的状态
+	XGL::initOpenGLState();
 }
-DWORD WINAPI _XLoading::loadingProc(void * pParam)
+DWORD WINAPI XLoading::loadingProc(void * pParam)
 {
-	_XLoading &pPar = *(_XLoading *) pParam;
+	XLoading &pPar = *(XLoading *) pParam;
 
 	//pPar.m_hDC = wglGetCurrentDC();
 	HGLRC hGlrc = wglCreateContext(pPar.m_hDC);
@@ -88,26 +92,26 @@ DWORD WINAPI _XLoading::loadingProc(void * pParam)
 
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式（对投影矩阵应用之后的矩阵操作）
 	glLoadIdentity();								//变换坐标系函数
-	glOrtho(0,XEE::windowWidth,XEE::windowHeight, 0, -1, 1);;
+	glOrtho(0,getWindowWidth(),getWindowHeight(), 0, -1, 1);;
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glClearColor(XEE::defaultBGColor.fR,XEE::defaultBGColor.fG,XEE::defaultBGColor.fB,XEE::defaultBGColor.fA);			//清除颜色
+	glClearColor(XEG.m_defBGColor.fR,XEG.m_defBGColor.fG,XEG.m_defBGColor.fB,XEG.m_defBGColor.fA);			//清除颜色
 	glDisable(GL_DEPTH);							//2D项目不需要深度测试
 
 	if(pPar.m_pScene != NULL) pPar.m_pScene->init(pPar.m_resoursePosition);
 
 	LogStr("Enter LoadingProc!");
 	pPar.m_isEnd = STATE_START;
-	while(true)
+	while(!XEG.m_isSuspend)
 	{
-		if(XEE::isSuspend) break;
+		//if(XEE::isSuspend) break;
 		pPar.move();
 
 		//wglMakeCurrent(pPar.m_hDC,hGlrc);
 		//清除屏幕
 	//	clearScreen();
 		pPar.draw();
-		XEE::updateScreen();
+		XEG.updateScreen();
 		//wglMakeCurrent(NULL,NULL);
 
 		if(!pPar.m_isShow)
@@ -117,7 +121,7 @@ DWORD WINAPI _XLoading::loadingProc(void * pParam)
 		}
 		if(pPar.m_loadPresent < 100) pPar.m_loadPresent += pPar.m_speed;
 		if(pPar.m_pScene != NULL) pPar.m_pScene->setLoadPresent(pPar.m_loadPresent);
-		mySleep(20000);
+		XEE::sleep(20000);
 	}
 	pPar.release();
 	wglMakeCurrent(NULL,NULL);
@@ -129,15 +133,10 @@ DWORD WINAPI _XLoading::loadingProc(void * pParam)
 #endif
 
 #ifdef XEE_OS_LINUX
-void _XLoading::init(const _XVector2 &windowSize,int resoursePosition)
+void XLoading::init(const XVector2 &windowSize,int resoursePosition)
 {
-	if(resoursePosition != RESOURCE_OUTSIDE)
-	{
-		m_resoursePosition = RESOURCE_INSIDE;
-	}else
-	{
-		m_resoursePosition = RESOURCE_OUTSIDE;
-	}
+	if(resoursePosition != RESOURCE_OUTSIDE) m_resoursePosition = RESOURCE_INSIDE;
+	else m_resoursePosition = RESOURCE_OUTSIDE;
 
 	m_isShow = 0;
 	m_loadPresent = 0;
@@ -145,23 +144,22 @@ void _XLoading::init(const _XVector2 &windowSize,int resoursePosition)
 	m_windowSize = windowSize;
 	//在这里载入相关资源
 	m_loadingBG.init("pic/Loading/LoadingBG.png",NULL,1,m_resoursePosition);		//设置界面的第一个界面
-	m_loadingBG.setPosition(_XVector2::zero);
+	m_loadingBG.setPosition(XVector2::zero);
 //	m_loadingBG.setSize(m_windowSize.x/64.0,m_windowSize.y/64.0);
 //	m_loadingBG.setIsResizeCenter(POINT_LEFT_TOP);
 
-	Number.init("pic/Number.png",_XVector2I(15,30),_XVector2I(8,2),m_resoursePosition);
+	Number.init("pic/Number.png",XVector2I(15,30),XVector2I(8,2),m_resoursePosition);
 	Number.setPosition(10,10);
 	ProgressTexture.init("pic/Progress/PB_00.png","pic/Progress/PM_00.png","pic/Progress/PU_00.png",m_resoursePosition);
 	float tempSize = m_windowSize.x/1280.0;
-	m_process.init(_XRect(m_windowSize.x * 0.5 - 256 * tempSize,m_windowSize.y * 0.5 - 16 * tempSize,
+	m_process.init(XRect(m_windowSize.x * 0.5 - 256 * tempSize,m_windowSize.y * 0.5 - 16 * tempSize,
 		m_windowSize.x * 0.5 - 256 * tempSize + 512,m_windowSize.y * 0.5 - 16 * tempSize + 32),
-		&ProgressTexture,&Number,1.0,_XVector2(250,0));
+		&ProgressTexture,&Number,1.0,XVector2(250,0));
 	m_process.setSize(tempSize,tempSize);
 	m_loadPresent = 0;
 	m_process.setValue(m_loadPresent);
 }
-
-void _XLoading::setStart()
+void XLoading::setStart()
 {//开启一个线程
 	m_isShow = 1;
 	m_isEnd = 0;
@@ -194,15 +192,14 @@ void _XLoading::setStart()
 	}
 
 
-    	if(pthread_create(&moveThreadP, NULL, &loadingProc, (void*) this) != 0) 
+    if(pthread_create(&moveThreadP, NULL, &loadingProc, (void*) this) != 0) 
 	{
 		LogStr("多线程开启失败！");
 	}
 }
-
-void *_XLoading::loadingProc(void * pParam)
+void *XLoading::loadingProc(void * pParam)
 {
-	_XLoading &pPar = *(_XLoading *) pParam;
+	XLoading &pPar = *(XLoading *) pParam;
 	//切换上下文
 	glXMakeCurrent(pPar.m_mainDisplay,pPar.m_threadPBuffer,pPar.m_threadContext);
 	int isSuccess = 0;					//记录加载是否成功的标记变量
@@ -219,3 +216,4 @@ void *_XLoading::loadingProc(void * pParam)
 	else pPar.m_isEnd = 2;					//加载失败
 }
 #endif
+}

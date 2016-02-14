@@ -34,7 +34,7 @@
 	requested that these non-binding requests be included whenever the
 	above license is reproduced.
 */
-#include "ip/UdpSocket.h"
+#include "../UdpSocket.h"
 #if !defined( __WIN32__ ) && !defined( _WIN32 )
 #include <pthread.h>
 #include <unistd.h>

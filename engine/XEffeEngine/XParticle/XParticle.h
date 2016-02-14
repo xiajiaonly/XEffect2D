@@ -5,39 +5,36 @@
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-
-#include "../XBasicClass.h"
-#include "gl.h"
-#include "../XSprite.h"
-#include "../XBasicOpenGL.h"
-
+//#include "../XBasicClass.h"
+//#include "../XSprite.h"
+//#include "../XBasicOpenGL.h"
+#include "../XMath/XVector2.h"
+namespace XE{
 //基本粒子中的子粒子，是粒子系统中的最多的基本粒子构成成分
-class _XBasicParticle
+class XBasicParticle
 {
 public:
 	char m_isEnable;			//基本粒子是否有效
 
-	_XVector2 m_initPosition;	//粒子诞生时的位置
-	_XVector2 m_initSize;		//粒子诞生时的尺寸
+	XVector2 m_initPosition;	//粒子诞生时的位置
+	XVector2 m_initSize;		//粒子诞生时的尺寸
 	float m_initAngle;		//粒子诞生时的角度
-	_XFColor m_initColor;	//粒子诞生时的初始颜色
+	XFColor m_initColor;	//粒子诞生时的初始颜色
 
-	_XVector2 m_dPosition;	//粒子位置变化的变化量
-	_XVector2 m_dSize;		//粒子尺寸变化的变化量
+	XVector2 m_dPosition;	//粒子位置变化的变化量
+	XVector2 m_dSize;		//粒子尺寸变化的变化量
 	float m_dAngle;			//粒子角度变化的变化量
-	_XFColor m_dColor;		//粒子颜色变化的变化量
+	XFColor m_dColor;		//粒子颜色变化的变化量
 
-	_XVector2 m_nowPosition;	//粒子的当前位置
-	_XVector2 m_nowSize;		//粒子的当前尺寸
-	float m_nowAngle;		//粒子的当前角度
-	_XFColor m_nowColor;	//粒子的当前颜色
-	_XBasicParticle()
+	XVector2 m_curPosition;	//粒子的当前位置
+	XVector2 m_curSize;		//粒子的当前尺寸
+	float m_curAngle;		//粒子的当前角度
+	XFColor m_curColor;	//粒子的当前颜色
+	XBasicParticle()
 		:m_isEnable(0)
-	{
-	}
-	virtual~_XBasicParticle(){}
+	{}
+	virtual~XBasicParticle(){}
 };
-
 enum
 {
 	STAGE_SLEEP,	//粒子处于休息状态，休息状态不显示也不运动
@@ -45,23 +42,21 @@ enum
 	STAGE_STILL,	//粒子处于静止状态，静止状态只显示不运动
 	STAGE_STEALTHY	//粒子处于隐身状态，隐身状态只运动不显示
 };
-
 //母粒子，粒子系统中最小团体的母体
-class _XParentParticle:public _XBasicParticle
+class XParentParticle:public XBasicParticle
 {
 public:
 	char m_stage;		//粒子阶段标记
 
-	_XParentParticle();
-	virtual~_XParentParticle(){}
+	XParentParticle();
+	virtual~XParentParticle(){}
 };
-
-class _XAloneParticles:public _XParentParticle
+class XAloneParticles:public XParentParticle
 {
 public:
 	char m_isInited;
 private:
-	const _XTexture *m_texture;	//粒子的贴图
+	const XTexture *m_texture;	//粒子的贴图
 //	int m_w;
 //	int m_h;
 
@@ -69,23 +64,22 @@ private:
 	int halfH;
 	int m_glListOrder;
 public:
-	int init(const _XTexture *texture);
+	int init(const XTexture *texture);
 	void draw() const;
-	_XAloneParticles();
+	XAloneParticles();
 	
-	void move(int timeDelay);
+	void move(float timeDelay);
 };
-
-inline void _XAloneParticles::move(int timeDelay)
+inline void XAloneParticles::move(float timeDelay)
 {
 	if(m_isInited == 0 ||
 		m_stage == STAGE_SLEEP) return;
 	//颜色的变化
 	//尺寸的变化
 	//位置的变化
-//	m_nowPosition.x += m_dPosition.x * timeDelay;
-//	m_nowPosition.y += m_dPosition.y * timeDelay;
-	m_nowPosition += m_dPosition * (float)timeDelay;
+//	m_curPosition.x += m_dPosition.x * timeDelay;
+//	m_curPosition.y += m_dPosition.y * timeDelay;
+	m_curPosition += m_dPosition * (float)timeDelay;
 }
-
+}
 #endif

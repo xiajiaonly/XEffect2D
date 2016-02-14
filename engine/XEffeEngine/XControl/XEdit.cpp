@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -6,11 +7,12 @@
 #include "XEdit.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
+#include "../XImm.h"
+#include "XResourcePack.h"
 
-//这一段是在Edit内部公用的内存空间，主要用于类实体之间的复制粘贴时的内存调用问题
-char copyString[MAX_INPUT_STRING_LENGTH] = "";
-
-_XEditTexture::_XEditTexture()
+namespace XE{
+char XEdit::m_copyString[m_maxInputStringLength] = "";
+XEditSkin::XEditSkin()
 :m_isInited(XFalse)
 ,editNormal(NULL)			//输入框普通状态
 ,editDisable(NULL)			//输入框无效状态
@@ -18,7 +20,7 @@ _XEditTexture::_XEditTexture()
 ,editInsert(NULL)			//输入框插入标记
 ,editUpon(NULL)
 {}
-_XBool _XEditTexture::init(const char *normal,const char *disable,const char *select,const char *insert,const char *upon,_XResourcePosition resoursePosition)
+XBool XEditSkin::init(const char *normal,const char *disable,const char *select,const char *insert,const char *upon,XResourcePosition resoursePosition)
 {
 	if(m_isInited ||	//防止重复初始化
 		normal == NULL || disable == NULL || insert == NULL || select == NULL) return XFalse;//这些关键的资源不能为空
@@ -42,240 +44,269 @@ _XBool _XEditTexture::init(const char *normal,const char *disable,const char *se
 	m_isInited = XTrue;
 	return XTrue;
 }
-#define EDIT_CONFIG_FILENAME ("Edit.txt")
-_XBool _XEditTexture::initEx(const char *filename,_XResourcePosition resoursePosition)
+#define EDIT_CONFIG_FILENAME "Edit.txt"
+bool XEditSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+{
+	char tempFilename[MAX_FILE_NAME_LENGTH];
+	sprintf(tempFilename,"%s/%s",filename,EDIT_CONFIG_FILENAME);
+	FILE *fp = NULL;
+	if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
+	//下面开始依次读取数据
+	int flag = 0;
+	char resFilename[MAX_FILE_NAME_LENGTH] = "";
+	//normal
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag == 0)
+	{//没有普通状态是不行的
+		fclose(fp);
+		return XFalse;
+	}
+	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editNormal = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		fclose(fp);
+		return XFalse;
+	}
+	//down
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editDisable = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	//on
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editSelect = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	//disable
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editInsert = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		fclose(fp);
+		return XFalse;
+	}
+	//upon
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag != 0)
+	{
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+		sprintf(tempFilename,"%s/%s",filename,resFilename);
+		if((editUpon = createATextureData(tempFilename,resPos)) == NULL)
+		{//资源读取失败
+			releaseTex();
+			fclose(fp);
+			return XFalse;
+		}
+	}
+	//读取两组数据
+	int l,t,r,b;
+	if(fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {fclose(fp);return XFalse;}
+	m_mouseRect.set(l,t,r,b);
+	//所有数据读取完成
+	fclose(fp);
+	return true;
+}
+bool XEditSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+{
+	char tempFilename[MAX_FILE_NAME_LENGTH];
+	sprintf(tempFilename,"%s/%s",filename,EDIT_CONFIG_FILENAME);
+	unsigned char *p = XResPack.getFileData(tempFilename);
+	if(p == NULL) return XFalse;
+
+	//下面开始依次读取数据
+	int flag = 0;
+	char resFilename[MAX_FILE_NAME_LENGTH] = "";
+	int offset = 0;
+	//normal
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag == 0)
+	{//没有普通状态是不行的
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editNormal = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	//down
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editDisable = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	//on
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editSelect = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	//disable
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag == 0)
+	{//没有普通状态是不行的
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	if((editInsert = createATextureData(tempFilename,resPos)) == NULL)
+	{//资源读取失败
+		releaseTex();
+		XMem::XDELETE_ARRAY(p);
+		return XFalse;
+	}
+	//upon
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag != 0)
+	{
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+		sprintf(tempFilename,"%s/%s",filename,resFilename);
+		if((editUpon = createATextureData(tempFilename,resPos)) == NULL)
+		{//资源读取失败
+			releaseTex();
+			XMem::XDELETE_ARRAY(p);
+			return XFalse;
+		}
+	}
+	//读取两组数据
+	int l,t,r,b;
+	if(sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_mouseRect.set(l,t,r,b);
+	//所有数据读取完成
+	XMem::XDELETE_ARRAY(p);
+	return true;
+}
+bool XEditSkin::loadFromWeb(const char *filename,XResourcePosition resPos)		//从网页中读取资源
+{
+	return true;
+}
+XBool XEditSkin::initEx(const char *filename,XResourcePosition resoursePosition)
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse;
 	char tempFilename[MAX_FILE_NAME_LENGTH];
 	sprintf(tempFilename,"%s/%s",filename,EDIT_CONFIG_FILENAME);
 	//先打开配置文件
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
-	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
-	{//外部资源
-		FILE *fp = NULL;
-		if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
-		//下面开始依次读取数据
-		int flag = 0;
-		char resFilename[MAX_FILE_NAME_LENGTH] = "";
-		//normal
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag == 0)
-		{//没有普通状态是不行的
-			fclose(fp);
-			return XFalse;
-		}
-		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editNormal = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			fclose(fp);
-			return XFalse;
-		}
-		//down
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editDisable = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		//on
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editSelect = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		//disable
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editInsert = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			fclose(fp);
-			return XFalse;
-		}
-		//upon
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag != 0)
-		{
-			if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-			sprintf(tempFilename,"%s/%s",filename,resFilename);
-			if((editUpon = createATextureData(tempFilename,resoursePosition)) == NULL)
-			{//资源读取失败
-				releaseTex();
-				fclose(fp);
-				return XFalse;
-			}
-		}
-		//读取两组数据
-		int l,t,r,b;
-		if(fscanf(fp,"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {fclose(fp);return XFalse;}
-		m_mouseRect.set(l,t,r,b);
-		//所有数据读取完成
-		fclose(fp);
-	}else
+	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
+	switch(resoursePosition)
 	{
-		unsigned char *p = _XResourcePack::GetInstance().getFileData(tempFilename);
-		if(p == NULL) return XFalse;
-
-		//下面开始依次读取数据
-		int flag = 0;
-		char resFilename[MAX_FILE_NAME_LENGTH] = "";
-		int offset = 0;
-		//normal
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag == 0)
-		{//没有普通状态是不行的
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editNormal = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		//down
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editDisable = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		//on
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editSelect = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		//disable
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag == 0)
-		{//没有普通状态是不行的
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		sprintf(tempFilename,"%s/%s",filename,resFilename);
-		if((editInsert = createATextureData(tempFilename,resoursePosition)) == NULL)
-		{//资源读取失败
-			releaseTex();
-			XDELETE_ARRAY(p);
-			return XFalse;
-		}
-		//upon
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag != 0)
-		{
-			if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-			offset += getCharPosition((char *)(p + offset),'\n') + 1;
-			sprintf(tempFilename,"%s/%s",filename,resFilename);
-			if((editUpon = createATextureData(tempFilename,resoursePosition)) == NULL)
-			{//资源读取失败
-				releaseTex();
-				XDELETE_ARRAY(p);
-				return XFalse;
-			}
-		}
-		//读取两组数据
-		int l,t,r,b;
-		if(sscanf((char *)(p + offset),"%d,%d,%d,%d,",&l,&t,&r,&b) != 4) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_mouseRect.set(l,t,r,b);
-		//所有数据读取完成
-		XDELETE_ARRAY(p);
+	case RESOURCE_LOCAL_PACK:
+		if(!loadFromPacker(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_WEB:
+		if(!loadFromWeb(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_AUTO:
+		if(!loadFromPacker(filename,resoursePosition) && !loadFromFolder(filename,resoursePosition) &&
+			!loadFromWeb(filename,resoursePosition)) return false;
+		break;
 	}
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XEdit::_XEdit()
-:m_isInited(XFalse)					//是否初始化
-,m_mouseRightButtonMenu(NULL)	//鼠标右键菜单
-,m_nowString(NULL)				//当前输入的字符串
-,m_tempNowString(NULL)
-//,m_insertString(NULL)			//插入的字符串
-//,m_selectString(NULL)			//选取的字符串
-,m_haveSelect(XFalse)
-,m_editNormal(NULL)				//输入框普通状态
-,m_editDisable(NULL)			//输入框无效状态
-,m_editSelect(NULL)				//输入框片选颜色
-,m_editInsert(NULL)				//输入框插入标记
-,m_funInputChenge(NULL)			//输入内容发生改变的时候调用
-,m_funInputOver(NULL)			//确认输入结束之后的时候调用
-,m_resInfo(NULL)
-,m_withoutTex(XFalse)
-,m_nowKeyDown(XFalse)
-,m_isPassword(false)
+XEdit::XEdit()
+	:m_isInited(XFalse)					//是否初始化
+	,m_mouseRightButtonMenu(NULL)	//鼠标右键菜单
+	,m_curString(NULL)				//当前输入的字符串
+	,m_tempCurString(NULL)
+	//,m_insertString(NULL)			//插入的字符串
+	//,m_selectString(NULL)			//选取的字符串
+	,m_haveSelect(XFalse)
+	,m_editNormal(NULL)				//输入框普通状态
+	,m_editDisable(NULL)			//输入框无效状态
+	,m_editSelect(NULL)				//输入框片选颜色
+	,m_editInsert(NULL)				//输入框插入标记
+	//,m_funInputChenge(NULL)			//输入内容发生改变的时候调用
+	//,m_funInputOver(NULL)			//确认输入结束之后的时候调用
+	,m_resInfo(NULL)
+	,m_withoutTex(XFalse)
+	,m_curKeyDown(XFalse)
+	,m_isPassword(false)
+	,m_withPromptStr(false)
+	,m_editType(TYPE_STRING)
 {//这里初始化几个按键的状态
-	if(getCapsLockState()) m_keyCapsLockState = 1;
+	if(XEE::getCapsLockState()) m_keyCapsLockState = 1;
 	else m_keyCapsLockState = 0;
-	if(getNumLockState()) m_keyNumLockState = 1;
+	if(XEE::getNumLockState()) m_keyNumLockState = 1;
 	else m_keyNumLockState = 0;
 	m_ctrlType = CTRL_OBJ_EDIT;
 }
-_XBool _XEdit::init(const _XVector2& position,		//控件的位置
-		const _XRect& Area,					//控件的鼠标响应区间
-		const _XEditTexture &tex,			//控件的贴图
+XBool XEdit::init(const XVector2& position,		//控件的位置
+		const XRect& Area,					//控件的鼠标响应区间
+		const XEditSkin &tex,			//控件的贴图
 		const char *str,					//控件的初始化字符串
-		const _XFontUnicode &font,			//控件的字体
+		const XFontUnicode &font,			//控件的字体
 		float strSize,	//控件的字体信息
-		_XMouseRightButtonMenu * mouseMenu)		//控件的右键菜单
+		XMouseRightButtonMenu * mouseMenu)		//控件的右键菜单
 {
 	if(m_isInited ||
 		tex.editNormal == NULL || tex.editInsert == NULL || tex.editDisable == NULL || tex.editSelect == NULL) return XFalse;
@@ -283,16 +314,16 @@ _XBool _XEdit::init(const _XVector2& position,		//控件的位置
 	//需要注意的是输入范围必须要能显示最少一个字符，否则将会造成问题，目前这里并没有代码去判断，但是实际使用中需要注意这个问题
 	if(Area.getWidth() <= 0 || Area.getHeight() <= 0) return XFalse;	//输入范围不能为空
 	if(strSize <= 0) return XFalse;		//字符串的大小不能为非法值
-	if(str != NULL && strlen(str) >= MAX_INPUT_STRING_LENGTH) return XFalse;
+	if(str != NULL && strlen(str) >= m_maxInputStringLength) return XFalse;
 	if(mouseMenu != NULL)
 	{//这里需要改进，这里使用指针，会受到别处修改的影响
-		m_mouseRightButtonMenu = createMem<_XMouseRightButtonMenu>();
+		m_mouseRightButtonMenu = XMem::createMem<XMouseRightButtonMenu>();
 		if(m_mouseRightButtonMenu == NULL) return XFalse;	
 		m_mouseRightButtonMenu->setACopy(* mouseMenu);
 		//从控件管理器中将这个控件注销掉
-		_XCtrlManger.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
+		XCtrlManager.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(m_mouseRightButtonMenu);
+		XObjManager.decreaseAObject(m_mouseRightButtonMenu);
 #endif
 	}
 
@@ -307,71 +338,71 @@ _XBool _XEdit::init(const _XVector2& position,		//控件的位置
 	m_editSelect = tex.editSelect;			//输入框片选颜色
 	m_editInsert = tex.editInsert;			//输入框插入标记
 	m_editUpon = tex.editUpon;			//输入框插入标记
-	m_size.set(1.0f,1.0f);
-	m_nowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_nowString == NULL) 
+	m_scale.set(1.0f,1.0f);
+	m_curString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_curString == NULL) 
 	{
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_nowString[0] = '\0';
-	m_tempNowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_tempNowString == NULL) 
+	m_curString[0] = '\0';
+	m_tempCurString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_tempCurString == NULL) 
 	{
-		XDELETE_ARRAY(m_nowString);
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE_ARRAY(m_curString);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_tempNowString[0] = '\0';
-//	m_insertString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);	//当前输入的字符串
+	m_tempCurString[0] = '\0';
+//	m_insertString = XMem::createArrayMem<char>(m_maxInputStringLength);	//当前输入的字符串
 //	if(m_insertString == NULL) return XFalse;
 //	m_insertString[0] = '\0';
-//	m_selectString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);	//当前输入的字符串
+//	m_selectString = XMem::createArrayMem<char>(m_maxInputStringLength);	//当前输入的字符串
 //	if(m_selectString == NULL) return XFalse;
 //	m_selectString[0] = '\0';
-	m_nowShowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_nowShowString == NULL) 
+	m_curShowString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_curShowString == NULL) 
 	{
-		XDELETE_ARRAY(m_tempNowString);
-		XDELETE_ARRAY(m_nowString);
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE_ARRAY(m_tempCurString);
+		XMem::XDELETE_ARRAY(m_curString);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_nowShowString[0] = '\0';
+	m_curShowString[0] = '\0';
 
-	m_caption.setACopy(font);
+	if(!m_caption.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_caption);
+	XObjManager.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
 	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 
-	m_textPosition.set(m_mouseRect.left + TEXT_EDGE_WIDTH,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
+	m_textPosition.set(m_mouseRect.left + m_textEdgeWidth,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
 	m_textSize.set(strSize,strSize);				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 	if(str != NULL)
 	{
 		m_caption.setString(str);
-		strcpy(m_nowString,str);
-		m_nowInsertPoint = strlen(m_nowString);	//当前选择输入的位置
-		m_nowStringLength = strlen(m_nowString);	//当前输入字符串的长度
+		strcpy(m_curString,str);
+		m_curInsertPoint = strlen(m_curString);	//当前选择输入的位置
+		m_curStringLength = strlen(m_curString);	//当前输入字符串的长度
 	}else
 	{
 		m_caption.setString(" ");
-		m_nowString[0] = '\0';
-		m_nowInsertPoint = 0;	//当前选择输入的位置
-		m_nowStringLength = 0;	//当前输入字符串的长度
+		m_curString[0] = '\0';
+		m_curInsertPoint = 0;	//当前选择输入的位置
+		m_curStringLength = 0;	//当前输入字符串的长度
 	}
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
+	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
+	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
 	//m_caption.m_isPassWord = 1;
 //	m_selectText.setACopy(* font);
 //	m_selectText.setString(" ");
-//	m_selectText.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_size.x,m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_size.y);
-//	m_selectText.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
+//	m_selectText.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_scale.x,m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_scale.y);
+//	m_selectText.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
 
 	m_haveSelect = XFalse;		//是否在字符串中有选择
 	m_selectMouseDown = XFalse;
@@ -380,33 +411,33 @@ _XBool _XEdit::init(const _XVector2& position,		//控件的位置
 
 	m_spriteBackGround.init(m_editNormal->texture.m_w,m_editNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_spriteBackGround);
+	XObjManager.decreaseAObject(&m_spriteBackGround);
 #endif
 	m_spriteBackGround.setPosition(m_position);
-	m_spriteBackGround.setSize(m_size);
+	m_spriteBackGround.setScale(m_scale);
 	m_spriteBackGround.setIsTransformCenter(POINT_LEFT_TOP);
 
 	m_spriteSelect.init(m_editSelect->texture.m_w,m_editSelect->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_spriteSelect);
+	XObjManager.decreaseAObject(&m_spriteSelect);
 #endif
 	m_spriteSelect.setPosition(m_position);
-	m_spriteSelect.setSize(m_size);
+	m_spriteSelect.setScale(m_scale);
 	m_spriteSelect.setIsTransformCenter(POINT_LEFT_TOP);
 
 	//计算输入框中可以显示的字符串的长度(这里取0.5，是因为显示英文字符但是却是使用的中文字体库)
-	m_nowTextWidth = m_caption.getTextSize().x * m_caption.getSize().x * 0.5f;
-	m_nowTextHeight = m_caption.getTextSize().y * m_caption.getSize().y;
-	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * TEXT_EDGE_WIDTH) * m_size.x / m_nowTextWidth;
-	m_nowShowStart = 0;	//初始化当前显示的起始位置
+	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
+	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
+	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * m_textEdgeWidth) * m_scale.x / m_curTextWidth;
+	m_curShowStart = 0;	//初始化当前显示的起始位置
 	upDataShowStr();
 
 	m_spriteInsert.init(m_editInsert->texture.m_w,m_editInsert->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_spriteInsert);
+	XObjManager.decreaseAObject(&m_spriteInsert);
 #endif
 	upDateInsertShowPosition();
-	m_spriteInsert.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
+	m_spriteInsert.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
 	m_spriteInsert.setIsTransformCenter(POINT_LEFT_TOP);
 
 	//printf("Can Show String Length:%d\n",m_canShowLength);
@@ -423,32 +454,32 @@ _XBool _XEdit::init(const _XVector2& position,		//控件的位置
 	m_isActive = XTrue;
 	m_isBeChoose = XFalse; 
 
-	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XEdit::initWithoutTex(const _XRect& area,
+XBool XEdit::initWithoutSkin(const XRect& area,
 		const char *str,					//控件的初始化字符串
-		const _XFontUnicode &font,			//控件的字体
+		const XFontUnicode &font,			//控件的字体
 		float strSize,	//控件的字体信息
-		_XMouseRightButtonMenu * mouseMenu)
+		XMouseRightButtonMenu * mouseMenu)
 {
 	if(m_isInited ||
 	//需要注意的是输入范围必须要能显示最少一个字符，否则将会造成问题，目前这里并没有代码去判断，但是实际使用中需要注意这个问题
 		strSize <= 0 ||		//字符串的大小不能为非法值
-		(str != NULL && strlen(str) >= MAX_INPUT_STRING_LENGTH)) return XFalse;
+		(str != NULL && strlen(str) >= m_maxInputStringLength)) return XFalse;
 	if(mouseMenu != NULL)
 	{//这里需要改进，这里使用指针，会受到别处修改的影响
-		m_mouseRightButtonMenu = createMem<_XMouseRightButtonMenu>();
+		m_mouseRightButtonMenu = XMem::createMem<XMouseRightButtonMenu>();
 		if(m_mouseRightButtonMenu == NULL) return XFalse;	
 		m_mouseRightButtonMenu->setACopy(* mouseMenu);
 		//从控件管理器中将这个控件注销掉
-		_XCtrlManger.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
+		XCtrlManager.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(m_mouseRightButtonMenu);
+		XObjManager.decreaseAObject(m_mouseRightButtonMenu);
 #endif
 	}
 
@@ -458,60 +489,60 @@ _XBool _XEdit::initWithoutTex(const _XRect& area,
 	m_withoutTex = XTrue;
 	m_comment.init();
 
-	m_size.set(1.0f,1.0f);
-	m_nowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_nowString == NULL) 
+	m_scale.set(1.0f,1.0f);
+	m_curString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_curString == NULL) 
 	{
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_nowString[0] = '\0';
-	m_tempNowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_tempNowString == NULL) 
+	m_curString[0] = '\0';
+	m_tempCurString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_tempCurString == NULL) 
 	{
-		XDELETE_ARRAY(m_nowString);
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE_ARRAY(m_curString);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_tempNowString[0] = '\0';
-	m_nowShowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_nowShowString == NULL) 
+	m_tempCurString[0] = '\0';
+	m_curShowString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_curShowString == NULL) 
 	{
-		XDELETE_ARRAY(m_tempNowString);
-		XDELETE_ARRAY(m_nowString);
-		XDELETE(m_mouseRightButtonMenu);
+		XMem::XDELETE_ARRAY(m_tempCurString);
+		XMem::XDELETE_ARRAY(m_curString);
+		XMem::XDELETE(m_mouseRightButtonMenu);
 		return XFalse;
 	}		
-	m_nowShowString[0] = '\0';
+	m_curShowString[0] = '\0';
 
-	m_caption.setACopy(font);
+	if(!m_caption.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_caption);
+	XObjManager.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
 	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 
-	m_textPosition.set(m_mouseRect.left + TEXT_EDGE_WIDTH,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
+	m_textPosition.set(m_mouseRect.left + m_textEdgeWidth,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
 	m_textSize.set(strSize,strSize);				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 	if(str != NULL)
 	{
 		m_caption.setString(str);
-		strcpy(m_nowString,str);
-		m_nowInsertPoint = strlen(m_nowString);	//当前选择输入的位置
-		m_nowStringLength = strlen(m_nowString);	//当前输入字符串的长度
+		strcpy(m_curString,str);
+		m_curInsertPoint = strlen(m_curString);	//当前选择输入的位置
+		m_curStringLength = strlen(m_curString);	//当前输入字符串的长度
 	}else
 	{
 		m_caption.setString(" ");
-		m_nowString[0] = '\0';
-		m_nowInsertPoint = 0;	//当前选择输入的位置
-		m_nowStringLength = 0;	//当前输入字符串的长度
+		m_curString[0] = '\0';
+		m_curInsertPoint = 0;	//当前选择输入的位置
+		m_curStringLength = 0;	//当前输入字符串的长度
 	}
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
+	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
+	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
 
 	m_haveSelect = XFalse;		//是否在字符串中有选择
 	m_selectMouseDown = XFalse;
@@ -519,10 +550,10 @@ _XBool _XEdit::initWithoutTex(const _XRect& area,
 	m_selectEnd = -1;		//选择的结束位置
 
 	//计算输入框中可以显示的字符串的长度(这里取0.5，是因为显示英文字符但是却是使用的中文字体库)
-	m_nowTextWidth = m_caption.getTextSize().x * m_caption.getSize().x * 0.5f;
-	m_nowTextHeight = m_caption.getTextSize().y * m_caption.getSize().y;
-	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * TEXT_EDGE_WIDTH) * m_size.x / m_nowTextWidth;
-	m_nowShowStart = 0;	//初始化当前显示的起始位置
+	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
+	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
+	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * m_textEdgeWidth) * m_scale.x / m_curTextWidth;
+	m_curShowStart = 0;	//初始化当前显示的起始位置
 	upDataShowStr();
 
 	upDateInsertShowPosition();
@@ -540,36 +571,47 @@ _XBool _XEdit::initWithoutTex(const _XRect& area,
 	m_isActive = XTrue;
 	m_isBeChoose = XFalse; 
 
-	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XEdit::upDataShowStr()
+void XEdit::upDataShowStr()
 {//还没有实现
-	if(m_nowStringLength <= m_nowShowStart + m_canShowLength) 
+	if(m_curStringLength <= m_curShowStart + m_canShowLength) 
 	{
-		m_nowShowStart = m_nowStringLength - m_canShowLength;
-		if(m_nowShowStart < 0) m_nowShowStart = 0;
-		strcpy(m_nowShowString,m_nowString + m_nowShowStart);
+		m_curShowStart = m_curStringLength - m_canShowLength;
+		if(m_curShowStart < 0) m_curShowStart = 0;
+		if(!XString::isAtUnicodeEnd(m_curString,m_curShowStart)) ++m_curShowStart; //如果头临界、则多移动一位
+		strcpy(m_curShowString,m_curString + m_curShowStart);
 	}else
 	{
-		if(isAtUnicodeEnd(m_nowString,m_nowShowStart + m_canShowLength)) 
+		if(XString::isAtUnicodeEnd(m_curString,m_curShowStart + m_canShowLength)) 
 		{
-			memcpy(m_nowShowString,m_nowString + m_nowShowStart,m_canShowLength);
-			m_nowShowString[m_canShowLength] = '\0';
+			memcpy(m_curShowString,m_curString + m_curShowStart,m_canShowLength);
+			m_curShowString[m_canShowLength] = '\0';
 		}else 
 		{
-			memcpy(m_nowShowString,m_nowString + m_nowShowStart,m_canShowLength - 1);
-			m_nowShowString[m_canShowLength - 1] = '\0';
+			memcpy(m_curShowString,m_curString + m_curShowStart,m_canShowLength - 1);
+			m_curShowString[m_canShowLength - 1] = '\0';
 		}
 	}
 	//跟新到显示中
-	m_caption.setString(m_nowShowString);
+	if(m_withPromptStr && strlen(m_curString) <= 0)
+	{//如果有提示文字
+		m_caption.setColor(XFColor(0.65f,0.65f,0.65f,1.0f) * m_color);
+		m_caption.setString(XString::getCanShowString(m_promptStr.c_str(),m_canShowLength).c_str());
+	}else
+	{//如果没有提示文字
+		m_caption.setColor(m_textColor * m_color);
+		m_caption.setString(m_curShowString);
+	}
+	if(!isStringPassable())
+		m_caption.setColor(XFColor::red * m_color);
 }
-void _XEdit::draw()
+void XEdit::draw()
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
@@ -578,18 +620,16 @@ void _XEdit::draw()
 	{
 		if(!m_isEnable) 
 		{
-			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
-				_XVector2(m_mouseRect.getWidth() * m_size.x,m_mouseRect.getHeight() * m_size.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true,false,true);
+			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y),
+				XVector2(m_mouseRect.getWidth() * m_scale.x,m_mouseRect.getHeight() * m_scale.y),XCCS::downColor * m_color,true,false,true);
 		}else 
 		{
-			drawFillBoxExA(m_position + _XVector2(m_mouseRect.left * m_size.x,m_mouseRect.top * m_size.y),
-				_XVector2(m_mouseRect.getWidth() * m_size.x,m_mouseRect.getHeight() * m_size.y),0.75f * m_color.fR,0.75f * m_color.fG,0.75f * m_color.fB,m_color.fA,true,false,true);
+			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y),
+				XVector2(m_mouseRect.getWidth() * m_scale.x,m_mouseRect.getHeight() * m_scale.y),XCCS::normalColor * m_color,true,false,true);
 		}
 
 		if(m_haveSelect) 
-		{
-			drawFillBoxExA(_XVector2(m_selectRect.left,m_selectRect.top),_XVector2(m_selectRect.right,m_selectRect.bottom),0.6f * m_color.fR,0.6f * m_color.fG,0.6f * m_color.fB,m_color.fA,true,false,true);
-		}
+			XRender::drawFillBoxExA(XVector2(m_selectRect.left,m_selectRect.top),XVector2(m_selectRect.right,m_selectRect.bottom),XCCS::specialColor * m_color,true,false,true);
 
 		//显示当前输入的字符串
 		m_caption.draw();
@@ -599,9 +639,9 @@ void _XEdit::draw()
 			{
 				if(m_timer > 250) 
 				{
-					float x = m_position.x + m_textPosition.x * m_size.x + (m_nowInsertPoint - m_nowShowStart) * m_nowTextWidth;
-					float y = m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f;
-					drawLine(x,y,x,y + m_nowTextHeight,1,0.25f * m_color.fR,0.25f * m_color.fG,0.25f * m_color.fB,m_color.fA);
+					float x = m_position.x + m_textPosition.x * m_scale.x + (m_curInsertPoint - m_curShowStart) * m_curTextWidth;
+					float y = m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f;
+					XRender::drawLine(x,y,x,y + m_curTextHeight,1,XCCS::blackDownColor * m_color);
 					//m_spriteInsert.draw(m_editInsert);
 				}
 			}
@@ -626,237 +666,220 @@ void _XEdit::draw()
 		if(m_editUpon != NULL) m_spriteBackGround.draw(m_editUpon);	
 	}
 }
-void _XEdit::release()
+void XEdit::setImmPos()
+{
+	float x = m_position.x + m_textPosition.x * m_scale.x + (m_curInsertPoint - m_curShowStart) * m_curTextWidth;
+	float y = m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f;
+	XImm::setCompositionPos(x,y);
+}
+void XEdit::release()
 {
 	if(!m_isInited) return;
-	XDELETE_ARRAY(m_nowString);
-	XDELETE_ARRAY(m_tempNowString);
-	//XDELETE_ARRAY(m_insertString);
-	//XDELETE_ARRAY(m_selectString);
-	XDELETE_ARRAY(m_nowShowString);
-	XDELETE(m_mouseRightButtonMenu);
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XMem::XDELETE_ARRAY(m_curString);
+	XMem::XDELETE_ARRAY(m_tempCurString);
+	//XMem::XDELETE_ARRAY(m_insertString);
+	//XMem::XDELETE_ARRAY(m_selectString);
+	XMem::XDELETE_ARRAY(m_curShowString);
+	XMem::XDELETE(m_mouseRightButtonMenu);
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif
 	if(m_resInfo != NULL)
 	{
-		_XResourceManager::GetInstance().releaseResource(m_resInfo);
+		XResManager.releaseResource(m_resInfo);
 		m_resInfo = NULL;
 	}
 	m_isInited = XFalse;
 }
-void _XEdit::setString(const char *str)
+void XEdit::setString(const char *str)
 {//这个函数面临很复杂的逻辑环境，如果用户正在处于输入阶段或者正在处于片选阶段的时候这个修改将会造成较为大的影响，所以这里可能会做一些不人性化的处理
 	if(!m_isInited ||
 		str == NULL) return;
+	if(!isStringPassable()) return;	//如果数据不符合要求则直接返回
 	m_caption.setString(str);
-	strcpy(m_nowString,str);
-	m_nowInsertPoint = strlen(m_nowString);	//当前选择输入的位置
-	m_nowStringLength = strlen(m_nowString);	//当前输入字符串的长度
+	strcpy(m_curString,str);
+	m_curInsertPoint = strlen(m_curString);	//当前选择输入的位置
+	m_curStringLength = strlen(m_curString);	//当前输入字符串的长度
 	//取消所有片选的信息
 	m_haveSelect = XFalse;		//是否在字符串中有选择
 	m_selectMouseDown = XFalse;
 	m_selectStart = -1;		//选择的起始位置
 	m_selectEnd = -1;		//选择的结束位置
 	//计算输入框中可以显示的字符串的长度(这里取0.5，是因为显示英文字符但是却是使用的中文字体库)
-	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * TEXT_EDGE_WIDTH) * m_size.x / m_nowTextWidth;
-	m_nowShowStart = 0;	//初始化当前显示的起始位置
+	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * m_textEdgeWidth) * m_scale.x / m_curTextWidth;
+	m_curShowStart = 0;	//初始化当前显示的起始位置
 	upDataShowStr();
 
 	upDateInsertShowPosition();
 }
-void _XEdit::mouseRightMenuProc()
+bool XEdit::stringPlaster()
 {
-	int TextChange = 0;
-	if(m_mouseRightButtonMenu->getLastChoose() == 0)
-	{//剪切
-		if(m_haveSelect)
-		{//存在片选，没有片选则什么也不作
-			//1、拷贝片选的内容
 #ifdef XEE_OS_WINDOWS
-			memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-			copyString[getSelectLength()] = '\0';
-			setTextToClipboard(copyString);
+	std::string tmp = XString::getTextFromClipboard();
+	if(tmp == "") m_copyString[0] = '\0';	//没有数
+	else 
+	{
+		if(tmp.size() >= m_maxInputStringLength - 1)
+		{
+			memcpy(m_copyString,tmp.c_str(),m_maxInputStringLength - 1);
+			m_copyString[m_maxInputStringLength - 1] = '\0';
+		}else
+		{
+			memcpy(m_copyString,tmp.c_str(),tmp.size());
+			m_copyString[tmp.size()] = '\0';
+		}
+	}
 #endif
-#ifdef XEE_OS_LINUX
-			memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-			copyString[getSelectLength()] = '\0';
-#endif
-			//2、删除片选的内容
+	if(m_copyString[0] == '\0' ||
+		!getCopyStrHaveEnd()) return false;
+	if(m_haveSelect)
+	{//存在片选(这里实际是替换动作)
+		if(m_curStringLength + strlen(m_copyString) - getSelectLength() > m_maxInputStringLength - 2)
+		{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
+		}else
+		{							
+			//1、删除片选内容
 			deleteSelectStr();
 			m_haveSelect = XFalse;	//片选结束
-			TextChange = 1;
-		}
-	}else
-	if(m_mouseRightButtonMenu->getLastChoose() == 1)
-	{//复制
-		if(m_haveSelect)
-		{//存在片选，没有片选则什么也不作
-			//拷贝片选的内容
-#ifdef XEE_OS_WINDOWS
-			memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-			copyString[getSelectLength()] = '\0';
-			setTextToClipboard(copyString);
-#endif
-#ifdef XEE_OS_LINUX
-			memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-			copyString[getSelectLength()] = '\0';
-#endif
-		}
-	}else
-	if(m_mouseRightButtonMenu->getLastChoose() == 2)
-	{//粘贴
-		//判断公用内存空间中是否有内容
-#ifdef XEE_OS_WINDOWS
-		std::string tmp = getTextFromClipboard();
-		if(tmp == "") copyString[0] = '\0';	//没有数
-		else 
-		{
-			if(tmp.size() >= MAX_INPUT_STRING_LENGTH - 1)
-			{
-				memcpy(copyString,tmp.c_str(),MAX_INPUT_STRING_LENGTH - 1);
-				copyString[MAX_INPUT_STRING_LENGTH - 1] = '\0';
+			//2、插入复制内容
+			if(m_curInsertPoint == m_curStringLength)
+			{//如果是在字符串的末尾添加
+				strcat(m_curString,m_copyString);
+				m_curStringLength = strlen(m_curString);
+				//m_curInsertPoint = m_curStringLength;
+				changeInsertPoint(m_curStringLength - m_curInsertPoint);
+				return true;
 			}else
 			{
-				memcpy(copyString,tmp.c_str(),tmp.size());
-				copyString[tmp.size()] = '\0';
-			}
-		}
-#endif
-		if(copyString[0] != '\0')
-		{
-			char haveEnd = 0;
-			for(int i = 0;i < MAX_INPUT_STRING_LENGTH;++ i)
-			{
-				if(copyString[i] == '\0')
-				{
-					haveEnd = 1;
-					break;
-				}
-			}
-			if(haveEnd != 0)
-			{
-				if(m_haveSelect)
-				{//存在片选(这里实际是替换动作)
-					if(m_nowStringLength + strlen(copyString) - getSelectLength() > MAX_INPUT_STRING_LENGTH - 2)
-					{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
-					}else
-					{							
-						//1、删除片选内容
-						deleteSelectStr();
-						m_haveSelect = XFalse;	//片选结束
-						//2、插入复制内容
-						if(m_nowInsertPoint == m_nowStringLength)
-						{//如果是在字符串的末尾添加
-							strcat(m_nowString,copyString);
-							m_nowStringLength = strlen(m_nowString);
-							//m_nowInsertPoint = m_nowStringLength;
-							changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-							TextChange = 1;
-						}else
-						{
-							strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-							strcpy(m_nowString + m_nowInsertPoint,copyString);
-							strcat(m_nowString,m_tempNowString);
-							m_nowStringLength = strlen(m_nowString);
-							//m_nowInsertPoint += strlen(copyString);
-							changeInsertPoint(strlen(copyString));
-							TextChange = 1;
-						}
-					}
-				}else
-				{//没有片选
-					//判断粘贴的内容是否会超出字符串的总长度
-					if(m_nowStringLength + strlen(copyString) > MAX_INPUT_STRING_LENGTH - 2)
-					{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
-					}else
-					{
-						if(m_nowInsertPoint == m_nowStringLength)
-						{//如果是在字符串的末尾添加
-							strcat(m_nowString,copyString);
-							m_nowStringLength = strlen(m_nowString);
-						//	m_nowInsertPoint = m_nowStringLength;
-							changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-							TextChange = 1;
-						}else
-						{
-							strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-							strcpy(m_nowString + m_nowInsertPoint,copyString);
-							strcat(m_nowString,m_tempNowString);
-							m_nowStringLength = strlen(m_nowString);
-							//m_nowInsertPoint += strlen(copyString);
-							changeInsertPoint(strlen(copyString));
-							TextChange = 1;
-						}
-					}
-				}
+				strcpy(m_tempCurString,m_curString + m_curInsertPoint);
+				strcpy(m_curString + m_curInsertPoint,m_copyString);
+				strcat(m_curString,m_tempCurString);
+				m_curStringLength = strlen(m_curString);
+				//m_curInsertPoint += strlen(m_copyString);
+				changeInsertPoint(strlen(m_copyString));
+				return true;
 			}
 		}
 	}else
-	if(m_mouseRightButtonMenu->getLastChoose() == 3)
-	{//撤销(如果存在片选择取消片选)
-		if(m_haveSelect) m_haveSelect = XFalse;
-	}
-	printf("%d\n",m_mouseRightButtonMenu->getLastChoose());
-	if(TextChange != 0)
-	{
-		upDataShowStr();	//因为字符串被改变，所以这里需要更新字符的显示
-	//	m_caption.setString(m_nowString);
-	//	m_spriteInsert.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_size.x + m_nowInsertPoint * m_caption.m_size.x * m_caption.m_showSize.x * 0.5,
-	//		m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_size.y);
-		if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
-		//当数据发生变化的时候播放动作
-		if(m_withAction)
-		{//这里测试一个动态效果
-		//	m_isInAction = XTrue;
-			m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
-			m_oldPos = m_position;
-			m_oldSize = m_size;
+	{//没有片选
+		//判断粘贴的内容是否会超出字符串的总长度
+		if(m_curStringLength + strlen(m_copyString) > m_maxInputStringLength - 2)
+		{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
+		}else
+		{
+			if(m_curInsertPoint == m_curStringLength)
+			{//如果是在字符串的末尾添加
+				strcat(m_curString,m_copyString);
+				m_curStringLength = strlen(m_curString);
+			//	m_curInsertPoint = m_curStringLength;
+				changeInsertPoint(m_curStringLength - m_curInsertPoint);
+				return true;
+			}else
+			{
+				strcpy(m_tempCurString,m_curString + m_curInsertPoint);
+				strcpy(m_curString + m_curInsertPoint,m_copyString);
+				strcat(m_curString,m_tempCurString);
+				m_curStringLength = strlen(m_curString);
+				//m_curInsertPoint += strlen(m_copyString);
+				changeInsertPoint(strlen(m_copyString));
+				return true;
+			}
 		}
 	}
+	return false;
 }
-void _XEdit::changeInsertPoint(int sum)
+void XEdit::mouseRightMenuProc()
+{
+	int TextChange = 0;
+	switch(m_mouseRightButtonMenu->getLastChoose())
+	{
+	case 0://剪切
+		if(!m_haveSelect) break;//存在片选，没有片选则什么也不作
+		//1、拷贝片选的内容
+#ifdef XEE_OS_WINDOWS
+		memcpy(m_copyString,m_curString + getSelectHead(),getSelectLength());
+		m_copyString[getSelectLength()] = '\0';
+		XString::setTextToClipboard(m_copyString);
+#endif
+#ifdef XEE_OS_LINUX
+		memcpy(m_copyString,m_curString + getSelectHead(),getSelectLength());
+		m_copyString[getSelectLength()] = '\0';
+#endif
+		//2、删除片选的内容
+		deleteSelectStr();
+		m_haveSelect = XFalse;	//片选结束
+		TextChange = 1;
+		break;
+	case 1://复制
+		stringCopy();
+		break;
+	case 2://粘贴
+		if(stringPlaster()) TextChange = 1;
+		break;
+	case 3://撤销(如果存在片选择取消片选)
+		if(m_haveSelect) m_haveSelect = XFalse;
+		break;
+	}
+//	printf("%d\n",m_mouseRightButtonMenu->getLastChoose());
+	if(TextChange == 0) return;	//如果没有发生变化，则直接退出
+	upDataShowStr();	//因为字符串被改变，所以这里需要更新字符的显示
+//	m_caption.setString(m_curString);
+//	m_spriteInsert.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_scale.x + m_curInsertPoint * m_caption.m_scale.x * m_caption.m_showSize.x * 0.5,
+//		m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_scale.y);
+	//if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
+	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,EDT_INPUT_CHANGE);
+	else XCtrlManager.eventProc(m_objectID,EDT_INPUT_CHANGE);
+	//当数据发生变化的时候播放动作
+	if(m_withAction)
+	{//这里测试一个动态效果
+	//	m_isInAction = XTrue;
+		m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
+		m_oldPos = m_position;
+		m_oldSize = m_scale;
+	}
+}
+void XEdit::changeInsertPoint(int sum)
 {
 	if(sum == 0) return;
-	int tempNewPosition = m_nowInsertPoint + sum;
+	int tempNewPosition = m_curInsertPoint + sum;
 	if(tempNewPosition < 0) return;
-	if(tempNewPosition > m_nowStringLength) return;
+	if(tempNewPosition > m_curStringLength) return;
 	//这里需要检查中文的问题
-	if(!isAtUnicodeEnd(m_nowString,tempNewPosition)) 
+	if(!XString::isAtUnicodeEnd(m_curString,tempNewPosition)) 
 	{//如果遇到中文临界就多移动一位,(这个方法不对)
 		if(sum < 0) changeInsertPoint(sum - 1);//后退
 		else changeInsertPoint(sum + 1);//前进
 		return;
 	}
 	//可以移动
-	int tempOldPosition = m_nowInsertPoint;		//旧光标的位置
-	m_nowInsertPoint = tempNewPosition;
+	int tempOldPosition = m_curInsertPoint;		//旧光标的位置
+	m_curInsertPoint = tempNewPosition;
 	//检查是否要移动显示数据
-	if(m_nowInsertPoint < m_nowShowStart || m_nowInsertPoint > m_nowShowStart + m_canShowLength)
+	if(m_curInsertPoint < m_curShowStart || m_curInsertPoint > m_curShowStart + m_canShowLength)
 	{//超出显示范围需要修改显示范围
-		if(m_nowInsertPoint < m_nowShowStart)
+		if(m_curInsertPoint < m_curShowStart)
 		{//向前移动
-			if(tempOldPosition != m_nowShowStart)
+			if(tempOldPosition != m_curShowStart)
 			{//如果之前光标没有在输入框的开头，则需要跟新到开头
-				m_nowShowStart = m_nowInsertPoint;
+				m_curShowStart = m_curInsertPoint;
 				upDateInsertShowPosition();
 			}else
 			{
-				m_nowShowStart = m_nowInsertPoint;
+				m_curShowStart = m_curInsertPoint;
 			}
 		}else
-		if(m_nowInsertPoint > m_nowShowStart + m_canShowLength)
+		if(m_curInsertPoint > m_curShowStart + m_canShowLength)
 		{//向后移动
-			if(tempOldPosition != m_nowShowStart + m_canShowLength)
+			if(tempOldPosition != m_curShowStart + m_canShowLength)
 			{//如果之前的光标不在输入框结尾则需要更新光标到结尾
-				m_nowShowStart = m_nowInsertPoint - m_canShowLength;
-				if(!isAtUnicodeEnd(m_nowString,m_nowShowStart)) ++m_nowShowStart; //如果头临界、则多移动一位
+				m_curShowStart = m_curInsertPoint - m_canShowLength;
+				if(!XString::isAtUnicodeEnd(m_curString,m_curShowStart)) ++m_curShowStart; //如果头临界、则多移动一位
 				upDateInsertShowPosition();
 			}else
 			{
-				m_nowShowStart = m_nowInsertPoint - m_canShowLength;
-				if(!isAtUnicodeEnd(m_nowString,m_nowShowStart)) ++m_nowShowStart; //如果头临界、则多移动一位
+				m_curShowStart = m_curInsertPoint - m_canShowLength;
+				if(!XString::isAtUnicodeEnd(m_curString,m_curShowStart)) ++m_curShowStart; //如果头临界、则多移动一位
 				upDateInsertShowPosition();
 			}
 		}
@@ -866,48 +889,48 @@ void _XEdit::changeInsertPoint(int sum)
 		upDateInsertShowPosition();
 	}
 }
-void _XEdit::upDataSelectShow()
+void XEdit::upDataSelectShow()
 {
 	int tempHead = getSelectHead();
 	int tempEnd = getSelectEnd();
-	if(tempHead < m_nowShowStart) tempHead = m_nowShowStart;
-	if(tempHead >= m_nowShowStart + m_canShowLength)
+	if(tempHead < m_curShowStart) tempHead = m_curShowStart;
+	if(tempHead >= m_curShowStart + m_canShowLength)
 	{//这个情况不需要显示
-		tempHead = m_nowShowStart + m_canShowLength;
+		tempHead = m_curShowStart + m_canShowLength;
 	}
-	if(tempEnd <= m_nowShowStart)
+	if(tempEnd <= m_curShowStart)
 	{//这种情况也不需要显示
-		tempEnd = m_nowShowStart;
+		tempEnd = m_curShowStart;
 	}
-	if(tempEnd > m_nowShowStart + m_canShowLength) tempEnd = m_nowShowStart + m_canShowLength;
+	if(tempEnd > m_curShowStart + m_canShowLength) tempEnd = m_curShowStart + m_canShowLength;
 	//更具实际的情况计算选区位置和选区图片需要放置的尺寸
 	if(m_withoutTex)
 	{
 		if(tempEnd - tempHead < m_canShowLength)
 		{
-			m_selectRect.set(m_position.x + m_textPosition.x * m_size.x + (tempHead - m_nowShowStart) * m_nowTextWidth,
-				m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f,(tempEnd - tempHead) * m_nowTextWidth,m_nowTextHeight);
+			m_selectRect.set(m_position.x + m_textPosition.x * m_scale.x + (tempHead - m_curShowStart) * m_curTextWidth,
+				m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f,(tempEnd - tempHead) * m_curTextWidth,m_curTextHeight);
 		}else
 		{
-			m_selectRect.set(m_position.x + m_textPosition.x * m_size.x + (tempHead - m_nowShowStart) * m_nowTextWidth,
-				m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f,m_canShowLength * m_nowTextWidth,m_nowTextHeight);
+			m_selectRect.set(m_position.x + m_textPosition.x * m_scale.x + (tempHead - m_curShowStart) * m_curTextWidth,
+				m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f,m_canShowLength * m_curTextWidth,m_curTextHeight);
 		}
 	}else
 	{
-		m_spriteSelect.setPosition(m_position.x + m_textPosition.x * m_size.x + (tempHead - m_nowShowStart) * m_nowTextWidth,
-			m_position.y + m_textPosition.y * m_size.y - m_nowTextHeight * 0.5f);
+		m_spriteSelect.setPosition(m_position.x + m_textPosition.x * m_scale.x + (tempHead - m_curShowStart) * m_curTextWidth,
+			m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f);
 		if(tempEnd - tempHead < m_canShowLength)
 		{
-			m_spriteSelect.setSize((tempEnd - tempHead) * m_nowTextWidth /m_editSelect->textureSize.x,
-				m_nowTextHeight / m_editSelect->textureSize.y);
+			m_spriteSelect.setScale((tempEnd - tempHead) * m_curTextWidth /m_editSelect->textureSize.x,
+				m_curTextHeight / m_editSelect->textureSize.y);
 		}else
 		{
-			m_spriteSelect.setSize(m_canShowLength * m_nowTextWidth /m_editSelect->textureSize.x,
-				m_nowTextHeight / m_editSelect->textureSize.y);
+			m_spriteSelect.setScale(m_canShowLength * m_curTextWidth /m_editSelect->textureSize.x,
+				m_curTextHeight / m_editSelect->textureSize.y);
 		}
 	}
 }
-_XBool _XEdit::mouseProc(float x,float y,_XMouseState mouseState)
+XBool XEdit::mouseProc(float x,float y,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -915,32 +938,40 @@ _XBool _XEdit::mouseProc(float x,float y,_XMouseState mouseState)
 		!m_isEnable) return XFalse;		//如果无效则直接退出
 	if(m_withAction && m_isInAction) return XFalse;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
 	//计算鼠标响应区域的位置
-//	_XRect temp;
-//	temp.set(m_objRect.left,m_objRect.top,m_objRect.left + m_objRect.getWidth() * m_size.x,m_objRect.top + m_objRect.getHeight() * m_size.y);
+//	XRect temp;
+//	temp.set(m_objRect.left,m_objRect.top,m_objRect.left + m_objRect.getWidth() * m_scale.x,m_objRect.top + m_objRect.getHeight() * m_scale.y);
 	if(m_mouseRightButtonMenu != NULL)
 	{//右键菜单处理在这里进行
-		int  flagMouseMenu = 0;
-		if(m_mouseRightButtonMenu->getVisible()) flagMouseMenu = 1;
+		XBool flagMouseMenu = m_mouseRightButtonMenu->getVisible();
+		bool ret = false;
 		if(mouseState == MOUSE_RIGHT_BUTTON_UP)
-		{//如果是右键单击产生动作需要在空间范围内
-			if(m_nowMouseRect.isInRect(x,y) && m_isBeChoose)
-			{
-				m_mouseRightButtonMenu->mouseProc(x,y,mouseState);
-			}
+		{//如果是右键单击产生动作需要在控件范围内
+			if(m_curMouseRect.isInRect(x,y) && m_isBeChoose)
+				ret = m_mouseRightButtonMenu->mouseProc(x,y,mouseState);
 		}else
 		{
-			m_mouseRightButtonMenu->mouseProc(x,y,mouseState);
+			ret = m_mouseRightButtonMenu->mouseProc(x,y,mouseState);
 		}
-		if(flagMouseMenu == 1 && !m_mouseRightButtonMenu->getVisible())
+		if(!flagMouseMenu && m_mouseRightButtonMenu->getVisible())
+		{//右键菜单出现，这里需要整理右键菜单的状态
+			m_mouseRightButtonMenu->setMnuState(m_haveSelect,0); 
+			m_mouseRightButtonMenu->setMnuState(m_haveSelect,1); 
+#ifdef XEE_OS_WINDOWS	//有选择才能粘贴
+			m_mouseRightButtonMenu->setMnuState(XString::getTextFromClipboard() != "",2); 
+#else
+			m_mouseRightButtonMenu->setMnuState(m_copyString[0] != '\0',2); 
+#endif
+			m_mouseRightButtonMenu->setMnuState(m_haveSelect,3); 
+		}
+		//if(flagMouseMenu && !m_mouseRightButtonMenu->getVisible())
+		if(ret)
 		{//按下了快捷键(这里实现对应菜单项的功能)
 			mouseRightMenuProc();//右键菜单的响应
-			if(m_mouseRightButtonMenu->getLastChoose() !=  -1)
-			{//如果菜单有操作，则这里的消息不后传
+			if(m_mouseRightButtonMenu->getLastChoose() != -1)//如果菜单有操作，则这里的消息不后传
 				return XTrue;	//对右键菜单的操作生效的话，则这个鼠标消息不会左重复处理
-			}
 		}
 	} 
-	if(m_nowMouseRect.isInRect(x,y))
+	if(m_curMouseRect.isInRect(x,y))
 	{//鼠标在范围内点击
 		if(!m_isMouseInRect)
 		{
@@ -948,6 +979,8 @@ _XBool _XEdit::mouseProc(float x,float y,_XMouseState mouseState)
 			m_comment.setShow();
 			setCommentPos(x,y + 16.0f);
 		}
+		if(mouseState != MOUSE_MOVE && m_comment.getIsShow())
+			m_comment.disShow();	//鼠标的任意操作都会让说明框消失
 		//下面是左右键都可以出发
 		if(mouseState == MOUSE_LEFT_BUTTON_DOWN || 
 			mouseState == MOUSE_LEFT_BUTTON_DCLICK || 
@@ -957,55 +990,53 @@ _XBool _XEdit::mouseProc(float x,float y,_XMouseState mouseState)
 			{
 				m_isBeChoose = XTrue;//如果控件没有处于激活状态则激活
 				if(m_withAction)
-				{
 					m_insertActionMD.set(10.0f,1.0f,0.005f);//,MOVE_DATA_MODE_SQRT2_MULT);
-				}
 			}
-			if(m_nowStringLength > 0)
-			{//字符串中有字符时，可以同通过鼠标选择插入位置(这里的常数10是为了方便选择头或者尾)
-				if(m_nowMouseRect.isInRect(x,y))
-				{//鼠标按下动作有效
-					//计算插入位置
-					if(x <= m_position.x + m_textPosition.x * m_size.x)
-					{//头
-						if(m_nowInsertPoint != m_nowShowStart) changeInsertPoint(m_nowShowStart - m_nowInsertPoint);
+			if(m_curStringLength > 0 &&//字符串中有字符时，可以同通过鼠标选择插入位置(这里的常数10是为了方便选择头或者尾)
+				m_curMouseRect.isInRect(x,y))
+			{//鼠标按下动作有效
+				//计算插入位置
+				if(x <= m_position.x + m_textPosition.x * m_scale.x)
+				{//头
+					if(m_curInsertPoint != m_curShowStart) changeInsertPoint(m_curShowStart - m_curInsertPoint);
+				}else
+				if(x >= m_position.x + (m_mouseRect.right - m_textEdgeWidth) * m_scale.x)
+				{//尾
+					if(m_curStringLength <= m_canShowLength)
+					{
+						if(m_curInsertPoint != m_curStringLength) changeInsertPoint(m_curStringLength - m_curInsertPoint);
 					}else
-					if(x >= m_position.x + (m_mouseRect.right - TEXT_EDGE_WIDTH) * m_size.x)
-					{//尾
-						if(m_nowStringLength <= m_canShowLength)
-						{
-							if(m_nowInsertPoint != m_nowStringLength) changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-						}else
-						{//则到显示的结束
-							if(m_nowInsertPoint != m_nowShowStart + m_canShowLength) changeInsertPoint(m_nowShowStart + m_canShowLength - m_nowInsertPoint);
-						}
-					}else
-					{//范围内
-						//这里使用0.5的常数是因为目前使用的是英文输入但是使用的字体是中文字体库，所以要加少一半的占用像素
-						//为了提高选择时的感觉，这里错位半个字符的宽度，使选择的时候更具有感觉
-						int tempInsertPoint = (x + m_nowTextWidth * 0.5f - m_position.x - m_textPosition.x * m_size.x) / m_nowTextWidth;
-						if(tempInsertPoint + m_nowShowStart > m_nowStringLength)
-						{
-							if(m_nowInsertPoint != m_nowStringLength) changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-						}else
-						{
-							if(m_nowInsertPoint != tempInsertPoint + m_nowShowStart) changeInsertPoint(tempInsertPoint + m_nowShowStart - m_nowInsertPoint);
-						}
+					{//则到显示的结束
+						if(m_curInsertPoint != m_curShowStart + m_canShowLength) changeInsertPoint(m_curShowStart + m_canShowLength - m_curInsertPoint);
 					}
-					if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
-					{//如果是左键按下，则可能是片选属性
+				}else
+				{//范围内
+					//这里使用0.5的常数是因为目前使用的是英文输入但是使用的字体是中文字体库，所以要加少一半的占用像素
+					//为了提高选择时的感觉，这里错位半个字符的宽度，使选择的时候更具有感觉
+					int tempInsertPoint = (x + m_curTextWidth * 0.5f - m_position.x - m_textPosition.x * m_scale.x) / m_curTextWidth;
+					if(tempInsertPoint + m_curShowStart > m_curStringLength)
+					{
+						if(m_curInsertPoint != m_curStringLength) changeInsertPoint(m_curStringLength - m_curInsertPoint);
+					}else
+					{
+						if(m_curInsertPoint != tempInsertPoint + m_curShowStart) changeInsertPoint(tempInsertPoint + m_curShowStart - m_curInsertPoint);
+					}
+				}
+				switch(mouseState)
+				{
+				case MOUSE_LEFT_BUTTON_DOWN://如果是左键按下，则可能是片选属性
+					m_haveSelect = XFalse;
+					m_selectEnd = m_curInsertPoint;
+					m_selectStart = m_curInsertPoint;
+					m_selectMouseDown = XTrue;
+					break;
+				case MOUSE_LEFT_BUTTON_DCLICK:	//这里设置为双击全选
+					chooseAllStr();
+					break;
+				case MOUSE_RIGHT_BUTTON_DOWN://如果是右键按下操作不再范围内也将会造成片选结束
+					if(m_curInsertPoint > getSelectEnd() || m_curInsertPoint < getSelectHead())
 						m_haveSelect = XFalse;
-						m_selectEnd = m_nowInsertPoint;
-						m_selectStart = m_nowInsertPoint;
-						m_selectMouseDown = XTrue;
-					}else
-					if(mouseState == MOUSE_RIGHT_BUTTON_DOWN)
-					{//如果是右键按下操作不再范围内也将会造成片选结束
-						if(m_nowInsertPoint > getSelectEnd() || m_nowInsertPoint < getSelectHead())
-						{
-							m_haveSelect = XFalse;
-						}
-					}
+					break;
 				}
 			}
 		}
@@ -1016,91 +1047,85 @@ _XBool _XEdit::mouseProc(float x,float y,_XMouseState mouseState)
 			m_isMouseInRect = XFalse;
 			m_comment.disShow();
 		}
-		if(mouseState == MOUSE_LEFT_BUTTON_DOWN || 
+		if((mouseState == MOUSE_LEFT_BUTTON_DOWN || 
 			mouseState == MOUSE_LEFT_BUTTON_DCLICK || 
-			mouseState == MOUSE_RIGHT_BUTTON_DOWN)
-		{//点击
-			if(m_isBeChoose)
-			{
-				m_isBeChoose = XFalse;//如果控件没有处于激活状态则激活
-				if(m_withAction)
-				{
-					m_insertActionMD.set(1.0f,0.0f,0.002f);
-				}
-			}
+			mouseState == MOUSE_RIGHT_BUTTON_DOWN) &&//点击
+			m_isBeChoose)
+		{
+			//setLostFocus();	//设置失去焦点
+			m_isBeChoose = XFalse;//如果控件没有处于激活状态则激活
+			if(m_withAction)
+				m_insertActionMD.set(1.0f,0.0f,0.002f);
 		}
 	}
-
-	if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
+	//双击为全选
+	if(mouseState == MOUSE_LEFT_BUTTON_DOWN)// || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
 	{//任何鼠标左键按下操作都回造成片选结束
 		if(m_haveSelect) m_haveSelect = XFalse;
 	}
 
-	if(mouseState == MOUSE_MOVE)
-	{
-		if(m_selectMouseDown)
-		{//如果鼠标按下，并且拖动，则作为片选动作处理
-			//计算片选的位置
-			if(x <= m_position.x + m_textPosition.x * m_size.x)
-			{//头
-				if(m_nowShowStart > 0 && x <= m_position.x + m_textPosition.x * m_size.x - TEXT_EDGE_WIDTH) 
-				{//如果超过头，可以向前移动
-					m_selectEnd = m_nowShowStart - 1;
-					if(!isAtUnicodeEnd(m_nowString,m_selectEnd)) --m_selectEnd;
-				}else 
-				{
-					m_selectEnd = m_nowShowStart;
-				}
+	if(mouseState == MOUSE_MOVE &&
+		m_selectMouseDown)
+	{//如果鼠标按下，并且拖动，则作为片选动作处理
+		//计算片选的位置
+		if(x <= m_position.x + m_textPosition.x * m_scale.x)
+		{//头
+			if(m_curShowStart > 0 && x <= m_position.x + m_textPosition.x * m_scale.x - m_textEdgeWidth) 
+			{//如果超过头，可以向前移动
+				m_selectEnd = m_curShowStart - 1;
+				if(!XString::isAtUnicodeEnd(m_curString,m_selectEnd)) --m_selectEnd;
+			}else 
+			{
+				m_selectEnd = m_curShowStart;
+			}
+		}else
+		if(x >= m_position.x + (m_mouseRect.right - m_textEdgeWidth) * m_scale.x)
+		{//尾
+			if(m_curShowStart + m_canShowLength >= m_curStringLength)
+			{//如果字符串没有显示满
+				m_selectEnd = m_curStringLength;
 			}else
-			if(x >= m_position.x + (m_mouseRect.right - TEXT_EDGE_WIDTH) * m_size.x)
-			{//尾
-				if(m_nowShowStart + m_canShowLength >= m_nowStringLength)
-				{//如果字符串没有显示满
-					m_selectEnd = m_nowStringLength;
+			{
+				if(x >= m_position.x + (m_mouseRect.right - m_textEdgeWidth) * m_scale.x + m_textEdgeWidth)
+				{//如果超过尾可以向后移动
+					m_selectEnd = m_curShowStart + m_canShowLength + 1;
+					if(!XString::isAtUnicodeEnd(m_curString,m_selectEnd)) ++m_selectEnd;
 				}else
 				{
-					if(x >= m_position.x + (m_mouseRect.right - TEXT_EDGE_WIDTH) * m_size.x + TEXT_EDGE_WIDTH)
-					{//如果超过尾可以向后移动
-						m_selectEnd = m_nowShowStart + m_canShowLength + 1;
-						if(!isAtUnicodeEnd(m_nowString,m_selectEnd)) ++m_selectEnd;
-					}else
-					{
-						m_selectEnd = m_nowShowStart + m_canShowLength;
-					}
-				}
-			}else
-			{//这里使用0.5的常数是因为目前使用的是英文输入但是使用的字体是中文字体库，所以要加少一半的占用像素
-				int tempEnd = m_selectEnd;
-				int tempPosition = (x - m_position.x - m_textPosition.x * m_size.x) / m_nowTextWidth;
-				if(tempPosition + m_nowShowStart >= m_nowStringLength) m_selectEnd = m_nowStringLength;
-				else m_selectEnd = m_nowShowStart + tempPosition;
-
-				if(!isAtUnicodeEnd(m_nowString,m_selectEnd))
-				{
-					if(m_selectEnd > tempEnd) ++m_selectEnd;
-					else --m_selectEnd;
+					m_selectEnd = m_curShowStart + m_canShowLength;
 				}
 			}
-			if(m_selectEnd != m_nowInsertPoint) changeInsertPoint(m_selectEnd - m_nowInsertPoint);	//插入符号也要跟随变化
-			if(m_selectEnd != m_selectStart)
-			{//片选有效
-				m_haveSelect = XTrue;
-				upDataSelectShow();
-			}else m_haveSelect = XFalse;	//片选无效
+		}else
+		{//这里使用0.5的常数是因为目前使用的是英文输入但是使用的字体是中文字体库，所以要加少一半的占用像素
+			int tempEnd = m_selectEnd;
+			int tempPosition = (x - m_position.x - m_textPosition.x * m_scale.x) / m_curTextWidth;
+			if(tempPosition + m_curShowStart >= m_curStringLength) m_selectEnd = m_curStringLength;
+			else m_selectEnd = m_curShowStart + tempPosition;
+
+			if(!XString::isAtUnicodeEnd(m_curString,m_selectEnd))
+			{
+				if(m_selectEnd > tempEnd) ++m_selectEnd;
+				else --m_selectEnd;
+			}
 		}
-	}	
-	if(m_isBeChoose && (mouseState == MOUSE_LEFT_BUTTON_UP || mouseState == MOUSE_RIGHT_BUTTON_UP))
-	{//如果是弹起事件，则不论是否在范围内，只要空间处于激活状态，则会做出反应
-		if(m_selectMouseDown)
-		{//片选结束判断
-			if(m_selectEnd != m_selectStart) m_haveSelect = XTrue;	//片选有效
-			else m_haveSelect = XFalse;	//片选无效
-			m_selectMouseDown = XFalse;
-		}
+		if(m_selectEnd != m_curInsertPoint) changeInsertPoint(m_selectEnd - m_curInsertPoint);	//插入符号也要跟随变化
+		if(m_selectEnd != m_selectStart)
+		{//片选有效
+			m_haveSelect = XTrue;
+			upDataSelectShow();
+		}else m_haveSelect = XFalse;	//片选无效
+	}
+	if(m_isBeChoose && (mouseState == MOUSE_LEFT_BUTTON_UP || mouseState == MOUSE_RIGHT_BUTTON_UP) &&//如果是弹起事件，则不论是否在范围内，只要控件处于激活状态，则会做出反应
+		m_selectMouseDown)//片选结束判断
+	{
+		m_haveSelect = (m_selectEnd != m_selectStart);
+		//if(m_selectEnd != m_selectStart) m_haveSelect = XTrue;	//片选有效
+		//else m_haveSelect = XFalse;	//片选无效
+		m_selectMouseDown = XFalse;
 	}
 	return XTrue;
 }
-_XBool _XEdit::keyboardProc(int keyOrder,_XKeyState keyState)
+XBool XEdit::keyboardProc(int keyOrder,XKeyState keyState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -1108,17 +1133,16 @@ _XBool _XEdit::keyboardProc(int keyOrder,_XKeyState keyState)
 		!m_isEnable) return XFalse;		//如果无效则直接退出
 	if(m_withAction && m_isInAction) return XFalse;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
 
-	if(m_mouseRightButtonMenu != NULL)
-	{
-		if(m_mouseRightButtonMenu->getVisible())
-		{//如果右键菜单可见,则所有按键都不会对输入框造成影响
-			m_mouseRightButtonMenu->keyboardProc(keyOrder,keyState);
-			if(!m_mouseRightButtonMenu->getVisible())
-			{//按下了快捷键(这里实现对应菜单项的功能)
-				mouseRightMenuProc();//右键菜单的响应
-			}
-			return XFalse;
+	if(m_mouseRightButtonMenu != NULL &&
+		m_mouseRightButtonMenu->getVisible())
+	{//如果右键菜单可见,则所有按键都不会对输入框造成影响
+		//m_mouseRightButtonMenu->keyboardProc(keyOrder,keyState);
+		//if(!m_mouseRightButtonMenu->getVisible())
+		if(m_mouseRightButtonMenu->keyboardProc(keyOrder,keyState))
+		{//按下了快捷键(这里实现对应菜单项的功能)
+			mouseRightMenuProc();//右键菜单的响应
 		}
+		return XFalse;
 	}
 	if(!m_isBeChoose) return XFalse;
 	switch(keyState)
@@ -1144,10 +1168,10 @@ _XBool _XEdit::keyboardProc(int keyOrder,_XKeyState keyState)
 			break;
 		default:
 		//	printf("keyDown:%d\n",keyOrder);
-			m_nowKeyDown = XTrue;
-			m_nowKeyDownTimer = 0;
-			m_nowKeyRepTimer = 1000;
-			m_nowKey = keyOrder;
+			m_curKeyDown = XTrue;
+			m_curKeyDownTimer = 0;
+			m_curKeyRepTimer = 1000;
+			m_curKey = keyOrder;
 			if(keyProc(keyOrder)) return XTrue;	//按键弹起时才作相应 
 			break;
 		}
@@ -1171,13 +1195,13 @@ _XBool _XEdit::keyboardProc(int keyOrder,_XKeyState keyState)
 			break;
 		case XKEY_MENU://菜单键被按下，则相当于是鼠标右击(菜单键弹起才有响应)
 			if(m_mouseRightButtonMenu != NULL)
-				m_mouseRightButtonMenu->mouseProc(m_position.x + m_textPosition.x * m_size.x + (m_nowInsertPoint - m_nowShowStart) * m_nowTextWidth,
-					m_position.y + m_textPosition.y * m_size.y,MOUSE_RIGHT_BUTTON_UP);
+				m_mouseRightButtonMenu->mouseProc(m_position.x + m_textPosition.x * m_scale.x + (m_curInsertPoint - m_curShowStart) * m_curTextWidth,
+					m_position.y + m_textPosition.y * m_scale.y,MOUSE_RIGHT_BUTTON_UP);
 			break;
 		case XKEY_UNKNOWN:
 			break;
 		default:
-			m_nowKeyDown = XFalse;
+			m_curKeyDown = XFalse;
 			break;
 		}
 		break;
@@ -1185,21 +1209,21 @@ _XBool _XEdit::keyboardProc(int keyOrder,_XKeyState keyState)
 
 	return XFalse;
 }
-_XBool _XEdit::keyProc(int keyOrder)
+XBool XEdit::keyProc(int keyOrder)
 {
 	int TextChange = 0;		//文本内容是否发生变化
 	if(m_keyCtrlState == 0)
 	{//ctrl没有按下的所有输入才能处理
 		if(m_haveSelect == 0)
 		{//没有片选的时候
-			if(m_nowStringLength < MAX_INPUT_STRING_LENGTH - 2)
+			if(m_curStringLength < m_maxInputStringLength - 2)
 			{//如果输入长度小于最大长度，则可以继续输入，否则只能输入一些功能
 				//这里是可打印字符的处理			
 				TextChange = keyJudgement(keyOrder);
 			}
 		}else
 		{//存在片选的时候
-			if(m_nowStringLength - getSelectLength() < MAX_INPUT_STRING_LENGTH - 2)
+			if(m_curStringLength - getSelectLength() < m_maxInputStringLength - 2)
 			{//如果输入长度小于最大长度，则可以继续输入，否则只能输入一些功能
 				//这里是可打印字符的处理			
 				TextChange = keyJudgement(keyOrder);
@@ -1207,130 +1231,37 @@ _XBool _XEdit::keyProc(int keyOrder)
 		}
 	}else
 	{//ctrl按下的所有输入作为功能键处理
-		if(keyOrder ==  XKEY_C)
-		{//ctrl + c 复制
-			if(m_haveSelect)
-			{//存在片选，没有片选则什么也不作
-				//拷贝片选的内容
-#ifdef XEE_OS_WINDOWS
-				memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-				copyString[getSelectLength()] = '\0';
-				setTextToClipboard(copyString);
-#endif
-#ifdef XEE_OS_LINUX
-				memcpy(copyString,m_nowString + getSelectHead(),getSelectLength());
-				copyString[getSelectLength()] = '\0';
-#endif
-			}
-		}else
-		if(keyOrder ==  XKEY_V)
-		{//ctrl + v 粘贴
-			//判断公用内存空间中是否有内容
-#ifdef XEE_OS_WINDOWS
-			std::string tmp = getTextFromClipboard();
-			if(tmp == "") copyString[0] = '\0';	//没有数
-			else 
-			{
-				if(tmp.size() >= MAX_INPUT_STRING_LENGTH - 1)
-				{
-					memcpy(copyString,tmp.c_str(),MAX_INPUT_STRING_LENGTH - 1);
-					copyString[MAX_INPUT_STRING_LENGTH - 1] = '\0';
-				}else
-				{
-					memcpy(copyString,tmp.c_str(),tmp.size());
-					copyString[tmp.size()] = '\0';
-				}
-			}
-#endif
-			if(copyString[0] != '\0')
-			{
-				char haveEnd = 0;
-				for(int i = 0;i < MAX_INPUT_STRING_LENGTH;++ i)
-				{
-					if(copyString[i] == '\0')
-					{
-						haveEnd = 1;
-						break;
-					}
-				}
-				if(haveEnd != 0)
-				{
-					if(m_haveSelect)
-					{//存在片选(这里实际是替换动作)
-						if(m_nowStringLength + strlen(copyString) - getSelectLength() > MAX_INPUT_STRING_LENGTH - 2)
-						{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
-						}else
-						{							
-							//1、删除片选内容
-							deleteSelectStr();
-							m_haveSelect = XFalse;	//片选结束
-							//2、插入复制内容
-							if(m_nowInsertPoint == m_nowStringLength)
-							{//如果是在字符串的末尾添加
-								strcat(m_nowString,copyString);
-								m_nowStringLength = strlen(m_nowString);
-								//m_nowInsertPoint = m_nowStringLength;
-								changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-								TextChange = 1;
-							}else
-							{
-								strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-								strcpy(m_nowString + m_nowInsertPoint,copyString);
-								strcat(m_nowString,m_tempNowString);
-								m_nowStringLength = strlen(m_nowString);
-								//m_nowInsertPoint += strlen(copyString);
-								changeInsertPoint(strlen(copyString));
-								TextChange = 1;
-							}
-						}
-					}else
-					{//没有片选
-						//判断粘贴的内容是否会超出字符串的总长度
-						if(m_nowStringLength + strlen(copyString) > MAX_INPUT_STRING_LENGTH - 2)
-						{//如果超出总长度，则这里需要谨慎处理，目前定义为不作处理
-						}else
-						{
-							if(m_nowInsertPoint == m_nowStringLength)
-							{//如果是在字符串的末尾添加
-								strcat(m_nowString,copyString);
-								m_nowStringLength = strlen(m_nowString);
-							//	m_nowInsertPoint = m_nowStringLength;
-								changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-								TextChange = 1;
-							}else
-							{
-								strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-								strcpy(m_nowString + m_nowInsertPoint,copyString);
-								strcat(m_nowString,m_tempNowString);
-								m_nowStringLength = strlen(m_nowString);
-								//m_nowInsertPoint += strlen(copyString);
-								changeInsertPoint(strlen(copyString));
-								TextChange = 1;
-							}
-						}
-					}
-				}
-			}			
+		switch(keyOrder)
+		{
+		case XKEY_A://ctrl + a 全选	//20150625新加入
+			chooseAllStr();
+			break;
+		case XKEY_C://ctrl + c 复制
+			stringCopy();
+			break;
+		case XKEY_V://ctrl + v 粘贴  //这里需要根据输入框类型判断当前输入是否有效(尚未完成)
+			if(stringPlaster()) TextChange = 1;
+			break;
 		}
 	}
 	if(keyOrder ==  XKEY_BACKSPACE)
 	{//回退键
 		if(!m_haveSelect)
 		{//没有片选的时候
-			if(m_nowInsertPoint > 0)
+			if(m_curInsertPoint > 0)
 			{
-				if(!isAtUnicodeEnd(m_nowString,m_nowInsertPoint - 1))
+				if(!XString::isAtUnicodeEnd(m_curString,m_curInsertPoint - 1))
 				{
-					m_nowStringLength -= 2;
+					m_curStringLength -= 2;
 					changeInsertPoint(-2);
-					if(m_nowStringLength == m_nowInsertPoint) m_nowString[m_nowInsertPoint] = '\0';	//字符串末尾
-					else strcpy(m_nowString + m_nowInsertPoint,m_nowString + m_nowInsertPoint + 2);
+					if(m_curStringLength == m_curInsertPoint) m_curString[m_curInsertPoint] = '\0';	//字符串末尾
+					else strcpy(m_curString + m_curInsertPoint,m_curString + m_curInsertPoint + 2);
 				}else
 				{
-					-- m_nowStringLength;
+					-- m_curStringLength;
 					changeInsertPoint(-1);
-					if(m_nowStringLength == m_nowInsertPoint) m_nowString[m_nowInsertPoint] = '\0';	//字符串末尾
-					else strcpy(m_nowString + m_nowInsertPoint,m_nowString + m_nowInsertPoint + 1);
+					if(m_curStringLength == m_curInsertPoint) m_curString[m_curInsertPoint] = '\0';	//字符串末尾
+					else strcpy(m_curString + m_curInsertPoint,m_curString + m_curInsertPoint + 1);
 				}
 				TextChange = 1;
 			}
@@ -1355,8 +1286,8 @@ _XBool _XEdit::keyProc(int keyOrder)
 				m_haveSelect = XFalse;	//片选结束
 				TextChange = 1;
 				//然后再作重新开始动作
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				m_selectMouseDown = XTrue;
 			}
 		}
@@ -1365,19 +1296,19 @@ _XBool _XEdit::keyProc(int keyOrder)
 	{//Delete按键
 		if(!m_haveSelect)
 		{//没有片选的时候
-			if(m_nowStringLength == m_nowInsertPoint)
+			if(m_curStringLength == m_curInsertPoint)
 			{//字符串末尾不作处理
 			}else
 			{
 				//这里需要判断后面那个字符是否为中文，如果为中文的话，则需要删除两个字符
-				if(m_nowString[m_nowInsertPoint] < 0)
+				if(m_curString[m_curInsertPoint] < 0)
 				{
-					strcpy(m_nowString + m_nowInsertPoint,m_nowString + m_nowInsertPoint + 2);
-					m_nowStringLength -= 2;
+					strcpy(m_curString + m_curInsertPoint,m_curString + m_curInsertPoint + 2);
+					m_curStringLength -= 2;
 				}else
 				{
-					strcpy(m_nowString + m_nowInsertPoint,m_nowString + m_nowInsertPoint + 1);
-					-- m_nowStringLength;
+					strcpy(m_curString + m_curInsertPoint,m_curString + m_curInsertPoint + 1);
+					-- m_curStringLength;
 				}
 				TextChange = 1;
 			}
@@ -1402,8 +1333,8 @@ _XBool _XEdit::keyProc(int keyOrder)
 				TextChange = 1;
 				//然后再作重新开始动作
 				m_haveSelect = XFalse;
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				m_selectMouseDown = XTrue;
 			}
 		}
@@ -1417,10 +1348,10 @@ _XBool _XEdit::keyProc(int keyOrder)
 				if(!m_haveSelect) changeInsertPoint(-1);	//没有片选,移动光标的位置
 				else
 				{//存在片选
-				//	m_nowInsertPoint = m_selectStart;
-				//	m_spriteInsert.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_size.x + m_nowInsertPoint * m_caption.m_size.x * m_caption.m_showSize.x * 0.5,
-				//		m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_size.y);
-					changeInsertPoint(m_selectStart - m_nowInsertPoint);
+				//	m_curInsertPoint = m_selectStart;
+				//	m_spriteInsert.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_scale.x + m_curInsertPoint * m_caption.m_scale.x * m_caption.m_showSize.x * 0.5,
+				//		m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_scale.y);
+					changeInsertPoint(m_selectStart - m_curInsertPoint);
 					m_haveSelect = XFalse;
 				}
 			}
@@ -1429,13 +1360,13 @@ _XBool _XEdit::keyProc(int keyOrder)
 			if(!m_haveSelect)
 			{//标记开始片选
 				m_haveSelect = XFalse;
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint > 0)
+				if(m_curInsertPoint > 0)
 				{
 					changeInsertPoint(-1);
-					m_selectEnd = m_nowInsertPoint;
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1445,10 +1376,10 @@ _XBool _XEdit::keyProc(int keyOrder)
 			}else
 			{//修改片选结果
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint > 0)
+				if(m_curInsertPoint > 0)
 				{
 					changeInsertPoint(-1);
-					m_selectEnd = m_nowInsertPoint;
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1467,7 +1398,7 @@ _XBool _XEdit::keyProc(int keyOrder)
 				if(!m_haveSelect) changeInsertPoint(1);	//没有片选,移动光标的位置
 				else
 				{//存在片选
-					changeInsertPoint(m_selectEnd - m_nowInsertPoint);
+					changeInsertPoint(m_selectEnd - m_curInsertPoint);
 					m_haveSelect = XFalse;
 				}
 			}
@@ -1476,13 +1407,13 @@ _XBool _XEdit::keyProc(int keyOrder)
 			if(!m_haveSelect)
 			{//标记开始片选
 				m_haveSelect = XFalse;
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint < m_nowStringLength)
+				if(m_curInsertPoint < m_curStringLength)
 				{
 					changeInsertPoint(1);
-					m_selectEnd = m_nowInsertPoint;
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1492,10 +1423,10 @@ _XBool _XEdit::keyProc(int keyOrder)
 			}else
 			{//修改片选结果
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint < m_nowStringLength)
+				if(m_curInsertPoint < m_curStringLength)
 				{
 					changeInsertPoint(1);
-					m_selectEnd = m_nowInsertPoint;
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1511,7 +1442,7 @@ _XBool _XEdit::keyProc(int keyOrder)
 		{//如果shift没有按下
 			if(!m_selectMouseDown)
 			{//如果没有鼠标选择(如果有鼠标选择则按键无效)
-				if(m_nowInsertPoint != 0) changeInsertPoint(-m_nowInsertPoint);
+				if(m_curInsertPoint != 0) changeInsertPoint(-m_curInsertPoint);
 				if(m_haveSelect) m_haveSelect = XFalse;
 			}
 		}else
@@ -1519,13 +1450,13 @@ _XBool _XEdit::keyProc(int keyOrder)
 			if(!m_haveSelect)
 			{//标记开始片选
 				m_haveSelect = XFalse;
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint > 0)
+				if(m_curInsertPoint > 0)
 				{//将选择移动到头
-					changeInsertPoint(-m_nowInsertPoint);
-					m_selectEnd = m_nowInsertPoint;
+					changeInsertPoint(-m_curInsertPoint);
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1535,10 +1466,10 @@ _XBool _XEdit::keyProc(int keyOrder)
 			}else
 			{//修改片选结果
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint > 0)
+				if(m_curInsertPoint > 0)
 				{//将选择移动到头
-					changeInsertPoint(-m_nowInsertPoint);
-					m_selectEnd = m_nowInsertPoint;
+					changeInsertPoint(-m_curInsertPoint);
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1554,7 +1485,7 @@ _XBool _XEdit::keyProc(int keyOrder)
 		{//如果shift没有按下
 			if(!m_selectMouseDown)
 			{//如果没有鼠标选择(如果有鼠标选择则按键无效)
-				if(m_nowInsertPoint != m_nowStringLength) changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
+				if(m_curInsertPoint != m_curStringLength) changeInsertPoint(m_curStringLength - m_curInsertPoint);
 				if(m_haveSelect) m_haveSelect = XFalse;
 			}
 		}else
@@ -1562,13 +1493,13 @@ _XBool _XEdit::keyProc(int keyOrder)
 			if(!m_haveSelect)
 			{//标记开始片选
 				m_haveSelect = XFalse;
-				m_selectEnd = m_nowInsertPoint;
-				m_selectStart = m_nowInsertPoint;
+				m_selectEnd = m_curInsertPoint;
+				m_selectStart = m_curInsertPoint;
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint < m_nowStringLength)
+				if(m_curInsertPoint < m_curStringLength)
 				{//将选择移动到头
-					changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-					m_selectEnd = m_nowInsertPoint;
+					changeInsertPoint(m_curStringLength - m_curInsertPoint);
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1578,10 +1509,10 @@ _XBool _XEdit::keyProc(int keyOrder)
 			}else
 			{//修改片选结果
 				//然后移动光标，并修改片选状态
-				if(m_nowInsertPoint < m_nowStringLength)
+				if(m_curInsertPoint < m_curStringLength)
 				{//将选择移动到头
-					changeInsertPoint(m_nowStringLength - m_nowInsertPoint);
-					m_selectEnd = m_nowInsertPoint;
+					changeInsertPoint(m_curStringLength - m_curInsertPoint);
+					m_selectEnd = m_curInsertPoint;
 				}
 				if(m_selectEnd != m_selectStart)
 				{//片选有效
@@ -1596,111 +1527,126 @@ _XBool _XEdit::keyProc(int keyOrder)
 	{
 		//如果字符串发生改变，需要更新字符串的内容
 		upDataShowStr();	//跟新字符串的显示
-		if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
+		//if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
+		if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,EDT_INPUT_CHANGE);
+		else XCtrlManager.eventProc(m_objectID,EDT_INPUT_CHANGE);
 		//当数据发生变化的时候播放动作
 		if(m_withAction)
 		{//这里测试一个动态效果
 		//	m_isInAction = XTrue;
 			m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
 			m_oldPos = m_position;
-			m_oldSize = m_size;
+			m_oldSize = m_scale;
 		}
 		return XTrue;
 	}
 	if(keyOrder ==  XKEY_RETURN || keyOrder == XKEY_N_ENTER)
 	{//回车键
 		//if(m_haveSelect) m_haveSelect = XFalse;	//回车键取消选择
-		if(m_funInputOver != NULL) m_funInputOver(m_pClass,m_objectID);
+		//if(m_funInputOver != NULL) m_funInputOver(m_pClass,m_objectID);
+		if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,EDT_INPUT_OVER);
+		else XCtrlManager.eventProc(m_objectID,EDT_INPUT_OVER);
 		if(m_withAction)
 		{//这里测试一个动态效果
 		//	m_isInAction = XTrue;
 			m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
 			m_oldPos = m_position;
-			m_oldSize = m_size;
+			m_oldSize = m_scale;
 		}
 		return XTrue;
 	}
 	return XFalse;
 }
-void _XEdit::setSize(float x,float y)
+void XEdit::setLostFocus() 
+{
+	if(m_haveSelect) m_haveSelect = XFalse;
+	m_isBeChoose = XFalse;
+	m_selectMouseDown = XFalse;
+	m_curKeyDown = XFalse;
+	//printf("失去焦点!\n");
+	//下面这里在弹出窗口时会造成bug，窗口角点的bug
+	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,EDT_INPUT_OVER);
+	else XCtrlManager.eventProc(m_objectID,EDT_INPUT_OVER);
+}
+void XEdit::setScale(float x,float y)
 {
 	if(x <= 0 || y <= 0 ||
 		!m_isInited) return;	//如果没有初始化直接退出
-	m_size.set(x,y);
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_size.x,m_position.y + m_textPosition.y * m_size.y);
-	m_caption.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
-	m_nowTextWidth = m_caption.getTextSize().x * m_caption.getSize().x * 0.5f;
-	m_nowTextHeight = m_caption.getTextSize().y * m_caption.getSize().y;
-//	m_selectText.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_size.x,m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_size.y);
-//	m_selectText.setSize(m_size);
+	m_scale.set(x,y);
+	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
+	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
+	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
+//	m_selectText.setPosition(m_objRect.left + (m_edgeDistance.left + m_textPosition.x) * m_scale.x,m_objRect.top + (m_edgeDistance.top + m_textPosition.y) * m_scale.y);
+//	m_selectText.setScale(m_scale);
 	//m_spriteBackGround.setPosition(m_position);
-	if(!m_withoutTex) m_spriteBackGround.setSize(m_size);
+	if(!m_withoutTex) m_spriteBackGround.setScale(m_scale);
 	upDateInsertShowPosition();
-	//m_spriteSelect.setSize(m_size);
+	//m_spriteSelect.setScale(m_scale);
 	upDataSelectShow();
-	if(!m_withoutTex) m_spriteInsert.setSize(m_textSize.x * m_size.x,m_textSize.y * m_size.y);
+	if(!m_withoutTex) m_spriteInsert.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
 
-	updateChildSize();
+	updateChildScale();
 }
-_XBool _XEdit::setACopy(const _XEdit &temp)			//设置为一个拷贝公用部分资源		
+XBool XEdit::setACopy(const XEdit &temp)			//设置为一个拷贝公用部分资源		
 {
-	if(& temp == this) return XTrue;	//防止自身赋值
-	if(!temp.m_isInited) return XFalse;
+	if(&temp == this ||	//防止自身赋值
+		!temp.m_isInited) return XFalse;
 	if(m_isInited) release();//如果自身已经初始化，则需要释放资源
-	if(!_XControlBasic::setACopy(temp)) return XFalse;
+	if(!XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+		XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.addAObject(this);
+		XObjManager.addAObject(this);
 #endif
 	}
 
 	m_isInited = temp.m_isInited;	//是否初始化
-	if(m_resInfo != NULL) _XResourceManager::GetInstance().releaseResource(m_resInfo);
-	m_resInfo = _XResourceMng.copyResource(temp.m_resInfo);
+	if(m_resInfo != NULL) XResManager.releaseResource(m_resInfo);
+	m_resInfo = XResManager.copyResource(temp.m_resInfo);
 	m_withoutTex = temp.m_withoutTex;
 	m_selectRect = temp.m_selectRect;
 
 	if(temp.m_mouseRightButtonMenu != NULL)
 	{
-		m_mouseRightButtonMenu = createMem<_XMouseRightButtonMenu>();
+		m_mouseRightButtonMenu = XMem::createMem<XMouseRightButtonMenu>();
 		if(m_mouseRightButtonMenu == NULL) return XFalse;
 
 		m_mouseRightButtonMenu->setACopy(* (temp.m_mouseRightButtonMenu));	//鼠标右键菜单
 		//从控件管理器中将这个控件注销掉
-		_XCtrlManger.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
+		XCtrlManager.decreaseAObject(m_mouseRightButtonMenu);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(m_mouseRightButtonMenu);
+		XObjManager.decreaseAObject(m_mouseRightButtonMenu);
 #endif
 	}
 
 	if(!m_caption.setACopy(temp.m_caption))	return XFalse;		//显示当前输入的字符串
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_caption);
+	XObjManager.decreaseAObject(&m_caption);
 #endif
-	m_nowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	strcpy(m_nowString,temp.m_nowString);
-	m_tempNowString = createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_tempNowString == NULL) 
+	m_curString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	strcpy(m_curString,temp.m_curString);
+	m_tempCurString = XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_tempCurString == NULL) 
 	{
-		XDELETE_ARRAY(m_nowString);
+		XMem::XDELETE_ARRAY(m_curString);
 		return XFalse;
 	}
-	strcpy(m_tempNowString,temp.m_tempNowString);
-	m_nowShowString	= createArrayMem<char>(MAX_INPUT_STRING_LENGTH);
-	if(m_nowShowString == NULL)
+	strcpy(m_tempCurString,temp.m_tempCurString);
+	m_curShowString	= XMem::createArrayMem<char>(m_maxInputStringLength);
+	if(m_curShowString == NULL)
 	{
-		XDELETE_ARRAY(m_nowString);
-		XDELETE_ARRAY(m_tempNowString);
+		XMem::XDELETE_ARRAY(m_curString);
+		XMem::XDELETE_ARRAY(m_tempCurString);
 		return XFalse;
 	}
-	strcpy(m_nowShowString,temp.m_nowShowString);
+	strcpy(m_curShowString,temp.m_curShowString);
 
-	m_nowInsertPoint = temp.m_nowInsertPoint;	//当前选择输入的位置,整个字符串的整体位置
-	m_nowStringLength = temp.m_nowStringLength;	//当前输入字符串的长度
+	m_curInsertPoint = temp.m_curInsertPoint;	//当前选择输入的位置,整个字符串的整体位置
+	m_curStringLength = temp.m_curStringLength;	//当前输入字符串的长度
 	m_haveSelect = temp.m_haveSelect;		//是否在字符串中有选择
 	m_selectMouseDown = temp.m_selectMouseDown;	//鼠标是否按下准备片选
 	m_selectStart = temp.m_selectStart;		//选择的起始位置
@@ -1712,19 +1658,22 @@ _XBool _XEdit::setACopy(const _XEdit &temp)			//设置为一个拷贝公用部分资源
 	m_editInsert = temp.m_editInsert;		//输入框插入标记
 	m_editUpon = temp.m_editUpon;		//输入框插入标记
 
+	m_editType = temp.m_editType;		//输入框的类型
+
 	m_spriteBackGround.setACopy(temp.m_spriteBackGround);	//用于显示输入框的背景贴图
 	m_spriteSelect.setACopy(temp.m_spriteSelect);		//用于显示选择内容的背景颜色
 	m_spriteInsert.setACopy(temp.m_spriteInsert);		//用于显示插入符号
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_spriteBackGround);
-	_XObjManger.decreaseAObject(&m_spriteSelect);
-	_XObjManger.decreaseAObject(&m_spriteInsert);
+	XObjManager.decreaseAObject(&m_spriteBackGround);
+	XObjManager.decreaseAObject(&m_spriteSelect);
+	XObjManager.decreaseAObject(&m_spriteInsert);
 #endif
 	m_textPosition = temp.m_textPosition;			//文字显示的位置，是相对于控件的位置来定的
 	m_textSize = temp.m_textSize;				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 
-	m_funInputChenge = temp.m_funInputChenge;		//输入内容发生改变的时候调用
-	m_funInputOver = temp.m_funInputOver;		//确认输入结束之后的时候调用
+	//m_funInputChenge = temp.m_funInputChenge;		//输入内容发生改变的时候调用
+	//m_funInputOver = temp.m_funInputOver;		//确认输入结束之后的时候调用
+	//m_pClass = temp.m_pClass;
 
 	m_timer = temp.m_timer;	//这是插入符号闪烁时使用的时间标记，这个时间使用不准确的计时方式
 	//下面是用于按键判断的中间变量
@@ -1734,12 +1683,11 @@ _XBool _XEdit::setACopy(const _XEdit &temp)			//设置为一个拷贝公用部分资源
 	m_keyCtrlState = temp.m_keyCtrlState;		//Ctrl按键的状态 0弹起，1按下
 
 	m_canShowLength = temp.m_canShowLength;		//输入框中可以显示的字符串的长度
-	m_nowShowStart = temp.m_nowShowStart;			//当前输入框中显示的字符串的起始位置
-	m_pClass = temp.m_pClass;
+	m_curShowStart = temp.m_curShowStart;			//当前输入框中显示的字符串的起始位置
 
 	m_textColor = temp.m_textColor;
-	m_nowTextWidth = temp.m_nowTextWidth;
-	m_nowTextHeight = temp.m_nowTextHeight;
+	m_curTextWidth = temp.m_curTextWidth;
+	m_curTextHeight = temp.m_curTextHeight;
 
 	m_oldPos = temp.m_oldPos;				//动作播放时的位置
 	m_oldSize = temp.m_oldSize;			//动作播放时的大小
@@ -1750,11 +1698,12 @@ _XBool _XEdit::setACopy(const _XEdit &temp)			//设置为一个拷贝公用部分资源
 
 	return XTrue;
 }
-void _XEdit::insertChar(const char * ch,int len)
-{
+void XEdit::insertChar(const char * ch,int len)
+{//这里需要根据输入框类型判断当前输入是否有效(尚未完成)
+	if(!m_isBeChoose) return;
 	if(ch == NULL ||
 		len <= 0 ||
-		m_nowStringLength + len >= MAX_INPUT_STRING_LENGTH - 1) return;
+		m_curStringLength + len >= m_maxInputStringLength - 1) return;
 	if(m_haveSelect)
 	{//存在片选状态
 		if(!m_selectMouseDown)
@@ -1763,23 +1712,22 @@ void _XEdit::insertChar(const char * ch,int len)
 			deleteSelectStr();
 			m_haveSelect = XFalse;	//片选结束
 
-			if(m_nowInsertPoint == m_nowStringLength)
+			if(m_curInsertPoint == m_curStringLength)
 			{//末尾
-				memcpy(m_nowString + m_nowInsertPoint,ch,len);
-			//	++ m_nowInsertPoint;
-				m_nowStringLength += len;
-				m_nowString[m_nowStringLength] = '\0';
-				changeInsertPoint(len);
+				memcpy(m_curString + m_curInsertPoint,ch,len);
+			//	++ m_curInsertPoint;
+				m_curStringLength += len;
+				m_curString[m_curStringLength] = '\0';
 			}else
 			{//中间插入
-				//strcpy(m_nowString + m_nowInsertPoint + 1,m_nowString + m_nowInsertPoint);
-				strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-				memcpy(m_nowString + m_nowInsertPoint,ch,len);
-				strcpy(m_nowString + m_nowInsertPoint + len,m_tempNowString);
-			//	++ m_nowInsertPoint;
-				m_nowStringLength += len;
-				changeInsertPoint(len);
+				//strcpy(m_curString + m_curInsertPoint + 1,m_curString + m_curInsertPoint);
+				strcpy(m_tempCurString,m_curString + m_curInsertPoint);
+				memcpy(m_curString + m_curInsertPoint,ch,len);
+				strcpy(m_curString + m_curInsertPoint + len,m_tempCurString);
+			//	++ m_curInsertPoint;
+				m_curStringLength += len;
 			}
+			changeInsertPoint(len);
 		}else
 		{//片选尚未结束
 			//作结束动作
@@ -1789,75 +1737,76 @@ void _XEdit::insertChar(const char * ch,int len)
 				//1、删除片选内容
 				deleteSelectStr();
 				m_haveSelect = XFalse;	//片选结束
-				if(m_nowInsertPoint == m_nowStringLength)
+				if(m_curInsertPoint == m_curStringLength)
 				{//末尾
-					memcpy(m_nowString + m_nowInsertPoint,ch,len);
-					//++ m_nowInsertPoint;
-					m_nowStringLength += len;
-					m_nowString[m_nowStringLength] = '\0';
-					changeInsertPoint(len);
+					memcpy(m_curString + m_curInsertPoint,ch,len);
+					//++ m_curInsertPoint;
+					m_curStringLength += len;
+					m_curString[m_curStringLength] = '\0';
 				}else
 				{//中间插入
-					//strcpy(m_nowString + m_nowInsertPoint + 1,m_nowString + m_nowInsertPoint);
-					strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-					memcpy(m_nowString + m_nowInsertPoint,ch,len);
-					strcpy(m_nowString + m_nowInsertPoint + len,m_tempNowString);
-					//++ m_nowInsertPoint;
-					m_nowStringLength += len;
-					changeInsertPoint(len);
+					//strcpy(m_curString + m_curInsertPoint + 1,m_curString + m_curInsertPoint);
+					strcpy(m_tempCurString,m_curString + m_curInsertPoint);
+					memcpy(m_curString + m_curInsertPoint,ch,len);
+					strcpy(m_curString + m_curInsertPoint + len,m_tempCurString);
+					//++ m_curInsertPoint;
+					m_curStringLength += len;
 				}
+				changeInsertPoint(len);
 			}
 			//然后再作重新开始动作
 			m_haveSelect = XFalse;
-			m_selectEnd = m_nowInsertPoint;
-			m_selectStart = m_nowInsertPoint;
+			m_selectEnd = m_curInsertPoint;
+			m_selectStart = m_curInsertPoint;
 			m_selectMouseDown = XTrue;
 		}
 	}else
 	{//不存在片选
-		if(m_nowInsertPoint == m_nowStringLength)
+		if(m_curInsertPoint == m_curStringLength)
 		{//末尾
-			memcpy(m_nowString + m_nowInsertPoint,ch,len);
-			//++ m_nowInsertPoint;
-			m_nowStringLength += len;
-			m_nowString[m_nowStringLength] = '\0';
-			changeInsertPoint(len);
+			memcpy(m_curString + m_curInsertPoint,ch,len);
+			//++ m_curInsertPoint;
+			m_curStringLength += len;
+			m_curString[m_curStringLength] = '\0';
 		}else
 		{//中间插入
-			//strcpy(m_nowString + m_nowInsertPoint + 1,m_nowString + m_nowInsertPoint);
-			strcpy(m_tempNowString,m_nowString + m_nowInsertPoint);
-			//m_nowString[m_nowInsertPoint] = tempChar;
-			memcpy(m_nowString + m_nowInsertPoint,ch,len);
-			strcpy(m_nowString + m_nowInsertPoint + len,m_tempNowString);
-			//++ m_nowInsertPoint;
-			m_nowStringLength += len;
-			changeInsertPoint(len);
+			//strcpy(m_curString + m_curInsertPoint + 1,m_curString + m_curInsertPoint);
+			strcpy(m_tempCurString,m_curString + m_curInsertPoint);
+			//m_curString[m_curInsertPoint] = tempChar;
+			memcpy(m_curString + m_curInsertPoint,ch,len);
+			strcpy(m_curString + m_curInsertPoint + len,m_tempCurString);
+			//++ m_curInsertPoint;
+			m_curStringLength += len;
 		}
+		changeInsertPoint(len);
+
 		if(m_selectMouseDown)
 		{//如果按下了片选鼠标，则光标要随着走
-			m_selectEnd = m_nowInsertPoint;
-			m_selectStart = m_nowInsertPoint;
+			m_selectEnd = m_curInsertPoint;
+			m_selectStart = m_curInsertPoint;
 		}
 	}
 
 	//如果字符串发生改变，需要更新字符串的内容
 	upDataShowStr();	//跟新字符串的显示
-	if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
+	//if(m_funInputChenge != NULL) m_funInputChenge(m_pClass,m_objectID);
+	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,EDT_INPUT_CHANGE);
+	else XCtrlManager.eventProc(m_objectID,EDT_INPUT_CHANGE);
 	//当数据发生变化的时候播放动作
 	if(m_withAction)
 	{//这里测试一个动态效果
 	//	m_isInAction = XTrue;
 		m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
 		m_oldPos = m_position;
-		m_oldSize = m_size;
+		m_oldSize = m_scale;
 	}
 
 	return;
 }
 #ifdef XEE_OS_WINDOWS	//windows系统下通过输入法来输入字符
-int _XEdit::keyJudgement(int)
+int XEdit::keyJudgement(int)
 #else
-int _XEdit::keyJudgement(int keyOrder)
+int XEdit::keyJudgement(int keyOrder)
 #endif
 {
 #ifdef XEE_OS_WINDOWS	//windows系统下通过输入法来输入字符
@@ -2042,17 +1991,60 @@ int _XEdit::keyJudgement(int keyOrder)
 	return TextChange;
 #endif
 }
-void _XEdit::setInputLen(int len)
+void XEdit::setInputLen(int len)
 {//设置输入框的长度
 	if(len <= 0) return;
 	m_mouseRect.right = m_mouseRect.left + len;
-	m_textPosition.set(m_mouseRect.left + TEXT_EDGE_WIDTH,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-	m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
-	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * TEXT_EDGE_WIDTH) * m_size.x / m_nowTextWidth;
+	m_textPosition.set(m_mouseRect.left + m_textEdgeWidth,m_mouseRect.top + m_mouseRect.getHeight() * 0.5f);			//文字显示的位置，是相对于控件的位置来定的
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+	m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_canShowLength = (m_mouseRect.getWidth() - 2.0f * m_textEdgeWidth) * m_scale.x / m_curTextWidth;
 	//这里需要改变几个值
-	if(m_nowInsertPoint < m_nowShowStart) m_nowShowStart = m_nowInsertPoint;
-	if(m_nowInsertPoint - m_nowShowStart > m_canShowLength) m_nowShowStart = m_nowInsertPoint - m_canShowLength;
+	if(m_curInsertPoint < m_curShowStart) m_curShowStart = m_curInsertPoint;
+	if(m_curInsertPoint - m_curShowStart > m_canShowLength) m_curShowStart = m_curInsertPoint - m_canShowLength;
 	upDataShowStr();
 	upDateInsertShowPosition();
+}
+void XEdit::update(float stepTime)
+{
+	if(!m_isInited ||	//如果没有初始化直接退出
+		!m_isVisible) return;	//如果不可见直接退出
+	m_comment.update(stepTime);
+	if(m_isEnable && m_isBeChoose)
+	{//输入光标闪烁的计时
+		m_timer += stepTime;
+		if(m_timer > 500) m_timer -= 500;
+		if(m_curKeyDown)
+		{
+			m_curKeyDownTimer += stepTime;
+			if(m_curKeyDownTimer > 500)
+			{//开始重复计数
+				m_curKeyRepTimer += stepTime;
+				if(m_curKeyRepTimer >= 50)
+				{
+					m_curKeyRepTimer = 0;
+					keyProc(m_curKey);
+				}
+			}
+		}
+	}
+	if(!m_lightMD.getIsEnd())
+	{
+		m_lightMD.move(stepTime);
+		XVector2 pos(m_oldPos.x + m_mouseRect.getWidth() * 0.5f * m_oldSize.x,
+			m_oldPos.y + m_mouseRect.getHeight() * 0.5f * m_oldSize.y);
+		XVector2 size(m_mouseRect.getWidth() * m_oldSize.x * m_lightMD.getCurData() * 0.5f,
+			m_mouseRect.getHeight() * m_oldSize.y * m_lightMD.getCurData() * 0.5f);
+		m_lightRect.set(pos.x - size.x,pos.y - size.y,pos.x + size.x,pos.y + size.y);
+	}
+	if(!m_insertActionMD.getIsEnd())
+	{
+		m_insertActionMD.move(stepTime);
+	}
+	if(m_mouseRightButtonMenu != NULL)
+		m_mouseRightButtonMenu->update(stepTime);
+}
+#if !WITH_INLINE_FILE
+#include "XEdit.inl"
+#endif
 }

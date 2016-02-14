@@ -9,8 +9,8 @@
 
 #include "AVer/AVerCapAPI.h"
 #pragma comment(lib,"../lib/AVer/AVerCapAPI.lib")
-
-class _XAVerCamera:public _XCameraBasic
+namespace XE{
+class XAVerCamera:public XCameraBasic
 {
 private:
 	HANDLE m_hHDCaptureDevice;		//摄像头的设备指针
@@ -22,15 +22,15 @@ private:
 	unsigned char *m_pixelsData;
 	int m_px;
 	int m_py;
-	_XBool m_isUp2Down;		//是否上下翻转
-	_XBool m_isLeft2Right;	//是否左右翻转
+	XBool m_isUp2Down;		//是否上下翻转
+	XBool m_isLeft2Right;	//是否左右翻转
 	friend BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO VideoInfo, BYTE *pbData,LONG lLength, __int64 tRefTime, LONG lUserData);
-	_XBool m_isNewFrame;
+	XBool m_isNewFrame;
 
-	_XBool setPixels(const _XCameraData &data);
+	XBool setPixels(const XCameraInfo &data);
 public:
-	void setUp2Down(_XBool flag){m_isUp2Down = flag;}
-	void setLeft2Right(_XBool flag){m_isLeft2Right = flag;}
+	void setUp2Down(XBool flag){m_isUp2Down = flag;}
+	void setLeft2Right(XBool flag){m_isLeft2Right = flag;}
 
 	void getData(unsigned char * p) const
 	{
@@ -43,10 +43,10 @@ public:
 		return m_pixelsData;
 	}
 	//int getBuffSize() const {return m_buffSize;}
-	_XBool init(_XCameraData &data);
-	_XBool upDateFrame();
+	XBool init(XCameraInfo &data);
+	XBool updateFrame();
 	//void draw();
-	_XAVerCamera()
+	XAVerCamera()
 		:m_frameDataBuff1(NULL)
 		,m_frameDataBuff(NULL)
 		,m_texDataBuff(NULL)
@@ -54,8 +54,8 @@ public:
 		,m_isLeft2Right(XFalse)
 		,m_isNewFrame(XFalse)
 	{}
-	~_XAVerCamera(){release();}
+	~XAVerCamera(){release();}
 	void release();
 };
-
+}
 #endif

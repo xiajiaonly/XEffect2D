@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="XEffectEngine_lib"
+	Name="XEffectEngine"
 	ProjectGUID="{BEDFD996-0EE4-459A-B5FA-64ECB9AAF04C}"
 	RootNamespace="TestLib"
 	Keyword="Win32Proj"
@@ -41,12 +41,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\tinyXML;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="GLEW_STATIC;WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				PrecompiledHeaderThrough=""
+				UsePrecompiledHeader="1"
+				PrecompiledHeaderThrough="XStdHead.h"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\bin\$(ProjectName).lib"
+				OutputFile="..\bin\XEffectEngineD.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -106,9 +106,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\tinyXML;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="GLEW_STATIC;WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="1"
+				PrecompiledHeaderThrough="XStdHead.h"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
@@ -124,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\bin\$(ProjectName).lib"
+				OutputFile="..\bin\XEffectEngine.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -155,6 +156,10 @@
 				Name="Header Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XAutoShrinkBase.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XButton.h"
 					>
 				</File>
@@ -179,6 +184,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XColorChoose.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XCombo.h"
 					>
 				</File>
@@ -199,7 +208,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XCtrlColorStyle.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCtrlManagerBase.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XDirectoryList.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XDragObjectBase.h"
 					>
 				</File>
 				<File
@@ -247,6 +268,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XParameterCtrl.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XPasswordPad.h"
 					>
 				</File>
@@ -263,7 +288,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XPropertyBox.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XRadios.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleChart.h"
 					>
 				</File>
 				<File
@@ -279,6 +312,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSoftBoard.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSubWindow.h"
 					>
 				</File>
@@ -291,6 +328,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XTimeLine.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XToolBar.h"
 					>
 				</File>
@@ -298,6 +339,10 @@
 			<Filter
 				Name="Source Files"
 				>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XAutoShrinkBase.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XButton.cpp"
 					>
@@ -323,6 +368,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XColorChoose.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XCombo.cpp"
 					>
 				</File>
@@ -339,7 +388,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XCtrlColorStyle.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XCtrlManagerBase.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XDirectoryList.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XDragObjectBase.cpp"
 					>
 				</File>
 				<File
@@ -387,6 +448,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XParameterCtrl.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XPasswordPad.cpp"
 					>
 				</File>
@@ -403,7 +468,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XPropertyBox.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XRadios.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleChart.cpp"
 					>
 				</File>
 				<File
@@ -419,6 +492,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSoftBoard.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSubWindow.cpp"
 					>
 				</File>
@@ -428,6 +505,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XText.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XTimeLine.cpp"
 					>
 				</File>
 				<File
@@ -535,6 +616,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XPropertyBox.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XRadios.inl"
 					>
 				</File>
@@ -560,6 +645,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XText.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XTimeLine.inl"
 					>
 				</File>
 				<File
@@ -643,6 +732,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XTailing.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XWindLine.h"
 					>
 				</File>
@@ -679,7 +772,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XTailing.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XWindLine.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XTailing.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XWindLine.inl"
 					>
 				</File>
 			</Filter>
@@ -690,6 +799,10 @@
 			<Filter
 				Name="Header Files"
 				>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XAudioOutput.h"
+					>
+				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XAudioStream.h"
 					>
@@ -715,27 +828,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XDirectory.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XEmail.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpClient.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpCommon.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpServer.h"
+					RelativePath="..\XEffeEngine\XMedia\XFfmpeg.h"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XHIKCamera.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMediaList.h"
 					>
 				</File>
 				<File
@@ -747,15 +848,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XNetClient.h"
+					RelativePath="..\XEffeEngine\XMedia\XMovieCore.h"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XNetCommon.h"
+					RelativePath="..\XEffeEngine\XMedia\XMovieFfmpeg.h"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XNetServer.h"
+					RelativePath="..\XEffeEngine\XMedia\XMusic.h"
 					>
 				</File>
 				<File
@@ -775,13 +876,41 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XSound.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundCommon.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundCore.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundFmod.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundSDLMixer.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XVideoStream.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XVideoSynch.h"
 					>
 				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
 				>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XAudioOutput.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XAudioStream.cpp"
 					>
@@ -803,27 +932,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XDirectory.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XEmail.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpClient.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpCommon.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMedia\XFtpServer.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XMedia\XHIKCamera.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMediaList.cpp"
 					>
 				</File>
 				<File
@@ -835,12 +948,70 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XNetClient.cpp"
+					RelativePath="..\XEffeEngine\XMedia\XMovieCore.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XNetServer.cpp"
+					RelativePath="..\XEffeEngine\XMedia\XMovieFfmpeg.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMusic.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XSerialPort.cpp"
@@ -859,7 +1030,99 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XSound.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundCore.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundFmod.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSoundSDLMixer.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XVideoStream.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XVideoSynch.cpp"
 					>
 				</File>
 			</Filter>
@@ -867,7 +1130,23 @@
 				Name="Inline Files"
 				>
 				<File
-					RelativePath="..\XEffeEngine\XMedia\XEmail.inl"
+					RelativePath="..\XEffeEngine\XMedia\XAudioOutput.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XAVStream.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMicrophone.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMovieFfmpeg.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XSerialPort.inl"
 					>
 				</File>
 				<File
@@ -876,6 +1155,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XSonovoProtocol.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XVideoSynch.inl"
 					>
 				</File>
 			</Filter>
@@ -899,11 +1182,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFont.inl"
+					RelativePath="..\XEffeEngine\XConfigManager.inl"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFontUnicode.inl"
+					RelativePath="..\XEffeEngine\XEngineCommon.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFile.inl"
 					>
 				</File>
 				<File
@@ -915,15 +1202,11 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XFrameWork.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XNodeLine.inl"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumber.inl"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumberEx.inl"
 					>
 				</File>
 				<File
@@ -935,7 +1218,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XShaderGLSL.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XSprite.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XStdHead.cpp"
 					>
 				</File>
 				<File
@@ -943,7 +1234,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\X3D\XTerrain.inl"
+					RelativePath="..\XEffeEngine\XTextureInformation.inl"
 					>
 				</File>
 				<File
@@ -956,10 +1247,6 @@
 				Filter="h;hpp;hxx;hm;inl;inc;xsd"
 				UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 				>
-				<File
-					RelativePath="..\XEffeEngine\X2DPacker.h"
-					>
-				</File>
 				<File
 					RelativePath="..\XEffeEngine\XActionEx.h"
 					>
@@ -985,27 +1272,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XBezierInterpolation.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XBezierSpline.h"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XBmp.h"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XByteFun.h"
+					RelativePath="..\XEffeEngine\XCheatModule.h"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XCircleGroup.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XColorSpace.h"
 					>
 				</File>
 				<File
@@ -1025,7 +1300,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XDirectory.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XEffeEngine.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XEngineCommon.h"
 					>
 				</File>
 				<File
@@ -1037,23 +1320,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFfmpeg.h"
+					RelativePath="..\XEffeEngine\XException.h"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFont.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XFontBasic.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XFontTTF.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XFontUnicode.h"
+					RelativePath="..\XEffeEngine\XFile.h"
 					>
 				</File>
 				<File
@@ -1065,7 +1336,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XHTTPRequest.h"
+					RelativePath="..\XEffeEngine\XFrameWork.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameBasic.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XImm.h"
 					>
 				</File>
 				<File
@@ -1085,6 +1364,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XLanguage.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XLoading.h"
 					>
 				</File>
@@ -1097,7 +1380,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMD5.h"
+					RelativePath="..\XEffeEngine\XMemory.h"
 					>
 				</File>
 				<File
@@ -1105,31 +1388,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMesh2D.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMouseAndKeyBoardDefine.h"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMovieCore.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMovieFfmpeg.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMusic.h"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XNodeLine.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumber.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumberEx.h"
 					>
 				</File>
 				<File
@@ -1161,14 +1428,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XPressDataMode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XRandomFun.h"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XResourceManager.h"
 					>
 				</File>
@@ -1197,35 +1456,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XSocket.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSocketEx.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSound.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundCommon.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundCore.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundFmod.h"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundSDLMixer.h"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XSprite.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XStdHead.h"
 					>
 				</File>
 				<File
@@ -1279,10 +1514,6 @@
 				UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 				>
 				<File
-					RelativePath="..\XEffeEngine\X2DPacker.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XActionEx.cpp"
 					>
 				</File>
@@ -1307,27 +1538,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XBezierInterpolation.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XBezierSpline.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XBmp.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XByteFun.cpp"
+					RelativePath="..\XEffeEngine\XCheatModule.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XCircleGroup.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XColorSpace.cpp"
 					>
 				</File>
 				<File
@@ -1343,7 +1562,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XDirectory.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XEffeEngine.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XEngineCommon.cpp"
 					>
 				</File>
 				<File
@@ -1355,19 +1582,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFont.cpp"
+					RelativePath="..\XEffeEngine\XException.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XFontBasic.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XFontTTF.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XFontUnicode.cpp"
+					RelativePath="..\XEffeEngine\XFile.cpp"
 					>
 				</File>
 				<File
@@ -1379,7 +1598,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XHTTPRequest.cpp"
+					RelativePath="..\XEffeEngine\XFrameWork.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XImm.cpp"
 					>
 				</File>
 				<File
@@ -1407,7 +1630,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMD5.cpp"
+					RelativePath="..\XEffeEngine\XMemory.cpp"
 					>
 				</File>
 				<File
@@ -1415,27 +1638,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMovieCore.cpp"
+					RelativePath="..\XEffeEngine\XMesh2D.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XMovieFfmpeg.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XMusic.cpp"
+					RelativePath="..\XEffeEngine\XMouseAndKeyBoardDefine.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XNodeLine.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumber.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XNumberEx.cpp"
 					>
 				</File>
 				<File
@@ -1456,14 +1667,6 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XPixelSDL.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XPressDataMode.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XRandomFun.cpp"
 					>
 				</File>
 				<File
@@ -1488,30 +1691,6 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XSmartPointer.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSocket.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSocketEx.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSound.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundCore.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundFmod.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\XEffeEngine\XSoundSDLMixer.cpp"
 					>
 				</File>
 				<File
@@ -1691,6 +1870,14 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\X3D\XTerrain.inl"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="ThirdPart"
@@ -1746,7 +1933,7 @@
 					Name="Source Files"
 					>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\SDL_ttf\SDL_ttf.c"
+						RelativePath="..\XEffeEngine\ThirdPart\SDL_ttf\SDL_ttf.cpp"
 						>
 					</File>
 				</Filter>
@@ -1807,6 +1994,10 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="XMath"
@@ -1815,11 +2006,47 @@
 				Name="Header Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\XMath\X2DPacker.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierDeform.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierInterpolation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierSpline.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XByteFun.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XCColor.h"
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XColorSpace.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XEquidistantInterpolation.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XFColor.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XField2D.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XFilterVec2.h"
 					>
 				</File>
 				<File
@@ -1847,7 +2074,35 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XMD5.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XMoveData.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XMoveNumber.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XPressDataMode.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRandomFun.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XRect.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSampling.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XStatistics.h"
 					>
 				</File>
 				<File
@@ -1867,11 +2122,137 @@
 				Name="Source Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\XMath\X2DPacker.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierDeform.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierInterpolation.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierSpline.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XByteFun.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XCColor.cpp"
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XColorSpace.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XEquidistantInterpolation.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XFColor.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XField2D.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XFilterVec2.cpp"
 					>
 				</File>
 				<File
@@ -1899,7 +2280,89 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XMD5.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XMoveData.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XMoveNumber.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XPressDataMode.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRandomFun.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XRect.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSampling.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XStatistics.cpp"
 					>
 				</File>
 				<File
@@ -1947,6 +2410,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XMoveData.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XRect.inl"
 					>
 				</File>
@@ -1960,6 +2427,330 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\XVector4.inl"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="XGameElement"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XFlashStgObj.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XFrameExStgObj.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XGameElement.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XScene.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XSceneManager.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XSpriteStgObj.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XStageManager.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XStageObject.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XFlashStgObj.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XFrameExStgObj.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XScene.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XSceneManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XSpriteStgObj.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XStageManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XStageObject.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XGameElement\XSceneManager.inl"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="XFont"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFont.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontBasic.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontTTF.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontUnicode.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumber.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumberEx.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFont.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontBasic.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontTTF.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontUnicode.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumber.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumberEx.inl"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFont.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontBasic.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontTTF.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XFontUnicode.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumber.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFont\XNumberEx.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="XNetwork"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XEmail.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpClient.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpCommon.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpServer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XHTTPRequest.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XNetClient.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XNetCommon.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XNetServer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocket.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocketBasic.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocketEx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XUdpReceiver.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XUdpSender.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XWinSockCommon.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XEmail.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocketEx.inl"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XEmail.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpClient.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpCommon.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XFtpServer.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XHTTPRequest.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XNetClient.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XNetServer.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocket.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocketBasic.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSocketEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XUdpReceiver.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XUdpSender.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="XData"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XData\XTempSave.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XData\XTempSave.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XData\XTempSave.inl"
 					>
 				</File>
 			</Filter>

@@ -8,13 +8,13 @@
 #include "XBasicFun.h"
 #include "XTextureInformation.h"
 #include "XCam.h"
-
+namespace XE{
 //这是一个天空盒子的类
-class _XSkyBox
+class XSkyBox
 {
 private:
-	char m_isInited;				//是否完成初始化
-	_XTextureData m_texture[6];		//天空盒子的6个面
+	XBool m_isInited;				//是否完成初始化
+	XTextureData m_texture[6];		//天空盒子的6个面
 	float m_top;					//天空的范围
 	float m_bottom;
 	float m_front;
@@ -32,26 +32,24 @@ public:
 		m_back = back;
 	}
 	//传入的文件名大致为：....\top.png
-	int init(const char *filename,_XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool init(const char *filename,XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);
 	void draw();
 
-	_XSkyBox()
-		:m_isInited(0)
+	XSkyBox()
+		:m_isInited(XFalse)
 		,m_top(-100.0f)					//天空的范围
 		,m_bottom(100.0f)
 		,m_front(100.0f)
 		,m_back(-100.0f)
 		,m_left(-100.0f)
 		,m_right(100.0f)
-	{
-	}
-	~_XSkyBox() {release();}
+	{}
+	~XSkyBox() {release();}
 	void release()
 	{
-		if(m_isInited == 0) return;
-
-		m_isInited = 0;
+		if(!m_isInited) return;
+		m_isInited = XFalse;
 	}
 };
-
+}
 #endif	//_JIA_XSKYBOX_

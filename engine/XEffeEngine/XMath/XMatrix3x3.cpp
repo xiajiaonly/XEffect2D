@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -5,11 +6,12 @@
 //--------------------------------
 #include "XMatrix3x3.h"
 #include "XMatrix2x2.h"
-const _XMatrix3x3 _XMatrix3x3::identity(1.0f,0.0f,0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,1.0f);	//单位矩阵
-_XMatrix3x3 _XMatrix3x3::inverse()
+namespace XE{
+const XMatrix3x3 XMatrix3x3::identity(1.0f,0.0f,0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,1.0f);	//单位矩阵
+XMatrix3x3 XMatrix3x3::inverse()
 {
-	_XMatrix3x3 ret;
-	_XMatrix3x3& A = * this;
+	XMatrix3x3 ret;
+	XMatrix3x3& A = * this;
 	double determinant = getValue();
 	if(determinant == 0.0f) return ret;
 	double invdet = 1/determinant;
@@ -24,10 +26,10 @@ _XMatrix3x3 _XMatrix3x3::inverse()
 	ret(2,2) =  (A(0,0)*A(1,1)-A(1,0)*A(0,1))*invdet;
 	return ret;
 }
-_XVector2 _XMatrix3x3::resolveEquation()
+XVector2 XMatrix3x3::resolveEquation()
 {
-	_XVector2 ret;
-	_XMatrix2x2 m;
+	XVector2 ret;
+	XMatrix2x2 m;
 	m.data[0] = data[0];m.data[1] = data[1];
 	m.data[2] = data[3];m.data[3] = data[4];
 	float d = m.getValue();
@@ -40,9 +42,10 @@ _XVector2 _XMatrix3x3::resolveEquation()
 	ret.y = m.getValue() / d;
 	return ret;
 }
-_XVector4 toVector4(const _XMatrix3x3 &m)
+namespace XMath{
+XVector4 toVector4(const XMatrix3x3 &m)
 {//从旋转矩阵到四元数的转换
-	_XVector4 ret;
+	XVector4 ret;
 	ret.w = m(0,0) + m(1,1) + m(2,2);
 	ret.x = m(0,0) - m(1,1) - m(2,2);
 	ret.y = m(1,1) - m(0,0) - m(2,2);
@@ -90,4 +93,9 @@ _XVector4 toVector4(const _XMatrix3x3 &m)
 		break;
 	}
 	return ret;
+}
+}
+#if !WITH_INLINE_FILE
+#include "XMatrix3x3.inl"
+#endif
 }

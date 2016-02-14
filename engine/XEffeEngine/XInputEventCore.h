@@ -6,9 +6,9 @@
 //Date:		2014.3.25
 //--------------------------------
 #include "XMouseAndKeyBoardDefine.h"
-
+namespace XE{
 //输入事件的类型
-enum _XInputType
+enum XInputType
 {
 	EVENT_NULL,		//无效的事件
 	EVENT_MOUSE,	//鼠标事件
@@ -19,22 +19,24 @@ enum _XInputType
 	EVENT_EXIT,		//退出事件
 };
 //输入事件(尚未完成，可以更具需求增加)
-struct _XInputEvent
+struct XInputEvent
 {
-	_XInputType type;	//输入事件的类型
+	XInputType type;	//输入事件的类型
 
-	_XKeyState keyState;	//键盘的状态
-	_XKeyValue keyValue;	//键盘的键值
+	XKeyState keyState;	//键盘的状态
+	XKeyValue keyValue;	//键盘的键值
 
-	_XMouseState mouseState;	//鼠标状态
+	XMouseState mouseState;	//鼠标状态
 	int mouseX;					//鼠标的位置
 	int mouseY;
 	unsigned short unicode;
-	_XInputEvent()
+	XInputEvent()
 		:type(EVENT_NULL)
 	{}
+	bool isKeyBoardDown()const{return type == EVENT_KEYBOARD && keyState == KEY_STATE_DOWN;}
+	bool isKeyBoardUp()const{return type == EVENT_KEYBOARD && keyState == KEY_STATE_UP;}
 };
 //返回是否有未处理的事件
-//inline bool getInputEvent(_XInputEvent &event);
-
+//inline bool getInputEvent(XInputEvent &event);
+}
 #endif

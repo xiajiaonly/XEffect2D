@@ -1,49 +1,75 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XHIKCamera.h"
-#include "stdio.h"
 
 #if SUPPORT_FOR_HIK
-#include "../XColorSpace.h"
-
+#include "../XMath/XColorSpace.h"
+namespace XE{
 //解码的回调函数
-unsigned char* pOutRGB;	//输出的RGB颜色
-_XBool *haveNewFrame;		//结合接口
-//int *width = NULL;
-//int *height = NULL;
-void CALLBACK DecCBFun(long/*nPort*/,char * pBuf,long/*nSize*/, FRAME_INFO * pFrameInfo,long/*nReserved1*/,long) 
+void CALLBACK XHIKCamera::decCBFun(long,char * pBuf,long nSize,FRAME_INFO * pFrameInfo, long nUser,long)
 {
-	if(pFrameInfo->nType == T_YV12) YUVToRGB((unsigned char *)pBuf,pOutRGB,pFrameInfo->nWidth,pFrameInfo->nHeight);
-	//YUVToRGB((unsigned char *)pBuf,pOutRGB,*width,*height);
-	* haveNewFrame = XTrue;
+	//switch(pFrameInfo->nType)
+	//{
+	//case T_AUDIO16:printf("T_AUDIO16\n");break;
+	//case T_AUDIO8:printf("T_AUDIO8\n");break;
+	//case T_UYVY:printf("T_UYVY\n");break;
+	//case T_YV12:printf("T_YV12\n");break;
+	//case T_RGB32:printf("T_RGB32\n");break;
+	//default:
+	//	printf("%d\n",pFrameInfo->nType);
+	//	break;
+	//}
+	if(pFrameInfo->nType != T_YV12) return;
+	XHIKCamera &pPar = *(XHIKCamera *)nUser;
+	if(!pPar.m_isGetInitData) pPar.setInitData(pFrameInfo->nWidth,pFrameInfo->nHeight);
+#if HIK_WITH_LOECORE
+	pPar.m_mutex.Lock();
+	memcpy(pPar.m_yuvData,pBuf,nSize);
+	pPar.m_mutex.Unlock();
+#else
+	XColorSpace::YUVToRGB((unsigned char *)pBuf,pPar.m_dataRGB,pFrameInfo->nWidth,pFrameInfo->nHeight);
+#endif
+	pPar.m_haveNewFrame = XTrue;
 }
 //实时解码的回调函数
-LONG lPort;
-void CALLBACK g_RealDataCallBack_V30(LONG/*lRealHandle*/, DWORD dwDataType, BYTE *pBuffer,DWORD dwBufSize,DWORD/*dwUser*/)
+#ifdef VERSION_40
+void CALLBACK XHIKCamera::realDataCB(LONG/*lRealHandle*/, DWORD dwDataType, BYTE *pBuffer,DWORD dwBufSize,void * dwUser)
+#endif
+#ifdef VERSION_30
+void CALLBACK XHIKCamera::realDataCB(LONG/*lRealHandle*/, DWORD dwDataType, BYTE *pBuffer,DWORD dwBufSize,DWORD dwUser)
+#endif
 {
+//	printf("realDataCB\n");
+	XHIKCamera &pPar = *(XHIKCamera *)dwUser;
 	switch(dwDataType)
 	{
 	case NET_DVR_SYSHEAD:					//系统头
-		if(!PlayM4_GetPort(&lPort)) break;	//获取播放库未使用的通道号
+		if(!PlayM4_GetPort(&(pPar.m_lPort))) break;	//获取播放库未使用的通道号
 		if(dwBufSize > 0)
 		{
-			if(!PlayM4_SetStreamOpenMode(lPort,STREAME_REALTIME)) break;		//设置实时流播放模式
-			if(!PlayM4_OpenStream(lPort,pBuffer,dwBufSize,1024*1024)) break;	//打开流接口,1024 * 1024的数据何来？
-			PlayM4_SetDecCallBack(lPort,DecCBFun);
-			if(!PlayM4_SetDecCBStream(lPort,1)) break;
-			if(!PlayM4_Play(lPort,NULL)) break;//播放开始
+			if(!PlayM4_SetStreamOpenMode(pPar.m_lPort,STREAME_REALTIME)) break;		//设置实时流播放模式
+			if(!PlayM4_OpenStream(pPar.m_lPort,pBuffer,dwBufSize,1024*1024)) break;	//打开流接口,1024 * 1024的数据何来？
+#ifdef VERSION_40
+			PlayM4_SetDecCallBackMend(pPar.m_lPort,decCBFun,(DWORD)dwUser);
+#endif
+#ifdef VERSION_30
+			PlayM4_SetDecCallBackMend(pPar.m_lPort,decCBFun,dwUser);
+#endif
+			if(!PlayM4_SetDecCBStream(pPar.m_lPort,1)) break;
+			if(!PlayM4_Play(pPar.m_lPort,NULL)) break;//播放开始
 		}//T_YV12
 	case NET_DVR_STREAMDATA:   //码流数据
-		if (dwBufSize > 0 && lPort != -1)
+		if (dwBufSize > 0 && pPar.m_lPort != -1)
 		{
-			if(!PlayM4_InputData(lPort,pBuffer,dwBufSize)) break;
+			if(!PlayM4_InputData(pPar.m_lPort,pBuffer,dwBufSize)) break;
 		}
 	}
 }
-void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG/*lUserID*/, LONG/*lHandle*/, void *)/*pUser*/
+void CALLBACK XHIKCamera::exceptionCB(DWORD dwType, LONG/*lUserID*/, LONG/*lHandle*/, void * /*pUser*/)
 {
 	switch(dwType) 
 	{
@@ -54,41 +80,39 @@ void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG/*lUserID*/, LONG/*lHandle*/
 		break;
 	}
 }
-_XBool _XHIKCamera::upDateFrame()
+XBool XHIKCamera::updateFrame()
 {
 	if(!m_isInited) return XFalse;
 	if(isNewFrame() && m_isWork != 0)
 	{//更新贴图数据
-		memcpy(m_dataRGBOut,m_dataRGB,m_buffSize);
-		m_cameraTex.updateTexture(m_dataRGBOut);
+#if HIK_WITH_LOECORE
+		m_mutex.Lock();
+		XColorSpace::YUVToRGB(m_yuvData,m_dataRGB,m_cameraWidth,m_cameraHeight);
+		m_mutex.Unlock();
+#endif
+		m_cameraTex.updateTexture(m_dataRGB);
 		return XTrue;
 	}
 	return XFalse;
 }
-void _XHIKCamera::release()
+void XHIKCamera::release()
 {
 	if(!m_isInited) return;
-	PlayM4_Stop(lPort);
-	PlayM4_CloseFile(lPort);
+	PlayM4_Stop(m_lPort);
+	PlayM4_CloseFile(m_lPort);
 	NET_DVR_Logout(m_lUserID);
 	NET_DVR_Cleanup();
-
-	XDELETE_ARRAY(m_dataRGB);
-	XDELETE_ARRAY(m_dataRGBOut);
+	m_isGetInitData = false;
+	XMem::XDELETE_ARRAY(m_dataRGB);
+#if HIK_WITH_LOECORE
+	XMem::XDELETE_ARRAY(m_yuvData);
+#endif
 	//下面需要删除资源
 	m_isInited = XFalse;
 }
-_XBool _XHIKCamera::init(_XCameraData &data)
+XBool XHIKCamera::init(XCameraInfo &data)
 {
 	if(m_isInited) return XTrue;
-	m_cameraWidth = data.w;
-	m_cameraHeight = data.h;
-	//width = &m_cameraWidth;
-	//height = & m_cameraHeight;
-	m_buffSize = m_cameraWidth * m_cameraHeight * 3;
-
-	m_cameraTexWidth = m_cameraWidth;
-	m_cameraTexHeight = m_cameraHeight;
 	//初始化摄像头并连接设备
 	NET_DVR_Init();	//初始化
 	m_lUserID = NET_DVR_Login_V30(data.ipAddress,data.port,data.userName,data.pwd,&m_structDeviceInfo);
@@ -98,25 +122,17 @@ _XBool _XHIKCamera::init(_XCameraData &data)
 		NET_DVR_Cleanup();
 		return XFalse;
 	}
-	//下面开始连接回调函数并分配内存空间
-	m_dataRGB = createArrayMem<unsigned char>(m_buffSize);	//分配内存空间
-	if(m_dataRGB == NULL) return XFalse;
-	memset(m_dataRGB,0,m_buffSize);
-	m_dataRGBOut = createArrayMem<unsigned char>(m_buffSize);
-	if(m_dataRGBOut == NULL) return XFalse;
 
-	haveNewFrame = &m_haveNewFrame;
-	pOutRGB = m_dataRGB;
+	NET_DVR_SetExceptionCallBack_V30(0,NULL,exceptionCB,this);
 
-	NET_DVR_SetExceptionCallBack_V30(0,NULL,g_ExceptionCallBack,NULL);
-
+#ifdef VERSION_30
+	//V30的实现方式
 	NET_DVR_CLIENTINFO ClientInfo = {0};
 	ClientInfo.hPlayWnd = NULL;         //需要SDK解码时句柄设为有效值，仅取流不解码时可设为空
 	ClientInfo.lChannel = 0;			//预览通道号
 	ClientInfo.lLinkMode = 0;			//最高位(31)为0表示主码流，为1表示子码流0～30位表示连接方式：0－TCP方式；1－UDP方式；2－多播方式；3－RTP方式;
 	ClientInfo.sMultiCastIP = NULL;		//多播地址，需要多播预览时配置
-
-	//BOOL bPreviewBlock = XFalse;			//请求码流过程是否阻塞，0：否，1：是
+	BOOL bPreviewBlock = XFalse;			//请求码流过程是否阻塞，0：否，1：是
 	m_lRealPlayHandle = NET_DVR_RealPlay_V30(m_lUserID,&ClientInfo,NULL,NULL,XFalse);
 	if(m_lRealPlayHandle < 0)
 	{
@@ -125,21 +141,68 @@ _XBool _XHIKCamera::init(_XCameraData &data)
 		NET_DVR_Cleanup();
 		return XFalse;
 	}
-
-	if(!NET_DVR_SetRealDataCallBack(m_lRealPlayHandle,g_RealDataCallBack_V30,0))
+	if(!NET_DVR_SetRealDataCallBack(m_lRealPlayHandle,realDataCB,(DWORD)this))
 	{
 		printf("NET_DVR_SetRealDataCallBack error\n");
 	}
+	DWORD dwReturn = 0;
+	NET_DVR_COMPRESSIONCFG_V30 struParams = {0}; 
+	if(!NET_DVR_GetDVRConfig(m_lUserID, NET_DVR_GET_COMPRESSCFG_V30, m_structDeviceInfo.byStartChan, &struParams,sizeof(NET_DVR_COMPRESSIONCFG_V30), &dwReturn))
+	{
+		printf("Error!\n");
+	}
+	setInitData(data.w,data.h);
+#endif
+#ifdef VERSION_40
+	//V40的实现方式
+	NET_DVR_PREVIEWINFO struPreViewInfo = {0};
+	struPreViewInfo.lChannel = 0;
+	struPreViewInfo.hPlayWnd = NULL;
+	struPreViewInfo.dwLinkMode = 0;
+	struPreViewInfo.byProtoType = 1;
+	m_lRealPlayHandle = NET_DVR_RealPlay_V40(m_lUserID, &struPreViewInfo, realDataCB, this);
+	if(m_lRealPlayHandle < 0)
+	{
+		printf("NET_DVR_RealPlay_V40 error\n");
+		NET_DVR_Logout(m_lUserID);
+		NET_DVR_Cleanup();
+		return XFalse;
+	}
+	while(!m_isGetInitData)
+	{//这里等待初始化数据
+		//if(m_isGetInitData) break;
+		Sleep(1);
+	}
+	//下面开始连接回调函数并分配内存空间
+	data.w = m_cameraWidth;
+	data.h = m_cameraHeight;
+#endif
+	m_cameraTexWidth = m_cameraWidth;
+	m_cameraTexHeight = m_cameraHeight;
 
 	m_cameraTex.createTexture(m_cameraWidth,m_cameraHeight,COLOR_RGB);	//不允许进行2的n次方扩展，这回造成不兼容
+	if(data.needReset) m_cameraTex.reset();
 	m_cameraSprite.init(m_cameraWidth,m_cameraHeight,0);
 
 	m_haveNewFrame = XFalse;
 	m_isInited = XTrue;
 	return XTrue;
 }
-
-//void _XHIKCamera::init()
+void XHIKCamera::setInitData(int w,int h)
+{
+	if(m_isGetInitData) return;
+	m_cameraWidth = w;
+	m_cameraHeight = h;
+	m_buffSize = m_cameraWidth * m_cameraHeight * 3;
+	m_dataRGB = XMem::createArrayMem<unsigned char>(m_buffSize);	//分配内存空间
+	memset(m_dataRGB,0,m_buffSize);
+#if HIK_WITH_LOECORE
+	m_yuvData =  XMem::createArrayMem<unsigned char>(m_buffSize >> 1);
+	memset(m_yuvData,0,m_buffSize >> 1);
+#endif
+	m_isGetInitData = true;
+}
+//void XHIKCamera::init()
 //{
 //	pYUV = new unsigned char[m_width * m_height * 1.5];
 //	pRGB = new unsigned char[m_width * m_height * 3];
@@ -175,7 +238,7 @@ _XBool _XHIKCamera::init(_XCameraData &data)
 //	{
 //		printf("NET_DVR_SetRealDataCallBack error\n");
 //	}
-//
+//int isupport = NET_DVR_IsSupport(); //判断运行客户端的PC配置是否符合要求
 //	//DWORD dwReturn = 0;
 //	//memset(&m_CcdParam, 0, sizeof(m_CcdParam));
 //	//m_CcdParam.dwSize = sizeof(m_CcdParam);
@@ -199,5 +262,5 @@ _XBool _XHIKCamera::init(_XCameraData &data)
 //	//}
 //	//cout <<(int)m_CcdParam.struWhiteBalance.byWhiteBalanceMode<<endl;
 //}
-
+}
 #endif //SUPPORT_FOR_HIK

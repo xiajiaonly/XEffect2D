@@ -1,71 +1,74 @@
+#include "XStdHead.h"
 #include "XTab.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-
-void tabBtnProc(void *pClass,int id)
+#include "../XXml.h"
+namespace XE{
+void XTab::ctrlProc(void*pClass,int id,int eventID)
 {
-	_XTab &pPar = *(_XTab *)pClass;
+	if(eventID != XButton::BTN_MOUSE_DOWN) return;
+	XTab &pPar = *(XTab *)pClass;
 	if(id == pPar.m_leftBtn.getControlID())
 	{
-		if(pPar.m_nowStartTabIndex > 0)
+		if(pPar.m_curStartTabIndex > 0)
 		{
-			-- pPar.m_nowStartTabIndex;
+			-- pPar.m_curStartTabIndex;
 			pPar.updateTitle();
 			pPar.updateBtnState();
 		}
 	}else
 	if(id == pPar.m_rightBtn.getControlID())
 	{
-		if(pPar.m_nowStartTabIndex < pPar.m_tabObjects.size() - 1)
+		if(pPar.m_curStartTabIndex < (int)(pPar.m_tabObjects.size()) - 1)
 		{
-			++ pPar.m_nowStartTabIndex;
+			++ pPar.m_curStartTabIndex;
 			pPar.updateTitle();
 			pPar.updateBtnState();
 		}
 	}
 }
-_XBool _XTab::initWithoutTex(const _XRect &rect,const _XFontUnicode &font)
+XBool XTab::initWithoutSkin(const XRect &rect,const XFontUnicode &font)
 {
 	if(m_isInited) return XFalse;
 	if(rect.getWidth() <= 0 || rect.getHeight() <= 0) return XFalse;
 	//检查数据的合法性
 	m_mouseRect = rect;
 	m_position.set(0.0f,0.0f);
-	m_size.set(1.0f,1.0f);
-	m_nowMouseRect.set(m_mouseRect.left * m_size.x + m_position.x,
-		m_mouseRect.top * m_size.y + m_position.y,
-		m_mouseRect.right * m_size.x + m_position.x,
-		m_mouseRect.bottom * m_size.y + m_position.y);
-	m_titleRect.set(m_nowMouseRect.left,m_nowMouseRect.top,m_nowMouseRect.right,m_nowMouseRect.top + TAB_TITLE_HEIGHT * m_size.y);
-	m_texFont.setACopy(font);
+	m_scale.set(1.0f,1.0f);
+	m_curMouseRect.set(m_mouseRect.left * m_scale.x + m_position.x,
+		m_mouseRect.top * m_scale.y + m_position.y,
+		m_mouseRect.right * m_scale.x + m_position.x,
+		m_mouseRect.bottom * m_scale.y + m_position.y);
+	m_titleRect.set(m_curMouseRect.left,m_curMouseRect.top,m_curMouseRect.right,m_curMouseRect.top + TAB_TITLE_HEIGHT * m_scale.y);
+	if(!m_texFont.setACopy(font)) return XFalse;
 	m_texFont.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_texFont.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 	m_texFont.setColor(0.0f,0.0f,0.0f,1.0f);
-	m_texFont.setSize(m_size);
+	m_texFont.setScale(m_scale);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_texFont);
+	XObjManager.decreaseAObject(&m_texFont);
 #endif
-	m_nowTextWidth = m_texFont.getTextSize().x * m_texFont.getSize().x * 0.5f;
-	m_maxTitleLen = (m_mouseRect.getWidth() - (TAB_BTN_WIDTH << 1) - TAB_TITLE_DISTANCE) / m_nowTextWidth;	//计算标题的最大长度
+	m_curTextWidth = m_texFont.getTextSize().x * m_texFont.getScale().x * 0.5f;
+	m_maxTitleLen = (m_mouseRect.getWidth() - (m_tabBtnWidth << 1) - m_tabTitleDistance) / m_curTextWidth;	//计算标题的最大长度
 	if(m_maxTitleLen < 3) return false;	//窗口太小
 
-	m_leftBtn.initWithoutTex("<",font,_XRect(0.0f,0.0f,TAB_BTN_WIDTH,32.0f));
-	m_leftBtn.setPosition(m_nowMouseRect.right - ((TAB_BTN_WIDTH << 1) * m_size.x),m_nowMouseRect.top);
+	m_leftBtn.initWithoutSkin("<", font, XRect(0.0f, 0.0f, m_tabBtnWidth, TAB_TITLE_HEIGHT));
+	m_leftBtn.setPosition(m_curMouseRect.right - ((m_tabBtnWidth << 1) * m_scale.x),m_curMouseRect.top);
 	m_leftBtn.disable();
-	m_leftBtn.setMouseDownCB(tabBtnProc,this);
-	m_leftBtn.setSize(m_size);
-	_XCtrlManger.decreaseAObject(&m_leftBtn);	//注销这个物件
+	m_leftBtn.setEventProc(ctrlProc,this);
+	m_leftBtn.setScale(m_scale);
+	XCtrlManager.decreaseAObject(&m_leftBtn);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_leftBtn);
+	XObjManager.decreaseAObject(&m_leftBtn);
 #endif
-	m_rightBtn.initWithoutTex(">",font,_XRect(0.0f,0.0f,TAB_BTN_WIDTH,32.0f));
-	m_rightBtn.setPosition(m_nowMouseRect.right - TAB_BTN_WIDTH * m_size.x,m_nowMouseRect.top);
+	m_rightBtn.initWithoutSkin(">", font, XRect(0.0f, 0.0f, m_tabBtnWidth, TAB_TITLE_HEIGHT));
+	m_rightBtn.setPosition(m_curMouseRect.right - m_tabBtnWidth * m_scale.x,m_curMouseRect.top);
 	m_rightBtn.disable();
-	m_rightBtn.setMouseDownCB(tabBtnProc,this);
-	m_rightBtn.setSize(m_size);
-	_XCtrlManger.decreaseAObject(&m_rightBtn);	//注销这个物件
+	m_rightBtn.setEventProc(ctrlProc,this);
+	m_rightBtn.setScale(m_scale);
+	XCtrlManager.decreaseAObject(&m_rightBtn);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_rightBtn);
+	XObjManager.decreaseAObject(&m_rightBtn);
 #endif
 
 	m_isVisible = XTrue;
@@ -75,180 +78,172 @@ _XBool _XTab::initWithoutTex(const _XRect &rect,const _XFontUnicode &font)
 	m_withoutTex = XTrue;
 	m_isInited = XTrue;
 
-	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 
 	return XTrue;
 }
-void _XTab::draw()
+void XTab::draw()
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
 	if(m_withoutTex)
 	{//不使用贴图时
 		//描绘标签的背景
-		drawFillBox(m_nowMouseRect.left,m_nowMouseRect.top,
-			m_nowMouseRect.getWidth(),TAB_TITLE_HEIGHT * m_size.y,
-			0.2f * m_color.fR,0.2f * m_color.fG,0.2f * m_color.fB,m_color.fA);
+		XRender::drawFillBox(m_curMouseRect.left,m_curMouseRect.top,
+			m_curMouseRect.getWidth(),TAB_TITLE_HEIGHT * m_scale.y,
+			XCCS::lightBlackColor * m_color);
 		//下面显示标签
 		if(m_withAction && m_isInAction)
 		{
-			for(int i = m_nowStartTabIndex;i < m_tabObjects.size();++ i)
+			for(unsigned int i = m_curStartTabIndex;i < m_tabObjects.size();++ i)
 			{//显示标签背景
 				if(m_tabObjects[i].needDraw)
 				{
-					drawFillBoxExAS(_XVector2(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top),
-						_XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_size.y),
-						0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA);
+					XRender::drawFillBoxExAS(XVector2(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top),
+						XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_scale.y),
+						XCCS::disableColor * m_color);
 				}
 			}
 		}else
 		{
-			for(int i = m_nowStartTabIndex;i < m_tabObjects.size();++ i)
+			for(unsigned int i = m_curStartTabIndex;i < m_tabObjects.size();++ i)
 			{//显示标签背景
-				if(m_tabObjects[i].needDraw && m_nowChooseTabIndex != i)
+				if(m_tabObjects[i].needDraw && m_curChooseTabIndex != i)
 				{
 					if(m_tabObjects[i].isEnable)
 					{//没有被选中的标签
-						drawFillBoxExAS(_XVector2(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top),
-							_XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_size.y),
-							0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA);
-						m_tabObjects[i].pFont->setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+						XRender::drawFillBoxExAS(XVector2(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top),
+							XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_scale.y),
+							XCCS::disableColor * m_color);
+						m_tabObjects[i].pFont->setColor(XCCS::downColor * m_color);
 						//m_texFont.setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
 					}else
 					{
-						drawFillBoxExAS(_XVector2(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top),
-							_XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_size.y),
-							0.25f * m_color.fR,0.25f * m_color.fG,0.25f * m_color.fB,m_color.fA);
-						m_tabObjects[i].pFont->setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+						XRender::drawFillBoxExAS(XVector2(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top),
+							XVector2(m_tabObjects[i].len,TAB_TITLE_HEIGHT * m_scale.y),
+							XCCS::blackDownColor * m_color);
+						m_tabObjects[i].pFont->setColor(XCCS::downColor * m_color);
 						//m_texFont.setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
 					}
 				}
 			}
-			for(int i = m_nowStartTabIndex;i < m_tabObjects.size();++ i)
+			for(unsigned int i = m_curStartTabIndex;i < m_tabObjects.size();++ i)
 			{//显示标签文字
-				if(m_tabObjects[i].needDraw && m_nowChooseTabIndex != i)
+				if(m_tabObjects[i].needDraw && m_curChooseTabIndex != i)
 				{
-				//	m_tabObjects[i].pFont->setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
+				//	m_tabObjects[i].pFont->setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
 					m_tabObjects[i].pFont->draw();
 				//	m_texFont.setString(m_tabObjects[i].title.c_str());
-				//	m_texFont.setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
+				//	m_texFont.setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
 				//	m_texFont.draw();
 				}
 			}
 		}
 		//描绘下面的面板
-		drawFillBoxExAS(_XVector2(m_nowMouseRect.left,m_nowMouseRect.top + TAB_TITLE_HEIGHT * m_size.y),
-			_XVector2(m_nowMouseRect.getWidth(),m_nowMouseRect.getHeight() - TAB_TITLE_HEIGHT * m_size.y),
-			0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,true);
+		XRender::drawFillBoxExAS(XVector2(m_curMouseRect.left,m_curMouseRect.top + TAB_TITLE_HEIGHT * m_scale.y),
+			XVector2(m_curMouseRect.getWidth(),m_curMouseRect.getHeight() - TAB_TITLE_HEIGHT * m_scale.y),
+			XCCS::disableColor * m_color,true);
 		//描绘被选中的项
 		if(m_withAction && m_isInAction)
 		{
 			//描绘动态，注意这里没有考虑源出于不显示状态的情况
 			if(m_tabObjects[m_oldChooseTabIndex].needDraw)
 			{
-				drawFillBoxExExA(_XVector2(m_nowMouseRect.left + 
-					lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].offset,m_tabObjects[m_nowChooseTabIndex].offset,m_actionMoveData.getNowData()),m_nowMouseRect.top),
-					_XVector2(lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_nowChooseTabIndex].len,m_actionMoveData.getNowData()),TAB_TITLE_HEIGHT * m_size.y),
-					0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,0x0b,0x00,true);
+				XRender::drawFillBoxExExA(XVector2(m_curMouseRect.left + 
+					XMath::lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].offset,m_tabObjects[m_curChooseTabIndex].offset,m_actionMoveData.getCurData()),m_curMouseRect.top),
+					XVector2(XMath::lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_curChooseTabIndex].len,m_actionMoveData.getCurData()),TAB_TITLE_HEIGHT * m_scale.y),
+					XCCS::disableColor * m_color,0x0b,0x00,true);
 			}else
 			{
-				if(m_oldChooseTabIndex < m_nowChooseTabIndex)
+				if(m_oldChooseTabIndex < m_curChooseTabIndex)
 				{
-					float pos = m_nowMouseRect.left - m_tabObjects[m_oldChooseTabIndex].len;
-					pos = lineSlerp<float>(pos,m_tabObjects[m_nowChooseTabIndex].offset,m_actionMoveData.getNowData());
-					float len = lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_nowChooseTabIndex].len,m_actionMoveData.getNowData());
+					float pos = m_curMouseRect.left - m_tabObjects[m_oldChooseTabIndex].len;
+					pos = XMath::lineSlerp<float>(pos,m_tabObjects[m_curChooseTabIndex].offset,m_actionMoveData.getCurData());
+					float len = XMath::lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_curChooseTabIndex].len,m_actionMoveData.getCurData());
 					if(pos <= 0)
 					{
 						len += pos;
 						pos = 0;
 					}
-					drawFillBoxExExA(_XVector2(m_nowMouseRect.left + pos,m_nowMouseRect.top),
-						_XVector2(len,TAB_TITLE_HEIGHT * m_size.y),
-						0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,0x0b,0x00,true);
+					XRender::drawFillBoxExExA(XVector2(m_curMouseRect.left + pos,m_curMouseRect.top),
+						XVector2(len,TAB_TITLE_HEIGHT * m_scale.y),
+						XCCS::disableColor * m_color,0x0b,0x00,true);
 				}else
 				{
-					float pos = m_nowMouseRect.right;
-					pos = lineSlerp<float>(pos,m_tabObjects[m_nowChooseTabIndex].offset,m_actionMoveData.getNowData());
-					float len = lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_nowChooseTabIndex].len,m_actionMoveData.getNowData());
-					if(pos + len > m_nowMouseRect.right)
+					float pos = m_curMouseRect.right;
+					pos = XMath::lineSlerp<float>(pos,m_tabObjects[m_curChooseTabIndex].offset,m_actionMoveData.getCurData());
+					float len = XMath::lineSlerp<float>(m_tabObjects[m_oldChooseTabIndex].len,m_tabObjects[m_curChooseTabIndex].len,m_actionMoveData.getCurData());
+					if(pos + len > m_curMouseRect.right)
 					{
-						len -= m_nowMouseRect.right - pos;
+						len -= m_curMouseRect.right - pos;
 					}
-					drawFillBoxExExA(_XVector2(m_nowMouseRect.left + pos,m_nowMouseRect.top),
-						_XVector2(len,TAB_TITLE_HEIGHT * m_size.y),
-						0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,0x0b,0x00,true);
+					XRender::drawFillBoxExExA(XVector2(m_curMouseRect.left + pos,m_curMouseRect.top),
+						XVector2(len,TAB_TITLE_HEIGHT * m_scale.y),
+						XCCS::disableColor * m_color,0x0b,0x00,true);
 				}
 			}
-			for(int i = m_nowStartTabIndex;i < m_tabObjects.size();++ i)
+			for(unsigned int i = m_curStartTabIndex;i < m_tabObjects.size();++ i)
 			{//显示标签文字
 				if(m_tabObjects[i].needDraw)
 				{
-					if(m_nowChooseTabIndex != i)
+					if(m_curChooseTabIndex != i)
 					{
 						if(m_oldChooseTabIndex == i)
 						{
-							float temp = m_actionMoveData.getNowData();
-							m_tabObjects[i].pFont->setColor(0.5f * m_color.fR * temp,0.5f * m_color.fG * temp,0.5f * m_color.fB * temp,m_color.fA);
+							float temp = m_actionMoveData.getCurData();
+							m_tabObjects[i].pFont->setColor(XCCS::downColor * m_color * XFColor(temp,temp,temp,1.0f));
 							//m_texFont.setColor(0.5f * m_color.fR * temp,0.5f * m_color.fG * temp,0.5f * m_color.fB * temp,m_color.fA);
 						}else
 						{
-							m_tabObjects[i].pFont->setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
+							m_tabObjects[i].pFont->setColor(XCCS::downColor * m_color);
 							//m_texFont.setColor(0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA);
 						}
 					}else
 					{
-						float temp = 1.0f - m_actionMoveData.getNowData();
-						m_tabObjects[i].pFont->setColor(0.5f * m_color.fR * temp,0.5f * m_color.fG * temp,0.5f * m_color.fB * temp,m_color.fA);
+						float temp = 1.0f - m_actionMoveData.getCurData();
+						m_tabObjects[i].pFont->setColor(XCCS::downColor * m_color * XFColor(temp,temp,temp,1.0f));
 						//m_texFont.setColor(0.5f * m_color.fR * temp,0.5f * m_color.fG * temp,0.5f * m_color.fB * temp,m_color.fA);
 					}
-				//	m_tabObjects[i].pFont->setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
+				//	m_tabObjects[i].pFont->setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
 					m_tabObjects[i].pFont->draw();
 				//	m_texFont.setString(m_tabObjects[i].title.c_str());
-				//	m_texFont.setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
+				//	m_texFont.setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
 				//	m_texFont.draw();
 				}
 			}
 		}else
 		{
-			if(m_nowChooseTabIndex >= m_nowStartTabIndex && m_nowChooseTabIndex < m_tabObjects.size() &&
-				m_tabObjects[m_nowChooseTabIndex].needDraw)
+			if(m_curChooseTabIndex >= m_curStartTabIndex && (m_curChooseTabIndex < m_tabObjects.size() || m_curChooseTabIndex < 0) &&
+				m_tabObjects[m_curChooseTabIndex].needDraw)
 			{//被选中的标签
-			//	drawFillBoxEx(_XVector2(m_nowMouseRect.left + m_tabObjects[m_nowChooseTabIndex].offset,m_nowMouseRect.top),
-			//		_XVector2(m_tabObjects[m_nowChooseTabIndex].len,TAB_TITLE_HEIGHT * m_size.y),0.35f,0.35f,0.35f,false,false,true);
-				drawFillBoxExExA(_XVector2(m_nowMouseRect.left + m_tabObjects[m_nowChooseTabIndex].offset,m_nowMouseRect.top),
-					_XVector2(m_tabObjects[m_nowChooseTabIndex].len,TAB_TITLE_HEIGHT * m_size.y),
-					0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,0x0b,0x00,true);
-				m_tabObjects[m_nowChooseTabIndex].pFont->setColor(0.0f,0.0f,0.0f,m_color.fA);
-			//	m_tabObjects[m_nowChooseTabIndex].pFont->setPosition(m_nowMouseRect.left + m_tabObjects[m_nowChooseTabIndex].offset,m_nowMouseRect.top);
-				m_tabObjects[m_nowChooseTabIndex].pFont->draw();
+			//	drawFillBoxEx(XVector2(m_curMouseRect.left + m_tabObjects[m_curChooseTabIndex].offset,m_curMouseRect.top),
+			//		XVector2(m_tabObjects[m_curChooseTabIndex].len,TAB_TITLE_HEIGHT * m_scale.y),0.35f,0.35f,0.35f,false,false,true);
+				XRender::drawFillBoxExExA(XVector2(m_curMouseRect.left + m_tabObjects[m_curChooseTabIndex].offset,m_curMouseRect.top),
+					XVector2(m_tabObjects[m_curChooseTabIndex].len,TAB_TITLE_HEIGHT * m_scale.y),
+					XCCS::disableColor * m_color,0x0b,0x00,true);
+				m_tabObjects[m_curChooseTabIndex].pFont->setColor(XCCS::darkColor * m_color);
+			//	m_tabObjects[m_curChooseTabIndex].pFont->setPosition(m_curMouseRect.left + m_tabObjects[m_curChooseTabIndex].offset,m_curMouseRect.top);
+				m_tabObjects[m_curChooseTabIndex].pFont->draw();
 			//	m_texFont.setColor(0.0f,0.0f,0.0f,m_color.fA);
-			//	m_texFont.setString(m_tabObjects[m_nowChooseTabIndex].title.c_str());
-			//	m_texFont.setPosition(m_nowMouseRect.left + m_tabObjects[m_nowChooseTabIndex].offset,m_nowMouseRect.top);
+			//	m_texFont.setString(m_tabObjects[m_curChooseTabIndex].title.c_str());
+			//	m_texFont.setPosition(m_curMouseRect.left + m_tabObjects[m_curChooseTabIndex].offset,m_curMouseRect.top);
 			//	m_texFont.draw();
 			}
 		}
 	}
 	m_leftBtn.draw();
 	m_rightBtn.draw();
-#if TAB_MODE == 1
-	//显示其子物体
-	for(int i = 0;i < m_tabObjects.size();++ i)
-	{
-		for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-		{
-			m_tabObjects[i].objs[j]->draw();
-		}
-	}
-#endif
+
+	m_ctrlManager.draw();
 }
-void _XTab::updateBtnState()	//更新按钮的状态
+void XTab::updateBtnState()	//更新按钮的状态
 {//不可见的物件不在显示范围内
 	int startIndex = -1;
 	int endIndex = -1;
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
 		if(m_tabObjects[i].isVisible)
 		{
@@ -256,7 +251,7 @@ void _XTab::updateBtnState()	//更新按钮的状态
 			break;
 		}
 	}
-	for(int i = m_tabObjects.size() - 1;i >= 0;-- i)
+	for(int i = (int)(m_tabObjects.size()) - 1;i >= 0;-- i)
 	{
 		if(m_tabObjects[i].isVisible)
 		{
@@ -273,18 +268,18 @@ void _XTab::updateBtnState()	//更新按钮的状态
 	{
 		m_leftBtn.setVisible();
 		m_rightBtn.setVisible();
-		if(m_nowStartTabIndex <= startIndex) m_leftBtn.disable();
+		if(m_curStartTabIndex <= startIndex) m_leftBtn.disable();
 		else m_leftBtn.enable();
 		if(m_tabObjects[endIndex].needDraw) m_rightBtn.disable();
 		else m_rightBtn.enable();
 	}
 }
-void _XTab::updateTitle()	//更新标题的显示
+void XTab::updateTitle()	//更新标题的显示
 {
 	int pixelOffset = 0;
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		if(i < m_nowStartTabIndex)
+		if(i < m_curStartTabIndex)
 		{
 			m_tabObjects[i].needDraw = XFalse;
 			continue;
@@ -297,65 +292,61 @@ void _XTab::updateTitle()	//更新标题的显示
 		//m_texFont.setString(m_tabObjects[i].title.c_str());
 		//m_tabObjects[i].len = m_texFont.getMaxPixelWidth();
 		m_tabObjects[i].len = m_tabObjects[i].pFont->getMaxPixelWidth();
-		if(pixelOffset + m_tabObjects[i].len + TAB_TITLE_DISTANCE * m_size.x <= m_nowMouseRect.getWidth() - ((TAB_BTN_WIDTH << 1) * m_size.x))
+		if(pixelOffset + m_tabObjects[i].len + m_tabTitleDistance * m_scale.x <= m_curMouseRect.getWidth() - ((m_tabBtnWidth << 1) * m_scale.x))
 		{//需要描绘
 			m_tabObjects[i].needDraw = XTrue;
 			m_tabObjects[i].offset = pixelOffset;
-			m_tabObjects[i].pFont->setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
-			pixelOffset += m_tabObjects[i].len + TAB_TITLE_DISTANCE * m_size.x;
+			m_tabObjects[i].pFont->setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
+			pixelOffset += m_tabObjects[i].len + m_tabTitleDistance * m_scale.x;
 		}else
 		{
 			m_tabObjects[i].needDraw = XFalse;
-			pixelOffset += m_tabObjects[i].len + TAB_TITLE_DISTANCE * m_size.x;
+			pixelOffset += m_tabObjects[i].len + m_tabTitleDistance * m_scale.x;
 		}
 	}
 }
-_XBool _XTab::mouseProc(float x,float y,_XMouseState mouseState)
+XBool XTab::mouseProc(float x,float y,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-#if TAB_MODE == 1
-	//for(int i = 0;i < m_tabObjects.size();++ i)
-	//{
-	//	for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-	//	{
-	//		m_tabObjects[i].objs[j]->mouseProc(x,y,mouseState);
-	//	}
-	//}
-#endif
+
+	m_ctrlManager.mouseProc(x,y,mouseState);
 	if(m_titleRect.isInRect(x,y))
 	{
 		m_leftBtn.mouseProc(x,y,mouseState);
 		m_rightBtn.mouseProc(x,y,mouseState);
 		if(mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
 		{
-			_XRect tmpRect;
-			tmpRect.top = m_nowMouseRect.top;
-			tmpRect.bottom = m_nowMouseRect.top + TAB_TITLE_HEIGHT * m_size.y;
-			for(int i = m_nowStartTabIndex;i < m_tabObjects.size();++ i)
+			XRect tmpRect;
+			tmpRect.top = m_curMouseRect.top;
+			tmpRect.bottom = m_curMouseRect.top + TAB_TITLE_HEIGHT * m_scale.y;
+			for(int i = m_curStartTabIndex;i < m_tabObjects.size();++ i)
 			{
 				if(m_tabObjects[i].needDraw && m_tabObjects[i].isEnable && m_tabObjects[i].isVisible)
 				{
-					tmpRect.left = m_tabObjects[i].offset + m_nowMouseRect.left;
-					tmpRect.right = m_tabObjects[i].offset + m_nowMouseRect.left + m_tabObjects[i].len;
-					if(tmpRect.isInRect(x,y) && i != m_nowChooseTabIndex)	//已经被选中不会再次被选中
+					tmpRect.left = m_tabObjects[i].offset + m_curMouseRect.left;
+					tmpRect.right = m_tabObjects[i].offset + m_curMouseRect.left + m_tabObjects[i].len;
+					if(tmpRect.isInRect(x,y) && i != m_curChooseTabIndex)	//已经被选中不会再次被选中
 					{
 						startAction();
-						m_nowChooseTabIndex = i;
+						m_curChooseTabIndex = i;
 						if(m_withAction)
 						{
-							for(int i = 0;i < m_tabObjects[m_nowChooseTabIndex].objs.size();++ i)
+							for(unsigned int j = 0;j < m_tabObjects[m_curChooseTabIndex].objs.size();++ j)
 							{
-								m_tabObjects[m_nowChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getNowData());
-								m_tabObjects[m_nowChooseTabIndex].objs[i]->setVisible();
+								m_tabObjects[m_curChooseTabIndex].objs[j]->setAlpha(m_actionMoveData.getCurData());
+								m_ctrlManager.setNeedDrawAndInput(true,true,m_tabObjects[m_curChooseTabIndex].objs[j]);
 							}
 						}else
 						{
 							updateObjState();
 						}
-						if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[i].srcTitle);
+						//if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[i].srcTitle);
+						m_curChooseTabStr = m_tabObjects[i].srcTitle;
+						if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,TAB_CHOOSE);
+						else XCtrlManager.eventProc(m_objectID,TAB_CHOOSE);
 						break;
 					}
 				}
@@ -365,60 +356,55 @@ _XBool _XTab::mouseProc(float x,float y,_XMouseState mouseState)
 	}
 	return XFalse;
 }
-_XBool _XTab::keyboardProc(int keyOrder,_XKeyState keyState)
+XBool XTab::keyboardProc(int keyOrder,XKeyState keyState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 	!m_isActive ||		//没有激活的控件不接收控制
 	!m_isVisible ||	//如果不可见直接退出
 	!m_isEnable) return XFalse;		//如果无效则直接退出
-#if TAB_MODE == 1
-	//for(int i = 0;i < m_tabObjects.size();++ i)
-	//{
-	//	for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-	//	{
-	//		m_tabObjects[i].objs[j]->keyboardProc(keyOrder,keyState);
-	//	}
-	//}
-#endif
+	m_ctrlManager.keyProc(keyOrder,keyState);
 	if(keyState == KEY_STATE_UP && m_isBeChoose)
 	{//按键弹起时才作相应
 		switch(keyOrder)
 		{
 		case XKEY_LEFT:
-			if(m_nowChooseTabIndex > 0) 
+			if(m_curChooseTabIndex > 0) 
 			{
 				startAction();
-				-- m_nowChooseTabIndex;
-				if(m_nowStartTabIndex > m_nowChooseTabIndex) m_nowStartTabIndex = m_nowChooseTabIndex;
+				-- m_curChooseTabIndex;
+				if(m_curStartTabIndex > m_curChooseTabIndex) m_curStartTabIndex = m_curChooseTabIndex;
 				updateTitle();	//更新标题的显示
 				updateBtnState();	//更新按钮的状态
 				if(m_withAction)
 				{
-					for(int i = 0;i < m_tabObjects[m_nowChooseTabIndex].objs.size();++ i)
+					for(unsigned int i = 0;i < m_tabObjects[m_curChooseTabIndex].objs.size();++ i)
 					{
-						m_tabObjects[m_nowChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getNowData());
-						m_tabObjects[m_nowChooseTabIndex].objs[i]->setVisible();
+						m_tabObjects[m_curChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getCurData());
+						m_ctrlManager.setNeedDrawAndInput(true,true,m_tabObjects[m_curChooseTabIndex].objs[i]);
 					}
 				}else
 				{
 					updateObjState();
 				}
-				if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[m_nowChooseTabIndex].srcTitle);
+				//if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[m_curChooseTabIndex].srcTitle);
+				m_curChooseTabStr = m_tabObjects[m_curChooseTabIndex].srcTitle;
+				if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,TAB_CHOOSE);
+				else XCtrlManager.eventProc(m_objectID,TAB_CHOOSE);
 			}
 			return XTrue;
 		case XKEY_RIGHT:
-			if(m_nowChooseTabIndex < m_tabObjects.size() - 1)
+			if(m_curChooseTabIndex < (int)(m_tabObjects.size()) - 1)
 			{
 				startAction();
-				++ m_nowChooseTabIndex;
-				//if(m_nowStartTabIndex < m_nowChooseTabIndex) m_nowStartTabIndex = m_nowChooseTabIndex;
+				++ m_curChooseTabIndex;
+				//if(m_curStartTabIndex < m_curChooseTabIndex) m_curStartTabIndex = m_curChooseTabIndex;
 				updateTitle();	//更新标题的显示
 				updateBtnState();	//更新按钮的状态
 				while(true)
 				{//移动直到显示出来(超长标签时这里会出现错误)
-					if(!m_tabObjects[m_nowChooseTabIndex].needDraw && m_nowStartTabIndex < m_nowChooseTabIndex)
+					if(!m_tabObjects[m_curChooseTabIndex].needDraw && m_curStartTabIndex < m_curChooseTabIndex)
 					{
-						++ m_nowStartTabIndex;
+						++ m_curStartTabIndex;
 						updateTitle();	//更新标题的显示
 						updateBtnState();	//更新按钮的状态
 					}else
@@ -428,16 +414,19 @@ _XBool _XTab::keyboardProc(int keyOrder,_XKeyState keyState)
 				}
 				if(m_withAction)
 				{
-					for(int i = 0;i < m_tabObjects[m_nowChooseTabIndex].objs.size();++ i)
+					for(unsigned int i = 0;i < m_tabObjects[m_curChooseTabIndex].objs.size();++ i)
 					{
-						m_tabObjects[m_nowChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getNowData());
-						m_tabObjects[m_nowChooseTabIndex].objs[i]->setVisible();
+						m_tabObjects[m_curChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getCurData());
+						m_ctrlManager.setNeedDrawAndInput(true,true,m_tabObjects[m_curChooseTabIndex].objs[i]);
 					}
 				}else
 				{
 					updateObjState();
 				}
-				if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[m_nowChooseTabIndex].srcTitle);
+				//if(m_funChooseTab != NULL) m_funChooseTab(m_pClass,m_objectID,m_tabObjects[m_curChooseTabIndex].srcTitle);
+				m_curChooseTabStr = m_tabObjects[m_curChooseTabIndex].srcTitle;
+				if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,TAB_CHOOSE);
+				else XCtrlManager.eventProc(m_objectID,TAB_CHOOSE);
 			}
 			return XTrue;
 			break;
@@ -446,99 +435,103 @@ _XBool _XTab::keyboardProc(int keyOrder,_XKeyState keyState)
 	return XFalse;
 
 }
-void _XTab::setPosition(float x,float y)
+void XTab::setPosition(float x,float y)
 {
 	m_position.set(x,y);
-	m_nowMouseRect.set(m_mouseRect.left * m_size.x + m_position.x,
-		m_mouseRect.top * m_size.y + m_position.y,
-		m_mouseRect.right * m_size.x + m_position.x,
-		m_mouseRect.bottom * m_size.y + m_position.y);
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	m_curMouseRect.set(m_mouseRect.left * m_scale.x + m_position.x,
+		m_mouseRect.top * m_scale.y + m_position.y,
+		m_mouseRect.right * m_scale.x + m_position.x,
+		m_mouseRect.bottom * m_scale.y + m_position.y);
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
+		for(unsigned int j = 0;j < m_tabObjects[i].objs.size();++ j)
 		{
-			m_tabObjects[i].objs[j]->setPosition(_XVector2(m_tabObjects[i].pos[j].x * m_size.x,m_tabObjects[i].pos[j].y * m_size.y) + m_position);
+		//	m_tabObjects[i].objs[j]->setPosition(XVector2(m_tabObjects[i].pos[j].x * m_scale.x,m_tabObjects[i].pos[j].y * m_scale.y) + m_position);
+			m_tabObjects[i].objs[j]->setPosition(m_tabObjects[i].pos[j] * m_scale + m_position);
 		}
 		if(m_tabObjects[i].needDraw)
-			m_tabObjects[i].pFont->setPosition(m_nowMouseRect.left + m_tabObjects[i].offset,m_nowMouseRect.top);
+			m_tabObjects[i].pFont->setPosition(m_curMouseRect.left + m_tabObjects[i].offset,m_curMouseRect.top);
 	}
-	m_titleRect.set(m_nowMouseRect.left,m_nowMouseRect.top,m_nowMouseRect.right,m_nowMouseRect.top + TAB_TITLE_HEIGHT * m_size.y);
-	m_leftBtn.setPosition(m_nowMouseRect.right - ((TAB_BTN_WIDTH << 1) * m_size.x),m_nowMouseRect.top);
-	m_rightBtn.setPosition(m_nowMouseRect.right - TAB_BTN_WIDTH * m_size.x,m_nowMouseRect.top);
+	m_titleRect.set(m_curMouseRect.left,m_curMouseRect.top,m_curMouseRect.right,m_curMouseRect.top + TAB_TITLE_HEIGHT * m_scale.y);
+	m_leftBtn.setPosition(m_curMouseRect.right - ((m_tabBtnWidth << 1) * m_scale.x),m_curMouseRect.top);
+	m_rightBtn.setPosition(m_curMouseRect.right - m_tabBtnWidth * m_scale.x,m_curMouseRect.top);
 	//检查是否需要更新相关属性
 }
-void _XTab::setSize(float x,float y)
+void XTab::setScale(float x,float y)
 {
 	if(x <= 0.0f || y <= 0.0f) return;
-	m_size.set(x,y);
+	m_scale.set(x,y);
 	//下面更新相关属性
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
+		for(unsigned int j = 0;j < m_tabObjects[i].objs.size();++ j)
 		{
-			m_tabObjects[i].objs[j]->setPosition(_XVector2(m_tabObjects[i].pos[j].x * m_size.x,m_tabObjects[i].pos[j].y * m_size.y) + m_position);
-			m_tabObjects[i].objs[j]->setSize(m_tabObjects[i].size[j] * m_size);
-			m_tabObjects[i].pFont->setSize(m_size);
+		//	m_tabObjects[i].objs[j]->setPosition(XVector2(m_tabObjects[i].pos[j].x * m_scale.x,m_tabObjects[i].pos[j].y * m_scale.y) + m_position);
+			m_tabObjects[i].objs[j]->setPosition(m_tabObjects[i].pos[j] * m_scale + m_position);
+			m_tabObjects[i].objs[j]->setScale(m_tabObjects[i].scale[j] * m_scale);
+			m_tabObjects[i].pFont->setScale(m_scale);
 		}
 	}
-	m_texFont.setSize(m_size);
-	m_nowMouseRect.set(m_mouseRect.left * m_size.x + m_position.x,
-		m_mouseRect.top * m_size.y + m_position.y,
-		m_mouseRect.right * m_size.x + m_position.x,
-		m_mouseRect.bottom * m_size.y + m_position.y);
-	m_titleRect.set(m_nowMouseRect.left,m_nowMouseRect.top,m_nowMouseRect.right,m_nowMouseRect.top + TAB_TITLE_HEIGHT * m_size.y);
-	m_leftBtn.setPosition(m_nowMouseRect.right - ((TAB_BTN_WIDTH << 1) * m_size.x),m_nowMouseRect.top);
-	m_leftBtn.setSize(m_size);
-	m_rightBtn.setPosition(m_nowMouseRect.right - TAB_BTN_WIDTH * m_size.x,m_nowMouseRect.top);
-	m_rightBtn.setSize(m_size);
+	m_texFont.setScale(m_scale);
+	m_curMouseRect.set(m_mouseRect.left * m_scale.x + m_position.x,
+		m_mouseRect.top * m_scale.y + m_position.y,
+		m_mouseRect.right * m_scale.x + m_position.x,
+		m_mouseRect.bottom * m_scale.y + m_position.y);
+	m_titleRect.set(m_curMouseRect.left,m_curMouseRect.top,m_curMouseRect.right,m_curMouseRect.top + TAB_TITLE_HEIGHT * m_scale.y);
+	m_leftBtn.setPosition(m_curMouseRect.right - ((m_tabBtnWidth << 1) * m_scale.x),m_curMouseRect.top);
+	m_leftBtn.setScale(m_scale);
+	m_rightBtn.setPosition(m_curMouseRect.right - m_tabBtnWidth * m_scale.x,m_curMouseRect.top);
+	m_rightBtn.setScale(m_scale);
 	updateTitle();
 	updateBtnState();
 }
-int _XTab::getTabIndexByTitle(const std::string &title) const
+int XTab::getTabIndexByTitle(const std::string &title) const
 {
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
 		if(m_tabObjects[i].srcTitle == title) return i;
 	}
 	return -1;
 }
-void _XTab::updateObjState(bool flag)
+void XTab::updateObjState(bool flag)
 {
 	if(!m_isVisible) return;
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		if(i == m_nowChooseTabIndex)
+		if(i == m_curChooseTabIndex)
 		{
-			if(flag)
+			if(!flag) continue;
+			for(unsigned int j = 0;j < m_tabObjects[i].objs.size();++ j)
 			{
-				for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-				{
-					m_tabObjects[i].objs[j]->setVisible();
-				}
+				m_ctrlManager.setNeedDrawAndInput(true,true,m_tabObjects[i].objs[j]);
+				//m_tabObjects[i].objs[j]->setVisible();
 			}
 		}else
 		{
-			for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
+			//这里换一种控制方式不改变控件的内部状态，而是通过管理器来管理其状态
+			for(unsigned int j = 0;j < m_tabObjects[i].objs.size();++ j)
 			{
-				m_tabObjects[i].objs[j]->disVisible();
+				m_ctrlManager.setNeedDrawAndInput(false,false,m_tabObjects[i].objs[j]);
+				//m_tabObjects[i].objs[j]->disVisible();
 			}
 		}
 	}
 }
-void _XTab::release()
+void XTab::release()
 {
 	if(!m_isInited) return;
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		XDELETE(m_tabObjects[i].pFont);
+		XMem::XDELETE(m_tabObjects[i].pFont);
 	}
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif
+	m_ctrlManager.clearAllObject();	//这里需要清空所有的物件
 	m_isInited = XFalse;
 }
-void _XTab::setTabVisible(bool flag,int index)	//设置标签可见
+void XTab::setTabVisible(bool flag,int index)	//设置标签可见
 {
 	if(index < 0 || index >= m_tabObjects.size()) return;
 	if((m_tabObjects[index].isVisible && flag) ||
@@ -548,7 +541,7 @@ void _XTab::setTabVisible(bool flag,int index)	//设置标签可见
 	if(!flag)		//需要判断这个值
 	{//如果后面没有可显示的值则回退到第一个可以显示的值
 		int endIndex = 0;
-		for(int i = m_tabObjects.size() - 1;i >= 0;-- i)
+		for(int i = (int)(m_tabObjects.size()) - 1;i >= 0;-- i)
 		{
 			if(m_tabObjects[i].isVisible)
 			{
@@ -556,20 +549,20 @@ void _XTab::setTabVisible(bool flag,int index)	//设置标签可见
 				break;
 			}
 		}
-		if(m_nowStartTabIndex > endIndex) 
+		if(m_curStartTabIndex > endIndex) 
 		{
-			m_nowStartTabIndex = endIndex;
+			m_curStartTabIndex = endIndex;
 		}
 	}
-	if((m_nowChooseTabIndex == index && !flag)
-		|| (m_nowChooseTabIndex < 0 && flag)) 
+	if((m_curChooseTabIndex == index && !flag)
+		|| (m_curChooseTabIndex < 0 && flag)) 
 	{//这里应该选择第一个可以选的
-		m_nowChooseTabIndex = -1;	//需要判断这个值
-		for(int i = 0;i < m_tabObjects.size();++ i)
+		m_curChooseTabIndex = -1;	//需要判断这个值
+		for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 		{
 			if(m_tabObjects[i].isEnable && m_tabObjects[i].isVisible)
 			{
-				m_nowChooseTabIndex = i;
+				m_curChooseTabIndex = i;
 				break;
 			}
 		}
@@ -579,22 +572,22 @@ void _XTab::setTabVisible(bool flag,int index)	//设置标签可见
 	updateBtnState();	//更新按钮的状态
 	updateObjState();
 }
-void _XTab::setTabEnable(bool flag,int index)
+void XTab::setTabEnable(bool flag,unsigned int index)
 {
-	if(index < 0 || index >= m_tabObjects.size()) return;
+	if(index >= m_tabObjects.size()) return;
 	if((m_tabObjects[index].isEnable && flag) ||
 		(!m_tabObjects[index].isEnable && !flag)) return;	//重复的设置
 	m_tabObjects[index].isEnable = flag;
 
-	if((m_nowChooseTabIndex == index && !flag)
-		|| (m_nowChooseTabIndex < 0 && flag)) 
+	if((m_curChooseTabIndex == index && !flag)
+		|| (m_curChooseTabIndex < 0 && flag)) 
 	{//这里应该选择第一个可以选的
-		m_nowChooseTabIndex = -1;	//需要判断这个值
-		for(int i = 0;i < m_tabObjects.size();++ i)
+		m_curChooseTabIndex = -1;	//需要判断这个值
+		for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 		{
 			if(m_tabObjects[i].isEnable && m_tabObjects[i].isVisible)
 			{
-				m_nowChooseTabIndex = i;
+				m_curChooseTabIndex = i;
 				break;
 			}
 		}
@@ -604,17 +597,8 @@ void _XTab::setTabEnable(bool flag,int index)
 	updateBtnState();	//更新按钮的状态
 	updateObjState();
 }
-void _XTab::update(int stepTime)
+void XTab::update(float stepTime)
 {//下面是动作的演示
-#if TAB_MODE == 1
-	//for(int i = 0;i < m_tabObjects.size();++ i)
-	//{
-	//	for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-	//	{
-	//		m_tabObjects[i].objs[j]->update(stepTime);
-	//	}
-	//}
-#endif
 	m_leftBtn.update(stepTime);
 	m_rightBtn.update(stepTime);
 	if(m_isInAction)
@@ -623,52 +607,53 @@ void _XTab::update(int stepTime)
 		if(m_actionMoveData.getIsEnd())
 		{
 			m_isInAction = XFalse;
-			for(int i = 0;i < m_tabObjects[m_oldChooseTabIndex].objs.size();++ i)
+			for(unsigned int i = 0;i < m_tabObjects[m_oldChooseTabIndex].objs.size();++ i)
 			{
 				m_tabObjects[m_oldChooseTabIndex].objs[i]->setAlpha(1.0f);
 			}
-			for(int i = 0;i < m_tabObjects[m_nowChooseTabIndex].objs.size();++ i)
+			for(unsigned int i = 0;i < m_tabObjects[m_curChooseTabIndex].objs.size();++ i)
 			{
-				m_tabObjects[m_nowChooseTabIndex].objs[i]->setAlpha(1.0f);
+				m_tabObjects[m_curChooseTabIndex].objs[i]->setAlpha(1.0f);
 			}
 			updateObjState(false);
 		}else
 		{
-			for(int i = 0;i < m_tabObjects[m_oldChooseTabIndex].objs.size();++ i)
+			for(unsigned int i = 0;i < m_tabObjects[m_oldChooseTabIndex].objs.size();++ i)
 			{
-				m_tabObjects[m_oldChooseTabIndex].objs[i]->setAlpha(1.0f - m_actionMoveData.getNowData());
+				m_tabObjects[m_oldChooseTabIndex].objs[i]->setAlpha(1.0f - m_actionMoveData.getCurData());
 			}
-			for(int i = 0;i < m_tabObjects[m_nowChooseTabIndex].objs.size();++ i)
+			for(unsigned int i = 0;i < m_tabObjects[m_curChooseTabIndex].objs.size();++ i)
 			{
-				m_tabObjects[m_nowChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getNowData());
+				m_tabObjects[m_curChooseTabIndex].objs[i]->setAlpha(m_actionMoveData.getCurData());
 			}
 		}
 	}
+	m_ctrlManager.update(stepTime);
 }
-void _XTab::addATab(const std::string &title)
+void XTab::addATab(const std::string &title)
 {
 	if(!m_isInited) return;
 	if(getTabIndexByTitle(title) >= 0) return;	//title重名
 	//这里需要处理超长标签
-	_XTabObject tmp;
-	tmp.pFont = createMem<_XFontUnicode>();
+	XTabObject tmp;
+	tmp.pFont = XMem::createMem<XFontUnicode>();
 	if(tmp.pFont == NULL) return;
 	tmp.pFont->setACopy(m_texFont);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(tmp.pFont);
+	XObjManager.decreaseAObject(tmp.pFont);
 #endif	
 	tmp.srcTitle = title;
-	if(strlen(title.c_str()) > m_maxTitleLen)
+	if(title.length() > m_maxTitleLen || m_maxTitleLen < 0)
 	{//这里需要截断超长字符串
-		char *tmpStr = createArrayMem<char>(m_maxTitleLen + 1);
+		char *tmpStr = XMem::createArrayMem<char>(m_maxTitleLen + 1);
 		if(tmpStr == NULL) 
 		{
-			XDELETE(tmp.pFont);
+			XMem::XDELETE(tmp.pFont);
 			return;
 		}
 		memcpy(tmpStr,title.c_str(),m_maxTitleLen);
 		tmpStr[m_maxTitleLen] = '\0';
-		if(isAtUnicodeEnd(tmpStr,m_maxTitleLen - 3))
+		if(XString::isAtUnicodeEnd(tmpStr,m_maxTitleLen - 3))
 		{
 			tmpStr[m_maxTitleLen - 2] = '.';
 			tmpStr[m_maxTitleLen - 1] = '.';
@@ -679,7 +664,7 @@ void _XTab::addATab(const std::string &title)
 			tmpStr[m_maxTitleLen - 1] = '\0';
 		}
 		tmp.title = tmpStr;
-		XDELETE_ARRAY(tmpStr);
+		XMem::XDELETE_ARRAY(tmpStr);
 	}else
 	{
 		tmp.title = title;
@@ -690,18 +675,18 @@ void _XTab::addATab(const std::string &title)
 	updateTitle();
 	updateBtnState();
 }
-_XBool _XTab::setTabStr(const char *str,int index)
+XBool XTab::setTabStr(const char *str,unsigned int index)
 {
-	if(str == NULL || index < 0 || index >= m_tabObjects.size()) return XFalse;
+	if(str == NULL || index >= m_tabObjects.size()) return XFalse;
 	if(getTabIndexByTitle(str) >= 0) return XFalse;	//title重名
 	m_tabObjects[index].srcTitle = str;
-	if(strlen(str) > m_maxTitleLen)
+	if(strlen(str) > m_maxTitleLen || m_maxTitleLen < 0)
 	{//这里需要截断超长字符串
-		char *tmpStr = createArrayMem<char>(m_maxTitleLen + 1);
+		char *tmpStr = XMem::createArrayMem<char>(m_maxTitleLen + 1);
 		if(tmpStr == NULL) return XFalse;
 		memcpy(tmpStr,str,m_maxTitleLen);
 		tmpStr[m_maxTitleLen] = '\0';
-		if(isAtUnicodeEnd(tmpStr,m_maxTitleLen - 3))
+		if(XString::isAtUnicodeEnd(tmpStr,m_maxTitleLen - 3))
 		{
 			tmpStr[m_maxTitleLen - 2] = '.';
 			tmpStr[m_maxTitleLen - 1] = '.';
@@ -712,7 +697,7 @@ _XBool _XTab::setTabStr(const char *str,int index)
 			tmpStr[m_maxTitleLen - 1] = '\0';
 		}
 		m_tabObjects[index].title = tmpStr;
-		XDELETE_ARRAY(tmpStr);
+		XMem::XDELETE_ARRAY(tmpStr);
 	}else
 	{
 		m_tabObjects[index].title = str;
@@ -722,18 +707,18 @@ _XBool _XTab::setTabStr(const char *str,int index)
 	updateBtnState();
 	return XTrue;
 }
-_XBool _XTab::setTabsStr(const char *str)		//;作为分隔符
+XBool XTab::setTabsStr(const char *str)		//;作为分隔符
 {
 	if(str == NULL) return XFalse;
 	//这里需要检查数据的合法性，防止重复的标题名称(尚未完成)
 	int index = 0;
 	int offset;
-	char *tmp = createArrayMem<char>(strlen(str) + 1);
+	char *tmp = XMem::createArrayMem<char>(strlen(str) + 1);
 	strcpy(tmp,str);
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-		if(index == 0) offset = getCharPosition(tmp + index,';');
-		else offset = getCharPosition(tmp + index + 1,';');
+		if(index == 0) offset = XString::getCharPosition(tmp + index,';');
+		else offset = XString::getCharPosition(tmp + index + 1,';');
 		if(offset > 0)
 		{
 			if(index == 0)
@@ -757,45 +742,128 @@ _XBool _XTab::setTabsStr(const char *str)		//;作为分隔符
 			}
 		}
 	}
-	XDELETE_ARRAY(tmp);
+	XMem::XDELETE_ARRAY(tmp);
 	return XTrue;
 }
-void _XTab::clearAllObj()
+void XTab::clearAllObj()
 {
 	//将所有控件的控制权交给控件管理器
-	for(int i = 0;i < m_tabObjects.size();++ i)
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
 	{
-#if TAB_MODE == 1
-//		for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
-//		{
-//			_XCtrlManger.addACtrl(m_tabObjects[i].objs[j]);	//在物件管理器中注册当前物件
-//#if WITH_OBJECT_MANAGER
-//			_XObjManger.addAObject(m_tabObjects[i].objs[j]);
-//#endif
-//		}
-		for(int j = 0;j < m_tabObjects[i].objs.size();++ j)
+		for(unsigned int j = 0;j < m_tabObjects[i].objs.size();++ j)
 		{
-			_XCtrlManger.setNeedDraw(XTrue,m_tabObjects[i].objs[j]);	//归还显示权
-		}
+			XCtrlManager.addACtrl(m_tabObjects[i].objs[j]);	//在物件管理器中注册当前物件
+#if WITH_OBJECT_MANAGER
+			XObjManager.addAObject(m_tabObjects[i].objs[j]);
 #endif
+		}
+		m_ctrlManager.clearAllObject();
 		m_tabObjects[i].objs.clear();
 		m_tabObjects[i].pos.clear();
-		m_tabObjects[i].size.clear();
+		m_tabObjects[i].scale.clear();
 	}
 }
-void _XTab::addObjToTab(_XControlBasic *obj,int index)	//向一个标签中添加物件
+void XTab::delObjFromTab(XControlBasic *obj,int index)
 {
-	if(obj == NULL || index < 0 || index >= m_tabObjects.size()) return;
-	m_tabObjects[index].objs.push_back(obj);
-	m_tabObjects[index].pos.push_back((obj->getPosition() - m_position) / m_size);
-	m_tabObjects[index].size.push_back(obj->getSize() / m_size);
+	if(obj == NULL || index >= m_tabObjects.size()) return;
+
+	bool find = false;
+	for(int i = 0;i < m_tabObjects[index].objs.size();++ i)
+	{
+		if(m_tabObjects[index].objs[i] == obj)
+		{
+			m_tabObjects[index].objs.erase(m_tabObjects[index].objs.begin() + i);
+			m_tabObjects[index].pos.erase(m_tabObjects[index].pos.begin() + i);
+			m_tabObjects[index].scale.erase(m_tabObjects[index].scale.begin() + i);
+			find = true;
+			break;
+		}
+	}
+	if(!find) return;	//如果没有找到指定的，则直接返回
 	updateObjState();
-#if TAB_MODE == 1
-	//从设备管理器中获取设备的管理权限
-//	_XCtrlManger.decreaseAObject(obj);	//在物件管理器中注册当前物件
-//#if WITH_OBJECT_MANAGER
-//	_XObjManger.decreaseAObject(obj);
-//#endif
-	_XCtrlManger.setNeedDraw(XFalse,obj);	//剥夺显示权
+	XCtrlManager.addACtrl(obj);	//在物件管理器中注册当前物件
+#if WITH_OBJECT_MANAGER
+	XObjManager.addAObject(obj);
+#endif
+	m_ctrlManager.decreaseAObject(obj);
+}
+void XTab::addObjToTab(XControlBasic *obj,unsigned int index)	//向一个标签中添加物件
+{
+	if(obj == NULL || index >= m_tabObjects.size()) return;
+	for(int i = 0;i < m_tabObjects[index].objs.size();++ i)
+	{
+		if(m_tabObjects[index].objs[i] == obj)
+			return;	//防止重复添加
+	}
+
+	m_tabObjects[index].objs.push_back(obj);
+	m_tabObjects[index].pos.push_back((obj->getPosition() - m_position) / m_scale);
+	m_tabObjects[index].scale.push_back(obj->getScale() / m_scale);
+	//updateObjState();
+	XCtrlManager.decreaseAObject(obj);	//在物件管理器中注册当前物件
+#if WITH_OBJECT_MANAGER
+	XObjManager.decreaseAObject(obj);
+#endif
+	m_ctrlManager.addACtrl(obj);
+	//对下面的优化
+	if(index == m_curChooseTabIndex)
+		m_ctrlManager.setNeedDrawAndInput(true,true,m_ctrlManager.getObjSum() - 1);
+	else 
+		m_ctrlManager.setNeedDrawAndInput(false,false,m_ctrlManager.getObjSum() - 1);
+	//if(index == m_curChooseTabIndex)
+	//	m_ctrlManager.setNeedDrawAndInput(true,true,obj);
+	//else 
+	//	m_ctrlManager.setNeedDrawAndInput(false,false,obj);
+}
+XBool XTab::saveState(TiXmlNode &e)
+{
+	TiXmlElement elmNode(m_ctrlName.c_str());
+	XBool flag = XTrue;
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
+	{
+		if(!m_tabObjects[i].saveState(elmNode)) flag = XFalse;
+	}
+	if(e.InsertEndChild(elmNode) == NULL) flag = XFalse;
+	return flag;
+}
+XBool XTab::loadState(TiXmlNode *e)
+{
+	//遍历所有的空间，读取其状态
+	TiXmlNode * keyNode = e->FirstChildElement(m_ctrlName.c_str());
+	if(keyNode == NULL) return XFalse;
+	XBool flag = XTrue;
+	for(unsigned int i = 0;i < m_tabObjects.size();++ i)
+	{
+		if(!m_tabObjects[i].loadState(keyNode)) flag = XFalse;
+	}
+	return flag;
+}
+XBool XTabObject::saveState(TiXmlNode &e)
+{
+	TiXmlElement elmNode(srcTitle.c_str());
+	bool flag = true;
+	for(unsigned int i = 0;i < objs.size();++ i)
+	{
+		if(objs[i] != NULL && 
+			!objs[i]->saveState(elmNode)) flag = false;
+	}
+	if(e.InsertEndChild(elmNode) == NULL) flag = false;
+	return flag;
+}
+XBool XTabObject::loadState(TiXmlNode *e)
+{
+	//遍历所有的空间，读取其状态
+	TiXmlNode * keyNode = e->FirstChildElement(srcTitle.c_str());
+	if(keyNode == NULL) return XFalse;
+	bool flag = true;
+	for(unsigned int i = 0;i < objs.size();++ i)
+	{
+		if(objs[i] != NULL && 
+			!objs[i]->loadState(keyNode)) flag = false;
+	}
+	return flag;
+}
+#if !WITH_INLINE_FILE
+#include "XTab.inl"
 #endif
 }

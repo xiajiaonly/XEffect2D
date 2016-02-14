@@ -24,7 +24,7 @@
   <!--窗口模式：0、左上角对齐并裁剪，1、重点对齐并裁剪，2、短边拉伸长边裁剪，3、长边拉伸短边填空白，4、自动拉伸全屏-->
   <windowMode>4</windowMode>
   <!--窗口标题-->
-  <windowTitle>Osc工具</windowTitle>
+  <windowTitle>OSC Tool</windowTitle>
   <!--窗口的旋转模式：0、不旋转，1、90旋转，2、180度旋转，3、270旋转-->
   <rotateMode>0</rotateMode>
   <!--窗口的反转模式：0、不翻转，1、左右翻转，2、上下翻转，3、左右上下翻转-->

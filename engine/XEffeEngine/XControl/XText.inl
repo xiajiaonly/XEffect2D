@@ -1,4 +1,4 @@
-inline void _XText::setLostFocus() 
+INLINE void XText::setLostFocus() 
 {
 	if(!m_isInited ||		//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -7,27 +7,27 @@ inline void _XText::setLostFocus()
 
 	m_isBeChoose = XFalse;	//控件处于焦点状态
 }
-inline void _XText::setPosition(float x,float y)
+INLINE void XText::setPosition(float x,float y)
 {
 	m_position.set(x,y);
 	m_font.setPosition(x,y);
 }
-inline void _XText::setSize(float x,float y)
+INLINE void XText::setScale(float x,float y)
 {
-	m_size.set(x,y);
-	m_font.setSize(x,y);
+	m_scale.set(x,y);
+	m_font.setScale(x,y);
 }
-inline void _XText::setColor(float r,float g,float b,float a)
+INLINE void XText::setColor(float r,float g,float b,float a)
 {
 	m_color.setColor(r,g,b,a);
 	m_font.setColor(r,g,b,a);
 }
-inline void _XText::setAlpha(float a)
+INLINE void XText::setAlpha(float a)
 {
 	m_color.setA(a);
 	m_font.setAlpha(a);
 }
-inline void _XText::draw()
+INLINE void XText::draw()
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出

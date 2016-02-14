@@ -7,24 +7,20 @@
 //--------------------------------
 #include "XWindowCore.h"
 #include <gl/glut.h>
-
-class _XWindowGlut:public _XWindowCore
+namespace XE{
+class XWindowGlut:public XWindowCore
 {
-protected:
-	_XWindowGlut()
+public:
+	XWindowGlut()
 		:m_isShowCurcor(true)
 	{}
-	_XWindowGlut(const _XWindowGlut&);
-	_XWindowGlut &operator= (const _XWindowGlut&);
-	virtual ~_XWindowGlut() {}
-public:
-	static _XWindowGlut& GetInstance()
-	{
-		static _XWindowGlut m_instance;
-		return m_instance;
-	}
+	virtual ~XWindowGlut() {}
+protected:
+	XWindowGlut(const XWindowGlut&);
+	XWindowGlut &operator= (const XWindowGlut&);
 private:
 	bool m_isShowCurcor;
+	//bool m_isFullScreen;
 public:
 	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame);
 	virtual void setWindowTitle(const std::string &title) {glutSetWindowTitle(title.c_str());}
@@ -37,5 +33,15 @@ public:
 	virtual void release() {}
 	virtual void update() {glutSwapBuffers();}
 	virtual int mapKey(int key);
+	virtual unsigned char *getWindowBuff(){return NULL;}
+	//virtual void toggleFullScreen()
+	//{
+	////	if(m_isFullScreen)
+	////	else glutFullScreen();
+	//	glutFullScreen();
+	//	m_isFullScreen = !m_isFullScreen;
+	//}
+	//virtual bool getIsFullScreen(){return m_isFullScreen;}
 };
+}
 #endif

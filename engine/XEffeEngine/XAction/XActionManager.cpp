@@ -1,15 +1,18 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XActionManager.h"
-void _XActionMananger::loadActionDesFromFold(const _XDir * dir)
+#include "../XDirectory.h"
+namespace XE{
+void XActionMananger::loadActionDesFromFold(const XDir * dir)
 {
 	if(dir == NULL) return;	//¿ÕµÄÎÄ¼ş¼ĞÖ±½Ó·µ»Ø
 	int sum = dir->files.size();
 	if(sum <= 0) return;
-	_XFile * tempFile = NULL;
+	XFileInfo * tempFile = NULL;
 	for(int i = 0;i < sum;++ i)
 	{
 		tempFile = dir->files[i];
@@ -18,21 +21,21 @@ void _XActionMananger::loadActionDesFromFold(const _XDir * dir)
 			loadActionDesFromFold(tempFile->directory);
 		}else
 		{
-			if(isActionDescriptionFile(tempFile->filename))
+			if(isActionDescriptionFile(tempFile->filename.c_str()))
 			{//ºÏ·¨µÄÎÄ¼ş
-				_XActionDescription * tempAD = createMem<_XActionDescription>();
+				XActionDescription * tempAD = XMem::createMem<XActionDescription>();
 				if(tempAD == NULL)
 				{
 					printf("ERROR:Memory ERROR!\n");
 					return;
 				}
-				if(!tempAD->loadAction(tempFile->allPath,RESOURCE_LOCAL_FOLDER))	//×ÊÔ´Î»ÖÃµÄ²ÎÊıÉĞĞèÒªÉÌÈ¶
+				if(!tempAD->loadAction(tempFile->allPath.c_str(),RESOURCE_LOCAL_FOLDER))	//×ÊÔ´Î»ÖÃµÄ²ÎÊıÉĞĞèÒªÉÌÈ¶
 				{
-					printf("ERROR:Action description load ERROR:%s\n",tempFile->allPath);
+					printf("ERROR:Action description load ERROR:%s\n",tempFile->allPath.c_str());
 					return;
 				}
-				m_actionDescriptions.insert(pair<int,_XActionDescription *>(tempAD->getID(),tempAD));
-				m_actionDesMap.insert(pair<string,int>(tempAD->getName(),tempAD->getID()));
+				m_actionDescriptions.insert(std::pair<int,XActionDescription *>(tempAD->getID(),tempAD));
+				m_actionDesMap.insert(std::pair<std::string,int>(tempAD->getName(),tempAD->getID()));
 				m_actionIDList.push_back(tempAD->getID());
 			}
 		//	else
@@ -41,22 +44,22 @@ void _XActionMananger::loadActionDesFromFold(const _XDir * dir)
 		}
 	}
 }
-_XBool _XActionMananger::loadAllActionDes(const char * path)	//½«Ö¸¶¨Ä¿Â¼ÏÂµÄ¶¯×÷È«²¿ÔØÈë 
+XBool XActionMananger::loadAllActionDes(const char * path)	//½«Ö¸¶¨Ä¿Â¼ÏÂµÄ¶¯×÷È«²¿ÔØÈë 
 {//ÄÚ²¿×ÊÔ´¶ÁÈ¡»á´æÔÚÎÊÌâ
 	if(m_isInited) return XFalse;
 	char tempStr[MAX_FILE_NAME_LENGTH];
 	if(path == NULL) strcpy(tempStr,ACTION_DES_PATH);	//Ê¹ÓÃÄ¬ÈÏÂ·¾¶
 	else strcpy(tempStr,path);
 
-	_XDirectory tempDir;
+	XDirectory tempDir;
 	if(!tempDir.initEx(tempStr))
 	{
 		if(!tempDir.init(tempStr)) return XFalse;
 	}
-	loadActionDesFromFold(&tempDir.m_nowDirectory);
+	loadActionDesFromFold(&tempDir.m_curDirectory);
 	//±éÀúËùÓĞµÄ¶¯×÷ÃèÊö£¬²¢½«ÆäÓ¦ÓÃ¹ØÏµÀíÇå³ş
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
-	_XActionDescription * tempAD = NULL;
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	XActionDescription * tempAD = NULL;
 	for(;it != m_actionDescriptions.end();++ it)
 	{
 		int sum = it->second->m_otherActionID.size();
@@ -75,23 +78,23 @@ _XBool _XActionMananger::loadAllActionDes(const char * path)	//½«Ö¸¶¨Ä¿Â¼ÏÂµÄ¶¯×
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XActionMananger::saveAllActionDes()
+XBool XActionMananger::saveAllActionDes()
 {
 	if(!m_isInited) return XFalse;
 	//±éÀúËùÓĞµÄ¶¯×÷²¢±£´æ
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
 	for(;it != m_actionDescriptions.end();++ it)
 	{
 		if(it->second != NULL) it->second->saveAction();
 	}
 	return XTrue;
 }
-_XBool _XActionMananger::getIsReferenced(_XActionDescription * AD)
+XBool XActionMananger::getIsReferenced(XActionDescription * AD)
 {
 	if(AD == NULL) return XFalse;
 	//±éÀúËùÓĞµÄAD£¬¼ì²éÒıÓÃ
-	_XActionDescription *tempAD = NULL;
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	XActionDescription *tempAD = NULL;
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
 	for(;it != m_actionDescriptions.end();++ it)
 	{
 		tempAD = it->second;
@@ -104,7 +107,7 @@ _XBool _XActionMananger::getIsReferenced(_XActionDescription * AD)
 	}
 	return XFalse;		//Ã»ÓĞ±»ÒıÓÃ
 }
-_XBool _XActionMananger::isActionDescriptionFile(const char * filename)
+XBool XActionMananger::isActionDescriptionFile(const char * filename)
 {
 	if(filename == NULL) return XFalse;
 	int len = strlen(filename);
@@ -117,14 +120,14 @@ _XBool _XActionMananger::isActionDescriptionFile(const char * filename)
 	}
 	return XFalse;
 }
-void _XActionMananger::release()	//×ÊÔ´ÊÍ·Å
+void XActionMananger::release()	//×ÊÔ´ÊÍ·Å
 {//ÊÍ·ÅÒÑ¾­ÔØÈëµÄ×ÊÔ´
 	if(!m_isInited) return;
 	//±éÀúËùÓĞµÄAD²¢ÊÍ·Å
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
 	for(;it != m_actionDescriptions.end();++ it)
 	{
-		XDELETE(it->second);
+		XMem::XDELETE(it->second);
 	}
 	m_actionDescriptions.clear();
 
@@ -132,15 +135,15 @@ void _XActionMananger::release()	//×ÊÔ´ÊÍ·Å
 	m_actionIDList.clear();
 	m_isInited = XFalse;
 }
-void _XActionMananger::deleteAActionDesNoReference(_XActionDescription * AD)
+void XActionMananger::deleteAActionDesNoReference(XActionDescription * AD)
 {//É¾³ıÖ¸¶¨µÄAD
 	if(AD == NULL) return;
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
 	for(;it != m_actionDescriptions.end();++ it)
 	{
 		if(it->second == AD)
 		{
-			std::map<string,int>::iterator itTemp = m_actionDesMap.find(AD->getName());	//É¾³ıÖ¸¶¨µÄ
+			std::map<std::string,int>::iterator itTemp = m_actionDesMap.find(AD->getName());	//É¾³ıÖ¸¶¨µÄ
 			m_actionDesMap.erase(itTemp);
 
 			int sum = m_actionIDList.size();
@@ -159,31 +162,32 @@ void _XActionMananger::deleteAActionDesNoReference(_XActionDescription * AD)
 			}
 
 			//Ã»ÓĞÊÍ·ÅÕâ¸öADµÄÎï¼ş×ÊÔ´
-			_XActionObjectManager::GetInstance().decreaseAObject(AD->getObject());
-			XDELETE(it->second);
+			XActionObjectManager::GetInstance().decreaseAObject(AD->getObject());
+			XMem::XDELETE(it->second);
 			m_actionDescriptions.erase(it);
 			break;
 		}
 	}
 }
-_XBool _XActionMananger::setADName(_XActionDescription * AD,const char *name)
+XBool XActionMananger::setADName(XActionDescription * AD,const char *name)
 {
 	if(AD == NULL) return XFalse;
 	if(name == NULL) return XFalse;
-	std::map<int,_XActionDescription *>::iterator it = m_actionDescriptions.begin();
+	std::map<int,XActionDescription *>::iterator it = m_actionDescriptions.begin();
 	for(;it != m_actionDescriptions.end();++ it)
 	{
 		if(it->second == AD)
 		{
-			std::map<string,int>::iterator itTemp = m_actionDesMap.find(AD->getName());	//É¾³ıÖ¸¶¨µÄ
+			std::map<std::string,int>::iterator itTemp = m_actionDesMap.find(AD->getName());	//É¾³ıÖ¸¶¨µÄ
 			if(AD->setName(name))
 			{//¸úÃû³É¹¦£¬ĞŞ¸ÄÃû×ÖÓëindexµÄ¶ÔÓ¦¹ØÏµ
 				m_actionDesMap.erase(itTemp);
-				m_actionDesMap.insert(pair<string,int>(AD->getName(),AD->getID()));
+				m_actionDesMap.insert(std::pair<std::string,int>(AD->getName(),AD->getID()));
 				return XTrue;
 			}
 			break;
 		}
 	}
 	return XFalse;
+}
 }

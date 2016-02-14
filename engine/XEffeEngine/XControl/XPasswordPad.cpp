@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -6,34 +7,35 @@
 #include "XPasswordPad.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-
-void btnFunc(void *pClass,int ID)
+#include "XResourcePack.h"
+namespace XE{
+void XPasswordPad::ctrlProc(void*pClass,int id,int eventID)
 {
-	_XPasswordPad &pPar = *(_XPasswordPad *)pClass;
+	if(eventID != XButton::BTN_MOUSE_UP) return;
+	XPasswordPad &pPar = *(XPasswordPad *)pClass;
 	for(int i = 0;i < 10;++ i)
 	{
-		if(ID == pPar.m_button[i].getControlID())
+		if(id == pPar.m_button[i].getControlID())
 		{
 			printf("%d被按下\n",i);
 			pPar.addChar('0' + i);
 			return;
 		}
 	}
-	if(ID == pPar.m_button[10].getControlID())
+	if(id == pPar.m_button[10].getControlID())
 	{
 		printf("确认 被按下\n");
 		pPar.btn10Proc();
 		return;
 	}
-	if(ID == pPar.m_button[11].getControlID())
+	if(id == pPar.m_button[11].getControlID())
 	{
 		printf("取消 被按下\n");
 		pPar.btn11Proc();
 		return;
 	}
 }
-
-_XBool _XPasswordPadTexture::init(const char *normal,const char *down,const char *on,const char *disable,const char *BG,_XResourcePosition resoursePosition)
+XBool XPasswordPadSkin::init(const char *normal,const char *down,const char *on,const char *disable,const char *BG,XResourcePosition resoursePosition)
 {
 	if(m_isInited) return XFalse;
 	if(!m_bottomTex.init(normal,on,down,disable,resoursePosition)) return XFalse;
@@ -43,92 +45,117 @@ _XBool _XPasswordPadTexture::init(const char *normal,const char *down,const char
 	m_isInited = XTrue;
 	return XTrue;
 }
-#define PASSWORDPAD_CONFIG_FILENAME ("PasswordPad.txt")
-_XBool _XPasswordPadTexture::initEx(const char *filename,_XResourcePosition resoursePosition)
+#define PASSWORDPAD_CONFIG_FILENAME "PasswordPad.txt"
+bool XPasswordPadSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+{
+	char tempFilename[MAX_FILE_NAME_LENGTH];
+	sprintf(tempFilename,"%s/%s",filename,PASSWORDPAD_CONFIG_FILENAME);
+	FILE *fp = NULL;
+	if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
+	//下面开始依次读取数据
+	int flag = 0;
+	char resFilename[MAX_FILE_NAME_LENGTH] = "";
+	if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
+	if(flag != 0)
+	{
+		if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
+		sprintf(tempFilename,"%s/%s",filename,resFilename);
+		if((backGround = createATextureData(tempFilename,resPos)) == NULL)
+		{//资源读取失败
+			fclose(fp);
+			return XFalse;
+		}
+	}
+	int x,y;
+	if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
+	m_data.bottonDistance.set(x,y);
+	if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
+	m_data.bottonEffectArea.set(x,y);
+	if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
+	m_data.bottonOffsetPosition.set(x,y);
+	if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
+	m_data.bottonTextPosition.set(x,y);
+	if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
+	m_data.captionPosition.set(x,y);
+	fclose(fp);
+	return true;
+}
+bool XPasswordPadSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+{
+	char tempFilename[MAX_FILE_NAME_LENGTH];
+	sprintf(tempFilename,"%s/%s",filename,PASSWORDPAD_CONFIG_FILENAME);
+	unsigned char *p = XResPack.getFileData(tempFilename);
+	if(p == NULL) return XFalse;
+	//下面开始依次读取数据
+	int flag = 0;
+	char resFilename[MAX_FILE_NAME_LENGTH] = "";
+	int offset = 0;
+	//normal
+	if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
+	if(flag != 0)
+	{
+		if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
+		offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+		sprintf(tempFilename,"%s/%s",filename,resFilename);
+		if((backGround = createATextureData(tempFilename,resPos)) == NULL)
+		{//资源读取失败
+			XMem::XDELETE_ARRAY(p);
+			return XFalse;
+		}
+	}
+	int x,y;
+	if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_data.bottonDistance.set(x,y);
+	if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_data.bottonEffectArea.set(x,y);
+	if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_data.bottonOffsetPosition.set(x,y);
+	if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_data.bottonTextPosition.set(x,y);
+	if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XMem::XDELETE_ARRAY(p);return XFalse;}
+	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
+	m_data.captionPosition.set(x,y);
+	XMem::XDELETE_ARRAY(p);
+	return true;
+}
+bool XPasswordPadSkin::loadFromWeb(const char *filename,XResourcePosition resPos)		//从网页中读取资源
+{
+	return false;
+}
+XBool XPasswordPadSkin::initEx(const char *filename,XResourcePosition resoursePosition)
 {
 	if(m_isInited || filename == NULL) return XFalse;
 	if(!m_bottomTex.initEx(filename,resoursePosition)) return XFalse;
 
-	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,PASSWORDPAD_CONFIG_FILENAME);
 	//先打开配置文件
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
-	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
-	{//外部资源
-		FILE *fp = NULL;
-		if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
-		//下面开始依次读取数据
-		int flag = 0;
-		char resFilename[MAX_FILE_NAME_LENGTH] = "";
-		if(fscanf(fp,"%d:",&flag) != 1) {fclose(fp);return XFalse;}
-		if(flag != 0)
-		{
-			if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-			sprintf(tempFilename,"%s/%s",filename,resFilename);
-			if((backGround = createATextureData(tempFilename,resoursePosition)) == NULL)
-			{//资源读取失败
-				fclose(fp);
-				return XFalse;
-			}
-		}
-		int x,y;
-		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
-		m_data.bottonDistance.set(x,y);
-		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
-		m_data.bottonEffectArea.set(x,y);
-		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
-		m_data.bottonOffsetPosition.set(x,y);
-		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
-		m_data.bottonTextPosition.set(x,y);
-		if(fscanf(fp,"%d,%d,",&x,&y) != 2) {fclose(fp);return XFalse;}
-		m_data.captionPosition.set(x,y);
-		fclose(fp);
-	}else
+	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
+	switch(resoursePosition)
 	{
-		unsigned char *p = _XResourcePack::GetInstance().getFileData(tempFilename);
-		if(p == NULL) return XFalse;
-		//下面开始依次读取数据
-		int flag = 0;
-		char resFilename[MAX_FILE_NAME_LENGTH] = "";
-		int offset = 0;
-		//normal
-		if(sscanf((char *)(p + offset),"%d:",&flag) != 1) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),':') + 1;
-		if(flag != 0)
-		{
-			if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XDELETE_ARRAY(p);return XFalse;}
-			offset += getCharPosition((char *)(p + offset),'\n') + 1;
-			sprintf(tempFilename,"%s/%s",filename,resFilename);
-			if((backGround = createATextureData(tempFilename,resoursePosition)) == NULL)
-			{//资源读取失败
-				XDELETE_ARRAY(p);
-				return XFalse;
-			}
-		}
-		int x,y;
-		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_data.bottonDistance.set(x,y);
-		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_data.bottonEffectArea.set(x,y);
-		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_data.bottonOffsetPosition.set(x,y);
-		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_data.bottonTextPosition.set(x,y);
-		if(sscanf((char *)(p + offset),"%d,%d,",&x,&y) != 2) {XDELETE_ARRAY(p);return XFalse;}
-		offset += getCharPosition((char *)(p + offset),'\n') + 1;
-		m_data.captionPosition.set(x,y);
-		XDELETE_ARRAY(p);
+	case RESOURCE_LOCAL_PACK:
+		if(!loadFromPacker(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_WEB:
+		if(!loadFromWeb(filename,resoursePosition)) return false;
+		break;
+	case RESOURCE_AUTO:
+		if(!loadFromPacker(filename,resoursePosition) && !loadFromFolder(filename,resoursePosition) &&
+			!loadFromWeb(filename,resoursePosition)) return false;
+		break;
 	}
 
 	m_isInited = XTrue;
 	return XTrue;
 }
 
-_XPasswordPad::_XPasswordPad()
+XPasswordPad::XPasswordPad()
 :m_isInited(XFalse)
 ,m_mode(0)
 //,m_position(0,0)
@@ -142,20 +169,20 @@ _XPasswordPad::_XPasswordPad()
 	m_showString[0] = '\0';
 	m_ctrlType = CTRL_OBJ_PASSWORDPAD;
 }
-_XPasswordPad::~_XPasswordPad()
+XPasswordPad::~XPasswordPad()
 {
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif
 	if(m_resInfo != NULL)
 	{
-		_XResourceManager::GetInstance().releaseResource(m_resInfo);
+		XResManager.releaseResource(m_resInfo);
 		m_resInfo = NULL;
 	}
 }
 //键盘的排列是4*3
-_XBool _XPasswordPad::init(const _XVector2& position,_XPasswordPadTexture *tex,const _XFontUnicode& font,const _XPasswordPadData& data)
+XBool XPasswordPad::init(const XVector2& position,XPasswordPadSkin *tex,const XFontUnicode& font,const XPasswordPadData& data)
 {
 	if(m_isInited || tex == NULL) return XFalse;
 
@@ -163,35 +190,35 @@ _XBool _XPasswordPad::init(const _XVector2& position,_XPasswordPadTexture *tex,c
 	m_passwardPadData = data;
 	if(!m_caption.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_caption);
+	XObjManager.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 	m_caption.setPosition(m_passwardPadData.captionPosition.x,m_passwardPadData.captionPosition.y);
 	m_caption.setColor(1.0f,1.0f,1.0f,1.0f);
 	//if(m_buttonTexture.set(m_texture->buttonNormal,m_texture->buttonDown,m_texture->buttonOn,m_texture->buttonDisable) == 0) return XFalse;
-	m_size.set(1.0f,1.0f);
+	m_scale.set(1.0f,1.0f);
 	//初始化按钮
-	m_button[0].init(m_passwardPadData.bottonOffsetPosition,_XRect(0,0,m_passwardPadData.bottonEffectArea.x,m_passwardPadData.bottonEffectArea.y),
+	m_button[0].init(m_passwardPadData.bottonOffsetPosition,XRect(0,0,m_passwardPadData.bottonEffectArea.x,m_passwardPadData.bottonEffectArea.y),
 		m_texture->m_bottomTex,"0",m_caption,1.0f,m_passwardPadData.bottonTextPosition);
 	m_button[0].setPosition(m_passwardPadData.bottonOffsetPosition);
-	_XCtrlManger.decreaseAObject(&m_button[0]);	//在物件管理器中注册当前物件
+	XCtrlManager.decreaseAObject(&m_button[0]);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_button[0]);
+	XObjManager.decreaseAObject(&m_button[0]);
 #endif
 	for(int i = 1;i < 12;++ i)
 	{
 		m_button[i].setACopy(m_button[0]);
 		m_button[i].setPosition(m_passwardPadData.bottonOffsetPosition.x + (i % 3) * m_passwardPadData.bottonDistance.x,
 			m_passwardPadData.bottonOffsetPosition.y + (int)(i / 3) * m_passwardPadData.bottonDistance.y);
-		_XCtrlManger.decreaseAObject(&m_button[i]);	//在物件管理器中注册当前物件
+		XCtrlManager.decreaseAObject(&m_button[i]);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_button[i]);
+		XObjManager.decreaseAObject(&m_button[i]);
 #endif
 	}
 	for(int i = 0;i < 12;++ i)
 	{
-		m_button[i].setMouseUpCB(btnFunc,this);
+		m_button[i].setEventProc(ctrlProc,this);
 	}
 	m_button[0].setCaptionText("0");
 	m_button[1].setCaptionText("1");
@@ -211,15 +238,15 @@ _XBool _XPasswordPad::init(const _XVector2& position,_XPasswordPadTexture *tex,c
 	m_sprite.init(m_texture->backGround->texture.m_w,m_texture->backGround->texture.m_h,1);
 	m_sprite.setPosition(0.0f,0.0f);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_sprite);
+	XObjManager.decreaseAObject(&m_sprite);
 #endif
 	m_mouseRect.set(0.0f,0.0f,m_texture->backGround->texture.m_w,m_texture->backGround->texture.m_h);
 
 	m_withoutTex = XFalse;
 
-	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 
 	m_isVisible = XTrue;
@@ -230,7 +257,7 @@ _XBool _XPasswordPad::init(const _XVector2& position,_XPasswordPadTexture *tex,c
 	setPosition(position);
 	return XTrue;
 }
-_XBool _XPasswordPad::initWithoutTex(const _XFontUnicode& font)
+XBool XPasswordPad::initWithoutSkin(const XFontUnicode& font)
 {
 	if(m_isInited) return XFalse;
 
@@ -244,23 +271,23 @@ _XBool _XPasswordPad::initWithoutTex(const _XFontUnicode& font)
 
 	if(!m_caption.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_caption);
+	XObjManager.decreaseAObject(&m_caption);
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 	m_caption.setPosition(m_passwardPadData.captionPosition.x,m_passwardPadData.captionPosition.y);
 	m_caption.setColor(1.0f,1.0f,1.0f,1.0f);
 	//if(m_buttonTexture.set(m_texture->buttonNormal,m_texture->buttonDown,m_texture->buttonOn,m_texture->buttonDisable) == 0) return XFalse;
-	m_size.set(1.0f,1.0f);
+	m_scale.set(1.0f,1.0f);
 
 	//初始化按钮
-	m_button[0].initWithoutTex("0",m_caption,_XRect(0.0f,0.0f,64.0f,32.0f));
-	//m_button[0].init(m_passwardPadData.bottonOffsetPosition,_XRect(0,0,m_passwardPadData.bottonEffectArea.x,m_passwardPadData.bottonEffectArea.y),
+	m_button[0].initWithoutSkin("0",m_caption,XRect(0.0f,0.0f,64.0f,32.0f));
+	//m_button[0].init(m_passwardPadData.bottonOffsetPosition,XRect(0,0,m_passwardPadData.bottonEffectArea.x,m_passwardPadData.bottonEffectArea.y),
 	//	m_texture->m_bottomTex,"0",m_caption,1.0f,m_passwardPadData.bottonTextPosition);
 	m_button[0].setPosition(m_passwardPadData.bottonOffsetPosition);
-	_XCtrlManger.decreaseAObject(&m_button[0]);	//在物件管理器中注册当前物件
+	XCtrlManager.decreaseAObject(&m_button[0]);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_button[0]);
+	XObjManager.decreaseAObject(&m_button[0]);
 #endif
 	for(int i = 1;i < 12;++ i)
 	{
@@ -268,14 +295,14 @@ _XBool _XPasswordPad::initWithoutTex(const _XFontUnicode& font)
 		m_button[i].setPosition(m_passwardPadData.bottonOffsetPosition.x + (i % 3) * m_passwardPadData.bottonDistance.x,
 			m_passwardPadData.bottonOffsetPosition.y + (int)(i / 3) * m_passwardPadData.bottonDistance.y);
 
-		_XCtrlManger.decreaseAObject(&m_button[i]);	//在物件管理器中注册当前物件
+		XCtrlManager.decreaseAObject(&m_button[i]);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_button[i]);
+		XObjManager.decreaseAObject(&m_button[i]);
 #endif
 	}
 	for(int i = 0;i < 12;++ i)
 	{
-		m_button[i].setMouseUpCB(btnFunc,this);
+		m_button[i].setEventProc(ctrlProc,this);
 	}
 	m_button[0].setCaptionText("0");
 	m_button[1].setCaptionText("1");
@@ -298,17 +325,17 @@ _XBool _XPasswordPad::initWithoutTex(const _XFontUnicode& font)
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
 
-	_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 
 	m_withoutTex = XTrue;
 	m_isInited = XTrue;
-	setPosition(_XVector2::zero);
+	setPosition(XVector2::zero);
 	return XTrue;
 }
-void _XPasswordPad::draw()
+void XPasswordPad::draw()
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
@@ -317,10 +344,10 @@ void _XPasswordPad::draw()
 		m_sprite.draw(m_texture->backGround);
 	}else
 	{
-		drawFillBoxExA(m_position,_XVector2(m_mouseRect.getWidth(),m_mouseRect.getHeight()) * m_size,
-			0.35 * m_color.fR,0.35 * m_color.fG,0.35 * m_color.fB,m_color.fA,true,true);
-		drawFillBoxExA(m_position + _XVector2(5,2) * m_size,_XVector2(212,38) * m_size,
-			0.15 * m_color.fR,0.15 * m_color.fG,0.15 * m_color.fB,m_color.fA,false,true);
+		XRender::drawFillBoxExA(m_position,XVector2(m_mouseRect.getWidth(),m_mouseRect.getHeight()) * m_scale,
+			XCCS::disableColor * m_color,true,true);
+		XRender::drawFillBoxExA(m_position + XVector2(5,2) * m_scale,XVector2(212,38) * m_scale,
+			XCCS::blackColor * m_color,false,true);
 	}
 	for(int i = 0;i < 12;++ i)
 	{
@@ -328,7 +355,7 @@ void _XPasswordPad::draw()
 	}
 	m_caption.draw();
 }
-_XBool _XPasswordPad::mouseProc(float x,float y,_XMouseState mouseState)
+XBool XPasswordPad::mouseProc(float x,float y,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -345,24 +372,24 @@ _XBool _XPasswordPad::mouseProc(float x,float y,_XMouseState mouseState)
 	}
 	return XTrue;
 }
-void _XPasswordPad::setPosition(float x,float y)
+void XPasswordPad::setPosition(float x,float y)
 {
 	if(!m_isInited) return;
 	m_position.set(x,y);
-	m_nowMouseRect.set(m_position.x + m_mouseRect.left * m_size.x,m_position.y + m_mouseRect.top * m_size.y,
-		m_position.x + m_mouseRect.right * m_size.x,m_position.y + m_mouseRect.bottom * m_size.y);
+	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
+		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
 	//设置各个物件的位置
-	m_caption.setPosition(m_position + m_passwardPadData.captionPosition * m_size);
+	m_caption.setPosition(m_position + m_passwardPadData.captionPosition * m_scale);
 	for(int i = 0;i < 12;++ i)
 	{
-		m_button[i].setPosition(m_position + _XVector2(m_passwardPadData.bottonOffsetPosition.x + (i % 3) * m_passwardPadData.bottonDistance.x,
-			m_passwardPadData.bottonOffsetPosition.y + (int)(i / 3) * m_passwardPadData.bottonDistance.y) * m_size);
+		m_button[i].setPosition(m_position + XVector2(m_passwardPadData.bottonOffsetPosition.x + (i % 3) * m_passwardPadData.bottonDistance.x,
+			m_passwardPadData.bottonOffsetPosition.y + (int)(i / 3) * m_passwardPadData.bottonDistance.y) * m_scale);
 	}
 	m_sprite.setPosition(m_position);
 
 	updateChildPos();
 }
-void _XPasswordPad::setStart(int mode)	//设置密码输入板开始工作
+void XPasswordPad::setStart(int mode)	//设置密码输入板开始工作
 {
 	if(m_stage != 0)
 	{
@@ -389,7 +416,7 @@ void _XPasswordPad::setStart(int mode)	//设置密码输入板开始工作
 		m_button[11].setCaptionText("退出");
 	}
 }
-void _XPasswordPad::btn10Proc()
+void XPasswordPad::btn10Proc()
 {
 	if(m_stage != 0) return;
 	int len;
@@ -417,8 +444,8 @@ void _XPasswordPad::btn10Proc()
 			m_caption.setString("密码输入正确");
 		}else
 		{//密码输入错误
-			m_couter ++;
-			if(m_couter >= MAX_ENTER_TRY)
+			++ m_couter;
+			if(m_couter >= m_maxEnterTry)
 			{
 				m_stage = 2;
 				m_caption.setString("密码输入错误");
@@ -436,7 +463,7 @@ void _XPasswordPad::btn10Proc()
 	{//修改密码模式
 		if(m_couter == 0)
 		{//要求重新输入密码
-			m_couter ++;
+			++ m_couter;
 			strcpy(m_newPassword,m_enterPassword);
 
 			m_enterPasswordLength = 0;
@@ -475,7 +502,7 @@ void _XPasswordPad::btn10Proc()
 		}
 	}
 }
-void _XPasswordPad::btn11Proc()
+void XPasswordPad::btn11Proc()
 {
 	if(m_stage != 0) return;
 	if(m_enterPasswordLength <= 0)
@@ -484,11 +511,11 @@ void _XPasswordPad::btn11Proc()
 		m_caption.setString("正在退出...");
 	}else
 	{
-		m_enterPasswordLength --;
+		-- m_enterPasswordLength;
 		m_showString[m_enterPasswordLength] = '\0';
 		m_enterPassword[m_enterPasswordLength] = '\0';
 		m_caption.setString(m_showString);
-		if(m_enterPasswordLength < MIN_PASSWARD_LENGTH)
+		if(m_enterPasswordLength < m_minPasswardLength)
 		{
 			m_button[10].disable();
 		}else
@@ -504,18 +531,18 @@ void _XPasswordPad::btn11Proc()
 		}
 	}
 }
-void _XPasswordPad::addChar(char temp)
+void XPasswordPad::addChar(char temp)
 {
 	if(m_stage != 0) return;
-	if(m_enterPasswordLength < MAX_PASSWARD_LENGTH)
+	if(m_enterPasswordLength < m_maxPasswardLength)
 	{
 		m_enterPassword[m_enterPasswordLength] = temp;
 		m_showString[m_enterPasswordLength] = '*';
-		m_enterPasswordLength ++;
+		++ m_enterPasswordLength;
 		m_showString[m_enterPasswordLength] = '\0';
 		m_enterPassword[m_enterPasswordLength] = '\0';
 		m_caption.setString(m_showString);
-		if(m_enterPasswordLength < MIN_PASSWARD_LENGTH)
+		if(m_enterPasswordLength < m_minPasswardLength)
 		{
 			m_button[10].disable();
 		}else
@@ -527,4 +554,8 @@ void _XPasswordPad::addChar(char temp)
 			m_button[11].setCaptionText("后退");
 		}
 	}
+}
+#if !WITH_INLINE_FILE
+#include "XPasswordPad.inl"
+#endif
 }

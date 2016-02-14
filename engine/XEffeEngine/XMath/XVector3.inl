@@ -1,136 +1,136 @@
-//inline 函数的定义
-inline void _XVector3::reset()//重置这个点
+//INLINE 函数的定义
+INLINE void XVector3::reset()//重置这个点
 {
     x = 0.0f;
     y = 0.0f;
     z = 0.0f;
 }
-inline void _XVector3::add(float a,float b,float c)//设置这个点的值
+INLINE void XVector3::add(float a,float b,float c)//设置这个点的值
 {
     x += a;
     y += b;
     z += c;
 }
-inline void _XVector3::set(float a,float b,float c)//这个点的值加上一个点的值
+INLINE void XVector3::set(float a,float b,float c)//这个点的值加上一个点的值
 {
     x = a;
     y = b;
     z = c;
 }
-inline _XVector3 _XVector3::operator + (const _XVector3& temp) const
+INLINE XVector3 XVector3::operator + (const XVector3& temp) const
 {
-	return _XVector3(x + temp.x,y + temp.y,z + temp.z);
+	return XVector3(x + temp.x,y + temp.y,z + temp.z);
 }
-inline _XVector3 _XVector3::operator - (const _XVector3& temp) const
+INLINE XVector3 XVector3::operator - (const XVector3& temp) const
 {
-	return _XVector3(x - temp.x,y - temp.y,z - temp.z);
+	return XVector3(x - temp.x,y - temp.y,z - temp.z);
 }
-inline _XVector3 _XVector3::operator * (const _XVector3& temp) const
+INLINE XVector3 XVector3::operator * (const XVector3& temp) const
 {
-	return _XVector3(y * temp.z - z * temp.y,
+	return XVector3(y * temp.z - z * temp.y,
 			z * temp.x - x * temp.z,
 			x * temp.y - y * temp.x);
 }
-inline _XVector3 _XVector3::operator / (const _XVector3& temp) const
+INLINE XVector3 XVector3::operator / (const XVector3& temp) const
 {
-	if(temp.x == 0.0f || temp.y == 0.0f || temp.z == 0.0f) return _XVector3(x,y,z);
-	return _XVector3(x / temp.x,y / temp.y,z / temp.z);
+	if(temp.x == 0.0f || temp.y == 0.0f || temp.z == 0.0f) return XVector3(x,y,z);
+	return XVector3(x / temp.x,y / temp.y,z / temp.z);
 }
-inline _XVector3 _XVector3::operator + (const float& temp) const
+INLINE XVector3 XVector3::operator + (const float& temp) const
 {
-	return _XVector3(x + temp,y + temp,z + temp);
+	return XVector3(x + temp,y + temp,z + temp);
 }
-inline _XVector3 _XVector3::operator - (const float& temp) const
+INLINE XVector3 XVector3::operator - (const float& temp) const
 {
-	return _XVector3(x - temp,y - temp,z - temp);
+	return XVector3(x - temp,y - temp,z - temp);
 }
-inline _XVector3 _XVector3::operator * (const float& temp) const
+INLINE XVector3 XVector3::operator * (const float& temp) const
 {
-	return _XVector3(x * temp,y * temp,z * temp);
+	return XVector3(x * temp,y * temp,z * temp);
 }
-inline _XVector3 _XVector3::operator / (const float& temp) const
+INLINE XVector3 XVector3::operator / (const float& temp) const
 {
 	if(temp == 0.0f) return *this;
 	return operator *(1.0f / temp);
 }
-inline void _XVector3::operator += (const _XVector3& temp)
+INLINE void XVector3::operator += (const XVector3& temp)
 {
 	x += temp.x;
 	y += temp.y;
 	z += temp.z;
 }
-inline void _XVector3::operator -= (const _XVector3& temp)
+INLINE void XVector3::operator -= (const XVector3& temp)
 {
 	x -= temp.x;
 	y -= temp.y;
 	z -= temp.z;
 }
-inline void _XVector3::operator *= (const _XVector3& temp)
+INLINE void XVector3::operator *= (const XVector3& temp)
 {
 	float tx = x,ty = y,tz = z;
 	x = ty * temp.z - tz * temp.y;
 	y = tz * temp.x - tx * temp.z;
 	z = tx * temp.y - ty * temp.x;
 }
-inline void _XVector3::operator /= (const _XVector3& temp)
+INLINE void XVector3::operator /= (const XVector3& temp)
 {
 	if(temp.x == 0.0f || temp.y == 0.0f || temp.z == 0.0f) return;
 	x /= temp.x;
 	y /= temp.y;
 	z /= temp.z;
 }
-inline void _XVector3::operator += (const float& temp)
+INLINE void XVector3::operator += (const float& temp)
 {
 	x += temp;
 	y += temp;
 	z += temp;
 }
-inline void _XVector3::operator -= (const float& temp)
+INLINE void XVector3::operator -= (const float& temp)
 {
 	x -= temp;
 	y -= temp;
 	z -= temp;
 }
-inline void _XVector3::operator *= (const float& temp)
+INLINE void XVector3::operator *= (const float& temp)
 {
 	x *= temp;
 	y *= temp;
 	z *= temp;
 }
-inline void _XVector3::operator /= (const float& temp)
+INLINE void XVector3::operator /= (const float& temp)
 {
 	if(temp == 0.0f) return;
 	operator *=(1.0f/temp);
 }
-inline float _XVector3::getLength(const _XVector3& P0) const
+INLINE float XVector3::getLength(const XVector3& P0) const
 {
-	return sqrtf(squareFloat(x - P0.x) + squareFloat(y - P0.y) + squareFloat(z - P0.z));
+	return sqrtf(XMath::squareFloat(x - P0.x) + XMath::squareFloat(y - P0.y) + XMath::squareFloat(z - P0.z));
 }
-inline float _XVector3::getLength(float a,float b,float c) const
+INLINE float XVector3::getLength(float a,float b,float c) const
 {
-	return sqrtf(squareFloat(x - a) + squareFloat(y - b) + squareFloat(z - c));
+	return sqrtf(XMath::squareFloat(x - a) + XMath::squareFloat(y - b) + XMath::squareFloat(z - c));
 }
-inline float _XVector3::getLength() const
+INLINE float XVector3::getLength() const
 {
 	return sqrtf(x * x + y * y + z * z);
 }
-inline float _XVector3::getLengthSqure(const _XVector3& P0) const
+INLINE float XVector3::getLengthSqure(const XVector3& P0) const
 {
-	return squareFloat(x - P0.x) + squareFloat(y - P0.y) + squareFloat(z - P0.z);
+	return XMath::squareFloat(x - P0.x) + XMath::squareFloat(y - P0.y) + XMath::squareFloat(z - P0.z);
 }
-inline float _XVector3::getLengthSqure(float a,float b,float c) const
+INLINE float XVector3::getLengthSqure(float a,float b,float c) const
 {
-	return squareFloat(x - a) + squareFloat(y - b) + squareFloat(z - c);
+	return XMath::squareFloat(x - a) + XMath::squareFloat(y - b) + XMath::squareFloat(z - c);
 }
-inline float _XVector3::getLengthSqure() const
+INLINE float XVector3::getLengthSqure() const
 {
 	return x * x + y * y + z * z;
 }
-inline _XVector3 _XVector3::operator - () const
+INLINE XVector3 XVector3::operator - () const
 {
-	return _XVector3(-x,-y,-z);
+	return XVector3(-x,-y,-z);
 }
-inline _XVector3& _XVector3::operator = (const float* temp)
+INLINE XVector3& XVector3::operator = (const float* temp)
 {
 	if(temp == NULL)
 	{
@@ -145,7 +145,7 @@ inline _XVector3& _XVector3::operator = (const float* temp)
 	}
 	return * this;
 }
-inline _XVector3 &_XVector3::operator = (const _XVector3 &temp)
+INLINE XVector3 &XVector3::operator = (const XVector3 &temp)
 {
 	if(this == &temp) return *this;
 	x = temp.x;
@@ -153,7 +153,7 @@ inline _XVector3 &_XVector3::operator = (const _XVector3 &temp)
 	z = temp.z;
 	return *this;
 }
-inline void _XVector3::normalize()
+INLINE void XVector3::normalize()
 {
 	float t = getLengthSqure();
 	if(t != 0.0f)
@@ -161,7 +161,7 @@ inline void _XVector3::normalize()
 		operator *= (1.0f / sqrt(t));
 	}
 }
-inline float _XVector3::dot(const _XVector3& temp) const
+INLINE float XVector3::dot(const XVector3& temp) const
 {//点乘，集合意义:a.dot(b) = |a|*|b|*cos(夹角)
 	return x * temp.x + y * temp.y + z * temp.z;
 }

@@ -7,17 +7,13 @@
 //--------------------------------
 #include "XOSDefine.h"
 
-#ifdef XEE_OS_WINDOWS
-#include "windows.h"
-#endif
-
 #ifdef XEE_OS_LINUX	//由于linux下的共享内存机制较为复杂，这里尚未经过测试，linux下不能使用
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #endif
-
-class _XShareMem
+namespace XE{
+class XShareMem
 {
 private:
 	bool m_isInited;
@@ -33,17 +29,17 @@ private:
 public:
 	bool init(const char *name,int size);
 	unsigned char *getBuff() {return m_pAddress;}
-	int getSize() {return m_size;}
+	int getSize() const {return m_size;}
 
 	void release();
-	_XShareMem()
+	XShareMem()
 		:m_isInited(false)
 		,m_pAddress(NULL)
 #ifdef XEE_OS_LINUX
 		,m_prsem(NULL)
 #endif
 	{}
-	~_XShareMem(){release();}
+	~XShareMem(){release();}
 };
-
+}
 #endif

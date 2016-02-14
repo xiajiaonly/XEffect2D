@@ -6,7 +6,8 @@
 //Date:		2013.6.3
 //--------------------------------
 //这是一个线性雾的类
-class _XLineFog
+namespace XE{
+class XLineFog
 {
 private:
 	unsigned int m_fogMode;	//雾的模式
@@ -15,7 +16,7 @@ private:
 	float m_start;		//雾的开始位置
 	float m_end;		//雾结束的位置
 public:
-	_XLineFog()
+	XLineFog()
 		:m_fogMode(GL_FOG)
 		,m_density(0.001f)
 		,m_start(1.0f)
@@ -33,7 +34,7 @@ public:
 		m_color[2] = b;
 		m_color[3] = a;
 	}
-	void setColor(const _XFColor &color) {setColor(color.fR,color.fG,color.fB,color.fA);}
+	void setColor(const XFColor &color) {setColor(color.fR,color.fG,color.fB,color.fA);}
 	void setDensity(float density){m_density = density;}
 	void setArea(float start,float end){m_start = start;m_end = end;}
 	void useFog()
@@ -46,9 +47,7 @@ public:
 		glFogf(GL_FOG_END,m_end);
 		glHint(GL_FOG_HINT,GL_NICEST);
 	}
-	void disFog()
-	{
-		glDisable(GL_FOG);
-	}
+	void disFog(){glDisable(GL_FOG);}
 };
+}
 #endif

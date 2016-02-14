@@ -6,24 +6,25 @@
 //Version:	1.0.0
 //Date:		2011.11.20
 //--------------------------------
-#include "XEffeEngine.h"
-
-class _XEngineLogo
+#include "XOSDefine.h"
+#include "XSprite.h"
+namespace XE{
+class XEngineLogo
 {
 private:
-	_XResourcePosition m_resoursePosition;
-	char m_isInited;
-	char m_mode;	//0普通模式，1竖屏模式
-	_XVector2 m_position;
-	_XSprite m_back;	
-	_XSprite m_logoBack;
-	_XSprite m_logoLight;
-	_XSprite m_logoMiddle;
-	_XSprite m_logoTextX;
-	_XSprite m_logoTextE;
-	_XSprite m_logoTextEC;
-	_XSprite m_logoTextRE;
-	//_XSprite m_logoTextECopy[30];
+	XResourcePosition m_resoursePosition;
+	XBool m_isInited;
+	XBool m_mode;	//0普通模式，1竖屏模式
+	XVector2 m_position;
+	XSprite m_back;	
+	XSprite m_logoBack;
+	XSprite m_logoLight;
+	XSprite m_logoMiddle;
+	XSprite m_logoTextX;
+	XSprite m_logoTextE;
+	XSprite m_logoTextEC;
+	XSprite m_logoTextRE;
+	//XSprite m_logoTextECopy[30];
 
 	int m_logoStage;
 	float m_xAlpha;
@@ -33,41 +34,32 @@ private:
 	
 	char m_stageFlag[8];	//描述各个阶段标记的变量
 	//下面这个是内部调用的方法
-	void setPosition(const _XVector2 &position);	//设置logo显示的位置
+	void setPosition(const XVector2 &position);	//设置logo显示的位置
 
 public:
-	int init(const _XVector2 &position,_XResourcePosition resoursePosition,int mode = 0);		//初始化
-	void move(int timeDelay);			//显示logo的动画
+	XBool init(const XVector2 &position,XResourcePosition resoursePosition,XBool mode = true);		//初始化
+	void move(float timeDelay);			//显示logo的动画
 	void reset();						//重置
 	void draw();						//描绘logo
-	_XEngineLogo();						//构造函数
-	~_XEngineLogo();						//构造函数
-	void setBackSize(const _XVector2 &size);		//设置背景图的尺寸
+	XEngineLogo();						//构造函数
+	~XEngineLogo();						//构造函数
+	void setBackSize(const XVector2 &size);		//设置背景图的尺寸
 	void setBackSize(float x,float y);		//设置背景图的尺寸
 
 	//下面这两个方法尚未实现
-	void setSize(const _XVector2 &size);			//设置logo显示的尺寸
-	int release();	//释放logo的资源
-	int getIsEnd();
+	void setSize(const XVector2 &size);			//设置logo显示的尺寸
+	XBool release();	//释放logo的资源
+	XBool getIsEnd();
 };
 
-inline void _XEngineLogo::setPosition(const _XVector2 &position)	//设置logo显示的位置
+inline void XEngineLogo::setPosition(const XVector2 &position)	//设置logo显示的位置
 {
 	m_position = position;
 }
-inline void _XEngineLogo::setBackSize(const _XVector2 &size)		//设置背景图的尺寸
+inline XBool XEngineLogo::getIsEnd()
 {
-	m_back.setSize(size);
+	if(!m_isInited) return XFalse;
+	return m_logoStage == -2;
 }
-inline void _XEngineLogo::setBackSize(float x,float y)		//设置背景图的尺寸
-{
-	m_back.setSize(x,y);
 }
-inline int _XEngineLogo::getIsEnd()
-{
-	if(m_isInited == 0) return 0;
-	if(m_logoStage == -2) return 1;
-	else return 0;
-}
-
 #endif

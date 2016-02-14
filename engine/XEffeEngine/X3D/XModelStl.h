@@ -7,7 +7,7 @@
 //--------------------------------
 #include "X3DWorld.h"
 #include "XShaderGLSL.h"
-
+namespace XE{
 //这是一个Stl模型操作的类
 /*
 二进制STL文件用固定的字节数来给出三角面片的几何信息。文件起始的80个字节是文件头，
@@ -26,7 +26,7 @@ faceInfo	50Bytes
 	……
 */
 
-class _XModelStl:public _XBasic3DObject
+class XModelStl:public XBasic3DObject
 {
 private:
 	bool m_isInited;
@@ -35,29 +35,24 @@ private:
 	int m_faceSum;
 	float *m_normalData;	//法线数据
 	float *m_vectorData;	//顶点数据
-	_XVBO vbo;
+	XVBO vbo;
 public:
 	bool load(const char * filename);
 	void draw();
 	void release()
 	{
 		if(!m_isInited) return;
-		XDELETE_ARRAY(m_normalData);
-		XDELETE_ARRAY(m_vectorData);
+		XMem::XDELETE_ARRAY(m_normalData);
+		XMem::XDELETE_ARRAY(m_vectorData);
 		vbo.release();
 		m_isInited = false;
 	}
-
-	_XModelStl()
+	XModelStl()
 		:m_isInited(false)
 		,m_normalData(NULL)
 		,m_vectorData(NULL)
-	{
-	}
-	~_XModelStl()
-	{
-		release();
-	}
+	{}
+	~XModelStl(){release();}
 };
-
+}
 #endif

@@ -1,13 +1,14 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
-#include "XEffeEngine.h"
+//#include "XEffeEngine.h"
 #include "XCam.h"
 #include "XBasic3D.h"
-
-_XBool _XCamRoam::calculate()
+namespace XE{
+XBool XCamRoam::calculate()
 {
 	if(m_needCalculate) m_needCalculate = XFalse;
 	else return XFalse;
@@ -33,9 +34,9 @@ _XBool _XCamRoam::calculate()
 	m_direction.x = -sinX * sinY * cosZ + cosX * sinZ;
 
 	//这里计算灯的世界矩阵和观察矩阵
-	m_fov = XEE::viewAngle3D;
-	m_projectMatrix = calPerspectiveMatrix(m_fov,(float)XEE::windowWidth/XEE::windowHeight,m_near,m_far);
-	m_viewMatrix = calLookAtMatrix(m_position,m_lookAtPosition,m_direction);
+	m_fov = XEG.getViewAngle();
+	m_projectMatrix = XMath::calPerspectiveMatrix(m_fov,(float)getWindowWidth()/getWindowHeight(),m_near,m_far);
+	m_viewMatrix = XMath::calLookAtMatrix(m_position,m_lookAtPosition,m_direction);
 
 	//glMatrixMode(GL_MODELVIEW);
 	//glPushMatrix();
@@ -51,19 +52,19 @@ _XBool _XCamRoam::calculate()
 	m_neadCalProjXView = XTrue;
 	return XTrue;
 }
-void _XCamRoam::calculateFrustumPlanes() //计算视锥体
+void XCamRoam::calculateFrustumPlanes() //计算视锥体
 {
-	_XMatrix4x4 tempM = m_projectMatrix * m_viewMatrix;
-	m_face[0] = normalize(tempM.getRow(3) - tempM.getRow(0));	//right
-	m_face[1] = normalize(tempM.getRow(3) + tempM.getRow(0));	//left
-	m_face[2] = normalize(tempM.getRow(3) - tempM.getRow(1));	//top
-	m_face[3] = normalize(tempM.getRow(3) + tempM.getRow(1));	//bottom
-	m_face[4] = normalize(tempM.getRow(3) - tempM.getRow(2));	//far
-	m_face[5] = normalize(tempM.getRow(3) + tempM.getRow(2));	//near
+	XMatrix4x4 tempM = m_projectMatrix * m_viewMatrix;
+	m_face[0] = XMath::normalize(tempM.getRow(3) - tempM.getRow(0));	//right
+	m_face[1] = XMath::normalize(tempM.getRow(3) + tempM.getRow(0));	//left
+	m_face[2] = XMath::normalize(tempM.getRow(3) - tempM.getRow(1));	//top
+	m_face[3] = XMath::normalize(tempM.getRow(3) + tempM.getRow(1));	//bottom
+	m_face[4] = XMath::normalize(tempM.getRow(3) - tempM.getRow(2));	//far
+	m_face[5] = XMath::normalize(tempM.getRow(3) + tempM.getRow(2));	//near
 //	m_face[4] = normalize(tempM.getRow(2) - tempM.getRow(3));	//far
-//	m_face[5] = normalize(_XVector4::zero - tempM.getRow(2) - tempM.getRow(3));	//near
+//	m_face[5] = normalize(XVector4::zero - tempM.getRow(2) - tempM.getRow(3));	//near
 }
-bool _XCamRoam::isInFrustum(float x,float y,float z)  
+bool XCamRoam::isInFrustum(float x,float y,float z)  
 {//判断点是否在视锥体内部  
 	if(m_neadCalFrustum)
 	{
@@ -80,19 +81,19 @@ bool _XCamRoam::isInFrustum(float x,float y,float z)
 	}
 	return true;  
 }
-void _XCamRoam::calculateFrustumPoint()
+void XCamRoam::calculateFrustumPoint()
 {
-	m_point[0] = getPoint(m_face[0],m_face[2],m_face[4]);
-	m_point[1] = getPoint(m_face[0],m_face[3],m_face[4]);
-	m_point[2] = getPoint(m_face[1],m_face[3],m_face[4]);
-	m_point[3] = getPoint(m_face[1],m_face[2],m_face[4]);
-	m_point[4] = getPoint(m_face[0],m_face[2],m_face[5]);
-	m_point[5] = getPoint(m_face[0],m_face[3],m_face[5]);
-	m_point[6] = getPoint(m_face[1],m_face[3],m_face[5]);
-	m_point[7] = getPoint(m_face[1],m_face[2],m_face[5]);
+	m_point[0] = XMath::getPoint(m_face[0],m_face[2],m_face[4]);
+	m_point[1] = XMath::getPoint(m_face[0],m_face[3],m_face[4]);
+	m_point[2] = XMath::getPoint(m_face[1],m_face[3],m_face[4]);
+	m_point[3] = XMath::getPoint(m_face[1],m_face[2],m_face[4]);
+	m_point[4] = XMath::getPoint(m_face[0],m_face[2],m_face[5]);
+	m_point[5] = XMath::getPoint(m_face[0],m_face[3],m_face[5]);
+	m_point[6] = XMath::getPoint(m_face[1],m_face[3],m_face[5]);
+	m_point[7] = XMath::getPoint(m_face[1],m_face[2],m_face[5]);
 	m_point[8] = m_position;
 }
-void _XCamRoam::drawFrustum()	//描绘视锥体
+void XCamRoam::drawFrustum()	//描绘视锥体
 {
 	if(m_neadCalFrustum)
 	{
@@ -101,20 +102,21 @@ void _XCamRoam::drawFrustum()	//描绘视锥体
 		calculateFrustumPlanes();
 		calculateFrustumPoint();
 	}
-	drawLine(m_point[0],m_point[1]);
-	drawLine(m_point[1],m_point[2]);
-	drawLine(m_point[2],m_point[3]);
-	drawLine(m_point[3],m_point[0]);
-	drawLine(m_point[4],m_point[5]);
-	drawLine(m_point[5],m_point[6]);
-	drawLine(m_point[6],m_point[7]);
-	drawLine(m_point[7],m_point[4]);
-	drawLine(m_point[0],m_point[4]);
-	drawLine(m_point[1],m_point[5]);
-	drawLine(m_point[2],m_point[6]);
-	drawLine(m_point[3],m_point[7]);
-	drawLine(m_point[8],m_point[4]);
-	drawLine(m_point[8],m_point[5]);
-	drawLine(m_point[8],m_point[6]);
-	drawLine(m_point[8],m_point[7]);
+	XRender::drawLine(m_point[0],m_point[1]);
+	XRender::drawLine(m_point[1],m_point[2]);
+	XRender::drawLine(m_point[2],m_point[3]);
+	XRender::drawLine(m_point[3],m_point[0]);
+	XRender::drawLine(m_point[4],m_point[5]);
+	XRender::drawLine(m_point[5],m_point[6]);
+	XRender::drawLine(m_point[6],m_point[7]);
+	XRender::drawLine(m_point[7],m_point[4]);
+	XRender::drawLine(m_point[0],m_point[4]);
+	XRender::drawLine(m_point[1],m_point[5]);
+	XRender::drawLine(m_point[2],m_point[6]);
+	XRender::drawLine(m_point[3],m_point[7]);
+	XRender::drawLine(m_point[8],m_point[4]);
+	XRender::drawLine(m_point[8],m_point[5]);
+	XRender::drawLine(m_point[8],m_point[6]);
+	XRender::drawLine(m_point[8],m_point[7]);
+}
 }

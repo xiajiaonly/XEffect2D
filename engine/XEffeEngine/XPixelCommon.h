@@ -7,7 +7,7 @@
 //--------------------------------
 #include "XPixelCore.h"
 #include "XPixelSDL.h"
-
-#define _XCurPixel _XPixelSDL
-
+namespace XE{
+#define XCurPixel XPixelSDL
+}
 #endif

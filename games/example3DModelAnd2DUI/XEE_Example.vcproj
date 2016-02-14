@@ -100,7 +100,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			UseOfMFC="1"
+			UseOfMFC="0"
 			UseOfATL="0"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
@@ -188,10 +188,18 @@
 			<Filter
 				Name="Header Files"
 				>
+				<File
+					RelativePath=".\GGameE.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
 				>
+				<File
+					RelativePath=".\GGameE.cpp"
+					>
+				</File>
 				<File
 					RelativePath=".\main.cpp"
 					>

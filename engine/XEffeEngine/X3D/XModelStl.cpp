@@ -1,17 +1,19 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XModelStl.h"
-
-bool _XModelStl::load(const char * filename)
+#include "XFile.h"
+namespace XE{
+bool XModelStl::load(const char * filename)
 {
 	if(m_isInited) return false;
 	if(filename == NULL) return false;
 	FILE * fp = NULL;
 	if((fp = fopen(filename,"rb")) == NULL) return false;
-	int fLen = getFileLen(fp);
+	int fLen = XFile::getFileLen(fp);
 	fread(m_modelName,1,sizeof(m_modelName),fp);	//读取文件名
 	fread(&m_faceSum,1,sizeof(m_faceSum),fp);
 	if(m_faceSum <= 0 || fLen != m_faceSum * 50 + 84) 
@@ -19,12 +21,12 @@ bool _XModelStl::load(const char * filename)
 		fclose(fp);
 		return false;
 	}
-	m_normalData = createArrayMem<float>(m_faceSum * 9);
-	m_vectorData = createArrayMem<float>(m_faceSum * 9);
+	m_normalData = XMem::createArrayMem<float>(m_faceSum * 9);
+	m_vectorData = XMem::createArrayMem<float>(m_faceSum * 9);
 	if(m_normalData == NULL || m_vectorData == NULL)
 	{
-		XDELETE_ARRAY(m_normalData);
-		XDELETE_ARRAY(m_vectorData);
+		XMem::XDELETE_ARRAY(m_normalData);
+		XMem::XDELETE_ARRAY(m_vectorData);
 		fclose(fp);
 		return false;
 	}
@@ -65,9 +67,10 @@ bool _XModelStl::load(const char * filename)
 	m_isInited = true;
 	return true;
 }
-void _XModelStl::draw()
+void XModelStl::draw()
 {
 	if(!m_isInited) return;
+	if(gFrameworkData.p3DWorld == NULL) return;
 	updateMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -77,15 +80,16 @@ void _XModelStl::draw()
 	//glRotatef(m_angle.x,1,0,0);
 	//glRotatef(m_angle.y,0,1,0);
 	//glRotatef(m_angle.z,0,0,1);
-	//glScalef(m_size.x,m_size.y,m_size.z);
+	//glScalef(m_scale.x,m_scale.y,m_scale.z);
 
-	_X3DWorld::GetInstance().m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
+	gFrameworkData.p3DWorld->m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
 	glColor4fv(m_color);
-	_X3DWorld::GetInstance().useShadow(XFalse,SHADER_SHADOW);
+	gFrameworkData.p3DWorld->useShadow(XFalse,SHADER_SHADOW);
 
 	vbo.drawByArray(GL_TRIANGLES);
 
-	_X3DWorld::GetInstance().removeShadow();
+	gFrameworkData.p3DWorld->removeShadow();
 
 	glPopMatrix();
+}
 }

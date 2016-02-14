@@ -1,8 +1,8 @@
+#include "XStdHead.h"
 #include "XWindowGlut.h"
-#include "XLogBook.h"
 #include "XMouseAndKeyBoardDefine.h"
-
-bool _XWindowGlut::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int/*withFrame*/)
+namespace XE{
+bool XWindowGlut::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int/*withFrame*/)
 {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);	//GLUT_MULTISAMPLE启用多重采样
     glutInitWindowPosition(100,100);
@@ -14,7 +14,7 @@ bool _XWindowGlut::createWindow(int width,int height,const char *windowTitle,int
 
 	return true;
 }
-int _XWindowGlut::mapKey(int key)
+int XWindowGlut::mapKey(int key)
 {
 	if(key < 512)
 	{
@@ -154,4 +154,5 @@ int _XWindowGlut::mapKey(int key)
 			return XKEY_UNKNOWN;
 		}
 	}
+}
 }

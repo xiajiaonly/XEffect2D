@@ -1,22 +1,29 @@
 #include "GGame.h"
-
-bool _GGame::init()
+using namespace XE;
+void GGame::ctrlEventProc(int id,int eventID)
+{
+}
+bool GGame::init()
 {
 	return true;
 }
-void _GGame::move(int stepTime)
+void GGame::move(float stepTime)
 {
 }
-void _GGame::draw()
+void GGame::draw()
 {
 }
-void _GGame::input(const _XInputEvent &event)
+void GGame::input(const XInputEvent &event)
 {
-	if(event.type == EVENT_KEYBOARD
-		&& event.keyState == KEY_STATE_DOWN
-		&& event.keyValue == XKEY_S)
-	{}
+	if(event.isKeyBoardDown())
+	{
+		switch (event.keyValue)
+		{
+		case XKEY_S:
+			break;
+		}
+	}
 }
-void _GGame::release()
+void GGame::release()
 {
 }

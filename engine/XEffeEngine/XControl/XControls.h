@@ -46,5 +46,11 @@
 #include "XComment.h"		//控件说明的类
 #include "XButtonBar.h"		//按钮条
 #include "XToolBar.h"		//工具条
+#include "XPropertyBox.h"	//属性框
+#include "XColorChoose.h"	//选色控件
+
+#include "XParameterCtrl.h"
+
+#include "XTimeLine.h"
 
 #endif

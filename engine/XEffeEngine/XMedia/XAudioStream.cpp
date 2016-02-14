@@ -1,12 +1,12 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XAudioStream.h"
-#include "../XLogBook.h"
-
-_XBool _XAudioStream::load(const char * filename)
+namespace XE{
+XBool XAudioStream::load(const char * filename)
 {
 	if(m_isLoaded ||
 		filename == NULL) return XFalse;
@@ -17,7 +17,7 @@ _XBool _XAudioStream::load(const char * filename)
 		LogStr("File open error!");
 		return XFalse;
 	}
-	if(av_find_stream_info(m_pFormatCtx) < 0)		//检查视频流信息
+	if(avformat_find_stream_info(m_pFormatCtx,NULL) < 0)		//检查视频流信息
 	{
 		LogStr("can not find stream information!");
 		return XFalse;
@@ -34,7 +34,11 @@ _XBool _XAudioStream::load(const char * filename)
 		LogStr("can not open audio decoder!");
 		return XFalse;
 	}
-	//m_pFrame = avcodec_alloc_frame();
+	m_frameDataSum = XEG.getAudioChannelSum() * av_get_bytes_per_sample(getSampleFormat());
+	XMem::XDELETE_ARRAY(m_audioBuf);
+	m_audioBuf = XMem::createArrayMem<uint8_t>((AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2);
+	if(m_audioBuf == NULL) return XFalse;
+	//m_pFrame = av_frame_alloc();
 	//if(m_pFrame == NULL)
 	//{
 	//	printf("malloc Frame failed!\n");
@@ -47,44 +51,65 @@ _XBool _XAudioStream::load(const char * filename)
 	if(m_pSwrContext == NULL) return XFalse;
 	if(m_pAudioCodecCtx->channel_layout == 0)
 	{
-		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEE::audioChannel),AV_SAMPLE_FMT_S16,XEE::audioFrequency,
+		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEG.getAudioChannelSum()),getSampleFormat(),XEG.getAudioSampleRate() * m_speed,
 			av_get_default_channel_layout(m_pAudioCodecCtx->channels),m_pAudioCodecCtx->sample_fmt,m_pAudioCodecCtx->sample_rate,0,NULL);
 	}else
 	{
-		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEE::audioChannel),AV_SAMPLE_FMT_S16,XEE::audioFrequency,
+		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEG.getAudioChannelSum()),getSampleFormat(),XEG.getAudioSampleRate() * m_speed,
 			m_pAudioCodecCtx->channel_layout,m_pAudioCodecCtx->sample_fmt,m_pAudioCodecCtx->sample_rate,0,NULL);
+	}
+	if(swr_init(m_pSwrContext) < 0)
+	{
+		LogStr("swr_init() fail");
+		return XFalse;
 	}
 
 	m_isLoaded = XTrue;
 	return XTrue;
 }
-_XBool _XAudioStream::getAFrame()	//从流中提取一帧数据
+void XAudioStream::setSpeed(float speed)
+{
+	if(m_speed == speed || speed <= 0.0f) return;
+	m_speed = speed;
+	swr_free(&m_pSwrContext);
+	m_pSwrContext = swr_alloc();
+	if(m_pSwrContext == NULL) return;
+	if(m_pAudioCodecCtx->channel_layout == 0)
+	{
+		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEG.getAudioChannelSum()),getSampleFormat(),XEG.getAudioSampleRate() * m_speed,
+			av_get_default_channel_layout(m_pAudioCodecCtx->channels),m_pAudioCodecCtx->sample_fmt,m_pAudioCodecCtx->sample_rate,0,NULL);
+	}else
+	{
+		swr_alloc_set_opts(m_pSwrContext,av_get_default_channel_layout(XEG.getAudioChannelSum()),getSampleFormat(),XEG.getAudioSampleRate() * m_speed,
+			m_pAudioCodecCtx->channel_layout,m_pAudioCodecCtx->sample_fmt,m_pAudioCodecCtx->sample_rate,0,NULL);
+	}
+	if(swr_init(m_pSwrContext) < 0)
+	{
+		LogStr("swr_init() fail");
+		return;
+	}
+}
+XBool XAudioStream::getAFrame()	//从流中提取一帧数据
 {
 	if(!m_isLoaded) return XFalse;
 	av_free_packet(&m_dataPacket);	//释放上一次获得的数据
 	av_init_packet(&m_dataPacket);
 	if(av_read_frame(m_pFormatCtx,&m_dataPacket) == 0)
 	{//这里见音频数据解码
-		m_pFrame = avcodec_alloc_frame();
+		m_pFrame = av_frame_alloc();
 
 		int isFinished;
-		int len = avcodec_decode_audio4(m_pAudioCodecCtx,m_pFrame,&isFinished,&m_dataPacket);
-		if(len < 0) return XFalse;
+		if(avcodec_decode_audio4(m_pAudioCodecCtx,m_pFrame,&isFinished,&m_dataPacket) < 0) return XFalse;
 		if(isFinished)
 		{
-			if(swr_init(m_pSwrContext) < 0)
-			{
-				LogStr("swr_init() fail");
-				return XFalse;
-			}
 			uint8_t *out[] = {m_audioBuf}; 
-			int outSize = sizeof(m_audioBuf)/XEE::audioChannel/av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+			int outSize = ((AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2) / m_frameDataSum;
 			m_dataLen = swr_convert(m_pSwrContext,out,outSize,(const uint8_t **)m_pFrame->extended_data,m_pFrame->nb_samples);  
-			m_dataLen = m_dataLen * XEE::audioChannel * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
-			avcodec_free_frame(&m_pFrame);
+			m_dataLen = m_dataLen * m_frameDataSum;
+			av_frame_free(&m_pFrame);
 			return XTrue;//解码成功
 		}
-		avcodec_free_frame(&m_pFrame);
+		av_frame_free(&m_pFrame);
 	}else 
 	{
 		gotoFrame(0.0f);	//跳到头
@@ -92,4 +117,5 @@ _XBool _XAudioStream::getAFrame()	//从流中提取一帧数据
 		return XFalse;
 	}
 	return XFalse;
+}
 }

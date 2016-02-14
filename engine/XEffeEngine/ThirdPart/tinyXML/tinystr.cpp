@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 /*
 www.sourceforge.net/projects/tinyxml
 

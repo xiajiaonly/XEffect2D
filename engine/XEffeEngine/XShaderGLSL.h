@@ -5,14 +5,17 @@
 //Version:	1.0.0
 //Date:		2014.1.1
 //--------------------------------
-//#include "glew.h"
-#include "XBasicFun.h"
+//#include "XBasicFun.h"
 //#include "XBasicOpenGL.h"
+#include <vector>
+//
+#include "XEngineCommon.h"
+namespace XE{
 //数据类型
-enum _XShaderDataType		//GLSL传递的数据类型
+enum XShaderDataType		//GLSL传递的数据类型
 {
 	DATA_TYPE_INT,			//整形
-	DATA_TYPE_FLOAT,		//单精度浮点型
+	DATA_TYPE_FLOAT,		//单精度浮点型float
 	DATA_TYPE_INT_ARRAY,	//1D整形
 	DATA_TYPE_FLOAT_ARRAY,	//1D单精度
 	DATA_TYPE_2INT_ARRAY,	//2D整形
@@ -23,92 +26,102 @@ enum _XShaderDataType		//GLSL传递的数据类型
 	DATA_TYPE_4FLOAT_MATRIX,//4x4矩阵
 	DATA_TYPE_2INT,			//整形
 	DATA_TYPE_3INT,			//整形
-	DATA_TYPE_2FLOAT,		//单精度浮点型
-	DATA_TYPE_3FLOAT,		//单精度浮点型
+	DATA_TYPE_2FLOAT,		//单精度浮点型vec2
+	DATA_TYPE_3FLOAT,		//单精度浮点型vec3
+	DATA_TYPE_4FLOAT,		//单精度浮点型vec4
 };
-#define MAX_SHADER_GLSL_DATA_SUM (256)	//可以连接的数据的最大数量
-class _XShaderDataInfo
+class XShaderDataInfo
 {
 public:
 	int m_handle;				//数据的句柄
 	//char m_name[256];			//数据的名称
-	_XShaderDataType m_type;	//数据的类型
+	XShaderDataType m_type;	//数据的类型
 	void *m_p;					//数据的指针
 	int m_size;
 
 	void updateData();	//更新数据
 };
 //下面是关于UBO的封装
-class _XUBO
+class XUBO
 {
 private:
-	_XBool m_isInited;
+	XBool m_isInited;
 	unsigned int m_uboHandle;
 public:
-	_XUBO()
+	XUBO()
 		:m_isInited(XFalse)
+		,m_uboHandle(0)
 	{}
-	~_XUBO() {release();}
+	~XUBO() {release();}
 	void release();
-	_XBool init(int size,const void * p);
+	XBool init(int size,const void * p);
 	void useUBO(unsigned int index);	//index为对应的shader中结构的索引
 };
-class _XShaderUBOData
+class XShaderUBOInfo
+{
+public:
+	unsigned int m_handle;
+	XUBO *m_pUBO;
+
+	void updateData() {m_pUBO->useUBO(m_handle);}
+};
+enum XShaderTexType
+{
+	TEX_TYPE_2D,
+	TEX_TYPE_CUBE,
+};
+struct XSaderTexInfo
+{
+	unsigned int * texID;
+	int texHandle;
+	XShaderTexType texType;
+};
+class XShaderUBOData;
+class XShaderGLSL
+{//目前对UBO的支持有限
+public:
+	static const int m_maxShaderGLSLDataSum = 256;	//可以连接的数据的最大数量
+private:
+	XBool m_isInited;		//是否初始化
+	XShaderHandle m_shaderHandle;
+	std::vector<XShaderDataInfo> m_dataInfos;
+	std::vector<XSaderTexInfo> m_texInfos;
+	std::vector<XShaderUBOInfo> m_UBOInfos;
+	void release();
+public:
+	void updateData();
+	XBool init(const char* vertFile,const char* fragFile,
+		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,const char* geomFile = NULL);
+	XBool initFromStr(const char *vStr,const char *fStr,const char * gStr = NULL);
+	XBool connectData(const char *name,XShaderDataType type,int size,void *p);//链接数据
+	XBool connectTexture(const char *name,unsigned int * tex,XShaderTexType type = TEX_TYPE_2D);//链接贴图
+	void useShader(bool withTex0 = false);	//使用shader,参数withTex0适用于设置是否需要绑定第一张贴图，
+											//如果需要绑定第一张贴图则设置为true,因为存在公用第一张贴图的情况所以有这个设置
+	void useShaderEx(unsigned int tex0,XShaderTexType type = TEX_TYPE_2D);	//调用的时候才传入第一张贴图
+	//++++++++++++++++++++++++++++++++++++++++++++++
+	//geometryShader相关的接口
+	void setGeometryInfo(unsigned int inType,unsigned int outType,int outSum);
+	int getGeometryMaxOutputCount() const;
+	//----------------------------------------------
+	void disShader();
+	unsigned int getShaderHandle()const{ return m_shaderHandle.shaderHandle;}
+	XShaderGLSL()
+		:m_isInited(XFalse)
+	{}
+	~XShaderGLSL() {release();}
+	//下面是为了提升性能而增加的接口
+	XBool connectUBO(const char *uboName,XUBO *ubo);
+	//从shader中读取UBO的相关信息
+	XBool getUBOInfo(XShaderUBOData &uboData,int valueSum,const char *uboName,const char **valueNames);	//连接UBO
+};
+class XShaderUBOData
 {
 public:
 	unsigned int m_handle;
 	char m_name[256];
-	int m_offset[MAX_SHADER_GLSL_DATA_SUM];
-	unsigned int m_index[MAX_SHADER_GLSL_DATA_SUM];
+	int m_offset[XShaderGLSL::m_maxShaderGLSLDataSum];
+	unsigned int m_index[XShaderGLSL::m_maxShaderGLSLDataSum];
 	int m_size;
-};
-class _XShaderUBOInfo
-{
-public:
-	unsigned int m_handle;
-	_XUBO *m_pUBO;
-
-	void updateData() {m_pUBO->useUBO(m_handle);}
-};
-class _XShaderGLSL
-{//目前对UBO的支持有限
-private:
-	_XBool m_isInited;		//是否初始化
-	//int m_shaderHandle;	//shader的句柄
-	_XShaderHandle m_shaderHandle;
-	int m_dataSum;			//数据的数量
-	_XShaderDataInfo m_dataInfo[MAX_SHADER_GLSL_DATA_SUM];	//链接数据的句柄
-	int m_texSum;
-	unsigned int *m_texture[MAX_SHADER_GLSL_DATA_SUM];
-	int m_texHandle[MAX_SHADER_GLSL_DATA_SUM];
-	int m_texType[MAX_SHADER_GLSL_DATA_SUM];
-
-	int m_UBOSum;
-	_XShaderUBOInfo m_UBOInfo[MAX_SHADER_GLSL_DATA_SUM];
-	void release();
-public:
-	_XBool init(const char* vertFile,const char* fragFile,
-		_XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,const char* geomFile = NULL);
-	_XBool connectData(const char *name,_XShaderDataType type,int size,void *p);//链接数据
-	_XBool connectTexture(const char *name,unsigned int * tex,int type = 0);//链接贴图
-	void useShader(bool withTex0 = false);	//使用shader,参数withTex0适用于设置是否需要绑定第一张贴图，
-											//如果需要绑定第一张贴图则设置为true,因为存在公用第一张贴图的情况所以有这个设置
-	void useShaderEx(unsigned int tex0,int type = 0);	//调用的时候才传入第一张贴图
-	//++++++++++++++++++++++++++++++++++++++++++++++
-	//geometryShader相关的接口
-	void setGeometryInfo(unsigned int inType,unsigned int outType,int outSum);
-	int getGeometryMaxOutputCount();
-	//----------------------------------------------
-	void disShader();
-	int getShaderHandle() { return m_shaderHandle.shaderHandle;}
-	_XShaderGLSL()
-		:m_isInited(XFalse)
-	{}
-	~_XShaderGLSL() {release();}
-	//下面是为了提升性能而增加的接口
-	_XBool connectUBO(const char *uboName,_XUBO *ubo);
-	//从shader中读取UBO的相关信息
-	_XBool getUBOInfo(_XShaderUBOData &uboData,int valueSum,const char *uboName,const char **valueNames);	//连接UBO
 };
 
 //使用UBO代替直接的GLSL的数据传递，以提升效率
@@ -156,22 +169,22 @@ public:
 #ifndef GL_FRONT
 #define GL_FRONT (0x4040)
 #endif
-enum _XPboMode
+enum XPboMode
 {
 	PBO_MODE_UNPACK,
 	PBO_MODE_PACK,
 };
-enum _XColorMode;
+enum XColorMode;
 //说明：在使用PBO来更新贴图的时候只有当需要将RGB转换成BGR的时候回来带有价值的性能提升外
 //其他形式完全没有必要
-class _XPBO	
+class XPBO	
 {
 private:
-	_XBool m_isInited;
+	XBool m_isInited;
 	unsigned int m_pboID[2];	//使用奇偶轮换的方式
-	int m_nowPBOIndex;
+	int m_curPBOIndex;
 	int m_size;
-	_XColorMode m_colorType;
+	XColorMode m_colorType;
 	int m_w;	//屏幕宽度
 	int m_h;	//屏幕高度
 	int m_px;	//截取图像的左上角点
@@ -179,19 +192,20 @@ private:
 	int m_wx;	//截取图像的宽度
 	int m_wy;
 	int m_dataSize;
-	_XPboMode m_mode;
+	XPboMode m_mode;
 public:
-	_XPBO()
+	XPBO()
 		:m_isInited(XFalse)
-		,m_nowPBOIndex(0)
+		,m_curPBOIndex(0)
 		,m_mode(PBO_MODE_PACK)
 	{}
-	~_XPBO(){release();}
+	~XPBO(){release();}
 	void release();
-	_XBool init(int w,int h,int px,int py,int wx,int wy,_XColorMode colorType,_XPboMode mode = PBO_MODE_PACK);
-	_XBool getPixel(unsigned char * buff,int target = GL_FRONT);
-	_XBool setPixel(unsigned char * buff);
+	XBool init(int w,int h,int px,int py,int wx,int wy,XColorMode colorType,XPboMode mode = PBO_MODE_PACK);
+	XBool getPixel(unsigned char * buff,int target = GL_FRONT);
+	XBool setPixel(unsigned char * buff);
 	void bind() const;
+	void unbind() const;
 };
 ////++++++++++++++++++++++++++++++++++++++++++++++
 ////下面是关于PBO的
@@ -218,15 +232,22 @@ public:
 //glDeleteBuffersARB(1,&pboID);
 ////--------------------------------------------------
 //下面使用VBO的方式提升性能（如果vbo显示不出来，请切换到release模式下试一试）
-class _XVBO
+//VBO使用技巧
+//1、太频繁的更新VBO将大大的影响性能，比如说在粒子系统中，每个粒子就是一个VBO的话，
+//频繁的更新VBO将会造成性能大大折扣，此时应该进行合并操作，将小的vbo合并成大的VBO(合并是否带来性能提升，尚未经过测试)
+//2、当数据量比较小的时候，BufferSubData是远远超过MapBuffer的效率的，但是当数据足够大的时候，
+//MapBuffer会压倒性的超越BufferSubData，据测试这个值大概是32k，具体还是根据驱动来决定。(尚未经过验证)
+class XVBO
 {
 private:
-	_XBool m_isInited;
-	_XBool m_withV;	//顶点
-	_XBool m_withT;	//贴图
-	_XBool m_withN;	//法线
-	_XBool m_withC;	//颜色
-	_XBool m_withI;	//索引
+	XBool m_withVAO;	//使用使用VAO(使用VAO没有明显性能提升，不过代码可以变得更简洁)
+	XBool m_isInited;
+	XBool m_withV;	//顶点
+	XBool m_withT;	//贴图
+	XBool m_withN;	//法线
+	XBool m_withC;	//颜色
+	XBool m_withI;	//索引
+	unsigned int m_vao;
 	unsigned int m_v;
 	unsigned int m_t;
 	unsigned int m_n;
@@ -234,40 +255,66 @@ private:
 	unsigned int m_i;
 	int m_size;			//VBO中数据的数量，一般是顶点的数量
 	int m_indexSize;	//索引的数量，一般来说就是模型渲染中依次填入的顶点的数量
+	int m_vSize;	//描述一个顶点的数据数量，3D顶点为3，2D顶点为2
+	XBool initX(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL,bool withVAO = false);
+	XBool updateDateX(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL);
 public:
 	//size为顶点的数量，实际的v的尺寸为size * 3，因为3D空间中一个顶点由3个浮点数确定
 	//t的尺寸为size * 2,n的尺寸为size * 3,c的尺寸为size * 4；
 	//iSize 为描绘面的数量，(由于这里默认为三角形)，所以i的尺寸为iSize * 3	//这项约定由问题，需要改正
-	_XBool init(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
-		int iSize = 0,const unsigned int *i = NULL);
-	_XBool updateDate(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
-		int iSize = 0,const unsigned int *i = NULL);
-	_XBool updateDataV(int size,const float *v);	//size为顶点的数量，默认一个顶点由3个浮点数描述
-	_XBool updateDataT(int size,const float *t);	//size为顶点的数量，默认一个顶点的t由2个浮点数描述
-	_XBool updateDataN(int size,const float *n);	//size为顶点的数量，默认一个顶点的n由3个浮点数描述
-	_XBool updateDataC(int size,const float *c);	//size为顶点的数量，默认一个顶点的c由4个浮点数描述
-	_XBool updateDataI(int size,const unsigned int *i);	//size为索引的数量，
-	void use(_XBool withTex = XTrue);	//参数用于描述是否显示贴图
+	XBool init(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL,bool withVAO = false)
+	{
+		m_vSize = 3;
+		return initX(size,v,t,n,c,iSize,i,withVAO);
+	}
+	XBool updateDate(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL)
+	{
+		if(!m_isInited) return init(size,v,t,n,c,iSize,i);//如果尚未进行初始化，则这里直接调用初始化函数
+		return updateDateX(size,v,t,n,c,iSize,i);
+	}
+	XBool init2D(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL,bool withVAO = false)
+	{
+		m_vSize = 2;
+		return initX(size,v,t,n,c,iSize,i,withVAO);
+	}
+	XBool updateDate2D(int size,const float *v,const float *t = NULL,const float *n = NULL,const float *c = NULL,
+		int iSize = 0,const unsigned int *i = NULL)
+	{
+		if(!m_isInited) return init2D(size,v,t,n,c,iSize,i);//如果尚未进行初始化，则这里直接调用初始化函数
+		return updateDateX(size,v,t,n,c,iSize,i);
+	}
+	XBool updateDataV(int size,const float *v);	//size为顶点的数量，默认一个顶点由3个浮点数描述
+	XBool updateDataT(int size,const float *t);	//size为顶点的数量，默认一个顶点的t由2个浮点数描述
+	XBool updateDataN(int size,const float *n);	//size为顶点的数量，默认一个顶点的n由3个浮点数描述
+	XBool updateDataC(int size,const float *c);	//size为顶点的数量，默认一个顶点的c由4个浮点数描述
+	XBool updateDataI(int size,const unsigned int *i);	//size为索引的数量，
+	void use(XBool withTex = XTrue);	//参数用于描述是否显示贴图
 	void disuse();	//取消索引
-	void drawByIndex(unsigned int type,_XBool withTex = XTrue);
-	void drawByIndex(unsigned int type,int size,unsigned int indexType,void *pIndex,_XBool withTex = XTrue);
-	void drawByArray(unsigned int type,_XBool withTex = XTrue);
+	void drawByIndex(unsigned int type,XBool withTex = XTrue);
+	void drawByIndex(unsigned int type,int size,unsigned int indexType,void *pIndex,XBool withTex = XTrue);
+	void drawByArray(unsigned int type,XBool withTex = XTrue);
+	void drawByArray(unsigned int type,int index,int size,XBool withTex);
 	void release();
-	int getSize() {return m_size;}
-	int getIndexSize() {return m_indexSize;}
+	int getSize()const{return m_size;}
+	int getIndexSize()const{return m_indexSize;}
 	//当一个VBO中的数据与另一个VBO数据相同时，不需要使用两份数据，而是设置一个VBO从属于另一个VBO，数据直接从另一个VBO中获取即可
 	//temp:从属的对象
 	//v,n,c,t:是否有这些属性
 	//cv,cn,cc,ct:属性是否从从属对象中获取
-	_XBool setAsSubject(const _XVBO &temp,_XBool v,_XBool n,_XBool c,_XBool t,_XBool i,_XBool cv,_XBool cn,_XBool cc,_XBool ct,_XBool ci);
-	_XBool m_isSubject;
-	_XBool m_subjectV;
-	_XBool m_subjectN;
-	_XBool m_subjectC;
-	_XBool m_subjectT;
-	_XBool m_subjectI;
+	XBool setAsSubject(const XVBO &temp,XBool v,XBool n,XBool c,XBool t,XBool i,XBool cv,XBool cn,XBool cc,XBool ct,XBool ci);
+	XBool m_isSubject;
+	XBool m_subjectV;
+	XBool m_subjectN;
+	XBool m_subjectC;
+	XBool m_subjectT;
+	XBool m_subjectI;
 
-	_XVBO()
+	XVBO()
 		:m_isInited(XFalse)
 		,m_withV(XFalse)
 		,m_withT(XFalse)
@@ -279,8 +326,10 @@ public:
 		,m_t(0)
 		,m_c(0)
 		,m_i(0)
+		,m_vSize(3)
+		,m_withVAO(false)
 	{}
-	~_XVBO(){release();}
+	~XVBO(){release();}
 };
 //VBO的使用方法如下
 //tmpVBO.use();	//启用VBO
@@ -293,81 +342,50 @@ public:
 //glDrawElements(GL_QUADS,150 * 150 * 4,GL_UNSIGNED_INT,index);	//描绘动作
 //tmpVBO.disuse();	//停止VBO的使用
 
-#define MAX_FBO_TEXTURE_SUM (64)
-enum _XFBOTextureType
+namespace XGL
 {
-	TEXTURE_RGB,
-	TEXTURE_RGBA,	//普通的RGBA贴图
-	TEXTURE_RGBA_F,	//RGBA都是float数据
-	TEXTURE_DEEPTH,	//深度贴图
-};
-extern _XBool isFBOSupported();		//判断底层是否支持FBO
-extern _XBool isFramebufferReady();	//判断FBO状态是否就绪
+	extern XBool getIsFramebufferReady();	//判断FBO状态是否就绪
+}
 //下面是对FBO的支持
-class _XFBOEx;
-class _XFBO
+class XFBOEx;
+class XFBO
 {
 private:
-	unsigned int m_fboId;								//FBO的ID
-	unsigned int m_rboId;							//RBO的ID
-	unsigned int m_textureId[MAX_FBO_TEXTURE_SUM];    //FBO对应贴图的ID
-	int m_w[MAX_FBO_TEXTURE_SUM];//贴图的尺寸
-	int m_h[MAX_FBO_TEXTURE_SUM];
-	int m_nowFBOTextureSum;
-	int m_maxTextureSum;	//一次能同时使用的贴图的数量
-	//int m_upTextureSum;		//上次绑定的贴图数量
-	_XFBOTextureType m_type;
+	unsigned int m_fboId;					//FBO的ID
+	unsigned int m_rboId;					//RBO的ID
+	std::vector<XTexture *> m_pTextures;
+	XColorMode m_type;
 	int m_zeroTexIndex;	//绑定在0号位置的贴图编号
 public:
-	_XBool init(int w,int h,_XFBOTextureType type = TEXTURE_RGBA); //w和h是纹理的尺寸，返回初始化是否成功
+	XBool init(int w,int h,XColorMode type = COLOR_RGBA); //w和h是纹理的尺寸，返回初始化是否成功
 	void useFBO(bool newSize = false,int w = 0,int h = 0);	//参数为是否使用新的视口矩阵
 	void bind();	//针对3D的情况额外封装一下
-	void attachTex(int order = 0);	//需要在useFBO之后调用
-	_XBool attachTexs(int sum,int index,...);	//需要在useFBO之后调用
+	void attachTex(unsigned int order = 0);	//需要在useFBO之后调用
+	XBool attachTexs(int sum,int index,...);	//需要在useFBO之后调用
 	void removeFBO();
 	void unbind();
-	void addOneTexture(int w,int h,_XFBOTextureType type = TEXTURE_RGBA);
-	unsigned int getTexture(int order) const	//存在问题
-	{
-		if(order >= 0 && order < m_nowFBOTextureSum)
-			return m_textureId[order];
-		return 0;
-	}
-	int getWidth(int order) const
-	{
-		if(order >= 0 && order < m_nowFBOTextureSum) return m_w[order];
-		return -1;
-	}
-	int getHeight(int order) const
-	{
-		if(order >= 0 && order < m_nowFBOTextureSum) return m_h[order];
-		return -1;
-	}
+	void addOneTexture(int w,int h,XColorMode type = COLOR_RGBA);
+	void updateTexture(void *p,unsigned int index);
+	unsigned int getTexture(unsigned int order) const;	//存在问题
+	int getWidth(unsigned int order) const;
+	int getHeight(unsigned int order) const;
 	void release();
-	_XFBO()
-		:m_nowFBOTextureSum(0)
-		,m_zeroTexIndex(-1)
+	XFBO()
+		:m_zeroTexIndex(-1)
+		, m_fboId(0)
+		, m_rboId(0)
+		, m_type(COLOR_RGBA)
 	{}
-	~_XFBO() {release();}
+	~XFBO() {release();}
 	//下面是用于测试的接口
 	unsigned int getFboID() const {return m_fboId;}
-	void getPixelFromFboEx(const _XFBOEx& ex);
-	int getW() const
-	{
-		if(m_zeroTexIndex < 0 || m_nowFBOTextureSum == 0
-			|| m_zeroTexIndex>= m_nowFBOTextureSum) return 0;
-		return m_w[m_zeroTexIndex];
-	}
-	int getH() const
-	{
-		if(m_zeroTexIndex < 0 || m_nowFBOTextureSum == 0
-			|| m_zeroTexIndex>= m_nowFBOTextureSum) return 0;
-		return m_h[m_zeroTexIndex];
-	}
+	void getPixelFromFboEx(const XFBOEx& ex);
+	int getW() const;
+	int getH() const;
 };
 //这个是支持多重采样的FBO的实现
 //这是fbo比较正规的用法，但是由于之前的FBO封装已经用的比较顺手，所以这里做额外的封装
-class _XFBOEx
+class XFBOEx
 {
 private:
 	unsigned int m_fboId;
@@ -378,18 +396,30 @@ private:
 
 	bool m_isInited;
 public:
-	bool init(int w,int h,_XFBOTextureType type = TEXTURE_RGBA);
+	bool init(int w,int h,XColorMode type = COLOR_RGBA);
 	void useFBO(bool newSize = false,int w = 0,int h = 0);	//参数为是否使用新的视口矩阵
 	void removeFBO();
-	_XFBOEx()
+	XFBOEx()
 		:m_isInited(false)
+		, m_fboId(0)
+		, m_rboId(0)
+		, m_rbdId(0)
+		, m_w(0)
+		, m_h(0)
 	{}
-	~_XFBOEx(){release();}
+	~XFBOEx(){release();}
 	void release();
 	unsigned int getFboID() const {return m_fboId;}
 	int getW() const{return m_w;}
 	int getH() const{return m_h;}
 };
 //为了解决shader与FBO的结合而定义的函数
-extern void drawBlankPlane(int w,int h,unsigned int tex,_XShaderGLSL *pShader = NULL);
+namespace XRender
+{
+extern void drawBlankPlane(int w,int h,unsigned int tex,XShaderGLSL *pShader = NULL);
+}
+#if WITH_INLINE_FILE
+#include "XShaderGLSL.inl"
+#endif
+}
 #endif //_JIA_XSHADER_GLSL_

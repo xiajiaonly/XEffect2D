@@ -1,19 +1,20 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file.
 //--------------------------------
 #include "XSnowParticles.h"
-
-_XSnowParticles::_XSnowParticles()
+namespace XE{
+XSnowParticles::XSnowParticles()
 :m_isInited(0)				//是否初始化
 ,m_isEnd(0)				//是否结束
 ,m_isSetEnd(0)				//是否设置结束
 ,m_atom(NULL)
 ,m_texture(NULL)
 {}
-int _XSnowParticles::init(const _XVector2& productArea,const _XRect& liveArea,const _XVector2& flySpeed,
-						  int maxAtomSum,float snowDensity,const _XTexture *texture)
+int XSnowParticles::init(const XVector2& productArea,const XRect& liveArea,const XVector2& flySpeed,
+						  int maxAtomSum,float snowDensity,const XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
 	m_productArea = productArea;
@@ -28,8 +29,8 @@ int _XSnowParticles::init(const _XVector2& productArea,const _XRect& liveArea,co
 	if(texture == NULL || !glIsTexture(texture->m_texture)) return 0;
 	m_texture = texture;
 
-	m_atom = createArrayMem<_XAloneParticles>(m_maxAtomSum);	
-//	m_atom = createArrayMem<_XEchoParticles>(m_maxAtomSum);
+	m_atom = XMem::createArrayMem<XAloneParticles>(m_maxAtomSum);	
+//	m_atom = XMem::createArrayMem<XEchoParticles>(m_maxAtomSum);
 	if(m_atom == NULL) return 0;
 
 	m_isInited = 1;
@@ -37,7 +38,7 @@ int _XSnowParticles::init(const _XVector2& productArea,const _XRect& liveArea,co
 	m_isSetEnd = 0;				
 	return 1;
 }
-void _XSnowParticles::reset()
+void XSnowParticles::reset()
 {
 	if(m_isInited == 0 ||
 		m_isEnd == 0) return;
@@ -50,7 +51,7 @@ void _XSnowParticles::reset()
 		m_atom[i].m_stage = STAGE_SLEEP;
 	}
 }
-void _XSnowParticles::move(int timeDelay)
+void XSnowParticles::move(float timeDelay)
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -58,12 +59,12 @@ void _XSnowParticles::move(int timeDelay)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)
 	//	{//飘落
-			if(random(1000 * timeDelay) < 10)
+			if(XRand::random(1000 * timeDelay) < 10)
 			{
-				m_atom[i].m_dPosition.x += (random(1000) * 0.002f - 1) * m_flySpeed.x * 0.1f;
+				m_atom[i].m_dPosition.x += (XRand::random(1000) * 0.002f - 1) * m_flySpeed.x * 0.1f;
 			}
 			m_atom[i].move(timeDelay);
-			if(!m_liveArea.isInRect(m_atom[i].m_nowPosition))
+			if(!m_liveArea.isInRect(m_atom[i].m_curPosition))
 			{
 				m_atom[i].m_initColor.setA(0.0f);
 				m_atom[i].m_stage = STAGE_SLEEP;
@@ -72,22 +73,22 @@ void _XSnowParticles::move(int timeDelay)
 	}
 	if(m_isSetEnd == 0)
 	{//产生粒子
-		if(random(10000) * 0.0001f <= m_snowDensity)
+		if(XRand::random(10000) * 0.0001f <= m_snowDensity)
 		{//产生粒子
 			for(int i = 0;i < m_maxAtomSum;++ i)
 			{
 				if(m_atom[i].m_stage == STAGE_SLEEP)
 				{
 				//	m_atom[i].m_isInited = 0;
-					float temp = random(75)/100.0f + 0.5f;
+					float temp = XRand::random(75)/100.0f + 0.5f;
 				//	m_atom[i].init(&(m_texture->m_texture),m_texture->m_w * temp,m_texture->m_h * temp);
 					m_atom[i].init(m_texture);
-					m_atom[i].m_nowSize.set(temp,temp);
+					m_atom[i].m_curSize.set(temp,temp);
 					m_atom[i].m_stage = STAGE_MOVE;
-					m_atom[i].m_dPosition.x = (random(1000) * 0.002f - 1.0f) * m_flySpeed.x;
-					m_atom[i].m_dPosition.y = m_flySpeed.y * (0.5f + random(1000) * 0.0005f);
-					m_atom[i].m_nowColor.setColor(1.0f,1.0f,1.0f,1.0f);
-					m_atom[i].m_nowPosition.set(m_productArea.x + random(10000) * 0.0001f * (m_productArea.y - m_productArea.x),m_liveArea.top);
+					m_atom[i].m_dPosition.x = (XRand::random(1000) * 0.002f - 1.0f) * m_flySpeed.x;
+					m_atom[i].m_dPosition.y = m_flySpeed.y * (0.5f + XRand::random(1000) * 0.0005f);
+					m_atom[i].m_curColor.setColor(1.0f,1.0f,1.0f,1.0f);
+					m_atom[i].m_curPosition.set(m_productArea.x + XRand::random(10000) * 0.0001f * (m_productArea.y - m_productArea.x),m_liveArea.top);
 					break;
 				}
 			}
@@ -101,7 +102,7 @@ void _XSnowParticles::move(int timeDelay)
 		m_isEnd = 1;
 	}
 }
-void _XSnowParticles::draw() const
+void XSnowParticles::draw() const
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -112,4 +113,5 @@ void _XSnowParticles::draw() const
 			m_atom[i].draw();
 	//	}
 	}
+}
 }

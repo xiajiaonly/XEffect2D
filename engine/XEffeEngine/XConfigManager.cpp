@@ -1,149 +1,181 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XConfigManager.h"
-void callbackProc(void *pClass,int ID)
+#include "XControl\XSliderEx.h"
+#include "XControl\XCheck.h"
+#include "XControl\XRadios.h"
+#include "XControl\XCheck.h"
+#include "XNetWork/XNetServer.h"
+#include "XNetWork/XNetClient.h"
+#include "XFile.h"
+namespace XE{
+bool XConfigManager::m_withConfigManager = false;
+void XConfigManager::ctrlProc(void*pClass,int id,int eventID)
 {
-	_XConfigManager &pPar = *(_XConfigManager *)pClass;
+	XConfigManager &pPar = *(XConfigManager *)pClass;
 	//功能按键
-	if(pPar.m_saveBtn.getControlID() == ID)
+	if(id == pPar.m_saveBtn->getControlID())
 	{//保存
+		if(eventID != XButton::BTN_MOUSE_DOWN) return;
 		pPar.save();
 		pPar.setOperateToServer(CFG_NET_OP_SAVE);
 		return;
-	}else
-	if(pPar.m_loadBtn.getControlID() == ID)
+	}
+	if(id == pPar.m_loadBtn->getControlID())
 	{//读取
-		if(pPar.m_configMode == CFG_MODE_CLIENT)
+		if(eventID != XButton::BTN_MOUSE_DOWN) return;
+		switch(pPar.m_configMode)
 		{
+		case CFG_MODE_CLIENT:
 			pPar.setOperateToServer(CFG_NET_OP_LOAD);
-		}else
-		if(pPar.m_configMode == CFG_MODE_SERVER)
-		{
+			break;
+		case CFG_MODE_SERVER:
 			pPar.load();
 			pPar.sendCFGInfo();
-		}else
-		{
+			break;
+		default:
 			pPar.load();
+			break;
 		}
-		return;
-	}else
-	if(pPar.m_defaultBtn.getControlID() == ID)
-	{//默认
-		if(pPar.m_configMode == CFG_MODE_CLIENT)
-		{
-			pPar.setOperateToServer(CFG_NET_OP_DEFAULT);
-		}else
-		if(pPar.m_configMode == CFG_MODE_SERVER)
-		{
-			pPar.setDefault();
-			pPar.sendCFGInfo();
-		}else
-		{
-			pPar.setDefault();
-		}
-		return;
-	}else
-	if(pPar.m_netUpdateBtn.getControlID() == ID)
-	{//同步
-		pPar.sendSynchToServer();
-		return;
-	}else	
-	if(pPar.m_netInjectBtn.getControlID() == ID)
-	{//注入
-		pPar.sendInject();
-		return;
-	}else	
-	if(pPar.m_undoBtn.getControlID() == ID)
-	{//撤销
-		_XOpManager.undo();
-		return;
-	}else	
-	if(pPar.m_redoBtn.getControlID() == ID)
-	{//重做
-		_XOpManager.redo();
 		return;
 	}
-	for(int i = 0;i < pPar.m_pItems.size();++ i)
-	{
-		if(pPar.m_pItems[i]->m_pCtrl != NULL)
+	if(id == pPar.m_defaultBtn->getControlID())
+	{//默认
+		if(eventID != XButton::BTN_MOUSE_DOWN) return;
+		switch(pPar.m_configMode)
 		{
-			if(pPar.m_pItems[i]->m_pCtrl->getControlID() == ID)
-			{//处理事件
-				switch(pPar.m_pItems[i]->m_type)
-				{
-				case CFG_DATA_TYPE_INT:
-					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						* (int *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-					break;
-				case CFG_DATA_TYPE_CHAR:
-					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						* (char *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-				case CFG_DATA_TYPE_UCHAR:
-					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueI = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						* (unsigned char *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-					break;
-				case CFG_DATA_TYPE_FLOAT:
-					if(pPar.m_pItems[i]->m_nowValue.valueF != ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueF = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						* (float *)pPar.m_pItems[i]->m_pVariable = ((_XSliderEx *)(pPar.m_pItems[i]->m_pCtrl))->getNowValue();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-					break;
-				case CFG_DATA_TYPE_XBOOL:
-					if(pPar.m_pItems[i]->m_nowValue.valueB != ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueB = ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState();
-						* (_XBool *)pPar.m_pItems[i]->m_pVariable = ((_XCheck *)(pPar.m_pItems[i]->m_pCtrl))->getState();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-					break;
-				case CFG_DATA_TYPE_RADIOS:
-					if(pPar.m_pItems[i]->m_nowValue.valueI != ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose())
-					{
-						pPar.m_pItems[i]->m_nowValue.valueI = ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose();
-						* (int *)pPar.m_pItems[i]->m_pVariable = ((_XRadios *)(pPar.m_pItems[i]->m_pCtrl))->getNowChoose();
-						if(pPar.m_pItems[i]->m_changeProc != NULL) pPar.m_pItems[i]->m_changeProc();	//在数值变化之后才调用回调函数
-						pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
-					}
-					break;
-				}
-				//break;
-				return;
-			}
+		case CFG_MODE_CLIENT:
+			pPar.setOperateToServer(CFG_NET_OP_DEFAULT);
+			break;
+		case CFG_MODE_SERVER:
+			pPar.setDefault();
+			pPar.sendCFGInfo();
+			break;
+		default:
+			pPar.setDefault();
+			break;
 		}
+		return;
+	}
+	if(id == pPar.m_netUpdateBtn->getControlID())
+	{//同步
+		if(eventID == XButton::BTN_MOUSE_DOWN)
+			pPar.sendSynchToServer();
+		return;
+	}	
+	if(id == pPar.m_netInjectBtn->getControlID())
+	{//注入
+		if(eventID == XButton::BTN_MOUSE_DOWN)
+			pPar.sendInject();
+		return;
+	}	
+	if(id == pPar.m_undoBtn->getControlID())
+	{//撤销
+		if(eventID == XButton::BTN_MOUSE_DOWN)
+			XOpManager.undo();
+		return;
+	}	
+	if(id == pPar.m_redoBtn->getControlID())
+	{//重做
+		if(eventID == XButton::BTN_MOUSE_DOWN)
+			XOpManager.redo();
+		return;
+	}
+	for(unsigned int i = 0;i < pPar.m_pItems.size();++ i)
+	{
+		if(pPar.m_pItems[i] == NULL || pPar.m_pItems[i]->m_pCtrl == NULL ||
+			id != pPar.m_pItems[i]->m_pCtrl->getControlID()) continue;
+		//下面处理事件
+		XConfigItem &pItem = *pPar.m_pItems[i];
+		int tmp = 0;
+		switch(pItem.m_type)
+		{
+		case CFG_DATA_TYPE_INT:
+			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
+			if(pItem.m_curValue.valueI != tmp)
+			{
+				pItem.m_curValue.valueI = tmp;
+				* (int *)pItem.m_pVariable = tmp;
+				if(pItem.m_changeProc != NULL) 
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+			break;
+		case CFG_DATA_TYPE_CHAR:
+			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
+			if(pItem.m_curValue.valueI != tmp)
+			{
+				pItem.m_curValue.valueI = tmp;
+				* (char *)pItem.m_pVariable = tmp;
+				if(pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+		case CFG_DATA_TYPE_UCHAR:
+			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
+			if(pItem.m_curValue.valueI != tmp)
+			{
+				pItem.m_curValue.valueI = tmp;
+				* (unsigned char *)pItem.m_pVariable = tmp;
+				if(pItem.m_changeProc != NULL) 
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+			break;
+		case CFG_DATA_TYPE_FLOAT:
+			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+			if(pItem.m_curValue.valueF != ((XSliderEx *)(pItem.m_pCtrl))->getCurValue())
+			{
+				pItem.m_curValue.valueF = ((XSliderEx *)(pItem.m_pCtrl))->getCurValue();
+				* (float *)pItem.m_pVariable = ((XSliderEx *)(pItem.m_pCtrl))->getCurValue();
+				if(pItem.m_changeProc != NULL) 
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+			break;
+		case CFG_DATA_TYPE_XBOOL:
+			if(eventID != XCheck::CHK_STATE_CHANGE) break;
+			if(pItem.m_curValue.valueB != ((XCheck *)(pItem.m_pCtrl))->getState())
+			{
+				pItem.m_curValue.valueB = ((XCheck *)(pItem.m_pCtrl))->getState();
+				* (XBool *)pItem.m_pVariable = ((XCheck *)(pItem.m_pCtrl))->getState();
+				if(pItem.m_changeProc != NULL) 
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+			break;
+		case CFG_DATA_TYPE_RADIOS:
+			if(eventID != XRadios::RDS_STATE_CHANGE) break;
+			if(pItem.m_curValue.valueI != ((XRadios *)(pItem.m_pCtrl))->getCurChoose())
+			{
+				pItem.m_curValue.valueI = ((XRadios *)(pItem.m_pCtrl))->getCurChoose();
+				* (int *)pItem.m_pVariable = ((XRadios *)(pItem.m_pCtrl))->getCurChoose();
+				if(pItem.m_changeProc != NULL) 
+					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//在数值变化之后才调用回调函数
+				pPar.sendItemValue(pPar.m_pItems[i]);	//如果是网络模式，则通知网络设备更新相应的值
+			}
+			break;
+		}
+		return;
 	}
 	//判断是否是群组控件的状态发生了变化
-	for(int i = 0;i < pPar.m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < pPar.m_pGroups.size();++ i)
 	{
-		if(pPar.m_pGroups[i]->m_group.getControlID() == ID)
+		if(id == pPar.m_pGroups[i]->m_group.getControlID())
 		{//群组控件的状态发生变化的时候改变整体布局
-			pPar.relayout();
+			if(eventID == XGroup::GRP_STATE_CHANGE) pPar.relayout();
 			return;
 		}
 	}
 }
-bool _XConfigManager::save(const char *filename)
+bool XConfigManager::save(const char *filename)
 {
 	FILE *fp = NULL;
 	if(filename == NULL)
@@ -153,7 +185,7 @@ bool _XConfigManager::save(const char *filename)
 	{
 		if((fp = fopen(filename,"w")) == NULL) return false;
 	}
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_isActive)
 		{//被动的值不需要保存
@@ -162,17 +194,17 @@ bool _XConfigManager::save(const char *filename)
 			case CFG_DATA_TYPE_INT:
 			case CFG_DATA_TYPE_CHAR:
 			case CFG_DATA_TYPE_UCHAR:
-				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_nowValue.valueI);
+				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueI);
 				break;
 			case CFG_DATA_TYPE_FLOAT:
-				fprintf(fp,"%s:%f,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_nowValue.valueF);
+				fprintf(fp,"%s:%f,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueF);
 				break;
 			case CFG_DATA_TYPE_XBOOL:
-				if(m_pItems[i]->m_nowValue.valueB) fprintf(fp,"%s:1,\n",m_pItems[i]->m_name.c_str());
+				if(m_pItems[i]->m_curValue.valueB) fprintf(fp,"%s:1,\n",m_pItems[i]->m_name.c_str());
 				else fprintf(fp,"%s:0,\n",m_pItems[i]->m_name.c_str());
 				break;
 			case CFG_DATA_TYPE_RADIOS:
-				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_nowValue.valueI);
+				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueI);
 				break;
 			case CFG_DATA_TYPE_CUSTOM:
 				m_pItems[i]->m_customIt->save(fp);
@@ -183,55 +215,55 @@ bool _XConfigManager::save(const char *filename)
 	fclose(fp);
 	return true;
 }
-bool _XConfigManager::getItemValueFromStr(_XConfigItem *it,const char *str)
+bool XConfigManager::getItemValueFromStr(XConfigItem *it,const char *str)
 {//这里不进行输入参数合理性检查
 	int temp;
 	switch(it->m_type)
 	{
 	case CFG_DATA_TYPE_INT:
-		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;
-		* (int *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
-		((_XSliderEx *)it->m_pCtrl)->stateChange();
+		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;
+		* (int *)it->m_pVariable = it->m_curValue.valueI;
+		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
+		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_CHAR:
-		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0)  return false;
-		* (char *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
-		((_XSliderEx *)it->m_pCtrl)->stateChange();
+		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0)  return false;
+		* (char *)it->m_pVariable = it->m_curValue.valueI;
+		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
+		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_UCHAR:
-		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;
-		* (unsigned char *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
-		((_XSliderEx *)it->m_pCtrl)->stateChange();
+		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;
+		* (unsigned char *)it->m_pVariable = it->m_curValue.valueI;
+		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
+		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_FLOAT:
-		if(sscanf(str,"%f,\n",&it->m_nowValue.valueF) == 0) return false;
-		* (float *)it->m_pVariable = it->m_nowValue.valueF;
-		((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
-		((_XSliderEx *)it->m_pCtrl)->stateChange();
+		if(sscanf(str,"%f,\n",&it->m_curValue.valueF) == 0) return false;
+		* (float *)it->m_pVariable = it->m_curValue.valueF;
+		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
+		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_XBOOL:
 		if(sscanf(str,"%d,\n",&temp) == 0) return false;			
-		if(temp == 0) it->m_nowValue.valueB = XFalse;
-		else it->m_nowValue.valueB = XTrue;
-		* (_XBool *)it->m_pVariable = it->m_nowValue.valueB;
-		((_XCheck *)it->m_pCtrl)->setState(it->m_nowValue.valueB);
-		((_XCheck *)it->m_pCtrl)->stateChange();
+		if(temp == 0) it->m_curValue.valueB = XFalse;
+		else it->m_curValue.valueB = XTrue;
+		* (XBool *)it->m_pVariable = it->m_curValue.valueB;
+		((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
+		((XCheck *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_RADIOS:
-		if(sscanf(str,"%d,\n",&it->m_nowValue.valueI) == 0) return false;			
-		* (int *)it->m_pVariable = it->m_nowValue.valueI;
-		((_XRadios *)it->m_pCtrl)->setChoosed(it->m_nowValue.valueI);
-		((_XRadios *)it->m_pCtrl)->stateChange();
+		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;			
+		* (int *)it->m_pVariable = it->m_curValue.valueI;
+		((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
+		((XRadios *)it->m_pCtrl)->stateChange();
 		break;
 	case CFG_DATA_TYPE_CUSTOM:
 		break;
 	}
 	return true;
 }
-bool _XConfigManager::loadEx(const char *filename)
+bool XConfigManager::loadEx(const char *filename)
 {
 	FILE *fp = NULL;
 	if(filename == NULL)
@@ -244,15 +276,16 @@ bool _XConfigManager::loadEx(const char *filename)
 	char lineData[1024];
 	int len = 0;
 	bool ret = true;
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
-		if(!m_pItems[i]->m_isActive) continue;	//被动的值不会读取
+		XConfigItem &pItem = *m_pItems[i];
+		if(!pItem.m_isActive) continue;	//被动的值不会读取
 		if(feof(fp)) break;
 		//读取一行数据
-		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM)
+		if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
 		{//这里会存在问题
 			int fpos = ftell(fp);
-			if(m_pItems[i]->m_customIt->load(fp))
+			if(pItem.m_customIt->load(fp))
 			{//如果读取成功，直接继续
 				continue;
 			}else
@@ -269,7 +302,7 @@ bool _XConfigManager::loadEx(const char *filename)
 				return ret;
 			}
 			//寻找配置项的名字
-			len = getCharPosition(lineData,':') + 1;
+			len = XString::getCharPosition(lineData,':') + 1;
 			if(len < 0) 
 			{//数据错误，继续读取下面的数据
 				ret = false;
@@ -277,16 +310,22 @@ bool _XConfigManager::loadEx(const char *filename)
 			}else break;
 		}
 		lineData[len - 1] = '\0';
-		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM || strcmp(lineData,m_pItems[i]->m_name.c_str()) != 0)
+		if(pItem.m_type == CFG_DATA_TYPE_CUSTOM || strcmp(lineData,pItem.m_name.c_str()) != 0)
 		{//名称比较失败
-			_XConfigItem *it = getItemByName(lineData,i + 1);
+			XConfigItem *it = getItemByName(lineData,i + 1);
 			if(it == NULL) 
 			{
 				-- i;
 				continue;	//找不到这个配置项
 			}
-			if(getItemValueFromStr(it,lineData + len))			//下面开始读取配置项的值
-				if(it->m_changeProc != NULL) it->m_changeProc();	//fix bug:读取配置参数时，没有调用其附带的函数
+			if(getItemValueFromStr(it,lineData + len) &&			//下面开始读取配置项的值
+				it->m_changeProc != NULL)
+			{
+				if(it->m_type == CFG_DATA_TYPE_CUSTOM)
+					it->m_changeProc(it->m_customIt,it->m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+				else
+					it->m_changeProc(it->m_pVariable,it->m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+			}
 			ret = false;	//标记数据不正确
 			--i;
 			continue;
@@ -294,7 +333,13 @@ bool _XConfigManager::loadEx(const char *filename)
 		{
 			if(getItemValueFromStr(m_pItems[i],lineData + len))
 			{//数据读取成功
-				if(m_pItems[i]->m_changeProc != NULL) m_pItems[i]->m_changeProc();	//fix bug:读取配置参数时，没有调用其附带的函数
+				if(pItem.m_changeProc != NULL)
+				{
+					if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
+						pItem.m_changeProc(pItem.m_customIt,pItem.m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+					else
+						pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+				}
 			}else
 			{
 				--i;
@@ -305,189 +350,209 @@ bool _XConfigManager::loadEx(const char *filename)
 	fclose(fp);
 	return ret;
 }
-void _XConfigManager::setDefault()	//恢复默认值
+void XConfigManager::setDefault()	//恢复默认值
 {
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
-		if(!m_pItems[i]->m_isActive) continue;	//被动的值不能回复默认设置
-		switch(m_pItems[i]->m_type)
+		XConfigItem &pItem = *m_pItems[i];
+		if(!pItem.m_isActive) continue;	//被动的值不能回复默认设置
+		switch(pItem.m_type)
 		{
 			case CFG_DATA_TYPE_INT:
-				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
-				* (int *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+				* (int *)pItem.m_pVariable = pItem.m_curValue.valueI;
+				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+				((XSliderEx *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_CHAR:
-				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
-				* (char *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+				* (char *)pItem.m_pVariable = pItem.m_curValue.valueI;
+				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+				((XSliderEx *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_UCHAR:
-				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
-				* (unsigned char *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueI);
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+				* (unsigned char *)pItem.m_pVariable = pItem.m_curValue.valueI;
+				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+				((XSliderEx *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_FLOAT:
-				m_pItems[i]->m_nowValue.valueF = m_pItems[i]->m_defaultValue.valueF;
-				* (float *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueF;
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->setNowValue(m_pItems[i]->m_nowValue.valueF);
-				((_XSliderEx *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueF = pItem.m_defaultValue.valueF;
+				* (float *)pItem.m_pVariable = pItem.m_curValue.valueF;
+				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueF);
+				((XSliderEx *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_XBOOL:
-				m_pItems[i]->m_nowValue.valueB = m_pItems[i]->m_defaultValue.valueB;
-				* (_XBool *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueB;
-				((_XCheck *)m_pItems[i]->m_pCtrl)->setState(m_pItems[i]->m_nowValue.valueB);
-				((_XCheck *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueB = pItem.m_defaultValue.valueB;
+				* (XBool *)pItem.m_pVariable = pItem.m_curValue.valueB;
+				((XCheck *)pItem.m_pCtrl)->setState(pItem.m_curValue.valueB);
+				((XCheck *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_RADIOS:
-				m_pItems[i]->m_nowValue.valueI = m_pItems[i]->m_defaultValue.valueI;
-				* (int *)m_pItems[i]->m_pVariable = m_pItems[i]->m_nowValue.valueI;
-				((_XRadios *)m_pItems[i]->m_pCtrl)->setChoosed(m_pItems[i]->m_nowValue.valueI);
-				((_XRadios *)m_pItems[i]->m_pCtrl)->stateChange();
+				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+				* (int *)pItem.m_pVariable = pItem.m_curValue.valueI;
+				((XRadios *)pItem.m_pCtrl)->setChoosed(pItem.m_curValue.valueI);
+				((XRadios *)pItem.m_pCtrl)->stateChange();
 				break;
 			case CFG_DATA_TYPE_CUSTOM:
-				m_pItems[i]->m_customIt->defValue();
+				pItem.m_customIt->defValue();
 				break;
 		}
-		if(m_pItems[i]->m_changeProc != NULL) m_pItems[i]->m_changeProc();	//fix bug:读取配置参数时，没有调用其附带的函数
+		if(pItem.m_changeProc != NULL)
+		{
+			if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
+				pItem.m_changeProc(pItem.m_customIt,pItem.m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+			else
+				pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//fix bug:读取配置参数时，没有调用其附带的函数
+		}
 	}
 }
-bool _XConfigManager::init(_XConfigMode mode)
+bool XConfigManager::init(XConfigMode mode)
 {
 	if(m_isInited) return false;	//防止重复初始化
 	m_configMode = mode;
 
-//	m_saveBtn.initWithoutTex("保存",_XVector2(64.0f,32.0f));
-	m_saveBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_saveBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/save.png").c_str());
-	m_saveBtn.setMouseDownCB(callbackProc,this);
-	m_saveBtn.setPosition(m_position.x + 32.0f * m_size.x,m_position.y);
-	m_saveBtn.setComment("将配置数据保存到文件");
-//	m_loadBtn.initWithoutTex("读取",_XVector2(64.0f,32.0f));
-	m_loadBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_loadBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/load.png").c_str());
-	m_loadBtn.setMouseDownCB(callbackProc,this);
-	m_loadBtn.setPosition(m_position.x + 64.0f * m_size.x,m_position.y);
-	m_loadBtn.setComment("从文件中读取配置数据");
-//	m_loadBtn.setPosition(m_position + _XVector2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
-//	m_defaultBtn.initWithoutTex("默认",_XVector2(64.0f,32.0f));
-	m_defaultBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_defaultBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/default.png").c_str());
-	m_defaultBtn.setMouseDownCB(callbackProc,this);
-	m_defaultBtn.setPosition(m_position.x + 96.0f * m_size.x,m_position.y);
-	m_defaultBtn.setComment("所有配置恢复默认值");
-//	m_defaultBtn.setPosition(m_position + _XVector2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_undoBtn.initWithoutTex("撤销",_XVector2(64.0f,32.0f));
-	m_undoBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_undoBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/undo.png").c_str());
-	m_undoBtn.setMouseDownCB(callbackProc,this);
-	m_undoBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
-	m_undoBtn.setComment("返回上一次操作");
-//	m_undoBtn.setPosition(m_position + _XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_redoBtn.initWithoutTex("重做",_XVector2(64.0f,32.0f));
-	m_redoBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_redoBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/redo.png").c_str());
-	m_redoBtn.setMouseDownCB(callbackProc,this);
-	m_redoBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
-	m_redoBtn.setComment("重做上一次操作");
-//	m_redoBtn.setPosition(m_position + _XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_netUpdateBtn.initWithoutTex("同步",_XVector2(64.0f,32.0f));
-	m_netUpdateBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_netUpdateBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/download.png").c_str());
-	m_netUpdateBtn.setMouseDownCB(callbackProc,this);
-	m_netUpdateBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
-	m_netUpdateBtn.setComment("将网络数据同步下来");
-//	m_netUpdateBtn.setPosition(m_position + _XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_netInjectBtn.initWithoutTex("注入",_XVector2(64.0f,32.0f));
-	m_netInjectBtn.initWithoutTex("",_XVector2(32.0f,32.0f));
-	m_netInjectBtn.setNormalIcon((XEE::windowData.commonResourcePos + "ResourcePack/pic/CFGIcon/upload.png").c_str());
-	m_netInjectBtn.setMouseDownCB(callbackProc,this);
-	m_netInjectBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
-	m_netInjectBtn.setComment("将本地数据同步上去");
-//	m_netInjectBtn.setPosition(m_position + _XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
-	if(m_configMode != CFG_MODE_CLIENT)
-	{
-		m_netUpdateBtn.disVisible();
-		m_netInjectBtn.disVisible();
-	}
+//	m_saveBtn->initWithoutSkin("保存",XVector2(64.0f,32.0f));
+	m_saveBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_saveBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/save.png").c_str());
+	m_saveBtn->setEventProc(ctrlProc,this);
+	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x,m_position.y);
+	m_saveBtn->setComment("将配置数据保存到文件");
+//	m_loadBtn->initWithoutSkin("读取",XVector2(64.0f,32.0f));
+	m_loadBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_loadBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/load.png").c_str());
+	m_loadBtn->setEventProc(ctrlProc,this);
+	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x,m_position.y);
+	m_loadBtn->setComment("从文件中读取配置数据");
+//	m_loadBtn->setPosition(m_position + XVector2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
+//	m_defaultBtn->initWithoutSkin("默认",XVector2(64.0f,32.0f));
+	m_defaultBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_defaultBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/default.png").c_str());
+	m_defaultBtn->setEventProc(ctrlProc,this);
+	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x,m_position.y);
+	m_defaultBtn->setComment("所有配置恢复默认值");
+//	m_defaultBtn->setPosition(m_position + XVector2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_undoBtn->initWithoutSkin("撤销",XVector2(64.0f,32.0f));
+	m_undoBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_undoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/undo.png").c_str());
+	m_undoBtn->setEventProc(ctrlProc,this);
+	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_undoBtn->setComment("返回上一次操作");
+//	m_undoBtn->setPosition(m_position + XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_redoBtn->initWithoutSkin("重做",XVector2(64.0f,32.0f));
+	m_redoBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_redoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/redo.png").c_str());
+	m_redoBtn->setEventProc(ctrlProc,this);
+	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_redoBtn->setComment("重做上一次操作");
+//	m_redoBtn->setPosition(m_position + XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_netUpdateBtn->initWithoutSkin("同步",XVector2(64.0f,32.0f));
+	m_netUpdateBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_netUpdateBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/download.png").c_str());
+	m_netUpdateBtn->setEventProc(ctrlProc,this);
+	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_netUpdateBtn->setComment("将网络数据同步下来");
+//	m_netUpdateBtn->setPosition(m_position + XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+//	m_netInjectBtn->initWithoutSkin("注入",XVector2(64.0f,32.0f));
+	m_netInjectBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
+	m_netInjectBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/upload.png").c_str());
+	m_netInjectBtn->setEventProc(ctrlProc,this);
+	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_netInjectBtn->setComment("将本地数据同步上去");
+//	m_netInjectBtn->setPosition(m_position + XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
 	if(m_configMode == CFG_MODE_CLIENT)
 	{//撤销和重做操作智能在服务器端或者是非网络的情况下使用，因为客户端会重新建立控件
-		m_undoBtn.disVisible();
-		m_redoBtn.disVisible();
+		m_undoBtn->disVisible();
+		m_redoBtn->disVisible();
+	}else
+	{
+		m_netUpdateBtn->disVisible();
+		m_netInjectBtn->disVisible();
 	}
-	m_nowInsertPos = m_position + _XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
-	m_maxHeight = XEE::windowData.h;	//默认使用全屏高度
+	m_curInsertPos = m_position + XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
+	m_maxHeight = getSceneHeight();	//默认使用全屏高度
 
 	addGroup(CFG_DEFAULT_GROUPNAME);
-	//_XConfigGroup *defGroup = createMem<_XConfigGroup>();
+	//XConfigGroup *defGroup = XMem::createMem<XConfigGroup>();
 	//if(defGroup == NULL) return false;
 	//defGroup->m_isEnable = true;
-	//defGroup->m_position = m_position + _XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
-	//defGroup->m_group.init(defGroup->m_position,_XRect(0.0f,0.0f,m_width,32.0f),defGroup->m_name.c_str(),XEE::systemFont,1.0f);
+	//defGroup->m_position = m_position + XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
+	//defGroup->m_group.init(defGroup->m_position,XRect(0.0f,0.0f,m_width,32.0f),defGroup->m_name.c_str(),getDefaultFont(),1.0f);
 	//m_pGroups.push_back(defGroup);
 	if(m_configMode == CFG_MODE_SERVER)
 	{//建立服务器
-		string tempStr = XEE::windowData.windowTitle;
+		std::string tempStr = XEG.m_windowData.windowTitle;
 		tempStr = tempStr + "_Config";
-		m_netServer.setProjectStr(tempStr.c_str());
-		if(!m_netServer.createServer(6868,XTrue)) return false;
+		m_netServer->setProjectStr(tempStr.c_str());
+		if(!m_netServer->createServer(6868,XTrue)) return false;
 	}else
 	if(m_configMode == CFG_MODE_CLIENT)
 	{//建立客户端
-		string tempStr = XEE::windowData.windowTitle;
+		std::string tempStr = XEG.m_windowData.windowTitle;
 		tempStr = tempStr + "_Config";
-		m_netClient.setProjectStr(tempStr.c_str());
-		if(!m_netClient.createClient()) return false;
+		m_netClient->setProjectStr(tempStr.c_str());
+		if(!m_netClient->createClient()) return false;
 	}
 
 	m_isInited = true;
 	return true;
 }
-void _XConfigManager::draw()
+void XConfigManager::draw()
 {
-	drawFillBoxEx(m_position,_XVector2(32.0f,32.0f) * m_size,0.75f,0.75f,0.75f,true,false,true);
-	for(int i = 0;i < m_pItems.size();++ i)
+	if(!m_isVisble || !m_isInited) return;
+	//这里为其添加一个背景
+	if(m_withBackground)
 	{
-		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM) m_pItems[i]->m_customIt->draw(); else
-		if(m_pItems[i]->m_type == CFG_DATA_TYPE_XSPRITE) ((_XObjectBasic *)m_pItems[i]->m_pVariable)->draw();
+		for(unsigned int i = 0;i < m_pGroups.size();++ i)
+		{
+			m_pGroups[i]->m_group.drawBG();
+		}
+	}
+
+	XRender::drawFillBoxEx(m_position,XVector2(32.0f,32.0f) * m_scale,0.75f,0.75f,0.75f,true,false,true);
+
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	{
+		switch(m_pItems[i]->m_type)
+		{
+		case CFG_DATA_TYPE_CUSTOM:m_pItems[i]->m_customIt->draw();break;
+		case CFG_DATA_TYPE_XSPRITE:((XObjectBasic *)m_pItems[i]->m_pVariable)->draw();break;
+		}
 	}
 }
-void _XConfigManager::relayoutGroup(int index,bool flag)
+void XConfigManager::relayoutGroup(int index,bool flag)
 {
-	m_pGroups[index]->m_size = m_size;
-	m_pGroups[index]->m_position = m_nowInsertPos; 
+	m_pGroups[index]->m_scale = m_scale;
+	m_pGroups[index]->m_position = m_curInsertPos; 
 	m_pGroups[index]->m_maxHeight = m_maxHeight;
 	m_pGroups[index]->m_group.setPosition(m_pGroups[index]->m_position);
-	m_pGroups[index]->m_group.setSize(m_size);
+	m_pGroups[index]->m_group.setScale(m_scale);
 	if(flag) m_pGroups[index]->relayout();
 }
-void _XConfigManager::relayout()	//重新自动布局
+void XConfigManager::relayout()	//重新自动布局
 {
-	m_saveBtn.setPosition(m_position.x + 32.0f * m_size.x,m_position.y);
-	m_saveBtn.setSize(m_size);
-	m_loadBtn.setPosition(m_position.x + 64.0f * m_size.x,m_position.y);
-	m_loadBtn.setSize(m_size);
-	m_defaultBtn.setPosition(m_position.x + 96.0f * m_size.x,m_position.y);
-	m_defaultBtn.setSize(m_size);
-	m_undoBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
-	m_undoBtn.setSize(m_size);
-	m_redoBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
-	m_redoBtn.setSize(m_size);
-	m_netUpdateBtn.setPosition(m_position.x + 128.0f * m_size.x,m_position.y);
-	m_netUpdateBtn.setSize(m_size);
-	m_netInjectBtn.setPosition(m_position.x + 160.0f * m_size.x,m_position.y);
-	m_netInjectBtn.setSize(m_size);
+	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x,m_position.y);
+	m_saveBtn->setScale(m_scale);
+	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x,m_position.y);
+	m_loadBtn->setScale(m_scale);
+	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x,m_position.y);
+	m_defaultBtn->setScale(m_scale);
+	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_undoBtn->setScale(m_scale);
+	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_redoBtn->setScale(m_scale);
+	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_netUpdateBtn->setScale(m_scale);
+	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_netInjectBtn->setScale(m_scale);
 	//更新组件的位置
-	m_nowInsertPos = m_position + _XVector2(0.0f,(32.0f + CFG_MANAGER_H_SPACE) * m_size.x);
+	m_curInsertPos = m_position + XVector2(0.0f,(32.0f + CFG_MANAGER_H_SPACE) * m_scale.x);
 	m_isNewRow = true;
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
-		if(m_pGroups[i]->m_group.getState() == STATE_NORMAL)
+		if(m_pGroups[i]->m_group.getState() == XGroup::STATE_NORMAL)
 		{//检查当前列是否可以容下，如果容不下则处理
-			if(m_maxHeight + m_position.y - m_nowInsertPos.y < m_pGroups[i]->calculateMaxSize().y)
+			if(m_maxHeight + m_position.y - m_curInsertPos.y < m_pGroups[i]->calculateMaxSize().y)
 			{//如果容不下
 				if(m_isNewRow)
 				{//如果已经是新的一列了则不处理
@@ -507,75 +572,74 @@ void _XConfigManager::relayout()	//重新自动布局
 		}else
 		{
 			relayoutGroup(i,false);
-			_XVector2 tempSize = m_pGroups[i]->m_group.getBox(0) - m_pGroups[i]->m_group.getBox(2);
+			XVector2 tempSize = m_pGroups[i]->m_group.getBox(0) - m_pGroups[i]->m_group.getBox(2);
 			if(tempSize.x < 0.0f) tempSize.x = -tempSize.x;
 			if(tempSize.y < 0.0f) tempSize.y = -tempSize.y;
-			moveDown(tempSize.x * 1.0f / m_size.x,tempSize.y * 1.0f / m_size.x);
+			moveDown(tempSize.x * 1.0f / m_scale.x,tempSize.y * 1.0f / m_scale.x);
 		}
 	}
 	return ;
 }
-void _XConfigManager::setVisible()
+void XConfigManager::setVisible()
 {//设置显示
 	m_isVisble = true;
-	m_saveBtn.setVisible();
-	m_loadBtn.setVisible();
-	m_defaultBtn.setVisible();
-	if(m_configMode != CFG_MODE_CLIENT)
-	{
-		m_undoBtn.setVisible();
-		m_redoBtn.setVisible();
-	}
+	m_saveBtn->setVisible();
+	m_loadBtn->setVisible();
+	m_defaultBtn->setVisible();
 	if(m_configMode == CFG_MODE_CLIENT)
 	{
-		m_netUpdateBtn.setVisible();
-		m_netInjectBtn.setVisible();
+		m_netUpdateBtn->setVisible();
+		m_netInjectBtn->setVisible();
+	}else
+	{
+		m_undoBtn->setVisible();
+		m_redoBtn->setVisible();
 	}
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
 		m_pGroups[i]->m_group.setVisible();
 	}
 }
-void _XConfigManager::disVisible()
+void XConfigManager::disVisible()
 {//设置不显示
 	m_isVisble = false;
-	m_saveBtn.disVisible();
-	m_loadBtn.disVisible();
-	m_defaultBtn.disVisible();
+	m_saveBtn->disVisible();
+	m_loadBtn->disVisible();
+	m_defaultBtn->disVisible();
 	if(m_configMode != CFG_MODE_CLIENT)
 	{
-		m_undoBtn.disVisible();
-		m_redoBtn.disVisible();
+		m_undoBtn->disVisible();
+		m_redoBtn->disVisible();
 	}
 	if(m_configMode == CFG_MODE_CLIENT)
 	{
-		m_netUpdateBtn.disVisible();
-		m_netInjectBtn.disVisible();
+		m_netUpdateBtn->disVisible();
+		m_netInjectBtn->disVisible();
 	}
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
 		m_pGroups[i]->m_group.disVisible();
 	}
 }
-void _XConfigManager::sendSynchToServer()
+void XConfigManager::sendSynchToServer()
 {
 	if(m_configMode == CFG_MODE_CLIENT)
 	{
-		_XNetData *tempSendData = createMem<_XNetData>();
+		XNetData *tempSendData = XMem::createMem<XNetData>();
 		tempSendData->dataLen = 2;
-		tempSendData->data = createArrayMem<unsigned char>(tempSendData->dataLen);
+		tempSendData->data = XMem::createArrayMem<unsigned char>(tempSendData->dataLen);
 		tempSendData->isEnable = XTrue;
 		tempSendData->type = DATA_TYPE_CONFIG_INFO;
-		m_netClient.sendData(tempSendData);
+		m_netClient->sendData(tempSendData);
 	}
 }
 //从字符串中读取Item相关的数据，返回是否需要建立
-bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,unsigned char *groupName,
-										 std::vector<_XConfigItem *> *itemsList,std::vector<int> *itemsIDListD)
+bool XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,unsigned char *groupName,
+										 std::vector<XConfigItem *> *itemsList,std::vector<int> *itemsIDListD)
 {
 	if(data == NULL) return false;
 	int itemID,tempItemID = 0,len;
-	_XConfigDataType itemType;
+	XConfigDataType itemType;
 	offset = 0; 
 	unsigned char tempNameI[4096];	//默认最大长度为4096，这里会存在问题
 
@@ -583,7 +647,7 @@ bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,
 	offset += sizeof(int);
 	memcpy(&itemType,data + offset,sizeof(itemType));
 	offset += sizeof(itemType);
-	_XConfigValue rangeMin,rangeMax,defValue,nowValue;
+	XConfigValue rangeMin,rangeMax,defValue,curValue;
 	switch(itemType)
 	{
 	case CFG_DATA_TYPE_INT:
@@ -598,8 +662,8 @@ bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,
 		offset += sizeof(rangeMax);
 		memcpy(&defValue,data + offset,sizeof(defValue));
 		offset += sizeof(defValue);
-		memcpy(&nowValue.valueI,data + offset,sizeof(nowValue));
-		offset += sizeof(nowValue);
+		memcpy(&curValue.valueI,data + offset,sizeof(curValue));
+		offset += sizeof(curValue);
 		break;
 	case CFG_DATA_TYPE_CUSTOM:	//工作进行中
 		{
@@ -631,44 +695,44 @@ bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,
 	{
 	case CFG_DATA_TYPE_INT:
 		{
-			int *temp = createMem<int>();
-			*temp = nowValue.valueI;
+			int *temp = XMem::createMem<int>();
+			*temp = curValue.valueI;
 			tempItemID = addAItem<int>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_CHAR:
 		{
-			char *temp = createMem<char>();
-			*temp = nowValue.valueI;
+			char *temp = XMem::createMem<char>();
+			*temp = curValue.valueI;
 			tempItemID = addAItem<char>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_UCHAR:
 		{
-			unsigned char *temp = createMem<unsigned char>();
-			*temp = nowValue.valueI;
+			unsigned char *temp = XMem::createMem<unsigned char>();
+			*temp = curValue.valueI;
 			tempItemID = addAItem<unsigned char>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_RADIOS:
 		{
-			int *temp = createMem<int>();
-			*temp = nowValue.valueI;
+			int *temp = XMem::createMem<int>();
+			*temp = curValue.valueI;
 			tempItemID = addAItem<int>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_FLOAT:
 		{
-			float *temp = createMem<float>();
-			*temp = nowValue.valueF;
+			float *temp = XMem::createMem<float>();
+			*temp = curValue.valueF;
 			tempItemID = addAItem<float>(temp,itemType,(char *)tempNameI,rangeMax.valueF,rangeMin.valueF,defValue.valueF,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_XBOOL:
 		{
-			_XBool *temp = createMem<_XBool>();
-			*temp = nowValue.valueB;
-			tempItemID = addAItem<_XBool>(temp,itemType,(char *)tempNameI,rangeMax.valueB,rangeMin.valueB,defValue.valueB,NULL,(char *)groupName);
+			XBool *temp = XMem::createMem<XBool>();
+			*temp = curValue.valueB;
+			tempItemID = addAItem<XBool>(temp,itemType,(char *)tempNameI,rangeMax.valueB,rangeMin.valueB,defValue.valueB,NULL,(char *)groupName);
 		}
 		break;
 	case CFG_DATA_TYPE_CUSTOM:	//工作进行中
@@ -678,7 +742,7 @@ bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,
 	default:
 		break;
 	}
-	_XConfigItem * it = getItemByID(tempItemID);
+	XConfigItem * it = getItemByID(tempItemID);
 	if(it != NULL)
 	{
 		if(itemsList != NULL) itemsList->push_back(it);
@@ -686,7 +750,7 @@ bool _XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,
 	}
 	return true;
 }
-void _XConfigManager::updateInfo(unsigned char *data)
+void XConfigManager::updateInfo(unsigned char *data)
 {
 	if(data == NULL) return;
 	int groupSum = 0;
@@ -696,7 +760,7 @@ void _XConfigManager::updateInfo(unsigned char *data)
 	memcpy(&groupSum,data + offset,sizeof(int));
 	offset += sizeof(int);
 	unsigned char tempName[4096];	//默认最大长度为4096，这里会存在问题
-	std::vector<_XConfigItem *> itemsList;
+	std::vector<XConfigItem *> itemsList;
 	std::vector<int> itemsIDListD;
 	for(int i = 0;i < groupSum;++ i)
 	{
@@ -716,111 +780,118 @@ void _XConfigManager::updateInfo(unsigned char *data)
 		}
 	}
 	//统一改变控件的ID
-	for(int i = 0;i < itemsList.size();++ i)
+	for(unsigned int i = 0;i < itemsList.size();++ i)
 	{
 		itemsList[i]->setID(itemsIDListD[i]);
 	}
 }
-void _XConfigManager::sendItemValue(const _XConfigItem * it)
+void XConfigManager::sendItemValue(const XConfigItem * it)
 {
-	if(m_configMode == CFG_MODE_SERVER)
+	switch(m_configMode)
 	{
+	case CFG_MODE_SERVER:
 		if(it->m_type != CFG_DATA_TYPE_CUSTOM && it->m_type != CFG_DATA_TYPE_XSPRITE)
 		{
-			_XNetData *tempSendData = createMem<_XNetData>();
+			XNetData *tempSendData = XMem::createMem<XNetData>();
 			unsigned char *temp = NULL;
 			int size = 0;
 			int offset = 0;
 			int tempID = it->getID();
-			temp = spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
-			temp = spliceData(temp,size,offset,(unsigned char *)&it->m_nowValue,sizeof(it->m_nowValue));
+			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
+			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
 			tempSendData->isEnable = XTrue;
 			tempSendData->type = DATA_TYPE_CONFIG_ITEM;
-			m_netServer.sendData(tempSendData);
+			m_netServer->sendData(tempSendData);
 			//printf("配置项数据发送!\n");
 		}
-	}else
-	if(m_configMode == CFG_MODE_CLIENT)
-	{
+		break;
+	case CFG_MODE_CLIENT:
 		if(it->m_type != CFG_DATA_TYPE_CUSTOM && it->m_type != CFG_DATA_TYPE_XSPRITE)
 		{
-			_XNetData *tempSendData = createMem<_XNetData>();
+			XNetData *tempSendData = XMem::createMem<XNetData>();
 			unsigned char *temp = NULL;
 			int size = 0;
 			int offset = 0;
 			int tempID = it->getID();
-			temp = spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
-			temp = spliceData(temp,size,offset,(unsigned char *)&it->m_nowValue,sizeof(it->m_nowValue));
+			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
+			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
 			tempSendData->isEnable = XTrue;
 			tempSendData->type = DATA_TYPE_CONFIG_ITEM;
-			m_netClient.sendData(tempSendData);
+			m_netClient->sendData(tempSendData);
 			//printf("配置项数据发送!\n");
 		}
+		break;
 	}
 }
-void _XConfigManager::updateItemFromCFG(_XConfigItem * it)
+void XConfigManager::updateItemFromCFG(XConfigItem * it)
 {
 	if(it == NULL) return;
 	switch(it->m_type)
 	{
 	case CFG_DATA_TYPE_INT:
-		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			* (int *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			* (int *)it->m_pVariable = it->m_curValue.valueI;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CHAR:
-		if(* (char *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (char *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			* (char *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			* (char *)it->m_pVariable = it->m_curValue.valueI;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_UCHAR:
-		if(* (unsigned char *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (unsigned char *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			* (unsigned char *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			* (unsigned char *)it->m_pVariable = it->m_curValue.valueI;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_FLOAT:
-		if(* (float *)it->m_pVariable != it->m_nowValue.valueF)
+		if(* (float *)it->m_pVariable != it->m_curValue.valueF)
 		{//下面更新数据
-			* (float *)it->m_pVariable = it->m_nowValue.valueF;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+			* (float *)it->m_pVariable = it->m_curValue.valueF;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
 		}
 		break;
 	case CFG_DATA_TYPE_XBOOL:
-		if(((* (_XBool *)it->m_pVariable) && !it->m_nowValue.valueB)
-			|| (!(* (_XBool *)it->m_pVariable) && it->m_nowValue.valueB))
+		if(((* (XBool *)it->m_pVariable) && !it->m_curValue.valueB)
+			|| (!(* (XBool *)it->m_pVariable) && it->m_curValue.valueB))
 		{//下面更新数据
-			* (_XBool *)it->m_pVariable = it->m_nowValue.valueB;
-			((_XCheck *)it->m_pCtrl)->setState(it->m_nowValue.valueB);
+			* (XBool *)it->m_pVariable = it->m_curValue.valueB;
+			((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
 		}
 		break;
 	case CFG_DATA_TYPE_RADIOS:
-		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			* (int *)it->m_pVariable = it->m_nowValue.valueI;
-			((_XRadios *)it->m_pCtrl)->setChoosed(it->m_nowValue.valueI);
+			* (int *)it->m_pVariable = it->m_curValue.valueI;
+			((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CUSTOM:	//占位
 		it->m_customIt->update();
 		break;
 	}
-	if(it->m_changeProc != NULL) it->m_changeProc();	
+	if(it->m_changeProc != NULL)
+	{
+		if(it->m_type == CFG_DATA_TYPE_CUSTOM)
+			it->m_changeProc(it->m_customIt,it->m_pClass);	
+		else
+			it->m_changeProc(it->m_pVariable,it->m_pClass);	
+	}
 }
-void _XConfigManager::setTextColor(const _XFColor& color)
+void XConfigManager::setTextColor(const XFColor& color)
 {
 	m_textColor = color;
 	//遍历所有的元素，并设置其颜色
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		switch(m_pItems[i]->m_type)
 		{
@@ -828,63 +899,63 @@ void _XConfigManager::setTextColor(const _XFColor& color)
 		case CFG_DATA_TYPE_CHAR:
 		case CFG_DATA_TYPE_UCHAR:
 		case CFG_DATA_TYPE_FLOAT:
-			((_XSliderEx *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			((XSliderEx *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
 		case CFG_DATA_TYPE_XBOOL:
-			((_XCheck *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			((XCheck *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
 		case CFG_DATA_TYPE_RADIOS:
-			((_XRadios *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
+			((XRadios *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
 		}
 	}
 }
-void _XConfigManager::updateItemToCFG(_XConfigItem * it)
+void XConfigManager::updateItemToCFG(XConfigItem * it)
 {
 	if(it == NULL) return;
 	switch(it->m_type)
 	{
 	case CFG_DATA_TYPE_INT:
-		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			it->m_nowValue.valueI = * (int *)it->m_pVariable;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			it->m_curValue.valueI = * (int *)it->m_pVariable;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CHAR:
-		if(* (char *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (char *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			it->m_nowValue.valueI = * (char *)it->m_pVariable;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			it->m_curValue.valueI = * (char *)it->m_pVariable;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_UCHAR:
-		if(* (unsigned char *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (unsigned char *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			it->m_nowValue.valueI = * (unsigned char *)it->m_pVariable;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueI);
+			it->m_curValue.valueI = * (unsigned char *)it->m_pVariable;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_FLOAT:
-		if(* (float *)it->m_pVariable != it->m_nowValue.valueF)
+		if(* (float *)it->m_pVariable != it->m_curValue.valueF)
 		{//下面更新数据
-			it->m_nowValue.valueF = * (float *)it->m_pVariable;
-			((_XSliderEx *)it->m_pCtrl)->setNowValue(it->m_nowValue.valueF);
+			it->m_curValue.valueF = * (float *)it->m_pVariable;
+			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
 		}
 		break;
 	case CFG_DATA_TYPE_XBOOL:
-		if(((* (_XBool *)it->m_pVariable) && !it->m_nowValue.valueB)
-			|| (!(* (_XBool *)it->m_pVariable) && it->m_nowValue.valueB))
+		if(((* (XBool *)it->m_pVariable) && !it->m_curValue.valueB)
+			|| (!(* (XBool *)it->m_pVariable) && it->m_curValue.valueB))
 		{//下面更新数据
-			it->m_nowValue.valueB = * (_XBool *)it->m_pVariable;
-			((_XCheck *)it->m_pCtrl)->setState(it->m_nowValue.valueB);
+			it->m_curValue.valueB = * (XBool *)it->m_pVariable;
+			((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
 		}
 		break;
 	case CFG_DATA_TYPE_RADIOS:
-		if(* (int *)it->m_pVariable != it->m_nowValue.valueI)
+		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
 		{//下面更新数据
-			it->m_nowValue.valueI = * (int *)it->m_pVariable;
-			((_XRadios *)it->m_pCtrl)->setChoosed(it->m_nowValue.valueI);
+			it->m_curValue.valueI = * (int *)it->m_pVariable;
+			((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
 		}
 		break;
 	case CFG_DATA_TYPE_CUSTOM:	//占位
@@ -892,48 +963,40 @@ void _XConfigManager::updateItemToCFG(_XConfigItem * it)
 		break;
 	}
 }
-void _XConfigManager::setItemValue(int ID,const _XConfigValue value)
-{
-	_XConfigItem * it = getItemByID(ID);
-	if(it == NULL) return;
-	it->m_nowValue = value;
-	updateItemFromCFG(it);
-}
-void _XConfigManager::sendCFGInfo()
+void XConfigManager::sendCFGInfo()
 {
 	//GroupSum
 	//GroupNameLen|GroupName|
 		//ItemsSum
-		//ItemID|ItemType|ItemRangeMin|ItemRangeMax|ItemDefault|ItemNowValue|ItemNameLen|ItemName|
-	_XNetData *tempSendData = createMem<_XNetData>();
+		//ItemID|ItemType|ItemRangeMin|ItemRangeMax|ItemDefault|ItemCurValue|ItemNameLen|ItemName|
+	XNetData *tempSendData = XMem::createMem<XNetData>();
 	tempSendData->data = getConfigInfo(tempSendData->dataLen);
 	tempSendData->isEnable = XTrue;
 	tempSendData->type = DATA_TYPE_CONFIG_INFO;
-	m_netServer.sendData(tempSendData);
+	m_netServer->sendData(tempSendData);
 	//printf("服务器发送同步信息!\n");
 }
-void _XConfigManager::sendInject()	//向服务器发送注入信息
+void XConfigManager::sendInject()	//向服务器发送注入信息
 {
-	if(m_configMode == CFG_MODE_CLIENT)
-	{//读取配置文件，将配置文件发送到服务端，服务端读取配置文件并载入，然后同步到客户端
-		FILE *fp = NULL;
-		if((fp = fopen(CFG_DEFAULT_FILENAME,"r")) == NULL) return;
-		_XNetData *tempSendData = createMem<_XNetData>();
-		tempSendData->dataLen = getFileLen(fp);
-		tempSendData->data = createArrayMem<unsigned char>(tempSendData->dataLen);
-		fread(tempSendData->data,1,tempSendData->dataLen,fp);
-		fclose(fp);
-		tempSendData->isEnable = XTrue;
-		tempSendData->type = DATA_TYPE_CONFIG_INJECT;
-		m_netClient.sendData(tempSendData);
-		//printf("发送数据注入命令!\n");
-	}
+	if(m_configMode != CFG_MODE_CLIENT) return;
+	//读取配置文件，将配置文件发送到服务端，服务端读取配置文件并载入，然后同步到客户端
+	FILE *fp = NULL;
+	if((fp = fopen(CFG_DEFAULT_FILENAME,"r")) == NULL) return;
+	XNetData *tempSendData = XMem::createMem<XNetData>();
+	tempSendData->dataLen = XFile::getFileLen(fp);
+	tempSendData->data = XMem::createArrayMem<unsigned char>(tempSendData->dataLen);
+	fread(tempSendData->data,1,tempSendData->dataLen,fp);
+	fclose(fp);
+	tempSendData->isEnable = XTrue;
+	tempSendData->type = DATA_TYPE_CONFIG_INJECT;
+	m_netClient->sendData(tempSendData);
+	//printf("发送数据注入命令!\n");
 }
-void _XConfigManager::updateNet()
+void XConfigManager::updateNet()
 {
 	if(m_configMode == CFG_MODE_SERVER)
 	{//服务器
-		_XNetData *tempData = m_netServer.getData();
+		XNetData *tempData = m_netServer->getData();
 		if(tempData != NULL)
 		{//下面处理数据
 			switch(tempData->type)
@@ -944,20 +1007,20 @@ void _XConfigManager::updateNet()
 			case DATA_TYPE_CONFIG_ITEM:		//客户端发送某个配置项的值
 				{//取出相应的值
 					int itemID;
-					_XConfigValue nowValue;
+					XConfigValue curValue;
 					memcpy(&itemID,tempData->data,sizeof(itemID));
-					memcpy(&nowValue,tempData->data + sizeof(int),sizeof(nowValue));
-					if(itemID > CFG_MAX_ITEMS_SUM)
+					memcpy(&curValue,tempData->data + sizeof(int),sizeof(curValue));
+					if(itemID > m_cfgMaxItemsSum)
 					{//用户自定义的配置类的ID
-						itemID = itemID / CFG_MAX_ITEMS_SUM;
-						_XConfigItem *it = getItemByID(itemID);
+						itemID = itemID / m_cfgMaxItemsSum;
+						XConfigItem *it = getItemByID(itemID);
 						if(it != NULL && it->m_customIt != NULL)
 						{
 							it->m_customIt->setValueFromStr(tempData->data);	//生效相应的值
 						}
 					}else
 					{
-						setItemValue(itemID,nowValue);	//生效相应的值
+						setItemValue(itemID,curValue);	//生效相应的值
 					}
 					//printf("收到客户端配置项数据变更!\n");
 				}
@@ -976,7 +1039,7 @@ void _XConfigManager::updateNet()
 				break;
 			case DATA_TYPE_CONFIG_OPERATE:	//功能操作(完成)
 				{
-					_XConfigNetOperate op;
+					XConfigNetOperate op;
 					memcpy(&op,tempData->data,sizeof(op));
 					switch(op)
 					{
@@ -995,24 +1058,24 @@ void _XConfigManager::updateNet()
 				}
 				break;
 			}
-			XDELETE(tempData);	//处理完成之后再删除数据
+			XMem::XDELETE(tempData);	//处理完成之后再删除数据
 		}
-		for(int i = 0;i < m_pItems.size();++ i)
+		for(unsigned int i = 0;i < m_pItems.size();++ i)
 		{
 			if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM && m_pItems[i]->m_customIt->needSendStr())
 			{//如果自定义配置类需要发送数据，这里发送数据
-				_XNetData *tempSendData = createMem<_XNetData>();
+				XNetData *tempSendData = XMem::createMem<XNetData>();
 				tempSendData->data = m_pItems[i]->m_customIt->sendStr(tempSendData->dataLen,m_pItems[i]->getID());
 				tempSendData->isEnable = XTrue;
 				tempSendData->type = DATA_TYPE_CONFIG_ITEMS;
-				m_netServer.sendData(tempSendData);
+				m_netServer->sendData(tempSendData);
 				//printf("向客户端发送数据变更!\n");
 			}
 		}
 	}else
 	if(m_configMode == CFG_MODE_CLIENT)
 	{//客户端
-		_XNetData *tempData = m_netClient.getData();
+		XNetData *tempData = m_netClient->getData();
 		if(tempData != NULL)
 		{//下面处理数据
 			switch(tempData->type)
@@ -1025,10 +1088,10 @@ void _XConfigManager::updateNet()
 			case DATA_TYPE_CONFIG_ITEM:		//服务器发送的某个配置项的值
 				{//取出相应的值
 					int itemID;
-					_XConfigValue nowValue;
+					XConfigValue curValue;
 					memcpy(&itemID,tempData->data,sizeof(itemID));
-					memcpy(&nowValue,tempData->data + sizeof(int),sizeof(nowValue));
-					setItemValue(itemID,nowValue);	//生效相应的值
+					memcpy(&curValue,tempData->data + sizeof(int),sizeof(curValue));
+					setItemValue(itemID,curValue);	//生效相应的值
 					//printf("收到服务器端配置项数据变更!\n");
 				}
 				break;
@@ -1040,14 +1103,14 @@ void _XConfigManager::updateNet()
 					memcpy(&sum,tempData->data + offset,sizeof(sum));
 					offset += sizeof(sum);
 					int itemID;
-					_XConfigValue nowValue;
+					XConfigValue curValue;
 					for(int i = 0;i < sum;++ i)
 					{
 						memcpy(&itemID,tempData->data + offset,sizeof(itemID));
 						offset += sizeof(itemID);
-						memcpy(&nowValue,tempData->data + offset,sizeof(nowValue));
-						offset += sizeof(nowValue);
-						setItemValue(itemID,nowValue);	//生效相应的值
+						memcpy(&curValue,tempData->data + offset,sizeof(curValue));
+						offset += sizeof(curValue);
+						setItemValue(itemID,curValue);	//生效相应的值
 					}
 					//printf("接收到服务器的数据变更!\n");
 				}
@@ -1055,22 +1118,23 @@ void _XConfigManager::updateNet()
 			case DATA_TYPE_CONFIG_OPERATE:	//服务器不会发送这个数据
 				break;
 			}
-			XDELETE(tempData);	//处理完成之后再删除数据
+			XMem::XDELETE(tempData);	//处理完成之后再删除数据
 		}
 	}
 }
-void _XConfigManager::update()	//更新状态
+void XConfigManager::update()	//更新状态
 {
+	if(!m_isInited) return;
 	updateNet();
 	if(m_configMode != CFG_MODE_CLIENT)
 	{//撤销和重做操作智能在服务器端或者是非网络的情况下使用，因为客户端会重新建立控件
-		if(_XOpManager.canUndo()) m_undoBtn.enable();
-		else m_undoBtn.disable();
-		if(_XOpManager.canRedo()) m_redoBtn.enable();
-		else m_redoBtn.disable();
-		_XOpManager.setOperateOver();
+		if(XOpManager.canUndo()) m_undoBtn->enable();
+		else m_undoBtn->disable();
+		if(XOpManager.canRedo()) m_redoBtn->enable();
+		else m_redoBtn->disable();
+		XOpManager.setOperateOver();
 	}
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 	//	if(!m_pItems[i]->m_isActive)
 		{//这里更新被动控件的状态
@@ -1079,132 +1143,132 @@ void _XConfigManager::update()	//更新状态
 	}
 	//方案1，没t时间遍查一次数据，如果数据发生变化则记录一次（被动式，建议使用主动式）
 }
-void _XConfigManager::setItemActive(bool isActive,void * p)	//设置某个配置项是否为主动形式(默认全部为主动形式)
+void XConfigManager::setItemActive(bool isActive,void * p)	//设置某个配置项是否为主动形式(默认全部为主动形式)
 {
 	if(p == NULL) return;
-	_XConfigItem *it = getItemByVariable(p);
-	if(it != NULL)
+	XConfigItem *it = getItemByVariable(p);
+	if(it == NULL) return;
+	it->m_isActive = isActive;
+	if(isActive)
 	{
-		it->m_isActive = isActive;
-		if(isActive)
+		switch(it->m_type)
 		{
-			switch(it->m_type)
-			{
-			case CFG_DATA_TYPE_INT:
-			case CFG_DATA_TYPE_CHAR:
-			case CFG_DATA_TYPE_UCHAR:
-			case CFG_DATA_TYPE_FLOAT:
-				((_XSliderEx *)it->m_pCtrl)->enable();
-				break;
-			case CFG_DATA_TYPE_XBOOL:
-				((_XCheck *)it->m_pCtrl)->enable();
-				break;
-			case CFG_DATA_TYPE_RADIOS:
-				((_XRadios *)it->m_pCtrl)->enable();
-				break;
-			case CFG_DATA_TYPE_CUSTOM:	//占位
-				it->m_customIt->enable();
-				break;
-			}
-		}else
+		case CFG_DATA_TYPE_INT:
+		case CFG_DATA_TYPE_CHAR:
+		case CFG_DATA_TYPE_UCHAR:
+		case CFG_DATA_TYPE_FLOAT:
+			((XSliderEx *)it->m_pCtrl)->enable();
+			break;
+		case CFG_DATA_TYPE_XBOOL:
+			((XCheck *)it->m_pCtrl)->enable();
+			break;
+		case CFG_DATA_TYPE_RADIOS:
+			((XRadios *)it->m_pCtrl)->enable();
+			break;
+		case CFG_DATA_TYPE_CUSTOM:	//占位
+			it->m_customIt->enable();
+			break;
+		}
+	}else
+	{
+		switch(it->m_type)
 		{
-			switch(it->m_type)
-			{
-			case CFG_DATA_TYPE_INT:
-			case CFG_DATA_TYPE_CHAR:
-			case CFG_DATA_TYPE_UCHAR:
-			case CFG_DATA_TYPE_FLOAT:
-				((_XSliderEx *)it->m_pCtrl)->disable();
-				break;
-			case CFG_DATA_TYPE_XBOOL:
-				((_XCheck *)it->m_pCtrl)->disable();
-				break;
-			case CFG_DATA_TYPE_RADIOS:
-				((_XRadios *)it->m_pCtrl)->disable();
-				break;
-			case CFG_DATA_TYPE_CUSTOM:	//占位
-				it->m_customIt->disable();
-				break;
-			}
+		case CFG_DATA_TYPE_INT:
+		case CFG_DATA_TYPE_CHAR:
+		case CFG_DATA_TYPE_UCHAR:
+		case CFG_DATA_TYPE_FLOAT:
+			((XSliderEx *)it->m_pCtrl)->disable();
+			break;
+		case CFG_DATA_TYPE_XBOOL:
+			((XCheck *)it->m_pCtrl)->disable();
+			break;
+		case CFG_DATA_TYPE_RADIOS:
+			((XRadios *)it->m_pCtrl)->disable();
+			break;
+		case CFG_DATA_TYPE_CUSTOM:	//占位
+			it->m_customIt->disable();
+			break;
 		}
 	}
 }
-bool _XConfigManager::clear()
+bool XConfigManager::clear()
 {
 	if(m_configMode == CFG_MODE_CLIENT)
 	{//这里需要删除变量
-		for(int i = 0;i < m_pItems.size();++ i)
+		for(unsigned int i = 0;i < m_pItems.size();++ i)
 		{
-			XDELETE(m_pItems[i]->m_pVariable);
-			XDELETE(m_pItems[i]);
+			m_pItems[i]->release();
+			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}else
 	{
-		for(int i = 0;i < m_pItems.size();++ i)
+		for(unsigned int i = 0;i < m_pItems.size();++ i)
 		{
-			XDELETE(m_pItems[i]);
+			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
-		XDELETE(m_pGroups[i]);
+		XMem::XDELETE(m_pGroups[i]);
 	}
 	m_pGroups.clear();
 	addGroup(CFG_DEFAULT_GROUPNAME);	//建立一个默认组
 	return true;
 }
-bool _XConfigManager::decreaseAItem(void *p)	//减少一个配置项
+bool XConfigManager::decreaseAItem(void *p)	//减少一个配置项
 {
 	if(p == NULL) return false;
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_pVariable == p) 
 		{
-			_XConfigItem *it = m_pItems[i];
-			for(int j = i;j < m_pItems.size() - 1;++ i)
-			{
-				m_pItems[j] = m_pItems[j + 1]; 
-			}
-			m_pItems.pop_back();
+			XConfigItem *it = m_pItems[i];
+		//	for(int j = i;j < (int)(m_pItems.size()) - 1;++ i)
+		//	{
+		//		m_pItems[j] = m_pItems[j + 1]; 
+		//	}
+		//	m_pItems.pop_back();
+			m_pItems.erase(m_pItems.begin() + i);
 			//更新群组的信息
 			bool flag = false;
-			for(int j = 0;j < m_pGroups.size();++ j)
+			for(unsigned int j = 0;j < m_pGroups.size();++ j)
 			{
-				for(int k = 0;k < m_pGroups[j]->m_items.size();++ k)
+				for(unsigned int k = 0;k < m_pGroups[j]->m_items.size();++ k)
 				{
 					if(m_pGroups[j]->m_items[k] == it)
 					{
-						for(int l = k;l < m_pGroups[j]->m_items.size() - 1;++ l)
-						{
-							m_pGroups[j]->m_items[l] = m_pGroups[j]->m_items[l + 1]; 
-						}
-						m_pGroups[j]->m_items.pop_back();
+					//	for(int l = k;l < (int)(m_pGroups[j]->m_items.size()) - 1;++ l)
+					//	{
+					//		m_pGroups[j]->m_items[l] = m_pGroups[j]->m_items[l + 1]; 
+					//	}
+					//	m_pGroups[j]->m_items.pop_back();
+						m_pGroups[j]->m_items.erase(m_pGroups[j]->m_items.begin() + k);
 						flag = true;
 						break;
 					}
 				}
 				if(flag) break;
 			}
-			XDELETE(it);
+			XMem::XDELETE(it);
 			return true;
 		}
 	}
 	return false;
 }
-void _XConfigGroup::moveDownPretreatment(int/*pixelW*/,int pixelH)
+void XConfigGroup::moveDownPretreatment(int/*pixelW*/,int pixelH)
 {
-	float h = m_nowInsertPos.y + (pixelH + CFG_MANAGER_H_SPACE) * m_size.y;
-	if(h > m_position.y + m_maxHeight && !m_isNewRow)
+	if(m_curInsertPos.y + (pixelH + CFG_MANAGER_H_SPACE) * m_scale.y > 
+		m_position.y + m_maxHeight && !m_isNewRow)
 	{
 		useANewRow();
 		m_isMaxH = true;
 	}
 }
-void _XConfigGroup::moveDown(int pixelW,int pixelH)	//向下移动插入点
+void XConfigGroup::moveDown(int pixelW,int pixelH)	//向下移动插入点
 {
-	m_nowInsertPos.y += (pixelH + CFG_MANAGER_H_SPACE) * m_size.y;
+	m_curInsertPos.y += (pixelH + CFG_MANAGER_H_SPACE) * m_scale.y;
 	if(m_isNewRow)
 	{
 		m_maxRowWidth = pixelW;
@@ -1217,92 +1281,92 @@ void _XConfigGroup::moveDown(int pixelW,int pixelH)	//向下移动插入点
 	}
 	if(!m_isMaxH) m_maxSize.y += pixelH + CFG_MANAGER_H_SPACE;
 	else
-	if((m_nowInsertPos.y - m_position.y) / m_size.y > m_maxSize.y)
+	if((m_curInsertPos.y - m_position.y) / m_scale.y > m_maxSize.y)
 	{//如果后面列的高度大于之前列的高度，则去最大值
-		m_maxSize.y = (m_nowInsertPos.y - m_position.y) / m_size.y;
+		m_maxSize.y = (m_curInsertPos.y - m_position.y) / m_scale.y;
 	}
 	m_isNewRow = false;
 	//这里会扩展一行，但是如果这是最后一行的话，则不需要扩展一列
-	if(m_nowInsertPos.y >= m_position.y + m_maxHeight)
+	if(m_curInsertPos.y >= m_position.y + m_maxHeight)
 	{//这里需要换行
 		useANewRow();
 		m_isMaxH = true;
 	}
 }
-void _XConfigGroup::relayout()
+void XConfigGroup::relayout()
 {//遍历组件，并设置组件的位置
-	m_nowInsertPos = m_position + _XVector2(10.0f,32.0f) * m_size;
+	m_curInsertPos = m_position + XVector2(10.0f,32.0f) * m_scale;
 	m_maxSize.set(10.0f + m_width + CFG_MANAGER_W_SPACE,32.0f);
 	m_maxRowWidth = m_width;
 	m_isNewRow = false;
 	m_isMaxH = false;
-	for(int i = 0;i < m_items.size();++ i)
+	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
-		_XConfigItem *it = m_items[i];
+		XConfigItem *it = m_items[i];
 		if(it == NULL) continue;
 		switch(it->m_type)
 		{
 		case CFG_DATA_TYPE_INT:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_CHAR:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_UCHAR:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_FLOAT:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((_XSliderEx *)it->m_pCtrl)->setPosition(m_nowInsertPos);
+			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
 			break;
 		case CFG_DATA_TYPE_XBOOL:
 			moveDownPretreatment(m_width,CFG_MNG_H_FONT);
-			it->m_pCtrl->setPosition(m_nowInsertPos);
+			it->m_pCtrl->setPosition(m_curInsertPos);
 			moveDown(m_width,CFG_MNG_H_FONT);
 			break;
 		case CFG_DATA_TYPE_RADIOS:
-			moveDownPretreatment((((_XRadios *)it->m_pCtrl)->getBox(2) - ((_XRadios *)it->m_pCtrl)->getBox(0)) / m_size);
-			((_XRadios *)it->m_pCtrl)->setPosition(m_nowInsertPos);
-			moveDown((((_XRadios *)it->m_pCtrl)->getBox(2) - ((_XRadios *)it->m_pCtrl)->getBox(0)) / m_size);// / m_size.y
+			moveDownPretreatment((((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)) / m_scale);
+			((XRadios *)it->m_pCtrl)->setPosition(m_curInsertPos);
+			moveDown((((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)) / m_scale);// / m_scale.y
 			break;
 		case CFG_DATA_TYPE_CUSTOM:
-			moveDownPretreatment((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_size);
-			it->m_customIt->setPosition(m_nowInsertPos);
-			moveDown((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_size);// / m_size.y
+			moveDownPretreatment((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_scale);
+			it->m_customIt->setPosition(m_curInsertPos);
+			moveDown((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_scale);// / m_scale.y
 			break;
 		case CFG_DATA_TYPE_XSPRITE:	
-			moveDownPretreatment((((_XObjectBasic *)it->m_pVariable)->getBox(2) - ((_XObjectBasic *)it->m_pVariable)->getBox(0)) / m_size);
-			((_XObjectBasic *)it->m_pVariable)->setPosition(m_nowInsertPos);
-			moveDown((((_XObjectBasic *)it->m_pVariable)->getBox(2) - ((_XObjectBasic *)it->m_pVariable)->getBox(0)) / m_size);
+			moveDownPretreatment((((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)) / m_scale);
+			((XObjectBasic *)it->m_pVariable)->setPosition(m_curInsertPos);
+			moveDown((((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)) / m_scale);
 			break;
 		}
 	}
 	//重新改编组件的范围
 	m_group.resetSize(m_maxSize);
 }
-_XVector2 _XConfigGroup::calculateMaxSize()
+XVector2 XConfigGroup::calculateMaxSize()
 {
-	_XVector2 ret;
-	if(m_group.getState() == STATE_MINISIZE)
+	XVector2 ret;
+	if(m_group.getState() == XGroup::STATE_MINISIZE)
 	{
 		ret = m_group.getBox(2) - m_group.getBox(0);
-	//	ret.x /= m_size.x;	//还原成像素
-	//	ret.y /= m_size.y;
+	//	ret.x /= m_scale.x;	//还原成像素
+	//	ret.y /= m_scale.y;
 	}else
 	{
 		float maxY = 0.0f;
 		bool isMaxH = false;
 		ret.set(10.0f + m_width + CFG_MANAGER_W_SPACE,32.0f);
-		for(int i = 0;i < m_items.size();++ i)
+		for(unsigned int i = 0;i < m_items.size();++ i)
 		{
-			_XConfigItem *it = m_items[i];
+			XConfigItem *it = m_items[i];
 			if(it == NULL) continue;
 			switch(it->m_type)
 			{
@@ -1310,53 +1374,53 @@ _XVector2 _XConfigGroup::calculateMaxSize()
 			case CFG_DATA_TYPE_CHAR:
 			case CFG_DATA_TYPE_UCHAR:
 			case CFG_DATA_TYPE_FLOAT:
-				ret.y += (CFG_MNG_H_FONT + CFG_MNG_H_SLD + CFG_MANAGER_H_SPACE) * m_size.y;
+				ret.y += (CFG_MNG_H_FONT + CFG_MNG_H_SLD + CFG_MANAGER_H_SPACE) * m_scale.y;
 				if(ret.y > m_maxHeight)
 				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_size.x;
+					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
 					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_size.x;
+					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			case CFG_DATA_TYPE_XBOOL:
-				ret.y += (CFG_MNG_H_FONT + CFG_MANAGER_H_SPACE) * m_size.y;
+				ret.y += (CFG_MNG_H_FONT + CFG_MANAGER_H_SPACE) * m_scale.y;
 				if(ret.y > m_maxHeight)
 				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_size.x;
+					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
 					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_size.x;
+					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			case CFG_DATA_TYPE_RADIOS:
-				ret.y += CFG_MANAGER_H_SPACE * m_size.y + (((_XRadios *)it->m_pCtrl)->getBox(2) - ((_XRadios *)it->m_pCtrl)->getBox(0)).y;
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)).y;
 				if(ret.y > m_maxHeight)
 				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_size.x;
+					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
 					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_size.x;
+					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			case CFG_DATA_TYPE_CUSTOM:	//占位
-				ret.y += CFG_MANAGER_H_SPACE * m_size.y + (it->m_customIt->getBox(2) - it->m_customIt->getBox(0)).y;
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (it->m_customIt->getBox(2) - it->m_customIt->getBox(0)).y;
 				if(ret.y > m_maxHeight)
 				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_size.x;
+					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
 					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_size.x;
+					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			case CFG_DATA_TYPE_XSPRITE:
-				ret.y += CFG_MANAGER_H_SPACE * m_size.y + (((_XObjectBasic *)it->m_pVariable)->getBox(2) - ((_XObjectBasic *)it->m_pVariable)->getBox(0)).y;
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)).y;
 				if(ret.y > m_maxHeight)
 				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_size.x;
+					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
 					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_size.x;
+					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			}
@@ -1365,138 +1429,138 @@ _XVector2 _XConfigGroup::calculateMaxSize()
 	}
 	return ret;
 }
-bool _XConfigManager::addGroup(const char * name)
+bool XConfigManager::addGroup(const char * name)
 {
-	if(name == NULL) return false;
-	if(isGroupExist(name)) return false;	//组不能重名
-	_XConfigGroup *defGroup = createMem<_XConfigGroup>();
+	if(name == NULL ||
+		isGroupExist(name)) return false;	//组不能重名
+	XConfigGroup *defGroup = XMem::createMem<XConfigGroup>();
 	if(defGroup == NULL) return false;
 	defGroup->m_isEnable = true;
-	defGroup->m_position = m_position + _XVector2(0.0f,64.0f + CFG_MANAGER_H_SPACE);
+	defGroup->m_position = m_position + XVector2(0.0f,64.0f + CFG_MANAGER_H_SPACE);
 	defGroup->m_name = name;
-	defGroup->m_group.init(defGroup->m_position,_XRect(0.0f,0.0f,m_width + CFG_MANAGER_W_SPACE * 0.5f,32.0f),
-		defGroup->m_name.c_str(),XEE::systemFont,1.0f);
-	defGroup->m_group.setCallbackFun(callbackProc,this);
-	defGroup->m_group.setState(STATE_MINISIZE);	//初始状态为最小化
+	defGroup->m_group.init(defGroup->m_position,XRect(0.0f,0.0f,m_width + CFG_MANAGER_W_SPACE * 0.5f,32.0f),
+		defGroup->m_name.c_str(),getDefaultFont(),1.0f);
+	defGroup->m_group.setEventProc(ctrlProc,this);
+	defGroup->m_group.setState(XGroup::STATE_MINISIZE);	//初始状态为最小化
 	defGroup->m_width = m_width;
 	defGroup->m_maxHeight = m_maxHeight;
 	m_pGroups.push_back(defGroup);
 	relayout();
 	return true;
 }
-int _XConfigManager::addSpecialItem(void * it,_XConfigDataType type,const char * groupName)
+int XConfigManager::addSpecialItem(void * it,XConfigDataType type,const char * groupName)
 {
-	if(it == NULL || type <= CFG_DATA_TYPE_CUSTOM) return -1;
-	if(isSpecialItemExist(it)) return -1;	//如果已经存在则不能重复加入
-	_XConfigItem *pItem = createMem<_XConfigItem>();
+	if(it == NULL || type <= CFG_DATA_TYPE_CUSTOM ||
+		isSpecialItemExist(it)) return -1;	//如果已经存在则不能重复加入
+	XConfigItem *pItem = XMem::createMem<XConfigItem>();
 	if(pItem == NULL) return -1;
 	pItem->m_isEnable = true;
 	pItem->m_pVariable = it;
 	pItem->m_customIt = NULL;
-	((_XObjectBasic *)pItem->m_pVariable)->setSize(((_XObjectBasic *)pItem->m_pVariable)->getSize() * m_size);
+	((XObjectBasic *)pItem->m_pVariable)->setScale(((XObjectBasic *)pItem->m_pVariable)->getScale() * m_scale);
 	////针对序列帧不能设置左上角对齐的问题，这里使用一种不适合的方式设置序列帧的尺寸不随之变化(注意：这是权宜之计，如果重构的话需要取消这个设计)
-	//if(((_XObjectBasic *)pItem->m_pVariable)->getObjectType() == OBJ_FRAMEEX)
+	//if(((XObjectBasic *)pItem->m_pVariable)->getObjectType() == OBJ_FRAMEEX)
 	//{
-	//	((_XObjectBasic *)pItem->m_pVariable)->setSize(1.0f,1.0f);
+	//	((XObjectBasic *)pItem->m_pVariable)->setSize(1.0f,1.0f);
 	//}else
 	//{
-	//	((_XObjectBasic *)pItem->m_pVariable)->setSize(((_XObjectBasic *)pItem->m_pVariable)->getSize() * m_size);
+	//	((XObjectBasic *)pItem->m_pVariable)->setSize(((XObjectBasic *)pItem->m_pVariable)->getSize() * m_scale);
 	//}
-//	pItem->m_size = m_size;
+//	pItem->m_scale = m_scale;
 	pItem->m_type = type;
 	pItem->m_isActive = false;
 	m_pItems.push_back(pItem);
 	if(groupName == NULL)
 	{//使用默认组
-		_XConfigGroup *gp = m_pGroups[0];
+		XConfigGroup *gp = m_pGroups[0];
 		gp->m_items.push_back(pItem);
-		gp->m_group.pushChild((_XObjectBasic *)pItem->m_pVariable);
-		if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisible();
+		gp->m_group.pushChild((XObjectBasic *)pItem->m_pVariable);
+		if(gp->m_group.getState() == XGroup::STATE_MINISIZE) ((XObjectBasic *)pItem->m_pVariable)->disVisible();
 
 		relayout();
 	}else
 	{
-		_XConfigGroup *gp = getGroup(groupName);
+		XConfigGroup *gp = getGroup(groupName);
 		if(gp != NULL)
 		{
 			gp->m_items.push_back(pItem);
-			gp->m_group.pushChild((_XObjectBasic *)pItem->m_pVariable);
-			if(gp->m_group.getState() == STATE_MINISIZE) ((_XObjectBasic *)pItem->m_pVariable)->disVisible();
+			gp->m_group.pushChild((XObjectBasic *)pItem->m_pVariable);
+			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) ((XObjectBasic *)pItem->m_pVariable)->disVisible();
 			relayout();
 		}
 	}
 	return pItem->getID();
 }
-int _XConfigManager::addCustomItem(_XCFGItemBasic *it,const char * groupName)
+int XConfigManager::addCustomItem(XCFGItemBasic *it,const char * groupName)
 {
 	if(it == NULL || isCustomItemExist(it)) return -1;
-	_XConfigItem *pItem = createMem<_XConfigItem>();
+	XConfigItem *pItem = XMem::createMem<XConfigItem>();
 	if(pItem == NULL) return -1;
 	pItem->m_isEnable = true;
 	pItem->m_pVariable = NULL;
 	pItem->m_customIt = it;
-	pItem->m_customIt->setSize(m_size);
-//	pItem->m_size = m_size;
+	pItem->m_customIt->setScale(m_scale);
+//	pItem->m_scale = m_scale;
 	pItem->m_type = CFG_DATA_TYPE_CUSTOM;
 	m_pItems.push_back(pItem);
 	if(groupName == NULL)
 	{//使用默认组
-		_XConfigGroup *gp = m_pGroups[0];
+		XConfigGroup *gp = m_pGroups[0];
 		gp->m_items.push_back(pItem);
 		gp->m_group.pushChild(pItem->m_customIt);
-		if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisible();
+		if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_customIt->disVisible();
 
 		relayout();
 	}else
 	{
-		_XConfigGroup *gp = getGroup(groupName);
+		XConfigGroup *gp = getGroup(groupName);
 		if(gp != NULL)
 		{
 			gp->m_items.push_back(pItem);
 			gp->m_group.pushChild(pItem->m_customIt);
-			if(gp->m_group.getState() == STATE_MINISIZE) pItem->m_customIt->disVisible();
+			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_customIt->disVisible();
 			relayout();
 		}
 	}
 	return pItem->getID();
 }
-bool _XConfigManager::isItemExist(void * p)	//检查配置项是否已经存在
+bool XConfigManager::isItemExist(void * p)	//检查配置项是否已经存在
 {
 	if(p == NULL) return false;
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_pVariable == p) return true;
 	}
 	return false;
 }
-bool _XConfigManager::isCustomItemExist(_XCFGItemBasic *it)
+bool XConfigManager::isCustomItemExist(XCFGItemBasic *it)
 {
 	if(it == NULL) return false;
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM && 
 			m_pItems[i]->m_customIt == it) return true;
 	}
 	return false;
 }
-_XConfigItem *_XConfigManager::getItemByID(int ID)			//通过ID获取配置项的指针
+XConfigItem *XConfigManager::getItemByID(int ID)			//通过ID获取配置项的指针
 {
 	if(ID < 0) return NULL;
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->getID() == ID) return m_pItems[i];
 	}
 	return NULL;
 }
-_XConfigItem *_XConfigManager::getItemByVariable(void *p)	//通过变量指针获得配置项的指针
+XConfigItem *XConfigManager::getItemByVariable(void *p)	//通过变量指针获得配置项的指针
 {
-	for(int i = 0;i < m_pItems.size();++ i)
+	for(unsigned int i = 0;i < m_pItems.size();++ i)
 	{
 		if(m_pItems[i]->m_pVariable == p) return m_pItems[i];
 	}
 	return NULL;
 }
-_XConfigItem *_XConfigManager::getItemByName(const char *name,int start)
+XConfigItem *XConfigManager::getItemByName(const char *name,int start)
 {
 	if(name == NULL) return NULL;
 	for(int i = start;i < m_pItems.size();++ i)
@@ -1505,104 +1569,81 @@ _XConfigItem *_XConfigManager::getItemByName(const char *name,int start)
 	}
 	return NULL;
 }
-bool _XConfigManager::isGroupExist(const char * name)	//判断组件是否存在
+bool XConfigManager::isGroupExist(const char * name)	//判断组件是否存在
 {
 	if(name == NULL) return false;
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
 		if(strcmp(m_pGroups[i]->m_name.c_str(),name) == 0) return true;
 	}
 	return false;
 }
-_XConfigGroup *_XConfigManager::getGroup(const char * name)
+XConfigGroup *XConfigManager::getGroup(const char * name)
 {
 	if(name == NULL) return NULL;
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
 		if(strcmp(m_pGroups[i]->m_name.c_str(),name) == 0) return m_pGroups[i];
 	}
 	return NULL;
 }
-void _XConfigManager::release()
+void XConfigManager::release()
 {//资源释放
 	if(!m_isInited) return;
 	if(m_configMode == CFG_MODE_CLIENT)
 	{//这里需要删除变量
-		for(int i = 0;i < m_pItems.size();++ i)
+		for(unsigned int i = 0;i < m_pItems.size();++ i)
 		{
-			XDELETE(m_pItems[i]->m_pVariable);
-			XDELETE(m_pItems[i]);
+			m_pItems[i]->release();
+			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}else
 	{
-		for(int i = 0;i < m_pItems.size();++ i)
+		for(unsigned int i = 0;i < m_pItems.size();++ i)
 		{
-			XDELETE(m_pItems[i]);
+			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}
-	for(int i = 0;i < m_pGroups.size();++ i)
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
-		XDELETE(m_pGroups[i]);
+		XMem::XDELETE(m_pGroups[i]);
 	}
 	m_pGroups.clear();
 	m_isInited = false;
 }
-void _XConfigManager::setOperateToServer(_XConfigNetOperate op)
+void XConfigManager::setOperateToServer(XConfigNetOperate op)
 {
-	if(!m_isInited) return;
-	if(m_configMode != CFG_MODE_CLIENT) return;
-	_XNetData *tempData = createMem<_XNetData>();
+	if(!m_isInited ||
+		m_configMode != CFG_MODE_CLIENT) return;
+	XNetData *tempData = XMem::createMem<XNetData>();
+	if(tempData == NULL) return;
 	tempData->isEnable = XTrue;
 	tempData->type = DATA_TYPE_CONFIG_OPERATE;
 	tempData->dataLen = sizeof(op);
-	tempData->data = createArrayMem<unsigned char>(tempData->dataLen);
+	tempData->data = XMem::createArrayMem<unsigned char>(tempData->dataLen);
 	memcpy(tempData->data,&op,tempData->dataLen);
-	m_netClient.sendData(tempData);
+	m_netClient->sendData(tempData);
 }
-unsigned char *spliceData(unsigned char * baseBuff,int &baseLen,int &offset,const unsigned char * addBuff,int len)
-{
-	if(addBuff == NULL) return baseBuff;
-	if(offset + len > baseLen || baseBuff == NULL)
-	{//数据超过长度
-		if(baseLen == 0) baseLen = 1;
-		while(true)
-		{
-			baseLen = baseLen << 1;
-			if(offset + len <= baseLen) break;
-		}
-		unsigned char *temp = createArrayMem<unsigned char>(baseLen);
-		if(baseBuff != NULL) memcpy(temp,baseBuff,offset);
-		XDELETE_ARRAY(baseBuff);
-		memcpy(temp + offset,addBuff,len);
-		offset += len;
-		return temp;
-	}else
-	{//数据没有超过长度
-		memcpy(baseBuff + offset,addBuff,len);
-		offset += len;
-		return baseBuff;
-	}
-}
-unsigned char *_XConfigManager::getConfigInfo(int &slen)
+unsigned char *XConfigManager::getConfigInfo(int &slen)
 {
 	unsigned char *temp = NULL;
 	int size = 0;
 	int offset = 0;
-	_XConfigDataType nullType = CFG_DATA_TYPE_NULL;
+	XConfigDataType nullType = CFG_DATA_TYPE_NULL;
 	int len = m_pGroups.size();
-	temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-	for(int i = 0;i < m_pGroups.size();++ i)
+	temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
+	for(unsigned int i = 0;i < m_pGroups.size();++ i)
 	{
 		len = m_pGroups[i]->m_name.size();
-		temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-		temp = spliceData(temp,size,offset,(unsigned char *)m_pGroups[i]->m_name.c_str(),len);
+		temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
+		temp = XMem::spliceData(temp,size,offset,(unsigned char *)m_pGroups[i]->m_name.c_str(),len);
 		len = m_pGroups[i]->m_items.size();
-		temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-		for(int j = 0;j < m_pGroups[i]->m_items.size();++ j)
+		temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
+		for(unsigned int j = 0;j < m_pGroups[i]->m_items.size();++ j)
 		{
-			_XConfigItem *it = m_pGroups[i]->m_items[j];
+			XConfigItem *it = m_pGroups[i]->m_items[j];
 			switch(it->m_type)
 			{
 			case CFG_DATA_TYPE_INT:
@@ -1612,41 +1653,375 @@ unsigned char *_XConfigManager::getConfigInfo(int &slen)
 			case CFG_DATA_TYPE_FLOAT:
 			case CFG_DATA_TYPE_XBOOL:
 				len = it->getID();
-				temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
 				if(!it->m_isActive)
 				{
-					temp = spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
+					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
 					break;
 				}
-				temp = spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
-				temp = spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMin,sizeof(it->m_rangeMin));	//min
-				temp = spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMax,sizeof(it->m_rangeMax));	//max
-				temp = spliceData(temp,size,offset,(unsigned char *)&it->m_defaultValue,sizeof(it->m_defaultValue));	//defualt
-				temp = spliceData(temp,size,offset,(unsigned char *)&it->m_nowValue,sizeof(it->m_nowValue));	//nowValue
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMin,sizeof(it->m_rangeMin));	//min
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMax,sizeof(it->m_rangeMax));	//max
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_defaultValue,sizeof(it->m_defaultValue));	//defualt
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));	//curValue
 				len = it->m_name.size();
-				temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//name len
-				temp = spliceData(temp,size,offset,(unsigned char *)it->m_name.c_str(),len);	//name len
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//name len
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)it->m_name.c_str(),len);	//name len
 				break;
 			case CFG_DATA_TYPE_CUSTOM:	//工作进行中
 				//扩展
 				{
 					len = it->getID();
-					temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));					//ID
-					temp = spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
+					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));					//ID
+					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
 					unsigned char *tempStr = it->m_customIt->getInfo(len,it->getID());
-					temp = spliceData(temp,size,offset,tempStr,len);
-					XDELETE_ARRAY(tempStr);
+					temp = XMem::spliceData(temp,size,offset,tempStr,len);
+					XMem::XDELETE_ARRAY(tempStr);
 				}
 				break;
 			case CFG_DATA_TYPE_XSPRITE:	//网络不支持
 			case CFG_DATA_TYPE_NULL:	//网络不支持
 				len = it->getID();
-				temp = spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
-				temp = spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
+				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
 				break;
 			}
 		}
 	}
 	slen = offset;
 	return temp;
+}
+void XConfigItem::release()	//注意：这个函数不能放在析构函数中因为并不是所有的情况都需要释放这个资源
+{
+	switch(m_type)
+	{
+	case CFG_DATA_TYPE_INT:
+		{
+			int *p = (int *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_CHAR:
+		{
+			char *p = (char *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_UCHAR:
+		{
+			unsigned char *p = (unsigned char *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_FLOAT:
+		{
+			float *p = (float *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_XBOOL:	//注意这个对应XBool类型，而不是bool类型，否则将会有可能造成错误
+		{
+			XBool *p = (XBool *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_RADIOS:	//单选框
+		{
+			int *p = (int *)m_pVariable;
+			XMem::XDELETE(p);
+			m_pVariable = NULL;
+		}
+		break;
+	case CFG_DATA_TYPE_CUSTOM:	//自定义		网络不支持
+	case CFG_DATA_TYPE_XSPRITE:	//精灵的物件	网络不支持
+	case CFG_DATA_TYPE_NULL:		//无效的配置项
+		XMem::XDELETE(m_pVariable);
+		break;
+	}
+}
+XBool XConfigManager::mouseProc(float x,float y,XMouseState mouseState)		//对于鼠标动作的响应函数
+{//尚未完成
+	if(!m_isInited) return XFalse;
+	XRect tmpRect(m_position.x,m_position.y,
+		m_position.x + 32.0f * m_scale.x,m_position.y + 32.0f * m_scale.y);
+	switch(mouseState)
+	{
+	case MOUSE_MOVE:
+		if(m_isMouseDown)
+		{//发生鼠标拖拽事件
+			XVector2 tmp = XVector2(x,y) - m_mousePos;
+			setPosition(m_position.x + tmp.x,m_position.y + tmp.y);
+			m_mousePos.set(x,y);
+			//if(!tmpRect.isInRect(x,y)) m_isMouseDown = false;
+		}
+		break;
+	case MOUSE_LEFT_BUTTON_DOWN:
+	case MOUSE_LEFT_BUTTON_DCLICK:
+		if(tmpRect.isInRect(x,y))
+		{
+			m_isMouseDown = true;
+			m_mousePos.set(x,y);
+		}
+		break;
+	case MOUSE_LEFT_BUTTON_UP:
+		m_isMouseDown = false;
+		break;
+	default:
+		break;
+	}
+	return XFalse;
+}
+XConfigManager::XConfigManager()
+	:m_isInited(false)
+	,m_isVisble(true)
+	,m_position(0.0f,0.0f)
+	,m_scale(1.0,1.0f)
+	,m_maxHeight(300.0f)
+	,m_width(256.0f)
+	,m_curInsertPos(0.0f,0.0f)
+	,m_configMode(CFG_MODE_NORMAL)
+//	,m_minuteIndex(-1)
+//	,m_operateIndex(-1)	//没有动作
+	,m_textColor(0.0f,0.0f,0.0f,1.0f)
+	,m_isMouseDown(false)
+	,m_withBackground(false)
+{
+	m_withConfigManager = true;	//标记配置管理器已经被使用
+	m_saveBtn = XMem::createMem<XButton>();
+	if(m_saveBtn == NULL) LogStr("Mem Error!");
+	m_loadBtn = XMem::createMem<XButton>();
+	if(m_loadBtn == NULL) LogStr("Mem Error!");
+	m_defaultBtn = XMem::createMem<XButton>();
+	if(m_defaultBtn == NULL) LogStr("Mem Error!");
+	m_undoBtn = XMem::createMem<XButton>();
+	if(m_undoBtn == NULL) LogStr("Mem Error!");
+	m_redoBtn = XMem::createMem<XButton>();
+	if(m_redoBtn == NULL) LogStr("Mem Error!");
+	m_netUpdateBtn = XMem::createMem<XButton>();
+	if(m_netUpdateBtn == NULL) LogStr("Mem Error!");
+	m_netInjectBtn = XMem::createMem<XButton>();
+	if(m_netInjectBtn == NULL) LogStr("Mem Error!");
+	m_netClient = XMem::createMem<XNetClient>();
+	if(m_netClient == NULL) LogStr("Mem Error!");
+	m_netServer = XMem::createMem<XNetServer>();
+	if(m_netServer == NULL) LogStr("Mem Error!");
+}
+XConfigManager::~XConfigManager()
+{
+	release();
+	XMem::XDELETE(m_saveBtn);
+	XMem::XDELETE(m_loadBtn);
+	XMem::XDELETE(m_defaultBtn);
+	XMem::XDELETE(m_undoBtn);
+	XMem::XDELETE(m_redoBtn);
+	XMem::XDELETE(m_netUpdateBtn);
+	XMem::XDELETE(m_netInjectBtn);
+	XMem::XDELETE(m_netClient);
+	XMem::XDELETE(m_netServer);
+}
+template<typename T>
+int XConfigManager::addAItem(T *p,XConfigDataType type,const char * name,
+	T max,T min,T def,
+	void (* changeProc)(void *,void*),const char * groupName,void *pClass)	//返回ID，-1为失败
+{
+	if(type >= CFG_DATA_TYPE_CUSTOM || p == NULL) return -1;	//数据不合法
+	if(p != NULL && isItemExist(p)) return -1; 
+	XConfigItem *pItem = XMem::createMem<XConfigItem>();
+	if(pItem == NULL ||
+		type == CFG_DATA_TYPE_CUSTOM) return -1;	//自定义控件不能使用这种方式添加
+	if(name == NULL) pItem->m_name = " ";
+	else pItem->m_name = name;
+	pItem->m_changeProc = changeProc;
+	pItem->m_pClass = pClass;
+	char tempStr[1024];
+	switch(type)
+	{
+	case CFG_DATA_TYPE_INT:
+		pItem->m_defaultValue.valueI = (int)def;
+		pItem->m_curValue.valueI = * (int *)p;
+		pItem->m_rangeMin.valueI = (int)min;
+		pItem->m_rangeMax.valueI = (int)max;
+		{
+			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
+				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			pCtrl->setScale(m_scale);
+			pCtrl->setTextColor(m_textColor);
+			if(name == NULL) pCtrl->setFont("%%.0f");
+			else
+			{
+				sprintf(tempStr,"%s:%%.0f",name);
+				pCtrl->setFont(tempStr);
+			}
+
+			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setCurValue(* (int *)p);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	case CFG_DATA_TYPE_CHAR:
+		pItem->m_defaultValue.valueI = (char)def;
+		pItem->m_curValue.valueI = * (char *)p;
+		pItem->m_rangeMin.valueI = (char)min;
+		pItem->m_rangeMax.valueI = (char)max;
+		{
+			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
+				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			pCtrl->setScale(m_scale);
+			pCtrl->setTextColor(m_textColor);
+			if(name == NULL) pCtrl->setFont("%%.0f");
+			else
+			{
+				sprintf(tempStr,"%s:%%.0f",name);
+				pCtrl->setFont(tempStr);
+			}
+
+			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setCurValue(* (char *)p);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	case CFG_DATA_TYPE_UCHAR:
+		pItem->m_defaultValue.valueI = (unsigned char)def;
+		pItem->m_curValue.valueI = * (unsigned char *)p;
+		pItem->m_rangeMin.valueI = (unsigned char)min;
+		pItem->m_rangeMax.valueI = (unsigned char)max;
+		{
+			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
+				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			pCtrl->setScale(m_scale);
+			pCtrl->setTextColor(m_textColor);
+			if(name == NULL) pCtrl->setFont("%%.0f");
+			else
+			{
+				sprintf(tempStr,"%s:%%.0f",name);
+				pCtrl->setFont(tempStr);
+			}
+
+			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setCurValue(* (unsigned char *)p);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	case CFG_DATA_TYPE_FLOAT:
+		pItem->m_defaultValue.valueF = (float)def;
+		pItem->m_curValue.valueF = * (float *)p;
+		pItem->m_rangeMin.valueF = (float)min;
+		pItem->m_rangeMax.valueF = (float)max;
+		{
+			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
+				pItem->m_rangeMax.valueF,pItem->m_rangeMin.valueF,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			pCtrl->setScale(m_scale);
+			pCtrl->setTextColor(m_textColor);
+			if(name == NULL) pCtrl->setFont("%%.4f");
+			else
+			{
+				sprintf(tempStr,"%s:%%.4f",name);
+				pCtrl->setFont(tempStr);
+			}
+
+			pCtrl->setEventProc(ctrlProc,this);
+			//这里不能连接数据，如果连接数据的话将会造成数据变化的时候调用回调函数的时候数据已经改变而不会执行回调函数中的相关代码
+			//pCtrl->setConnectVar((float *)p);
+			pCtrl->setCurValue(* (float *)p);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	case CFG_DATA_TYPE_XBOOL:
+		pItem->m_defaultValue.valueB = (XBool)def;
+		pItem->m_curValue.valueB = *(XBool *)p;
+		pItem->m_rangeMin.valueB = (XBool)min;
+		pItem->m_rangeMax.valueB = (XBool)max;
+		{
+			XCheck *pCtrl = XMem::createMem<XCheck>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			if(name == NULL) pCtrl->initWithoutSkin(" ",getDefaultFont(),1.0f,XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
+				XVector2(CFG_MNG_H_FONT,CFG_MNG_H_FONT * 0.5f));
+			else pCtrl->initWithoutSkin(name,getDefaultFont(),1.0f,XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
+				XVector2(CFG_MNG_H_FONT,CFG_MNG_H_FONT * 0.5f));
+			pCtrl->setScale(m_scale);
+			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setConnectVar((XBool *)p);
+			pCtrl->setTextColor(m_textColor);
+			if(*(XBool *)p) pCtrl->setState(XTrue);
+			else pCtrl->setState(XFalse);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	case CFG_DATA_TYPE_RADIOS:
+		pItem->m_defaultValue.valueI = (int)def;
+		pItem->m_curValue.valueI = *(int *)p;
+		pItem->m_rangeMin.valueI = (int)min;
+		pItem->m_rangeMax.valueI = (int)max;
+		{
+			XRadios *pCtrl = XMem::createMem<XRadios>();
+			if(pCtrl == NULL) return -1;
+			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(1,XVector2(0.0f,CFG_MNG_H_FONT + 2.0f),XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),getDefaultFont(),1.0f,
+				XVector2(CFG_MNG_H_FONT + 2.0f,CFG_MNG_H_FONT * 0.5f));
+			pCtrl->setRadiosText(name);
+			pCtrl->setScale(m_scale);
+			pCtrl->setTextColor(m_textColor);
+			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setChoosed(*(int *)p);
+			pCtrl->stateChange();
+			pItem->m_pCtrl = pCtrl;
+		}
+		break;
+	}
+	pItem->m_isEnable = true;
+	pItem->m_pVariable = p;
+	pItem->m_type = type;
+	m_pItems.push_back(pItem);
+	if(groupName == NULL)
+	{//使用默认组
+		XConfigGroup *gp = m_pGroups[0];
+		gp->m_items.push_back(pItem);
+		if(pItem->m_pCtrl != NULL) 
+		{
+			gp->m_group.pushChild(pItem->m_pCtrl);
+			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_pCtrl->disVisible();
+		}
+		relayout();
+	}else
+	{
+		XConfigGroup *gp = getGroup(groupName);
+		if(gp != NULL)
+		{
+			gp->m_items.push_back(pItem);
+			if(pItem->m_pCtrl != NULL) 
+			{
+				gp->m_group.pushChild(pItem->m_pCtrl);
+				if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_pCtrl->disVisible();
+			}
+			relayout();
+		}
+	}
+	return pItem->getID();
+}
+#if !WITH_INLINE_FILE
+#include "XConfigManager.inl"
+#endif
 }

@@ -5,12 +5,13 @@
 //Version:	1.0.0
 //Date:		2014.3.25
 //--------------------------------
+#include "XOSDefine.h"
 #include <string>
-
-class _XWindowCore
+namespace XE{
+class XWindowCore
 {
 public:
-	virtual ~_XWindowCore() {;}
+	virtual ~XWindowCore() {;}
 	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame) = 0;
 	virtual void setWindowTitle(const std::string &title) = 0;
 	virtual void setCurcor(bool flag) = 0;
@@ -18,12 +19,17 @@ public:
 	virtual void release() = 0;
 	virtual void update() = 0;
 	virtual int mapKey(int key) = 0;
+	virtual unsigned char *getWindowBuff() = 0;
+	//virtual void toggleFullScreen() = 0;
+	//virtual bool getIsFullScreen() = 0;
 };
 //下面是关于多重采样的设置，方法来自于NEHE的例子
-#include "windows.h"
-extern bool	arbMultisampleSupported;
-extern int arbMultisampleFormat;
-//to check for our sampling
-extern bool initMultisample(HDC hdc);
-
+namespace XEE
+{
+	extern bool	arbMultisampleSupported;
+	extern int arbMultisampleFormat;
+	//to check for our sampling
+	extern bool initMultisample(HDC hdc);
+}
+}
 #endif

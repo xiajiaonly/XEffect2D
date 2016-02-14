@@ -1,25 +1,24 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file.
 //--------------------------------
 #include "XJetParticles.h"
-
-_XJetParticles::_XJetParticles()
+namespace XE{
+XJetParticles::XJetParticles()
 :m_isInited(0)				//是否初始化
 ,m_isEnd(0)				//是否结束
 ,m_isSetEnd(0)				//是否设置结束
 ,m_texture(NULL)
 ,m_textureAtom(NULL)
-{
-}
-
-int _XJetParticles::init(const _XVector2& position,float jetSpeed,float jetAngle,float jetDensity,
-						 const _XTexture *texture,const _XTexture *textureAton)
+{}
+int XJetParticles::init(const XVector2& position,float jetSpeed,float jetAngle,float jetDensity,
+						 const XTexture *texture,const XTexture *textureAton)
 {
 	if(m_isInited != 0) return 0; 
 
-	m_nowPosition = position;
+	m_curPosition = position;
 	m_initSpeed = jetSpeed;
 	m_jetAngle = jetAngle;
 	if(jetDensity <= 0) jetDensity = 0.01f;
@@ -40,19 +39,19 @@ int _XJetParticles::init(const _XVector2& position,float jetSpeed,float jetAngle
 			m_textureAtom = textureAton;
 		}
 	}
-	m_atomBasic = createMem<_XEchoParticles>();
+	m_atomBasic = XMem::createMem<XEchoParticles>();
 	if(m_atomBasic == NULL) return 0;
 
 	m_maxAtomSum = jetDensity * 10;
 	if(m_maxAtomSum < 2) m_maxAtomSum = 2;
-	m_atom = createArrayMem<_XEchoParticles>(m_maxAtomSum);
+	m_atom = XMem::createArrayMem<XEchoParticles>(m_maxAtomSum);
 	if(m_atom == NULL) 
 	{
-		XDELETE(m_atomBasic);
+		XMem::XDELETE(m_atomBasic);
 		return 0;
 	}
 
-	m_nowAtomPoint = 0;
+	m_curAtomPoint = 0;
 	m_timer = 0;
 
 	m_isInited = 1;
@@ -60,8 +59,7 @@ int _XJetParticles::init(const _XVector2& position,float jetSpeed,float jetAngle
 	m_isSetEnd = 0;
 	return 1;
 }
-
-void _XJetParticles::reset(const _XVector2& position)
+void XJetParticles::reset(const XVector2& position)
 {
 	if(m_isInited == 0 ||
 		m_isEnd == 0) return;
@@ -73,31 +71,29 @@ void _XJetParticles::reset(const _XVector2& position)
 		m_atom[i].m_isInited = 0;
 		m_atom[i].m_isEnd = 1;
 	}
-	m_nowAtomPoint = 0;
+	m_curAtomPoint = 0;
 	m_timer = 0;
 	m_isEnd = 0;
 	m_isSetEnd = 0;
 }
-
-void _XJetParticles::reset(float x,float y)
+void XJetParticles::reset(float x,float y)
 {
 	if(m_isInited == 0 ||
 		m_isEnd == 0) return;
 	m_atomBasic->m_isInited = 0;
-	m_atomBasic->init(m_texture,100,2,_XVector2(x,y),0.95f,-0.001f);
+	m_atomBasic->init(m_texture,100,2,XVector2(x,y),0.95f,-0.001f);
 	m_atomBasic->m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 		m_atom[i].m_isInited = 0;
 		m_atom[i].m_isEnd = 1;
 	}
-	m_nowAtomPoint = 0;
+	m_curAtomPoint = 0;
 	m_timer = 0;
 	m_isEnd = 0;
 	m_isSetEnd = 0;
 }
-
-void _XJetParticles::move(int timeDelay)
+void XJetParticles::move(float timeDelay)
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -125,29 +121,29 @@ void _XJetParticles::move(int timeDelay)
 	{
 		m_timer += timeDelay;
 		int temp = 120 / m_jetDensity;
-		if(m_timer > temp || random(temp - m_timer) < temp * 0.1)
+		if(m_timer > temp || XRand::random(temp - m_timer) < temp * 0.1)
 		{//产生新的喷射粒子
 			m_timer = 0;
-			if(m_atom[m_nowAtomPoint].getIsEnd() != 0)
+			if(m_atom[m_curAtomPoint].getIsEnd() != 0)
 			{//有新的粒子
-				m_atom[m_nowAtomPoint].m_isInited = 0;
+				m_atom[m_curAtomPoint].m_isInited = 0;
 				float tempR = 1.0;//random(75)/100.0 + 0.5;
-				m_atom[m_nowAtomPoint].m_parentParticle.m_nowPosition = m_nowPosition;//_XVector2(m_nowPosition.x + m_w * 0.5,m_nowPosition.y + m_h * 0.5);
-			//	m_atom[m_nowAtomPoint].init(&(m_textureAtom->m_texture),64,2,m_atom[m_nowAtomPoint].m_parentParticle.m_nowPosition,
+				m_atom[m_curAtomPoint].m_parentParticle.m_curPosition = m_curPosition;//XVector2(m_curPosition.x + m_w * 0.5,m_curPosition.y + m_h * 0.5);
+			//	m_atom[m_curAtomPoint].init(&(m_textureAtom->m_texture),64,2,m_atom[m_curAtomPoint].m_parentParticle.m_curPosition,
 			//		0.92,-0.001,m_textureAtom->m_w * tempR,m_textureAtom->m_h * tempR,64);
-				m_atom[m_nowAtomPoint].init(m_textureAtom,64,2,m_atom[m_nowAtomPoint].m_parentParticle.m_nowPosition,
+				m_atom[m_curAtomPoint].init(m_textureAtom,64,2,m_atom[m_curAtomPoint].m_parentParticle.m_curPosition,
 					0.92f,-0.001f,64);
-				m_atom[m_nowAtomPoint].m_parentParticle.m_initSize.set(0.75f,0.75f);
-				m_atom[m_nowAtomPoint].m_parentParticle.m_stage = STAGE_MOVE;
-				tempR = (random(4000) / 2000.0f - 1.0f) * m_jetAngle + m_directionAngle + PI;
-				m_atom[m_nowAtomPoint].m_parentParticle.m_dPosition.x = m_initSpeed * cos(tempR);
-				m_atom[m_nowAtomPoint].m_parentParticle.m_dPosition.y = m_initSpeed * sin(tempR);
-				m_atom[m_nowAtomPoint].m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
+				m_atom[m_curAtomPoint].m_parentParticle.m_initSize.set(0.75f,0.75f);
+				m_atom[m_curAtomPoint].m_parentParticle.m_stage = STAGE_MOVE;
+				tempR = (XRand::random(4000) / 2000.0f - 1.0f) * m_jetAngle + m_directionAngle + PI;
+				m_atom[m_curAtomPoint].m_parentParticle.m_dPosition.x = m_initSpeed * cos(tempR);
+				m_atom[m_curAtomPoint].m_parentParticle.m_dPosition.y = m_initSpeed * sin(tempR);
+				m_atom[m_curAtomPoint].m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
 
-				++ m_nowAtomPoint;
-				if(m_nowAtomPoint >= m_maxAtomSum)
+				++ m_curAtomPoint;
+				if(m_curAtomPoint >= m_maxAtomSum)
 				{
-					m_nowAtomPoint = 0;
+					m_curAtomPoint = 0;
 				}
 			}
 		}
@@ -166,8 +162,7 @@ void _XJetParticles::move(int timeDelay)
 		if(flag == 0) m_isEnd = 1;
 	}
 }
-
-void _XJetParticles::draw() const
+void XJetParticles::draw() const
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -177,15 +172,15 @@ void _XJetParticles::draw() const
 		m_atom[i].draw();
 	}
 }
-
-void _XJetParticles::release()
+void XJetParticles::release()
 {
 	if(m_isInited == 0) return;
-	XDELETE(m_atomBasic);
+	XMem::XDELETE(m_atomBasic);
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 		m_atom[i].release();
 	}
-	XDELETE_ARRAY(m_atom);
+	XMem::XDELETE_ARRAY(m_atom);
 	m_isInited = 0;		//防止release之后调用其它成员函数而造成错误
+}
 }

@@ -6,44 +6,52 @@
 //Date:		2014.8.19
 //--------------------------------
 //这是一个关于卡尔曼滤波的类
-class _XKalmanFilter
+namespace XE{
+class XKalmanFilter
 {
-private:
+protected:
 	double m_processNioseQ;	//Q:过程噪声，Q增大，动态响应变快，收敛稳定性变坏
 	double m_measureNoiseR;	//R:测量噪声，R增大，动态响应变慢，收敛稳定性变好  
-	double m_initialPrediction;	//参数
+//	double m_initialPrediction;	//参数
 	//中间参数
 	double m_xLast;
 	double m_pLast;
+	bool m_isFirst;
 public:
-	double getQ() const{return m_processNioseQ;}
-	void setQ(double q){m_processNioseQ = q;}
-	double getR() const{return m_measureNoiseR;}
-	void setR(double r){m_measureNoiseR = r;}
-	double getInitP() const{return m_initialPrediction;}
-	void setInitP(double p){m_initialPrediction = p;}
-	double fliter(double data)
+	virtual double getQ() const{return m_processNioseQ;}
+	virtual void setQ(double q){m_processNioseQ = q;}
+	virtual double getR() const{return m_measureNoiseR;}
+	virtual void setR(double r){m_measureNoiseR = r;}
+//	virtual double getP() const{return m_initialPrediction;}
+//	virtual void setP(double p){m_initialPrediction = p;}
+	double filter(double data)
 	{
+		if(m_isFirst)
+		{
+			m_xLast = data;
+			m_isFirst = false;
+		}
 		double x_mid = m_xLast;								//x_last=x(k-1|k-1),x_mid=x(k|k-1)
 		double p_mid = m_pLast + m_processNioseQ;			//p_mid=p(k|k-1),p_last=p(k-1|k-1),Q=噪声
 		double kg = p_mid / (p_mid + m_measureNoiseR);		//kg为kalman filter，R为噪声
 		m_xLast = x_mid + kg * (data - x_mid);			//估计出的最优值
-		m_pLast = (1 - kg) * p_mid;						//最优值对应的covariance
+		m_pLast = (1.0 - kg) * p_mid;						//最优值对应的covariance
 
 		return m_xLast;                
 	}
-	void init(double Q,double R,double P)
+	virtual void init(double Q,double R)	//，double p
 	{
 		m_processNioseQ = Q;
 		m_measureNoiseR = R;
-		m_initialPrediction = P;
+//		m_initialPrediction = P;
 	}
-	_XKalmanFilter()
+	XKalmanFilter()
 		:m_processNioseQ(0.0000001)
 		,m_measureNoiseR(10.0)
-		,m_initialPrediction(2210.0)
+//		,m_initialPrediction(2210.0)
 		,m_xLast(0.0)
 		,m_pLast(0.0)
+		,m_isFirst(true)
 	{}
 };
 ////下面是卡尔曼滤波的网络资料
@@ -78,4 +86,5 @@ public:
 //
 //	return x_now;                
 //}
+}
 #endif

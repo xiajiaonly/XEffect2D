@@ -1,32 +1,31 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file.
 //--------------------------------
 #include "XCloudParticles.h"
-
-_XCloudParticles::_XCloudParticles()
+namespace XE{
+XCloudParticles::XCloudParticles()
 :m_isInited(0)				//是否初始化
 ,m_isEnd(0)				//是否结束
 ,m_isSetEnd(0)				//是否设置结束
 ,m_atom(NULL)
 ,m_texture(NULL)
-{
-}
-
-int _XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSize,float minSize,
-						   float density,const _XRect& liveArea,const _XVector2& speed,int maxAtomSum,const _XTexture *texture)
+{}
+int XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSize,float minSize,
+						   float density,const XRect& liveArea,const XVector2& speed,int maxAtomSum,const XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
 	if(minCenterPoint >= maxCenterPoint) return 0;
 	m_maxCenterPoint = maxCenterPoint;
 	m_minCenterPoint = minCenterPoint;
-	m_nowCenterPoint = random(1000) * 0.001f * (m_maxCenterPoint - m_minCenterPoint) + m_minCenterPoint; 
+	m_curCenterPoint = XRand::random(1000) * 0.001f * (m_maxCenterPoint - m_minCenterPoint) + m_minCenterPoint; 
 
 	if(minSize >= maxSize) return 0;
 	m_maxSize = maxSize;
 	m_minSize = minSize;
-	m_nowSize = random(1000) * 0.001f * (m_maxSize - m_minSize) + m_minSize;
+	m_curSize = XRand::random(1000) * 0.001f * (m_maxSize - m_minSize) + m_minSize;
 
 	if(density <= 0) return 0;
 	m_density = density;
@@ -39,7 +38,7 @@ int _XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSi
 	if(texture == NULL || !glIsTexture(texture->m_texture)) return 0;
 	m_texture = texture;
 
-	m_atom = createArrayMem<_XAloneParticles>(m_maxAtomSum);
+	m_atom = XMem::createArrayMem<XAloneParticles>(m_maxAtomSum);
 	if(m_atom == NULL) return 0;
 	
 	m_isInited = 1;				//是否初始化
@@ -48,13 +47,12 @@ int _XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSi
 
 	return 1;
 }
-
-void _XCloudParticles::reset()
+void XCloudParticles::reset()
 {
 	if(m_isInited == 0 ||
 		m_isEnd == 0) return;
-	m_nowCenterPoint = random(1000) * 0.001f * (m_maxCenterPoint - m_minCenterPoint) + m_minCenterPoint; 
-	m_nowSize = random(1000) * 0.001f * (m_maxSize - m_minSize) + m_minSize;
+	m_curCenterPoint = XRand::random(1000) * 0.001f * (m_maxCenterPoint - m_minCenterPoint) + m_minCenterPoint; 
+	m_curSize = XRand::random(1000) * 0.001f * (m_maxSize - m_minSize) + m_minSize;
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
 		m_atom[i].m_stage = STAGE_SLEEP;
@@ -62,8 +60,7 @@ void _XCloudParticles::reset()
 	m_isEnd = 0;
 	m_isSetEnd = 0;
 }
-
-void _XCloudParticles::move(int timeDelay)
+void XCloudParticles::move(float timeDelay)
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -71,14 +68,14 @@ void _XCloudParticles::move(int timeDelay)
 	{
 	//	if(m_atom[i].m_stage == STAGE_MOVE)
 	//	{
-			if(random(1000 * timeDelay) < 10)
+			if(XRand::random(1000 * timeDelay) < 10)
 			{//移动
-				m_atom[i].m_dPosition.y += (random(1000) * 0.002f - 1) * m_speed.y * 0.1f;
+				m_atom[i].m_dPosition.y += (XRand::random(1000) * 0.002f - 1) * m_speed.y * 0.1f;
 			}
 			m_atom[i].move(timeDelay);
-			if(!m_liveArea.isInRect(m_atom[i].m_nowPosition))
+			if(!m_liveArea.isInRect(m_atom[i].m_curPosition))
 			{
-				m_atom[i].m_nowColor.setA(0.0f);
+				m_atom[i].m_curColor.setA(0.0f);
 				m_atom[i].m_stage = STAGE_SLEEP;
 			}
 	//	}
@@ -86,46 +83,46 @@ void _XCloudParticles::move(int timeDelay)
 	if(m_isSetEnd == 0)
 	{//计算粒子的产生
 		//移动中心点
-		if(random(100) < 50)
+		if(XRand::random(100) < 50)
 		{
-			m_nowCenterPoint += 0.025f * timeDelay;
-			if(m_nowCenterPoint > m_maxCenterPoint) m_nowCenterPoint = m_maxCenterPoint;
+			m_curCenterPoint += 0.025f * timeDelay;
+			if(m_curCenterPoint > m_maxCenterPoint) m_curCenterPoint = m_maxCenterPoint;
 		}else
 		{
-			m_nowCenterPoint -= 0.025f * timeDelay;
-			if(m_nowCenterPoint < m_minCenterPoint) m_nowCenterPoint = m_minCenterPoint;
+			m_curCenterPoint -= 0.025f * timeDelay;
+			if(m_curCenterPoint < m_minCenterPoint) m_curCenterPoint = m_minCenterPoint;
 		}
 		//改变范围
-		if(random(100) < 50)
+		if(XRand::random(100) < 50)
 		{
-			m_nowSize += 0.025f * timeDelay;
-			if(m_nowSize > m_maxSize) m_nowSize = m_maxSize;
+			m_curSize += 0.025f * timeDelay;
+			if(m_curSize > m_maxSize) m_curSize = m_maxSize;
 		}else
 		{
-			m_nowSize -= 0.025f * timeDelay;
-			if(m_nowSize < m_minSize) m_nowSize = m_minSize;
+			m_curSize -= 0.025f * timeDelay;
+			if(m_curSize < m_minSize) m_curSize = m_minSize;
 		}
-		if(random(10000) * 0.0001f <= m_density)
+		if(XRand::random(10000) * 0.0001f <= m_density)
 		{//产生粒子
 			for(int i = 0;i < m_maxAtomSum;++ i)
 			{
 				if(m_atom[i].m_stage == STAGE_SLEEP)
 				{
 				//	m_atom[i].m_isInited = 0;
-					float temp = random(1000) * 0.001f * m_nowSize;
-					if(random(100) < 50) temp = -temp;
+					float temp = XRand::random(1000) * 0.001f * m_curSize;
+					if(XRand::random(100) < 50) temp = -temp;
 
-					m_atom[i].m_nowPosition.set(m_liveArea.right,m_nowCenterPoint + temp);
-					temp = random(75)/100.0f + 0.5f;
+					m_atom[i].m_curPosition.set(m_liveArea.right,m_curCenterPoint + temp);
+					temp = XRand::random(75)/100.0f + 0.5f;
 				//	m_atom[i].init(&(m_texture->m_texture),m_texture->m_w * temp,m_texture->m_h * temp);
 					m_atom[i].init(m_texture);
-					m_atom[i].m_nowSize.set(temp,temp);
+					m_atom[i].m_curSize.set(temp,temp);
 					m_atom[i].m_stage = STAGE_MOVE;
-					m_atom[i].m_dPosition.x = m_speed.x * (0.75f + random(1000) * 0.0005f);
-					m_atom[i].m_dPosition.y = (random(1000) * 0.002f - 1) * m_speed.y;
-					temp = random(30)/100.0f + 0.2f;
-					m_atom[i].m_nowColor.setColor(1.0f,1.0f,1.0f,temp);
-					m_atom[i].m_nowSize.set(random(50)/100.0f + 0.75f,random(50)/100.0f + 0.75f);
+					m_atom[i].m_dPosition.x = m_speed.x * (0.75f + XRand::random(1000) * 0.0005f);
+					m_atom[i].m_dPosition.y = (XRand::random(1000) * 0.002f - 1) * m_speed.y;
+					temp = XRand::random(30)/100.0f + 0.2f;
+					m_atom[i].m_curColor.setColor(1.0f,1.0f,1.0f,temp);
+					m_atom[i].m_curSize.set(XRand::random(50)/100.0f + 0.75f,XRand::random(50)/100.0f + 0.75f);
 					break;
 				}
 			}
@@ -139,8 +136,7 @@ void _XCloudParticles::move(int timeDelay)
 		m_isEnd = 1;
 	}
 }
-
-void _XCloudParticles::draw() const
+void XCloudParticles::draw() const
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -151,4 +147,5 @@ void _XCloudParticles::draw() const
 			m_atom[i].draw();
 	//	}
 	}
+}
 }

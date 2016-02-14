@@ -1,13 +1,15 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XCamera.h"
-
-_XBool _XCamera::init(_XCameraData &data)
+namespace XE{
+XBool XCamera::init(XCameraInfo &data)
 {
 	if(m_isInited) return XTrue;
+	if(data.cameraType != CAMERA_TYPE_NORMAL) return XFalse;
 
 	m_deviceSum = m_VI.listDevices();	
 	if(m_deviceSum <= 0) return XFalse;					//没有找到设备
@@ -28,30 +30,31 @@ _XBool _XCamera::init(_XCameraData &data)
 	m_buffSize = m_VI.getSize(data.deviceOrder);
 	m_deviceOrder = data.deviceOrder;
 
-	m_frameDataBuff = createArrayMem<unsigned char>(m_buffSize);
+	m_frameDataBuff = XMem::createArrayMem<unsigned char>(m_buffSize);
+	memset(m_frameDataBuff,0,m_buffSize);
 	if(m_frameDataBuff == NULL) return XFalse;
-	m_frameDataBuff1 = createArrayMem<unsigned char>(m_buffSize);
+	m_frameDataBuff1 = XMem::createArrayMem<unsigned char>(m_buffSize);
 	if(m_frameDataBuff1 == NULL)
 	{
-		XDELETE_ARRAY(m_frameDataBuff);
+		XMem::XDELETE_ARRAY(m_frameDataBuff);
 		return XFalse;
 	}
 	if(!m_cameraSprite.init(m_cameraWidth,m_cameraHeight))
 	{
-		XDELETE_ARRAY(m_frameDataBuff);
-		XDELETE_ARRAY(m_frameDataBuff1);
+		XMem::XDELETE_ARRAY(m_frameDataBuff);
+		XMem::XDELETE_ARRAY(m_frameDataBuff1);
 		return XFalse;
 	}
 	//判断贴图尺寸
-	if(isNPOT(m_cameraWidth,m_cameraHeight))
+	if(XMath::isNPOT(m_cameraWidth,m_cameraHeight))
 	{
-		m_cameraTexWidth = getMinWellSize2n(m_cameraWidth);
-		m_cameraTexHeight = getMinWellSize2n(m_cameraHeight);
-		m_texDataBuff = createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
+		m_cameraTexWidth = XMath::getMinWellSize2n(m_cameraWidth);
+		m_cameraTexHeight = XMath::getMinWellSize2n(m_cameraHeight);
+		m_texDataBuff = XMem::createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
 		if(m_texDataBuff == NULL)
 		{
-			XDELETE_ARRAY(m_frameDataBuff);
-			XDELETE_ARRAY(m_frameDataBuff1);
+			XMem::XDELETE_ARRAY(m_frameDataBuff);
+			XMem::XDELETE_ARRAY(m_frameDataBuff1);
 			return XFalse;
 		}
 		memset(m_texDataBuff,0,m_cameraTexHeight * m_cameraTexHeight * 3);
@@ -64,21 +67,24 @@ _XBool _XCamera::init(_XCameraData &data)
 	}
 	//建立贴图
 	m_cameraTex.createTexture(m_cameraTexWidth,m_cameraTexHeight,COLOR_RGB);
+	if(data.needReset) m_cameraTex.reset();
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XCamera::release()
+void XCamera::release()
 {
 	if(!m_isInited) return;
 
-	XDELETE_ARRAY(m_frameDataBuff1);
-	XDELETE_ARRAY(m_frameDataBuff);
-	XDELETE_ARRAY(m_texDataBuff);
+	XMem::XDELETE_ARRAY(m_frameDataBuff1);
+	XMem::XDELETE_ARRAY(m_frameDataBuff);
+	XMem::XDELETE_ARRAY(m_texDataBuff);
 	m_VI.stopDevice(m_deviceOrder);
+//	m_cameraSprite.release();
+//	m_cameraTex.release();
 	m_isInited = XFalse;
 }
-_XBool _XCamera::upDateFrame()
+XBool XCamera::updateFrame()
 {
 	if(!m_isInited) return XFalse;
 	if(m_VI.isFrameNew(m_deviceOrder) && m_isWork)	//如果摄像头有图像更新则作下面的操作
@@ -124,4 +130,5 @@ _XBool _XCamera::upDateFrame()
 		return XTrue;
 	}
 	return XFalse;
+}
 }

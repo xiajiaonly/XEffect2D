@@ -1,30 +1,30 @@
-//inline 函数
-inline void _XNodeLine::setOneNode(const _XVector2& node,int nodeOrder)
+//INLINE  函数
+INLINE  void XNodeLine::setOneNode(const XVector2& node,int nodeOrder)
 {
 	setOneNode(node.x,node.y,nodeOrder);
 	m_needUpdateData = XTrue;
 }
-inline void _XNodeLine::addOneNode(const _XVector2& node)
+INLINE  void XNodeLine::addOneNode(const XVector2& node)
 {
 	addOneNode(node.x,node.y);
 	m_needUpdateData = XTrue;
 }
-inline void _XNodeLine::addOneNode(const _XVector2& node,int nodeOrder)
+INLINE  void XNodeLine::addOneNode(const XVector2& node,int nodeOrder)
 {
 	addOneNode(node.x,node.y,nodeOrder);
 	m_needUpdateData = XTrue;
 }
-inline int _XNodeLine::getOrder() const
+INLINE  int XNodeLine::getOrder() const
 {
 	return m_myOrder;
 }
-inline void _XNodeLine::setMyOrder(int temp)
+INLINE  void XNodeLine::setMyOrder(int temp)
 {
 	if(temp < 0) return;
 	if(temp >= 100000) return;
 	m_myOrder = temp;
 }
-inline void _XNodeLine::setLeadMode(_XLeadMode mode)
+INLINE  void XNodeLine::setLeadMode(XLeadMode mode)
 {
 	if(mode == LEAD_MODE_FOREWORD)
 	{
@@ -35,37 +35,37 @@ inline void _XNodeLine::setLeadMode(_XLeadMode mode)
 		m_leadMode = LEAD_MODE_BACKWORD;
 	}
 }
-inline void _XNodeLine::setSpecialPointSpeed(float speed)	//设置逆向曲线的速度
+INLINE  void XNodeLine::setSpecialPointSpeed(float speed)	//设置逆向曲线的速度
 {
 	m_specialPoint.speed = speed;
 }
-inline _XBool _XNodeLine::getSpecialPointIsEnd() const
+INLINE  XBool XNodeLine::getSpecialPointIsEnd() const
 {
 	return m_specialPoint.isEnd;
 }
-inline _XVector2 _XNodeLine::getSpecialPointPosition() const		//获取曲线中的点的位置
+INLINE  XVector2 XNodeLine::getSpecialPointPosition() const		//获取曲线中的点的位置
 {
-	return _XVector2(m_specialPoint.position.x * m_size.x + m_offsetPosition.x,m_specialPoint.position.y * m_size.y + m_offsetPosition.y);
+	return XVector2(m_specialPoint.position.x * m_scale.x + m_offsetPosition.x,m_specialPoint.position.y * m_scale.y + m_offsetPosition.y);
 }
-inline float _XNodeLine::getSpecialPointAngle() const
+INLINE  float XNodeLine::getSpecialPointAngle() const
 {
 	return m_specialPoint.angle;
 }
-//inline int _XNodeLine::setSize(float size)			//设置曲线的尺寸
+//INLINE  int XNodeLine::setScale(float scale)			//设置曲线的尺寸
 //{
 //	if(size <= 0) return 0;
-//	m_size = size;
+//	m_scale = scale;
 //	return 1;
 //}
-inline void _XNodeLine::setPosition(float x,float y)	//设置曲线的偏移位置
+INLINE  void XNodeLine::setPosition(float x,float y)	//设置曲线的偏移位置
 {
 	m_offsetPosition.set(x,y);
 }
-inline void _XNodeLine::release()		//释放资源
+INLINE  void XNodeLine::release()		//释放资源
 {
 //	if(m_isACopy == 0)
 //	{
-//		XDELETE_ARRAY(m_node);
+//		XMem::XDELETE_ARRAY(m_node);
 //	}
 	m_nodeSum = 0;
 }

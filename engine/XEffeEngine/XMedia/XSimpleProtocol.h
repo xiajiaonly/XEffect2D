@@ -21,103 +21,80 @@ A0H，A1H，....FFH共96个特征码分别表示1-96号设备号，后面带2字节参数（以模数方式编
               另外，接收三字节数据包时每字节间隔不会超过2毫秒，放10倍，超时20毫秒该数据放弃。
               所有通讯不带校验，通讯项目做到如今从未碰到通讯出错，除非硬件条件不满足。
 ******************************************************************************************/
-#include "XBasicClass.h"
+//#include "XBasicClass.h"
 #include "XMedia/XSerialPort.h"
-#include "XLogBook.h"
-enum _XSimProDataType
+#include <deque>
+namespace XE{
+enum XSimProDataType
 {
 	SIMPRO_TYPE_STATE,	//状态数据
 	SIMPRO_TYPE_DATA,	//数值数据
 };
-struct _XSimProData
+struct XSimProData
 {
-	_XSimProDataType type;	//数据类型
+	XSimProDataType type;	//数据类型
 	int index;	//数据索引号
 	int data;	//数据值
-};
-#include <deque>
-class _XSimpleProtocol
+};	
+class XSimpleProtocol
 {
+public:
+	const static int m_maxXSPStateSum = 16;//状态数据的数量
+	const static int m_maxXSPValueSum = 96;//数值数据的数量
 private:
-	_XBool m_isInited;
-	char m_state[16];			//16个状态寄存器的状态
-	unsigned short m_data[96];	//96个数据寄存器的数据
+	XBool m_isInited;
+	XBool m_isSigned;	//是否为有符号的
+	char m_state[m_maxXSPStateSum];			//16个状态寄存器的状态
+	short m_data[m_maxXSPValueSum];	//96个数据寄存器的数据
 	unsigned char m_recvedData[3];	//已经接收的数据
 	int m_recvedDataLen;		//已经接受的数据长度
 
-	_XSerialPort m_serialPort;	//串口设备
-	friend void simpleProctocolRecvCB(void *pClass,unsigned char * data,int len);	//数据接收到的回调函数
-	void (*m_callBackFun)(const _XSimProData &data,void *p);	//增加一个回调函数，当接收到数据时调用该回调函数
+	XSerialPort m_serialPort;	//串口设备
+	static void simpleProctocolRecvCB(void *pClass,unsigned char * data,int len);	//数据接收到的回调函数
+	void (*m_callBackFun)(const XSimProData &data,void *p);	//增加一个回调函数，当接收到数据时调用该回调函数
 	void * m_pClass;
 
 	void recvDataProc(unsigned char *data,int len);
 public:
-	void setCallBackFun(void (*p)(const _XSimProData &,void *),void *pC)
-	{
-		m_callBackFun = p;
-		m_pClass = pC;
-	}
-	_XBool openDevice(int portIndex,int bitRate,int parity = 0)
-	{
-		if(m_isInited) return XFalse;
-		//打开串口设备
-		if(!m_serialPort.open(portIndex,bitRate,parity,SP_MODE_AUTO)) return XFalse;
-		m_serialPort.setCallBackFun(simpleProctocolRecvCB,this);
-		//开启相关线程
-		m_sendThreadState = STATE_BEFORE_START;
-		if(CreateThread(0,0,sendThread,this,0,NULL) == 0) return XFalse;	//开启发送线程
-
-		m_isInited = XTrue;
-		return XTrue;
-	}
-	_XSimpleProtocol()
+	void setCallBackFun(void (*p)(const XSimProData &,void *),void *pC);
+	XBool openDevice(int portIndex,int bitRate,int parity = 0,XBool withEventMode = XFalse);
+	XBool openDevice(const XSerialPortInfo &info);
+	XSimpleProtocol()
 		:m_isInited(XFalse)
 		,m_recvedDataLen(0)
-	{}
-	~_XSimpleProtocol(){release();}
-	void release()
+		,m_isSigned(XFalse)
 	{
-		if(!m_isInited) return;
-		m_sendThreadState = STATE_SET_TO_END;
-		m_sendData.clear();	//清空发送队列
-		waitThreadEnd(m_sendThreadState);
-		m_serialPort.close();
-		m_isInited = false;
+		memset(m_state,0,m_maxXSPStateSum);
+		memset(m_data,0,m_maxXSPValueSum * sizeof(unsigned short));
 	}
-	char getState(int index) const
-	{
-		if(index < 0 || index >= 16) return 0;
-		return m_state[index];
-	}
-	int getData(int index) const
-	{
-		if(index < 0 || index >= 96) return 0;
-		return m_data[index];
-	}
-	int getMaxStateSum() const{return 16;}
-	int getMaxDataSum() const{return 96;}
+	~XSimpleProtocol(){release();}
+	void release();
+	char getState(int index) const;
+	int getData(int index) const;
 	//下面是为发送数据而定义的
 private:
-	std::deque<_XSimProData> m_sendData;	//发送的数据
-	_XThreadState m_sendThreadState;
-	_XCritical m_sendMutex;
+	std::deque<XSimProData> m_sendData;	//发送的数据
+	XThreadState m_sendThreadState;
+	XCritical m_sendMutex;
 	static DWORD WINAPI sendThread(void * pParam);		//发送线程
-	void sendData(const _XSimProData&tmp);
+	void sendData(const XSimProData&tmp);
+	int decodeData(unsigned char *data);			//将原始数据解析为目标数据
+	void encodeData(int src,unsigned char *data);	//将目标数据编码为源数据
 public:
-	_XBool pushAData(_XSimProData &data)
-	{
-		m_sendMutex.Lock();
-		m_sendData.push_back(data);
-		m_sendMutex.Unlock();
-		return XTrue;
-	}
+	XBool pushAData(XSimProData &data);	//向发送队列中推入一个数据
 	//录制和回放的几个接口
-	_XBool getWithRecord() const {return m_serialPort.getWithRecord();}
-	_XBool getWithPlay() const {return m_serialPort.getWithPlay();}
-	_XBool startRecord() {return m_serialPort.startRecord();}	//开始录制
-	_XBool endRecord() {return m_serialPort.endRecord();}		//结束录制
-	_XBool startPlay() {return m_serialPort.startPlay();}		//开始播放
-	_XBool stopPlay() {return m_serialPort.stopPlay();}		//结束播放
+	XBool getWithRecord() const {return m_serialPort.getWithRecord();}
+	XBool getWithPlay() const {return m_serialPort.getWithPlay();}
+	XBool startRecord() {return m_serialPort.startRecord();}	//开始录制
+	XBool endRecord() {return m_serialPort.endRecord();}		//结束录制
+	XBool startPlay() {return m_serialPort.startPlay();}		//开始播放
+	XBool stopPlay() {return m_serialPort.stopPlay();}		//结束播放
 	void update() {m_serialPort.update();}
+	void setIsSigned(XBool flag) {m_isSigned = flag;}
+	XBool getIsSigned() const {return m_isSigned;}
 };
+#if WITH_INLINE_FILE
+#include "XSimpleProtocol.inl"
+#endif
+}
 #endif

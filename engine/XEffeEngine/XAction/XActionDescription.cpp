@@ -1,16 +1,17 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XActionDescription.h"
-#include "XBasicWindow.h"
+
 #include "XActionManager.h"
 #include "XFrameEx.h"
-
-string actionTypeStr[] = {	
+namespace XE{
+std::string actionTypeStr[] = {	
 	"ACTION_TYPE_POSITION",	//Î»ÖÃµÄ±ä»¯
-	"ACTION_TYPE_POSITION_X",	//Î»ÖÃµÄ±ä»¯
+	"ACTION_TYPE_POSITIONX",	//Î»ÖÃµÄ±ä»¯
 	"ACTION_TYPE_POSITION_Y",	//Î»ÖÃµÄ±ä»¯
 	"ACTION_TYPE_COLOR",		//ÑÕÉ«µÄ±ä»¯
 	"ACTION_TYPE_R",
@@ -20,13 +21,13 @@ string actionTypeStr[] = {
 	"ACTION_TYPE_ANGLE",		//½Ç¶È±ä»¯
 	"ACTION_TYPE_SIZE",		//³ß´çµÄ±ä»¯
 	"ACTION_TYPE_SIZE_EX",	//³ß´çµÄ±ä»¯	//x¡¢yµÈ±ÈÀıËõ·Å
-	"ACTION_TYPE_SIZE_X",		//³ß´çµÄ±ä»¯	
+	"ACTION_TYPE_SIZEX",		//³ß´çµÄ±ä»¯	
 	"ACTION_TYPE_SIZE_Y",		//³ß´çµÄ±ä»¯
 	"ACTION_TYPE_STAY",		//Í£Áô×´Ì¬
 	"ACTION_TYPE_MAX",
 };
 
-void _XActionCore::move(int delay)
+void XActionCore::move(float delay)
 {
 	if(m_isEnd || !m_isEnable) return;
 	//if(m_isStart)
@@ -41,21 +42,21 @@ void _XActionCore::move(int delay)
 		{//¿ªÊ¼²¥·Å¶¯×÷
 			if(!m_isActionStart)
 			{//³õÊ¼»¯¶¯×÷
-				//for(int i = 0;i < m_moveData.size();++ i)
+				//for(unsigned int i = 0;i < m_moveData.size();++ i)
 				//{
-				//	m_moveData[i]->reSet();
+				//	m_moveData[i]->reset();
 				//	m_moveData[i]->move(m_timeLine - m_startTime);
 				//}
 				for(int i = 0;i < m_moveDataSum;++ i)
 				{
-					m_moveData[i].reSet();
+					m_moveData[i].reset();
 					m_moveData[i].move(m_timeLine - m_startTime);
 				}
 				
 				m_isActionStart = XTrue;
 			}else
 			{
-				//for(int i = 0;i < m_moveData.size();++ i)
+				//for(unsigned int i = 0;i < m_moveData.size();++ i)
 				//{
 				//	m_moveData[i]->move(delay);
 				//}
@@ -65,8 +66,8 @@ void _XActionCore::move(int delay)
 				}
 			}
 			//ÅĞ¶ÏÊÇ·ñ¶¯×÷½áÊø
-			_XBool flag = XTrue;
-		//	for(int i = 0;i < m_moveData.size();++ i)
+			XBool flag = XTrue;
+		//	for(unsigned int i = 0;i < m_moveData.size();++ i)
 		//	{
 		//		if(!m_moveData[i]->getIsEnd())
 		//		{
@@ -88,49 +89,49 @@ void _XActionCore::move(int delay)
 			switch(m_actionType)
 			{
 			case ACTION_TYPE_POSITION:
-				m_object->setPosition(m_moveData[0].getNowData(),m_moveData[1].getNowData());
+				m_object->setPosition(m_moveData[0].getCurData(),m_moveData[1].getCurData());
 				break;
-			case ACTION_TYPE_POSITION_X:
-				m_object->setPosition(m_moveData[0].getNowData(),m_object->getPosition().y);
+			case ACTION_TYPE_POSITIONX:
+				m_object->setPosition(m_moveData[0].getCurData(),m_object->getPosition().y);
 				break;
 			case ACTION_TYPE_POSITION_Y:
-				m_object->setPosition(m_object->getPosition().x,m_moveData[0].getNowData());
+				m_object->setPosition(m_object->getPosition().x,m_moveData[0].getCurData());
 				break;
 			case ACTION_TYPE_COLOR:
-				m_object->setColor(m_moveData[0].getNowData(),
-					m_moveData[1].getNowData(),
-					m_moveData[2].getNowData(),
-					m_moveData[3].getNowData());//(m_object->getPosition().x,m_moveData[0]->getNowData());
+				m_object->setColor(m_moveData[0].getCurData(),
+					m_moveData[1].getCurData(),
+					m_moveData[2].getCurData(),
+					m_moveData[3].getCurData());//(m_object->getPosition().x,m_moveData[0]->getCurData());
 				break;
 			case ACTION_TYPE_R:
 				{
-					_XFColor tempColor = m_object->getColor();
-					m_object->setColor(m_moveData[0].getNowData(),tempColor.fG,tempColor.fB,tempColor.fA);
+					XFColor tempColor = m_object->getColor();
+					m_object->setColor(m_moveData[0].getCurData(),tempColor.fG,tempColor.fB,tempColor.fA);
 				}
 				break;
 			case ACTION_TYPE_G:
 				{
-					_XFColor tempColor = m_object->getColor();
-					m_object->setColor(tempColor.fG,m_moveData[0].getNowData(),tempColor.fB,tempColor.fA);
+					XFColor tempColor = m_object->getColor();
+					m_object->setColor(tempColor.fG,m_moveData[0].getCurData(),tempColor.fB,tempColor.fA);
 				}
 				break;
 			case ACTION_TYPE_B:
 				{
-					_XFColor tempColor = m_object->getColor();
-					m_object->setColor(tempColor.fR,tempColor.fG,m_moveData[0].getNowData(),tempColor.fA);
+					XFColor tempColor = m_object->getColor();
+					m_object->setColor(tempColor.fR,tempColor.fG,m_moveData[0].getCurData(),tempColor.fA);
 				}
 				break;
 			case ACTION_TYPE_ALPHA:
-				m_object->setAlpha(m_moveData[0].getNowData());
+				m_object->setAlpha(m_moveData[0].getCurData());
 				break;
 			case ACTION_TYPE_ANGLE:
-				m_object->setAngle(m_moveData[0].getNowData());
+				m_object->setAngle(m_moveData[0].getCurData());
 				break;
 			case ACTION_TYPE_SIZE:
-				m_object->setSize(m_moveData[0].getNowData(),m_moveData[1].getNowData());
+				m_object->setScale(m_moveData[0].getCurData(),m_moveData[1].getCurData());
 				break;
 			case ACTION_TYPE_SIZE_EX:
-				m_object->setSize(m_moveData[0].getNowData(),m_moveData[0].getNowData());
+				m_object->setScale(m_moveData[0].getCurData(),m_moveData[0].getCurData());
 				break;
 			case ACTION_TYPE_STAY:
 				break;
@@ -138,7 +139,7 @@ void _XActionCore::move(int delay)
 		}
 	}
 }
-_XBool _XActionCore::set(float startTime,float endTime,_XActionType type,_XMoveData *md,_XActionState *state)
+XBool XActionCore::set(float startTime,float endTime,XActionType type,XMoveData *md,XActionState *state)
 {
 	if(m_isEnable) return XFalse;	//·ÀÖ¹ÖØ¸´ÉèÖÃ
 
@@ -157,7 +158,7 @@ _XBool _XActionCore::set(float startTime,float endTime,_XActionType type,_XMoveD
 		m_moveData = md;
 		m_moveDataSum = 2;
 		break;
-	case ACTION_TYPE_POSITION_X:
+	case ACTION_TYPE_POSITIONX:
 		if(md == NULL) return XFalse;
 		//m_moveData.push_back(md);
 		m_moveData = md;
@@ -215,7 +216,7 @@ _XBool _XActionCore::set(float startTime,float endTime,_XActionType type,_XMoveD
 	m_isEnable = XTrue;
 	return XTrue;
 }
-void _XActionDescription::move(int delay)
+void XActionDescription::move(float delay)
 {
 	if(m_isEnd || !m_isEnable) return;
 	//if(!m_isStart) return;
@@ -225,12 +226,12 @@ void _XActionDescription::move(int delay)
 	{
 		if(!m_isActionStart)
 		{
-			for(int i = 0;i < m_otherAction.size();++ i)
+			for(unsigned int i = 0;i < m_otherAction.size();++ i)
 			{
 				m_otherAction[i]->setStart();
 				m_otherAction[i]->move(m_timeLine - m_startTime);
 			}
-			for(int i = 0;i < m_actionCore.size();++ i)
+			for(unsigned int i = 0;i < m_actionCore.size();++ i)
 			{
 				m_actionCore[i]->setStart();
 				m_actionCore[i]->move(m_timeLine - m_startTime);
@@ -241,19 +242,19 @@ void _XActionDescription::move(int delay)
 				switch(m_object->getObjectType())
 				{
 				case OBJ_FRAMEEX:
-					((_XFrameEx *)m_object)->reset();
-					((_XFrameEx *)m_object)->move(m_timeLine - m_startTime);
+					((XFrameEx *)m_object)->reset();
+					((XFrameEx *)m_object)->move(m_timeLine - m_startTime);
 					break;
 				}
 			}
 			m_isActionStart = XTrue;
 		}else
 		{
-			for(int i = 0;i < m_otherAction.size();++ i)
+			for(unsigned int i = 0;i < m_otherAction.size();++ i)
 			{
 				m_otherAction[i]->move(delay);
 			}
-			for(int i = 0;i < m_actionCore.size();++ i)
+			for(unsigned int i = 0;i < m_actionCore.size();++ i)
 			{
 				m_actionCore[i]->move(delay);
 			}
@@ -263,14 +264,14 @@ void _XActionDescription::move(int delay)
 				switch(m_object->getObjectType())
 				{
 				case OBJ_FRAMEEX:
-					((_XFrameEx *)m_object)->move(delay);
+					((XFrameEx *)m_object)->move(delay);
 					break;
 				}
 			}
 		}
 		//ÅĞ¶ÏÊÇ·ñ½áÊø
-		_XBool flag = XTrue;
-		for(int i = 0;i < m_otherAction.size();++ i)
+		XBool flag = XTrue;
+		for(unsigned int i = 0;i < m_otherAction.size();++ i)
 		{
 			if(!m_otherAction[i]->getIsEnd())
 			{
@@ -280,7 +281,7 @@ void _XActionDescription::move(int delay)
 		}
 		if(flag)
 		{
-			for(int i = 0;i < m_actionCore.size();++ i)
+			for(unsigned int i = 0;i < m_actionCore.size();++ i)
 			{
 				if(!m_actionCore[i]->getIsEnd())
 				{
@@ -292,178 +293,202 @@ void _XActionDescription::move(int delay)
 		if(flag) m_isEnd = XTrue;
 	}
 }
-_XBool _XActionDescription::loadAction(const char * filename,_XResourcePosition resoursePosition)
+bool XActionDescription::loadFromFolder(const char *filename)	//´ÓÎÄ¼ş¼ĞÖĞÔØÈë×ÊÔ´
+{
+	FILE *fp = NULL;
+	char tempStr[MAX_FILE_NAME_LENGTH];
+//	if(filename != NULL)
+//	{
+//		sprintf(tempStr,"%s%s",ACTION_DES_PATH,filename);
+//	}else
+//	{
+//		sprintf(tempStr,"%s%s.acd",ACTION_DES_PATH,m_actionName);
+//	}
+//	if((fp = fopen(tempStr,"r")) == NULL) return XFalse;	//ÎÄ¼ş´ò¿ªÊ§°Ü
+	if((fp = fopen(filename,"r")) == NULL) return XFalse;	//ÎÄ¼ş´ò¿ªÊ§°Ü
+	int tempSize;
+		
+	if(fscanf(fp,"ID:%d,\n",&m_ID) != 1) {fclose(fp);return XFalse;}	//Ğ´Èë¶¯×÷ID;
+	if(fscanf(fp,"Name:%s\n",m_actionName) != 1) {fclose(fp);return XFalse;}//Ğ´Èë¶¯×÷Ãû³Æ;
+	//fscanf(fp,"OBJ:%d,\n",&tempSize);//Îï¼şµÄÃû³Æ/ID;(ÓĞ´ıÈ·ÈÏ)£¬ÔİÊ±²»±£´æÎï¼şĞÅÏ¢
+	if(fscanf(fp,"%d:\n",&tempSize) != 1) {fclose(fp);return XFalse;}
+	if(tempSize != 0)
+	{//´æÔÚÎï¼ş£¨Ôø¾­¿¼ÂÇÔÚÕâÀïÀûÓÃÎï¼ş¹ÜÀíÆ÷À´×öµ½Îï¼şÖØÓÃ£¬µ«ÊÇÓÉÓÚÎï¼ş¿ÉÄÜÍ¬Ê±±»Ê¹ÓÃ£¬ËùÒÔÕâÀï²»ÄÜ±»ÖØÓÃ£¬ÓÉÓÚÊôĞÔ³åÍ»£©
+		XActionObjectDescription *temp = XMem::createMem<XActionObjectDescription>();
+		if(temp == NULL || !temp->getDataFromFile(fp))
+		{
+			fclose(fp);
+			return XFalse;
+		}
+		m_object = temp->createAObject();
+	}else
+	{//²»´æÔÚÎï¼ş
+		m_object = NULL;
+	}
+	if(fscanf(fp,"Time:%f,%f\n",&m_startTime,&m_endTime) != 2) {fclose(fp);return XFalse;}	
+	m_otherAction.clear();
+	m_actionCore.clear();
+	m_otherActionID.clear();
+
+	if(fscanf(fp,"OAD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//¸½Êô¶¯×÷ÊıÁ¿;
+	if(tempSize > 0)//¸½Êô¶¯×÷µÄIDºÍÃû³Æ
+	{
+		for(int i = 0;i < tempSize;++ i)
+		{//Õâ¸öÊı¾İ¶ÁÈ¡Ã»ÓĞÒâÒå,ĞèÒªÓĞ¹ÜÀíÆ÷Ö®ºó²ÅÓĞÒâÒå
+			if(fscanf(fp,"%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}	//Ğ´Èë¶¯×÷ID;
+			if(fscanf(fp,"%s\n",tempStr) != 1) {fclose(fp);return XFalse;}		//Ğ´Èë¶¯×÷Ãû³Æ;
+			//ÉĞÎ´Íê³É£¬ÉĞÎŞAD¹ÜÀíÆ÷
+			m_otherActionID.push_back(tempSize);
+			//ÓÉÓÚÏÈºóË³ĞòµÄÎÊÌâ£¬ÕâÀïÒ»±é¶ÁÈ¡Î´±ØÄÜÖ±½Ó¶ÁÈ¡µ½ËùÓĞ¶¯×÷£¬ËùÒÔÕâÀïĞèÒª¿¼ÂÇÁ½±é¶ÁÈ¡
+		//	XActionDescription * temp = XActionMananger::GetInstance().getAD(tempSize);
+		//	if(temp == NULL || !pushAActionDescription(temp))
+		//	{//¶¯×÷¶ÁÈ¡Ê§°Ü£¬ÕâÀï²¢Ã»ÓĞÊÍ·ÅÁÙÊ±×ÊÔ´£¬´úÂëÉĞ²»ÑÏ½÷
+		//		fclose(fp);
+		//		return XFalse;
+		//	}
+		}
+	}
+	if(fscanf(fp,"AC Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//Ôª¶¯×÷µÄÊıÁ¿
+	if(tempSize > 0)
+	{
+		XActionCore *temp;
+		int type;
+		float startTime,endTime;
+		XMoveData * tempMD = NULL;
+		int mdSum;
+		//mdÊı¾İ
+		float startData,endData,speed;
+		int mode,isLoop;
+		XActionState tempState;
+		for(int i = 0;i < tempSize;++ i)
+		{
+			if(fscanf(fp,"AC Type:%d,\n",&type) != 1) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄÀàĞÍ
+			if(fscanf(fp,"Time:%f,%f,\n",&startTime,&endTime) != 2) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄÀàĞÍ
+			if(fscanf(fp,"MD Sum:%d,\n",&mdSum) != 1) {fclose(fp);return XFalse;}
+			tempMD = NULL;
+			if(mdSum > 0)
+			{
+				if(mdSum > 1) 
+				{
+					tempMD = XMem::createArrayMem<XMoveData>(mdSum);
+					for(int j = 0;j < mdSum;++ j)
+					{
+						//m_actionCore[i]->m_moveData[j]->getParamStr(tempStr);	//×¢Òâ¸ñÊ½¶ÔÓ¦ÎÊÌâ
+						if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄ²ÎÊı
+						tempMD[j].set(startData,endData,speed,(XMoveDataMode)(mode),isLoop);
+					}
+				}else 
+				{
+					tempMD = XMem::createMem<XMoveData>();
+					if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄ²ÎÊı
+					tempMD->set(startData,endData,speed,(XMoveDataMode)(mode),isLoop);
+				}
+			}
+			if(fscanf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",&tempState.position.x,&tempState.position.y,
+				&tempState.angle,&tempState.size.x,&tempState.size.y,
+				&tempState.color.fR,&tempState.color.fG,&tempState.color.fB,&tempState.color.fA) != 9) {fclose(fp);return XFalse;}
+			temp = XMem::createMem<XActionCore>();
+			temp->set(startTime,endTime,(XActionType)(type),tempMD,&tempState);
+			if(!pushAActionCore(temp))
+			{//¶¯×÷¶ÁÈ¡Ê§°Ü£¬ÕâÀï²¢Ã»ÓĞÊÍ·ÅÁÙÊ±×ÊÔ´£¬´úÂëÉĞ²»ÑÏ½÷
+				fclose(fp);
+				return XFalse;
+			}
+		}
+	}
+	//ASDµÄ¶ÁÈ¡
+	if(fscanf(fp,"ASD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//Ôª¶¯×÷µÄÊıÁ¿
+	if(tempSize > 0)
+	{//ÏÂÃæÒÀ´Î¶ÁÈ¡ASDµÄÊı¾İ
+		XActionStateDescription * tempASD = NULL;
+		float tempValue = 0;
+		int tempBool = 0;
+		for(int i = 0;i < tempSize;++ i)
+		{
+			tempASD = XMem::createMem<XActionStateDescription>();
+			if(tempASD == NULL) return XFalse;
+			if(fscanf(fp,"time:%d,\n",&tempASD->time) != 1) {fclose(fp);return XFalse;}
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidPosX = XTrue;
+			else tempASD->isValidPosX = XFalse;
+			tempASD->position.x = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidPosY = XTrue;
+			else tempASD->isValidPosY = XFalse;
+			tempASD->position.y = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidColorR = XTrue;
+			else tempASD->isValidColorR = XFalse;
+			tempASD->color.fR = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidColorG = XTrue;
+			else tempASD->isValidColorG = XFalse;
+			tempASD->color.fG = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidColorB = XTrue;
+			else tempASD->isValidColorB = XFalse;
+			tempASD->color.fB = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidColorA = XTrue;
+			else tempASD->isValidColorA = XFalse;
+			tempASD->color.fA = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidAngle = XTrue;
+			else tempASD->isValidAngle = XFalse;
+			tempASD->angle = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidSizeX = XTrue;
+			else tempASD->isValidSizeX = XFalse;
+			tempASD->size.x = tempValue;
+			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
+			if(tempBool == 1) tempASD->isValidSizeY = XTrue;
+			else tempASD->isValidSizeY = XFalse;
+			tempASD->size.y = tempValue;
+
+			if(!insertASD(tempASD))
+			{
+				XMem::XDELETE(tempASD);
+				return XFalse;
+			}
+		}
+	}
+	fclose(fp);
+	return true;
+}
+bool XActionDescription::loadFromPacker(const char *filename)	//´ÓÑ¹Ëõ°üÖĞÔØÈë×ÊÔ´
+{
+	return false;
+}
+bool XActionDescription::loadFromWeb(const char *filename)		//´ÓÍøÒ³ÖĞ¶ÁÈ¡×ÊÔ´
+{
+	return false;
+}
+
+XBool XActionDescription::loadAction(const char * filename,XResourcePosition resoursePosition)
 {
 	if(m_isEnable) return XFalse;
 	if(filename == NULL) return XFalse;
 	m_isEnable = XTrue;
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
-	if(resoursePosition == RESOURCE_LOCAL_FOLDER)
+	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
+	switch(resoursePosition)
 	{
-		FILE *fp = NULL;
-		char tempStr[MAX_FILE_NAME_LENGTH];
-	//	if(filename != NULL)
-	//	{
-	//		sprintf(tempStr,"%s%s",ACTION_DES_PATH,filename);
-	//	}else
-	//	{
-	//		sprintf(tempStr,"%s%s.acd",ACTION_DES_PATH,m_actionName);
-	//	}
-	//	if((fp = fopen(tempStr,"r")) == NULL) return XFalse;	//ÎÄ¼ş´ò¿ªÊ§°Ü
-		if((fp = fopen(filename,"r")) == NULL) return XFalse;	//ÎÄ¼ş´ò¿ªÊ§°Ü
-		int tempSize;
-		
-		if(fscanf(fp,"ID:%d,\n",&m_ID) != 1) {fclose(fp);return XFalse;}	//Ğ´Èë¶¯×÷ID;
-		if(fscanf(fp,"Name:%s\n",m_actionName) != 1) {fclose(fp);return XFalse;}//Ğ´Èë¶¯×÷Ãû³Æ;
-		//fscanf(fp,"OBJ:%d,\n",&tempSize);//Îï¼şµÄÃû³Æ/ID;(ÓĞ´ıÈ·ÈÏ)£¬ÔİÊ±²»±£´æÎï¼şĞÅÏ¢
-		if(fscanf(fp,"%d:\n",&tempSize) != 1) {fclose(fp);return XFalse;}
-		if(tempSize != 0)
-		{//´æÔÚÎï¼ş£¨Ôø¾­¿¼ÂÇÔÚÕâÀïÀûÓÃÎï¼ş¹ÜÀíÆ÷À´×öµ½Îï¼şÖØÓÃ£¬µ«ÊÇÓÉÓÚÎï¼ş¿ÉÄÜÍ¬Ê±±»Ê¹ÓÃ£¬ËùÒÔÕâÀï²»ÄÜ±»ÖØÓÃ£¬ÓÉÓÚÊôĞÔ³åÍ»£©
-			_XActionObjectDescription *temp = createMem<_XActionObjectDescription>();
-			if(temp == NULL || !temp->getDataFromFile(fp))
-			{
-				fclose(fp);
-				return XFalse;
-			}
-			m_object = temp->createAObject();
-		}else
-		{//²»´æÔÚÎï¼ş
-			m_object = NULL;
-		}
-		if(fscanf(fp,"Time:%f,%f\n",&m_startTime,&m_endTime) != 2) {fclose(fp);return XFalse;}	
-		m_otherAction.clear();
-		m_actionCore.clear();
-		m_otherActionID.clear();
-
-		if(fscanf(fp,"OAD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//¸½Êô¶¯×÷ÊıÁ¿;
-		if(tempSize > 0)//¸½Êô¶¯×÷µÄIDºÍÃû³Æ
-		{
-			for(int i = 0;i < tempSize;++ i)
-			{//Õâ¸öÊı¾İ¶ÁÈ¡Ã»ÓĞÒâÒå,ĞèÒªÓĞ¹ÜÀíÆ÷Ö®ºó²ÅÓĞÒâÒå
-				if(fscanf(fp,"%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}	//Ğ´Èë¶¯×÷ID;
-				if(fscanf(fp,"%s\n",tempStr) != 1) {fclose(fp);return XFalse;}		//Ğ´Èë¶¯×÷Ãû³Æ;
-				//ÉĞÎ´Íê³É£¬ÉĞÎŞAD¹ÜÀíÆ÷
-				m_otherActionID.push_back(tempSize);
-				//ÓÉÓÚÏÈºóË³ĞòµÄÎÊÌâ£¬ÕâÀïÒ»±é¶ÁÈ¡Î´±ØÄÜÖ±½Ó¶ÁÈ¡µ½ËùÓĞ¶¯×÷£¬ËùÒÔÕâÀïĞèÒª¿¼ÂÇÁ½±é¶ÁÈ¡
-			//	_XActionDescription * temp = _XActionMananger::GetInstance().getAD(tempSize);
-			//	if(temp == NULL || !pushAActionDescription(temp))
-			//	{//¶¯×÷¶ÁÈ¡Ê§°Ü£¬ÕâÀï²¢Ã»ÓĞÊÍ·ÅÁÙÊ±×ÊÔ´£¬´úÂëÉĞ²»ÑÏ½÷
-			//		fclose(fp);
-			//		return XFalse;
-			//	}
-			}
-		}
-		if(fscanf(fp,"AC Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//Ôª¶¯×÷µÄÊıÁ¿
-		if(tempSize > 0)
-		{
-			_XActionCore *temp;
-			int type;
-			float startTime,endTime;
-			_XMoveData * tempMD = NULL;
-			int mdSum;
-			//mdÊı¾İ
-			float startData,endData,speed;
-			int mode,isLoop;
-			_XActionState tempState;
-			for(int i = 0;i < tempSize;++ i)
-			{
-				if(fscanf(fp,"AC Type:%d,\n",&type) != 1) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄÀàĞÍ
-				if(fscanf(fp,"Time:%f,%f,\n",&startTime,&endTime) != 2) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄÀàĞÍ
-				if(fscanf(fp,"MD Sum:%d,\n",&mdSum) != 1) {fclose(fp);return XFalse;}
-				tempMD = NULL;
-				if(mdSum > 0)
-				{
-					if(mdSum > 1) 
-					{
-						tempMD = createArrayMem<_XMoveData>(mdSum);
-						for(int j = 0;j < mdSum;++ j)
-						{
-							//m_actionCore[i]->m_moveData[j]->getParamStr(tempStr);	//×¢Òâ¸ñÊ½¶ÔÓ¦ÎÊÌâ
-							if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄ²ÎÊı
-							tempMD[j].set(startData,endData,speed,(_XMoveDataMode)(mode),isLoop);
-						}
-					}else 
-					{
-						tempMD = createMem<_XMoveData>();
-						if(fscanf(fp,"%f,%f,%f,%d,%d,\n",&startData,&endData,&speed,&mode,&isLoop) != 5) {fclose(fp);return XFalse;}	//Ôª¶¯×÷µÄ²ÎÊı
-						tempMD->set(startData,endData,speed,(_XMoveDataMode)(mode),isLoop);
-					}
-				}
-				if(fscanf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",&tempState.position.x,&tempState.position.y,
-					&tempState.angle,&tempState.size.x,&tempState.size.y,
-					&tempState.color.fR,&tempState.color.fG,&tempState.color.fB,&tempState.color.fA) != 9) {fclose(fp);return XFalse;}
-				temp = createMem<_XActionCore>();
-				temp->set(startTime,endTime,(_XActionType)(type),tempMD,&tempState);
-				if(!pushAActionCore(temp))
-				{//¶¯×÷¶ÁÈ¡Ê§°Ü£¬ÕâÀï²¢Ã»ÓĞÊÍ·ÅÁÙÊ±×ÊÔ´£¬´úÂëÉĞ²»ÑÏ½÷
-					fclose(fp);
-					return XFalse;
-				}
-			}
-		}
-		//ASDµÄ¶ÁÈ¡
-		if(fscanf(fp,"ASD Sum:%d,\n",&tempSize) != 1) {fclose(fp);return XFalse;}//Ôª¶¯×÷µÄÊıÁ¿
-		if(tempSize > 0)
-		{//ÏÂÃæÒÀ´Î¶ÁÈ¡ASDµÄÊı¾İ
-			_XActionStateDescription * tempASD = NULL;
-			float tempValue = 0;
-			int tempBool = 0;
-			for(int i = 0;i < tempSize;++ i)
-			{
-				tempASD = createMem<_XActionStateDescription>();
-				if(tempASD == NULL) return XFalse;
-				if(fscanf(fp,"time:%d,\n",&tempASD->time) != 1) {fclose(fp);return XFalse;}
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidPosX = XTrue;
-				else tempASD->isValidPosX = XFalse;
-				tempASD->position.x = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidPosY = XTrue;
-				else tempASD->isValidPosY = XFalse;
-				tempASD->position.y = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidColorR = XTrue;
-				else tempASD->isValidColorR = XFalse;
-				tempASD->color.fR = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidColorG = XTrue;
-				else tempASD->isValidColorG = XFalse;
-				tempASD->color.fG = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidColorB = XTrue;
-				else tempASD->isValidColorB = XFalse;
-				tempASD->color.fB = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidColorA = XTrue;
-				else tempASD->isValidColorA = XFalse;
-				tempASD->color.fA = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidAngle = XTrue;
-				else tempASD->isValidAngle = XFalse;
-				tempASD->angle = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidSizeX = XTrue;
-				else tempASD->isValidSizeX = XFalse;
-				tempASD->size.x = tempValue;
-				if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
-				if(tempBool == 1) tempASD->isValidSizeY = XTrue;
-				else tempASD->isValidSizeY = XFalse;
-				tempASD->size.y = tempValue;
-
-				if(!insertASD(tempASD))
-				{
-					XDELETE(tempASD);
-					return XFalse;
-				}
-			}
-		}
-		fclose(fp);
-	}else
-	{//´Ó×ÊÔ´°üÖĞ½âÑ¹ËõÊı¾İ(ÉĞÎ´Íê³É)
+	case RESOURCE_LOCAL_PACK:
+		if(!loadFromPacker(filename)) return false;
+		break;
+	case RESOURCE_LOCAL_FOLDER:
+		if(!loadFromFolder(filename)) return false;
+		break;
+	case RESOURCE_WEB:
+		if(!loadFromWeb(filename)) return false;
+		break;
+	case RESOURCE_AUTO:
+		if(!loadFromPacker(filename) && !loadFromFolder(filename) &&
+			!loadFromWeb(filename)) return false;
+		break;
 	}
 	return XTrue;
 }
-_XBool _XActionDescription::saveAction(const char *filename)
+XBool XActionDescription::saveAction(const char *filename)
 {
 	FILE *fp = NULL;
 	char tempStr[MAX_FILE_NAME_LENGTH];
@@ -486,7 +511,7 @@ _XBool _XActionDescription::saveAction(const char *filename)
 	}else
 	{
 		fprintf(fp,"1:\n");	
-		_XActionObjectDescription * objDes = _XActionObjectManager::GetInstance().getObjDes(m_object);
+		XActionObjectDescription * objDes = XActionObjectManager::GetInstance().getObjDes(m_object);
 		if(objDes == NULL)
 		{
 			fclose(fp);
@@ -499,14 +524,14 @@ _XBool _XActionDescription::saveAction(const char *filename)
 			return XFalse;
 		}
 		fprintf(fp,"%s",objDesStr);	//ĞèÒª²âÊÔ
-		XDELETE_ARRAY(objDesStr);
+		XMem::XDELETE_ARRAY(objDesStr);
 	}
 
 	fprintf(fp,"Time:%f,%f\n",m_startTime,m_endTime);	
 	fprintf(fp,"OAD Sum:%d,\n",m_otherAction.size());//¸½Êô¶¯×÷ÊıÁ¿;
 	if(m_otherAction.size() > 0)//¸½Êô¶¯×÷µÄIDºÍÃû³Æ
 	{
-		for(int i = 0;i < m_otherAction.size();++ i)
+		for(unsigned int i = 0;i < m_otherAction.size();++ i)
 		{
 			fprintf(fp,"%d,\n",m_otherAction[i]->m_ID);	//Ğ´Èë¶¯×÷ID;
 			fprintf(fp,"%s\n",m_otherAction[i]->m_actionName);//Ğ´Èë¶¯×÷Ãû³Æ;
@@ -515,7 +540,7 @@ _XBool _XActionDescription::saveAction(const char *filename)
 	fprintf(fp,"AC Sum:%d,\n",m_actionCore.size());//Ôª¶¯×÷µÄÊıÁ¿
 	if(m_actionCore.size() > 0)
 	{
-		for(int i = 0;i < m_actionCore.size();++ i)
+		for(unsigned int i = 0;i < m_actionCore.size();++ i)
 		{
 			fprintf(fp,"AC Type:%d,\n",m_actionCore[i]->m_actionType);	//Ôª¶¯×÷µÄÀàĞÍ
 			fprintf(fp,"Time:%f,%f,\n",m_actionCore[i]->m_startTime,m_actionCore[i]->m_endTime);	//Ôª¶¯×÷µÄÀàĞÍ
@@ -537,7 +562,7 @@ _XBool _XActionDescription::saveAction(const char *filename)
 	fprintf(fp,"ASD Sum:%d,\n",m_stateTable.size());//Ôª¶¯×÷µÄÊıÁ¿
 	if(m_stateTable.size() > 0)
 	{
-		for(int i = 0;i < m_stateTable.size();++ i)
+		for(unsigned int i = 0;i < m_stateTable.size();++ i)
 		{//ÏÂÃæĞ´Èë¾ßÌåµÄÄÚÈİ
 			fprintf(fp,"time:%d,\n",m_stateTable[i]->time);
 			if(m_stateTable[i]->isValidPosX) fprintf(fp,"1,%f,\n",m_stateTable[i]->position.x);
@@ -563,7 +588,7 @@ _XBool _XActionDescription::saveAction(const char *filename)
 	fclose(fp);
 	return XTrue;
 }
-_XActionDescription::_XActionDescription()
+XActionDescription::XActionDescription()
 :m_isEnable(XFalse)
 //,m_isStart(XFalse)
 ,m_isEnd(XTrue)
@@ -577,7 +602,7 @@ _XActionDescription::_XActionDescription()
 	while(true)
 	{//ÕâÀïĞèÒªIDµÄÎ¨Ò»ĞÔ
 		++ myID;
-		if(_XActionMananger::GetInstance().getActionDes(myID) == NULL) break;
+		if(XActionMananger::GetInstance().getActionDes(myID) == NULL) break;
 	}
 	m_ID = myID;
 	sprintf(m_actionName,"ActionDescription%06d",m_ID);	//ÕâÀïĞèÒª×¢ÒâÃû×ÖµÄÎ¨Ò»ĞÔ
@@ -589,16 +614,16 @@ _XActionDescription::_XActionDescription()
 	//	if(m_actionName[i] == ' ') m_actionName[i] = '0';
 	//}
 }
-void _XActionDescription::draw()
+void XActionDescription::draw()
 {//ÕâÀïĞèÒªÒıÈëÍ¼²ãµÄ¸ÅÄî£¬À´½â¾öÍ¼²ãÉÏÏÂÕÚ¸ÇµÄÎÊÌâ
 	if(!m_isEnable) return;
-	for(int i = 0;i < m_otherAction.size();++ i)
+	for(unsigned int i = 0;i < m_otherAction.size();++ i)
 	{
 		m_otherAction[i]->draw();
 	}
 	if(m_object != NULL) m_object->draw();
 }
-void _XActionDescription::setStart()
+void XActionDescription::setStart()
 {
 	//if(m_isEnd)
 	{
@@ -606,17 +631,17 @@ void _XActionDescription::setStart()
 		m_timeLine = 0.0f;
 		m_isActionStart = XFalse;
 		m_isEnd = XFalse;
-		for(int i = 0;i < m_otherAction.size();++ i)
+		for(unsigned int i = 0;i < m_otherAction.size();++ i)
 		{
 			m_otherAction[i]->setStart();
 		}
-		for(int i = 0;i < m_actionCore.size();++ i)
+		for(unsigned int i = 0;i < m_actionCore.size();++ i)
 		{
 			m_actionCore[i]->setStart();
 		}
 	}
 }
-int _XActionDescription::getADChildIndex(_XActionDescription * p)	//¼ì²éÖÆ¶¨µÄADÔÚµ±Ç°AD×ÓÁĞ±íÖĞµÄ±àºÅ
+int XActionDescription::getADChildIndex(XActionDescription * p)	//¼ì²éÖÆ¶¨µÄADÔÚµ±Ç°AD×ÓÁĞ±íÖĞµÄ±àºÅ
 {
 	if(p == NULL) return -1;
 	int sum = m_otherAction.size();
@@ -626,10 +651,10 @@ int _XActionDescription::getADChildIndex(_XActionDescription * p)	//¼ì²éÖÆ¶¨µÄAD
 	}
 	return -1;
 }
-void _XActionDescription::setObject(_XObjectBasic *obj)
+void XActionDescription::setObject(XObjectBasic *obj)
 {
 	if(!m_isEnable) return;
-	_XActionObjectManager::GetInstance().decreaseAObject(m_object);	//×¢ÒâÕâÒ»ĞĞ¿ÉÄÜ»áÔì³ÉÎÊÌâ
+	XActionObjectManager::GetInstance().decreaseAObject(m_object);	//×¢ÒâÕâÒ»ĞĞ¿ÉÄÜ»áÔì³ÉÎÊÌâ
 	m_object = obj;
 	//ÆäÏÂÃæµÄËùÓĞACµÄÄ¿±ê¶¼ĞèÒª¸Ä±ä
 	int sum = m_actionCore.size();
@@ -638,7 +663,7 @@ void _XActionDescription::setObject(_XObjectBasic *obj)
 		m_actionCore[i]->m_object = m_object;
 	}
 }
-_XBool _XActionDescription::pushAActionCore(_XActionCore * p)
+XBool XActionDescription::pushAActionCore(XActionCore * p)
 {
 	if(!m_isEnable) return XFalse;
 	if(p == NULL) return XFalse;
@@ -652,7 +677,7 @@ _XBool _XActionDescription::pushAActionCore(_XActionCore * p)
 	m_actionCore.push_back(p);
 	return XTrue;
 }
-_XBool _XActionDescription::popAActionCore(_XActionCore * p)	//´ÓĞòÁĞÖĞÉ¾³ıÒ»¸öÔªËØ
+XBool XActionDescription::popAActionCore(XActionCore * p)	//´ÓĞòÁĞÖĞÉ¾³ıÒ»¸öÔªËØ
 {
 	if(!m_isEnable) return XFalse;
 	if(p == NULL) return XFalse;
@@ -667,21 +692,21 @@ _XBool _XActionDescription::popAActionCore(_XActionCore * p)	//´ÓĞòÁĞÖĞÉ¾³ıÒ»¸öÔ
 	}
 	return XFalse;
 }
-_XBool _XActionDescription::replaceAAction(int index,_XActionCore * p)
+XBool XActionDescription::replaceAAction(int index,XActionCore * p)
 {
 	if(p == NULL) return XFalse;
 	if(index < 0 || index >= m_actionCore.size()) return XFalse;
-	XDELETE(m_actionCore[index]);
+	XMem::XDELETE(m_actionCore[index]);
 	p->m_object = m_object;
 	m_actionCore[index] = p;
 	return XTrue;
 }
-_XBool _XActionDescription::popAActionCore(int index)
+XBool XActionDescription::popAActionCore(int index)
 {
 	if(!m_isEnable) return XFalse;
 	int size = m_actionCore.size();
 	if(index < 0 || index >= size) return XFalse;
-	XDELETE(m_actionCore[index]);
+	XMem::XDELETE(m_actionCore[index]);
 //	for(int j = index;j < size - 1;++ j)
 //	{
 //		m_actionCore[j] = m_actionCore[j + 1];
@@ -690,7 +715,7 @@ _XBool _XActionDescription::popAActionCore(int index)
 	m_actionCore.erase(m_actionCore.begin() + index);
 	return XTrue;
 }
-_XBool _XActionDescription::getIsChildActionDes(_XActionDescription * p)
+XBool XActionDescription::getIsChildActionDes(XActionDescription * p)
 {
 	if(!m_isEnable) return XFalse;
 	if(p == NULL) return XFalse;
@@ -702,7 +727,7 @@ _XBool _XActionDescription::getIsChildActionDes(_XActionDescription * p)
 	}
 	return XFalse;
 }
-_XBool _XActionDescription::pushAActionDescription(_XActionDescription * p)
+XBool XActionDescription::pushAActionDescription(XActionDescription * p)
 {
 	if(!m_isEnable) return XFalse;
 	if(p == NULL) return XFalse;
@@ -713,7 +738,7 @@ _XBool _XActionDescription::pushAActionDescription(_XActionDescription * p)
 	m_otherActionID.push_back(p->m_ID);
 	return XTrue;
 }
-_XBool _XActionDescription::popAActionDescription(int index)
+XBool XActionDescription::popAActionDescription(int index)
 {//´Ó¶ÓÁĞÖĞÉ¾³ıÖ¸¶¨µÄ×ÓAD
 	if(!m_isEnable) return XFalse;
 	int sum = m_otherAction.size();
@@ -729,27 +754,27 @@ _XBool _XActionDescription::popAActionDescription(int index)
 	m_otherActionID.erase(m_otherActionID.begin() + index);
 	return XTrue;
 }
-void _XActionDescription::release()
+void XActionDescription::release()
 {
 	if(!m_isEnable) return;
 	//¾ßÌåµÄ×ÊÔ´ÊÍ·ÅÉĞÎ´ÊµÏÖ
-	for(int i = 0;i < m_actionCore.size();++ i)
+	for(unsigned int i = 0;i < m_actionCore.size();++ i)
 	{
-		XDELETE(m_actionCore[i]);
+		XMem::XDELETE(m_actionCore[i]);
 	}
 	m_actionCore.clear();
-	m_actionCore.swap(std::vector<_XActionCore *>());
+	//m_actionCore.swap(std::vector<XActionCore *>());
 
-	for(int i = 0;i < m_stateTable.size();++ i)
+	for(unsigned int i = 0;i < m_stateTable.size();++ i)
 	{
-		XDELETE(m_stateTable[i]);
+		XMem::XDELETE(m_stateTable[i]);
 	}
 	m_stateTable.clear();
-	m_stateTable.swap(std::vector<_XActionStateDes *>());
+	//m_stateTable.swap(std::vector<XActionStateDes *>());
 	m_isEnable = XFalse;
 }
 //+++++++++++++++++++++++++++++++++++++++
-_XBool _XActionDescription::popASD(const _XActionStateDes* ASD)
+XBool XActionDescription::popASD(const XActionStateDes* ASD)
 {
 	if(ASD == NULL) return XFalse;
 	int sum = m_stateTable.size();
@@ -767,13 +792,13 @@ _XBool _XActionDescription::popASD(const _XActionStateDes* ASD)
 				m_minTime = -1;
 				m_maxTime = -1;
 			}
-			XDELETE(ASD);
+			XMem::XDELETE(ASD);
 			return XTrue;
 		}
 	}
 	return XFalse;
 }
-_XBool _XActionDescription::insertASD(_XActionStateDes* ASD)
+XBool XActionDescription::insertASD(XActionStateDes* ASD)
 {
 	if(ASD == NULL) return XFalse;
 	int sum = m_stateTable.size();
@@ -794,7 +819,7 @@ _XBool _XActionDescription::insertASD(_XActionStateDes* ASD)
 	if(ASD->time > m_maxTime || m_maxTime < 0) m_maxTime = ASD->time;
 	return XTrue;
 }
-_XActionStateDes* _XActionDescription::getPreviousASD(int time,_XActionStateType type)
+XActionStateDes* XActionDescription::getPreviousASD(int time,XActionStateType type)
 {
 	if(time < m_minTime) return NULL;
 	int sum = m_stateTable.size();
@@ -804,7 +829,7 @@ _XActionStateDes* _XActionDescription::getPreviousASD(int time,_XActionStateType
 		{
 			switch(type)
 			{
-			case ACTION_STATE_TYPE_POS_X: 
+			case ACTION_STATE_TYPE_POSX: 
 				if(m_stateTable[i]->isValidPosX)
 					return m_stateTable[i];
 				break;
@@ -832,7 +857,7 @@ _XActionStateDes* _XActionDescription::getPreviousASD(int time,_XActionStateType
 				if(m_stateTable[i]->isValidAngle)
 					return m_stateTable[i];
 				break;
-			case ACTION_STATE_TYPE_SIZE_X: 
+			case ACTION_STATE_TYPE_SIZEX: 
 				if(m_stateTable[i]->isValidSizeX)
 					return m_stateTable[i];
 				break;
@@ -845,7 +870,7 @@ _XActionStateDes* _XActionDescription::getPreviousASD(int time,_XActionStateType
 	}
 	return NULL;
 }
-_XActionStateDes* _XActionDescription::getNextASD(int time,_XActionStateType type)
+XActionStateDes* XActionDescription::getNextASD(int time,XActionStateType type)
 {
 	if(time > m_maxTime) return NULL;
 	int sum = m_stateTable.size();
@@ -855,7 +880,7 @@ _XActionStateDes* _XActionDescription::getNextASD(int time,_XActionStateType typ
 		{
 			switch(type)
 			{
-			case ACTION_STATE_TYPE_POS_X: 
+			case ACTION_STATE_TYPE_POSX: 
 				if(m_stateTable[i]->isValidPosX)
 					return m_stateTable[i];
 				break;
@@ -883,7 +908,7 @@ _XActionStateDes* _XActionDescription::getNextASD(int time,_XActionStateType typ
 				if(m_stateTable[i]->isValidAngle)
 					return m_stateTable[i];
 				break;
-			case ACTION_STATE_TYPE_SIZE_X: 
+			case ACTION_STATE_TYPE_SIZEX: 
 				if(m_stateTable[i]->isValidSizeX)
 					return m_stateTable[i];
 				break;
@@ -896,24 +921,24 @@ _XActionStateDes* _XActionDescription::getNextASD(int time,_XActionStateType typ
 	}
 	return NULL;
 }
-float _XActionDescription::getASValue(int time,_XActionStateType type)
+float XActionDescription::getASValue(int time,XActionStateType type)
 {
-	_XActionStateDes * tempS = NULL;
-	_XActionStateDes * tempE = NULL;
+	XActionStateDes * tempS = NULL;
+	XActionStateDes * tempE = NULL;
 	tempS = getPreviousASD(time,type);
 	tempE = getNextASD(time,type);
 	if((tempS == NULL || tempS == tempE)&& tempE != NULL) 
 	{
 		switch(type)
 		{
-		case ACTION_STATE_TYPE_POS_X: return tempE->position.x; 
+		case ACTION_STATE_TYPE_POSX: return tempE->position.x; 
 		case ACTION_STATE_TYPE_POS_Y: return tempE->position.y; 
 		case ACTION_STATE_TYPE_COLOR_R: return tempE->color.fR; 
 		case ACTION_STATE_TYPE_COLOR_G: return tempE->color.fG; 
 		case ACTION_STATE_TYPE_COLOR_B: return tempE->color.fB; 
 		case ACTION_STATE_TYPE_COLOR_A: return tempE->color.fA; 
 		case ACTION_STATE_TYPE_ANGLE: return tempE->angle; 
-		case ACTION_STATE_TYPE_SIZE_X: return tempE->size.x; 
+		case ACTION_STATE_TYPE_SIZEX: return tempE->size.x; 
 		case ACTION_STATE_TYPE_SIZE_Y: return tempE->size.y; 
 		} 
 	}else
@@ -921,14 +946,14 @@ float _XActionDescription::getASValue(int time,_XActionStateType type)
 	{
 		switch(type)
 		{
-		case ACTION_STATE_TYPE_POS_X: return tempS->position.x; 
+		case ACTION_STATE_TYPE_POSX: return tempS->position.x; 
 		case ACTION_STATE_TYPE_POS_Y: return tempS->position.y; 
 		case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR; 
 		case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG; 
 		case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB; 
 		case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA; 
 		case ACTION_STATE_TYPE_ANGLE: return tempS->angle; 
-		case ACTION_STATE_TYPE_SIZE_X: return tempS->size.x; 
+		case ACTION_STATE_TYPE_SIZEX: return tempS->size.x; 
 		case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y; 
 		} 
 	}else
@@ -938,47 +963,47 @@ float _XActionDescription::getASValue(int time,_XActionStateType type)
 		{
 			switch(type)
 			{
-			case ACTION_STATE_TYPE_POS_X: return tempS->position.x; 
+			case ACTION_STATE_TYPE_POSX: return tempS->position.x; 
 			case ACTION_STATE_TYPE_POS_Y: return tempS->position.y; 
 			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR; 
 			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG; 
 			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB; 
 			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA; 
 			case ACTION_STATE_TYPE_ANGLE: return tempS->angle; 
-			case ACTION_STATE_TYPE_SIZE_X: return tempS->size.x; 
+			case ACTION_STATE_TYPE_SIZEX: return tempS->size.x; 
 			case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y; 
 			} 
 		}else
 		{
 			switch(type)
 			{
-			case ACTION_STATE_TYPE_POS_X: return tempS->position.x + (tempE->position.x - tempS->position.x) * (time - tempS->time)/(tempE->time - tempS->time); 
+			case ACTION_STATE_TYPE_POSX: return tempS->position.x + (tempE->position.x - tempS->position.x) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_POS_Y: return tempS->position.y + (tempE->position.y - tempS->position.y) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR + (tempE->color.fR - tempS->color.fR) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG + (tempE->color.fG - tempS->color.fG) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB + (tempE->color.fB - tempS->color.fB) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA + (tempE->color.fA - tempS->color.fA) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_ANGLE: return tempS->angle + (tempE->angle - tempS->angle) * (time - tempS->time)/(tempE->time - tempS->time); 
-			case ACTION_STATE_TYPE_SIZE_X: return tempS->size.x + (tempE->size.x - tempS->size.x) * (time - tempS->time)/(tempE->time - tempS->time);
+			case ACTION_STATE_TYPE_SIZEX: return tempS->size.x + (tempE->size.x - tempS->size.x) * (time - tempS->time)/(tempE->time - tempS->time);
 			case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y + (tempE->size.y - tempS->size.y) * (time - tempS->time)/(tempE->time - tempS->time);
 			} 
 		}
 	}
 	return 0.0f;
 }
-_XActionState _XActionDescription::getActionState(int time)
+XActionState XActionDescription::getActionState(int time)
 {
-	_XActionState retActionState;
+	XActionState retActionState;
 	if(time < m_minTime || time > m_maxTime || m_stateTable.size() < 2) return retActionState;
 
-	retActionState.position.x = getASValue(time,ACTION_STATE_TYPE_POS_X);
+	retActionState.position.x = getASValue(time,ACTION_STATE_TYPE_POSX);
 	retActionState.position.y = getASValue(time,ACTION_STATE_TYPE_POS_Y);
 	retActionState.color.fR = getASValue(time,ACTION_STATE_TYPE_COLOR_R);
 	retActionState.color.fG = getASValue(time,ACTION_STATE_TYPE_COLOR_G);
 	retActionState.color.fB = getASValue(time,ACTION_STATE_TYPE_COLOR_B);
 	retActionState.color.fA = getASValue(time,ACTION_STATE_TYPE_COLOR_A);
 	retActionState.angle = getASValue(time,ACTION_STATE_TYPE_ANGLE);
-	retActionState.size.x = getASValue(time,ACTION_STATE_TYPE_SIZE_X);
+	retActionState.size.x = getASValue(time,ACTION_STATE_TYPE_SIZEX);
 	retActionState.size.y = getASValue(time,ACTION_STATE_TYPE_SIZE_Y);
 	retActionState.isEnable = XTrue;
 
@@ -986,7 +1011,7 @@ _XActionState _XActionDescription::getActionState(int time)
 }
 //-------------------------------------------
 
-void _XActionCore::setStart()	//ÉèÖÃ¿ªÊ¼
+void XActionCore::setStart()	//ÉèÖÃ¿ªÊ¼
 {
 //	if(m_isEnd) 
 	{
@@ -999,24 +1024,25 @@ void _XActionCore::setStart()	//ÉèÖÃ¿ªÊ¼
 			m_object->setPosition(m_stayState.position);
 			m_object->setColor(m_stayState.color.fR,m_stayState.color.fG,
 				m_stayState.color.fB,m_stayState.color.fA);
-			m_object->setSize(m_stayState.size);
+			m_object->setScale(m_stayState.size);
 			m_object->setAngle(m_stayState.angle);
 		}
 	}
 }
-void _XActionCore::release()
+void XActionCore::release()
 {
 	if(!m_isEnable) return;
-//	for(int i = 0;i < m_moveData.size();++ i)
+//	for(unsigned int i = 0;i < m_moveData.size();++ i)
 //	{
-//		XDELETE(m_moveData[i]);
+//		XMem::XDELETE(m_moveData[i]);
 //	}
 //	m_moveData.clear();
-//	m_moveData.swap(std::vector<_XMoveData *>());
-	if(m_moveDataSum == 1) XDELETE(m_moveData);
-	else XDELETE_ARRAY(m_moveData);
-	//XDELETE(m_object);	//ÊÍ·ÅÎï¼şµÄ×ÊÔ´,±¾Éí²»ÊÍ·Å×ÔÉíµÄ×ÊÔ´
+//	m_moveData.swap(std::vector<XMoveData *>());
+	if(m_moveDataSum == 1) XMem::XDELETE(m_moveData);
+	else XMem::XDELETE_ARRAY(m_moveData);
+	//XMem::XDELETE(m_object);	//ÊÍ·ÅÎï¼şµÄ×ÊÔ´,±¾Éí²»ÊÍ·Å×ÔÉíµÄ×ÊÔ´
 	m_moveDataSum = 0;
 
 	m_isEnable = XFalse;
+}
 }

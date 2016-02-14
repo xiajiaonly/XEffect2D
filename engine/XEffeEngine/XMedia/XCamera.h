@@ -7,9 +7,13 @@
 //--------------------------------
 //这是一个普通摄像头视频数据提取的类，基于videoInput
 #include "XCameraBasic.h"
-#include "XEffeEngine.h"
 #include "videoInput.h"
-#pragma comment(lib, "videoInput.lib")
+//注意在包含opencv的时候不需要再包含这个库，否则会造成重复包含，因为opencv中已经包含这个库
+#ifdef _DEBUG
+#pragma comment(lib, "videoInputD.lib")
+#else
+#pragma comment(lib, "videoInput.lib")	//与opencv_videoio300.lib有冲突
+#endif
 
 #pragma comment(linker, "/NODEFAULTLIB:atlthunk.lib")
 #include <atlbase.h>
@@ -28,8 +32,8 @@ namespace ATL
   }
 };
 #endif //(_ATL_VER < 0x0700)
-
-class _XCamera:public _XCameraBasic
+namespace XE{
+class XCamera:public XCameraBasic
 {
 private:
 	videoInput m_VI;		//摄像头的设备指针
@@ -40,11 +44,11 @@ private:
 	unsigned char *m_texDataBuff;	//贴图的数据
 	int m_px;
 	int m_py;
-	_XBool m_isUp2Down;		//是否上下翻转
-	_XBool m_isLeft2Right;	//是否左右翻转
+	XBool m_isUp2Down;		//是否上下翻转
+	XBool m_isLeft2Right;	//是否左右翻转
 public:
-	void setUp2Down(_XBool flag){m_isUp2Down = flag;}
-	void setLeft2Right(_XBool flag){m_isLeft2Right = flag;}
+	void setUp2Down(XBool flag){m_isUp2Down = flag;}
+	void setLeft2Right(XBool flag){m_isLeft2Right = flag;}
 
 	void getData(unsigned char * p) const
 	{
@@ -57,53 +61,62 @@ public:
 		return m_frameDataBuff;
 	}
 	//int getBuffSize() const {return m_buffSize;}
-	_XBool init(_XCameraData &data);
-	_XBool upDateFrame();
+	XBool init(XCameraInfo &data);
+	XBool updateFrame();
+	bool resart()
+	{
+		if(!m_isInited) return false;
+		return m_VI.restartDevice(m_deviceOrder);
+	}
 	//void draw();
-	_XCamera()
+	XCamera()
 		:m_frameDataBuff1(NULL)
 		,m_frameDataBuff(NULL)
 		,m_texDataBuff(NULL)
 		,m_isUp2Down(XFalse)
 		,m_isLeft2Right(XFalse)
 	{}
-	~_XCamera(){release();}
+	~XCamera(){release();}
 	void release();
+	void showDeviceSetting()
+	{
+		if(m_isInited) m_VI.showSettingsWindow(m_deviceOrder);
+	}
 };
 
-//class _XCameraFactory:public _XCameraBaiscFactory
+//class XCameraFactory:public XCameraBaiscFactory
 //{
 //	//+++++++++++++++++++++++++++++++++++++++++++
 //	//下面需要将其设计为Singleton模式
 //protected:
-//	_XCameraFactory(){}
-//	_XCameraFactory(const _XCameraFactory&);
-//	_XCameraFactory &operator= (const _XCameraFactory&);
-//	virtual ~_XCameraFactory(){} 
+//	XCameraFactory(){}
+//	XCameraFactory(const XCameraFactory&);
+//	XCameraFactory &operator= (const XCameraFactory&);
+//	virtual ~XCameraFactory(){} 
 //public:
-//	static _XCameraFactory& GetInstance()
+//	static XCameraFactory& GetInstance()
 //	{
-//		static _XCameraFactory m_instance;
+//		static XCameraFactory m_instance;
 //		return m_instance;
 //	}
 //	//-------------------------------------------
 //public:
-//	_XCameraBasic * create(_XCameraData & data)
+//	XCameraBasic * create(XCameraInfo & data)
 //	{
-//		_XCameraBasic *pCamera = NULL;
+//		XCameraBasic *pCamera = NULL;
 //		if(data.cameraType == CAMERA_TYPE_NORMAL)
 //		{
-//			pCamera = createMem<_XCamera>();
+//			pCamera = XMem::createMem<XCamera>();
 //			if(pCamera != NULL) 
 //			{
 //				if(pCamera->init(data) == 0)
 //				{//初始化失败
-//					XDELETE(pCamera);
+//					XMem::XDELETE(pCamera);
 //				}
 //			}
 //		}
 //		return pCamera;
 //	}
 //};
-
+}
 #endif

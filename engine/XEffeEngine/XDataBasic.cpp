@@ -1,46 +1,42 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XDataBasic.h"
-#include "string.h"
-#include "XBasicFun.h"
-#include "XOSDefine.h"
+//#include "string.h"
+//#include "XBasicFun.h"
+//#include "XOSDefine.h"
+namespace XE{
+#define DEBUGXDB (0)
 
-#define DEBUG_XDB (0)
-
-_XDataBasic::_XDataBasic()
-:m_isInited(XFalse)
-,m_dataLength(0)
-,m_pData(NULL)
-,m_checkData(0)
-,m_secretKeyLength(0)
-,m_secretKey(NULL)
-,m_nowBackOrder(0)
-,m_ID(0)
-,m_versionsOrder(0)
-,m_isSaveAsynchronous(XFalse)
-,m_needSave(XFalse)
-,m_fileName(NULL)
-,m_saveMode(ANALYZING_BUFFERING)
+XDataBasic::XDataBasic()
+	:m_isInited(XFalse)
+	,m_dataLength(0)
+	,m_pData(NULL)
+	,m_checkData(0)
+	,m_secretKeyLength(0)
+	,m_secretKey(NULL)
+	,m_curBackOrder(0)
+	,m_ID(0)
+	,m_versionsOrder(0)
+	,m_isSaveAsynchronous(XFalse)
+	,m_needSave(XFalse)
+	,m_fileName(NULL)
+	,m_saveMode(ANALYZING_BUFFERING)
+{}
+XBool XDataBasic::EncryptData()            //¼ÓÃÜÊý¾Ý
 {
-}
-_XDataBasic::~_XDataBasic()
-{
-	release();
-}
-_XBool _XDataBasic::EncryptData()            //¼ÓÃÜÊý¾Ý
-{
-    if(!m_isInited) return XFalse;
-    if(m_secretKeyLength <= 0) return XFalse;
-    if(m_secretKey == NULL) return XFalse;
-    if(m_dataLength <= 0) return XFalse;
-    if(m_pData == NULL) return XFalse;
+    if(!m_isInited ||
+		m_secretKeyLength <= 0 ||
+		m_secretKey == NULL ||
+		m_dataLength <= 0 ||
+		m_pData == NULL) return XFalse;
     //Éú³ÉËæ»úµÄÃÜÂë
     for(int i = 0;i < m_secretKeyLength;++ i)
     {
-        m_secretKey[i] = random(256);
+        m_secretKey[i] = XRand::random(256);
     }
     //¼ÓÃÜÊý¾Ý
     unsigned char temp;
@@ -52,13 +48,13 @@ _XBool _XDataBasic::EncryptData()            //¼ÓÃÜÊý¾Ý
     }
     return XTrue;
 }
-_XBool _XDataBasic::DeCryptData()            //½âÃÜÊý¾Ý
+XBool XDataBasic::DeCryptData()            //½âÃÜÊý¾Ý
 {//Í¬ÑùµÄ¼ÓÃÜ²Ù×÷ÔÙ½øÐÐÒ»´Î¾ÍÊÇ½âÃÜ
-    if(!m_isInited) return XFalse;
-    if(m_secretKeyLength <= 0) return XFalse;
-    if(m_secretKey == NULL) return XFalse;
-    if(m_dataLength <= 0) return XFalse;
-    if(m_pData == NULL) return XFalse;
+    if(!m_isInited ||
+		m_secretKeyLength <= 0 ||
+		m_secretKey == NULL ||
+		m_dataLength <= 0 ||
+		m_pData == NULL) return XFalse;
     unsigned char temp;
     for(int i = 0,j = 0;i < m_dataLength;++ i,++j)
     {
@@ -68,11 +64,11 @@ _XBool _XDataBasic::DeCryptData()            //½âÃÜÊý¾Ý
     }
     return XTrue;
 }
-unsigned char _XDataBasic::getCheckData()        //¼ÆËãÐ£ÑéÂë
+unsigned char XDataBasic::getCheckData()        //¼ÆËãÐ£ÑéÂë
 {
-    if(!m_isInited) return 0;
-    if(m_dataLength <= 0) return 0;
-    if(m_pData == NULL) return 0;
+    if(!m_isInited ||
+		m_dataLength <= 0 ||
+		m_pData == NULL) return 0;
     unsigned char temp = 0;
     for(int i = 0;i < m_dataLength;++ i)
     {
@@ -80,26 +76,18 @@ unsigned char _XDataBasic::getCheckData()        //¼ÆËãÐ£ÑéÂë
     }
     return temp;
 }
-_XBool _XDataBasic::checkDataIsRigth()    //¼ì²éÊý¾ÝÊÇ·ñ·ûºÏÐ£Ñé
-{
-    if(!m_isInited) return XFalse;
-    if(m_dataLength <= 0) return XFalse;
-    if(m_pData == NULL) return XFalse;
-    if(getCheckData() != m_checkData) return XFalse;
-    else  return XTrue;
-}
-_XBool _XDataBasic::init(int ID,_XBool isSaveAsynchronous,_XAnalyzingFileMode saveMode)
+XBool XDataBasic::init(int ID,XBool isSaveAsynchronous,XAnalyzingFileMode saveMode)
 {
     if(m_isInited) return XFalse;
     m_ID = ID;
-    m_secretKeyLength = DATABASIC_KEY_LENGTH;
+    m_secretKeyLength = m_databasicKeyLength;
 	m_isSaveAsynchronous = isSaveAsynchronous;
 	m_saveMode = saveMode;
-	m_secretKey = createArrayMem<unsigned char>(m_secretKeyLength);
+	m_secretKey = XMem::createArrayMem<unsigned char>(m_secretKeyLength);
 	if(m_secretKey == NULL) return XFalse;
     for(int i = 0;i < m_secretKeyLength;++ i)
     {
-        m_secretKey[i] = random(256);
+        m_secretKey[i] = XRand::random(256);
     }
 
 	if(m_isSaveAsynchronous)
@@ -112,7 +100,7 @@ _XBool _XDataBasic::init(int ID,_XBool isSaveAsynchronous,_XAnalyzingFileMode sa
 		if(CreateThread(0,0,saveDataThread,this,0,&m_saveDataThreadP) == 0)
 #endif
 		{//¿ªÆôÏß³ÌÊ§°Ü
-			XDELETE_ARRAY(m_secretKey);
+			XMem::XDELETE_ARRAY(m_secretKey);
 			return XFalse;
 		}
 	}
@@ -120,32 +108,17 @@ _XBool _XDataBasic::init(int ID,_XBool isSaveAsynchronous,_XAnalyzingFileMode sa
     m_isInited = XTrue;
 	return XTrue;
 }
-void _XDataBasic::release()
-{
-	if(!m_isInited) return;
-	if(m_isSaveAsynchronous)
-	{//ÉèÖÃÏß³Ì½áÊø
-		m_isEnd = STATE_SET_TO_END;
-		while(true)
-		{//µÈ´ýÏß³Ì½áÊø
-			if(m_isEnd == STATE_END) break;
-			Sleep(1);
-		}
-	}
-	XDELETE_ARRAY(m_secretKey);
-	m_isInited = XFalse;
-}
 //ÄÚ´æÓëÊý¾Ý¼äµÄ×ª»»
-_XBool _XDataBasic::mergeData(const unsigned char *pData,int dataLength)        //´ÓÍâ²¿ºÏ²¢Êý¾Ýµ½ÄÚ²¿
+XBool XDataBasic::mergeData(const unsigned char *pData,int dataLength)        //´ÓÍâ²¿ºÏ²¢Êý¾Ýµ½ÄÚ²¿
 {
-    if(!m_isInited) return XFalse;
-    if(pData == NULL) return XFalse;
-    if(dataLength <= 0) return XFalse;
+    if(!m_isInited ||
+		pData == NULL ||
+		dataLength <= 0) return XFalse;
 
     if(m_pData == NULL)
     {//µÚÒ»´Î´«ÈëÊý¾Ý
         m_dataLength = dataLength;
-		m_pData = createArrayMem<unsigned char>(m_dataLength);
+		m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
 		if(m_pData == NULL) return XFalse;
         memcpy(m_pData,pData,m_dataLength);
     }else
@@ -155,28 +128,19 @@ _XBool _XDataBasic::mergeData(const unsigned char *pData,int dataLength)        
             memcpy(m_pData,pData,m_dataLength);
         }else
         {
-			XDELETE_ARRAY(m_pData);
+			XMem::XDELETE_ARRAY(m_pData);
             m_dataLength = dataLength;
-			m_pData = createArrayMem<unsigned char>(m_dataLength);
+			m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
 			if(m_pData == NULL) return XFalse;
 			memcpy(m_pData,pData,m_dataLength);
         }
     }
     return XTrue;
 }
-int _XDataBasic::analyzingData(unsigned char *pData,int dataLength)    //½«ÄÚ²¿Êý¾Ý½âÎöµ½Íâ²¿
+XBool XDataBasic::mergeDataBack(const char *fileName)
 {
-    if(!m_isInited) return -1;
-    if(dataLength <= 0) return -1;
-    if(m_pData == NULL || m_dataLength <= 0) return 0;
-    if(dataLength <= m_dataLength) memcpy(pData,m_pData,dataLength);
-    else  memcpy(pData,m_pData,m_dataLength);
-    return m_dataLength;
-}
-_XBool _XDataBasic::mergeDataBack(const char *fileName)
-{
-    if(!m_isInited) return XFalse;
-    if(fileName == NULL || strlen(fileName) <= 0) return XFalse;
+    if(!m_isInited ||
+		fileName == NULL || strlen(fileName) <= 0) return XFalse;
     FILE *fp;
     if((fp = fopen(fileName,"rb")) == NULL) return XFalse;//file open error!
 
@@ -185,7 +149,7 @@ _XBool _XDataBasic::mergeDataBack(const char *fileName)
         fclose(fp);
         return XFalse;
     }
-#if DEBUG_XDB
+#if DEBUGXDB
 	printf("read:%s - %d\n",fileName,m_versionsOrder);
 #endif
     if(fread(&m_ID,sizeof(int),1,fp) < 1)
@@ -200,8 +164,8 @@ _XBool _XDataBasic::mergeDataBack(const char *fileName)
     }
     if(m_dataLength > 0)
     {//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
-		XDELETE_ARRAY(m_pData);
-		m_pData = createArrayMem<unsigned char>(m_dataLength);
+		XMem::XDELETE_ARRAY(m_pData);
+		m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
 		if(m_pData == NULL)
 		{
 			fclose(fp);
@@ -225,8 +189,8 @@ _XBool _XDataBasic::mergeDataBack(const char *fileName)
     }
     if(m_secretKeyLength > 0)
     {//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
-		XDELETE_ARRAY(m_secretKey);
-		m_secretKey = createArrayMem<unsigned char>(m_secretKeyLength);
+		XMem::XDELETE_ARRAY(m_secretKey);
+		m_secretKey = XMem::createArrayMem<unsigned char>(m_secretKeyLength);
 		if(m_secretKey == NULL)
         {
             fclose(fp);
@@ -262,10 +226,10 @@ _XBool _XDataBasic::mergeDataBack(const char *fileName)
     return XTrue;
 }
 
-_XBool _XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
+XBool XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
 {
-    if(!m_isInited) return XFalse;
-	if(fileNameA == NULL || fileNameB == NULL) return XFalse;
+    if(!m_isInited ||
+		fileNameA == NULL || fileNameB == NULL) return XFalse;
     int version0 = 0;
     int version1 = 0;
     int stateFile0 = 1;
@@ -285,7 +249,7 @@ _XBool _XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)  
         }
         fclose(fp);
     }
-#if DEBUG_XDB
+#if DEBUGXDB
 	printf("%s - %d\n",fileNameA,version0);
 #endif
     //ÌáÈ¡µÚ¶þ¸öÎÄ¼þµÄ°æ±¾ºÅ
@@ -302,7 +266,7 @@ _XBool _XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)  
         }
         fclose(fp);
     }
-#if DEBUG_XDB
+#if DEBUGXDB
 	printf("%s - %d\n",fileNameB,version1);
 #endif
     
@@ -342,7 +306,7 @@ _XBool _XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)  
 	return XTrue;
 }
 //ÎÄ¼þÓëÊý¾Ý¼äµÄ×ª»»
-_XBool _XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾Ý
+XBool XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾Ý
 {//´ÓÁ½¸öÎÄ¼þÖÐ·Ö±ðÌáÈ¡Êý¾Ý£¬Èç¹ûÈ«²¿´íÎó£¬Ôò·µ»Ø´íÎó£¬Èç¹ûÈ«²¿³É¹¦£¬ÔòÈ¡×î½üµÄ°æ±¾£¬·ñÔòÌáÈ¡³É¹¦µÄ°æ±¾
     if(!m_isInited) return XFalse;
     if(fileName != NULL)
@@ -351,12 +315,12 @@ _XBool _XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾
         char *fileRealNameB = NULL;
         int len = strlen(fileName);
         if(len <= 0) return XFalse;
-		fileRealNameA = createArrayMem<char>(len + 2);
+		fileRealNameA = XMem::createArrayMem<char>(len + 2);
 		if(fileRealNameA == NULL) return XFalse;
-		fileRealNameB = createArrayMem<char>(len + 2);
+		fileRealNameB = XMem::createArrayMem<char>(len + 2);
 		if(fileRealNameB == NULL) 
 		{
-			XDELETE_ARRAY(fileRealNameA);
+			XMem::XDELETE_ARRAY(fileRealNameA);
 			return XFalse;
 		}
         //È·¶¨ÎÄ¼þÃû
@@ -389,13 +353,13 @@ _XBool _XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾
         }
         if(mergeDataBack(fileRealNameA,fileRealNameB))
         {
-			XDELETE_ARRAY(fileRealNameA);
-			XDELETE_ARRAY(fileRealNameB);
+			XMem::XDELETE_ARRAY(fileRealNameA);
+			XMem::XDELETE_ARRAY(fileRealNameB);
             return XTrue;
         }else
         {
-			XDELETE_ARRAY(fileRealNameA);
-			XDELETE_ARRAY(fileRealNameB);
+			XMem::XDELETE_ARRAY(fileRealNameA);
+			XMem::XDELETE_ARRAY(fileRealNameB);
             return XFalse;
         }
     }else
@@ -403,10 +367,10 @@ _XBool _XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾
         return mergeDataBack(DATABASIC_DEFAULT_FILE_NAME_A,DATABASIC_DEFAULT_FILE_NAME_B);
     }
 }
-_XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
+XBool XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
 {
-    if(!m_isInited) return XFalse;
-    if(fileName == NULL || strlen(fileName) <= 0) return XFalse;
+    if(!m_isInited ||
+		fileName == NULL || strlen(fileName) <= 0) return XFalse;
 	if(m_saveMode == ANALYZING_BUFFERING)
 	{
 		FILE *fp;
@@ -417,7 +381,7 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 			fclose(fp);
 			return XFalse;
 		}
-#if DEBUG_XDB
+#if DEBUGXDB
 		printf("write:%s - %d\n",m_fileName,m_versionsOrder);
 #endif	    
 		if(fwrite(&m_versionsOrder,sizeof(int),1,fp) < 1) 
@@ -477,15 +441,15 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 #ifdef XEE_OS_WINDOWS
 		if(m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
 		{
-			XDELETE_ARRAY(m_fileName);
-			m_fileName = createArrayMem<char>(strlen(fileName) + 1);
+			XMem::XDELETE_ARRAY(m_fileName);
+			m_fileName = XMem::createArrayMem<char>(strlen(fileName) + 1);
 			if(m_fileName == NULL) return XFalse;
 		}
 		strcpy(m_fileName,fileName);
 		HANDLE tempFile;
 		DWORD tempWriteLength;
 /*		int len = strlen(m_fileName)/2 + 1;
-		wchar_t *wText = createArrayMem<wchar_t>(len);
+		wchar_t *wText = XMem::createArrayMem<wchar_t>(len);
 		if(wText == NULL) return XFalse;
 
 		MultiByteToWideChar(CP_ACP,0,m_fileName,strlen(m_fileName),wText,strlen(m_fileName)); 
@@ -506,7 +470,7 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-#if DEBUG_XDB
+#if DEBUGXDB
 		printf("write:%s - %d\n",m_fileName,m_versionsOrder);
 #endif
 		if(!WriteFile(tempFile,&m_versionsOrder,sizeof(int),&tempWriteLength,NULL))
@@ -560,14 +524,14 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 		}
 
 		CloseHandle(tempFile);
-		//XDELETE_ARRAY(wText);
+		//XMem::XDELETE_ARRAY(wText);
 #endif
 #ifdef XEE_OS_LINUX
 		//LinuxÏÂµÄÊý¾ÝÁ¢¼´±£´æ»¹Ã»ÓÐÍê³É
 		if(m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
 		{
-			XDELETE_ARRAY(m_fileName);
-			m_fileName = createArrayMem<char>(strlen(fileName) + 1);
+			XMem::XDELETE_ARRAY(m_fileName);
+			m_fileName = XMem::createArrayMem<char>(strlen(fileName) + 1);
 			if(m_fileName == NULL) return XFalse;
 		}
 		strcpy(m_fileName,fileName);
@@ -610,7 +574,7 @@ _XBool _XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²
 	}
     return XTrue;
 }
-_XBool _XDataBasic::analyzingDataManager(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬Õâ¸öº¯Êý»á¸ù¾ÝÖ®Ç°ÓÃ»§µÄÉèÖÃ¶Ô±£´æµÄ¾ßÌå²Ù×÷½øÐÐµ÷¶È
+XBool XDataBasic::analyzingDataManager(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬Õâ¸öº¯Êý»á¸ù¾ÝÖ®Ç°ÓÃ»§µÄÉèÖÃ¶Ô±£´æµÄ¾ßÌå²Ù×÷½øÐÐµ÷¶È
 {
 	if(!m_isInited) return XFalse;
 	if(m_isSaveAsynchronous)
@@ -621,15 +585,15 @@ _XBool _XDataBasic::analyzingDataManager(const char *fileName)        //½«Êý¾Ý±£
 			{
 				if(m_fileName == NULL || strlen(fileName) != strlen(m_fileName))
 				{
-					XDELETE_ARRAY(m_fileName);
+					XMem::XDELETE_ARRAY(m_fileName);
 					int len = strlen(fileName);
-					m_fileName = createArrayMem<char>(len + 1);
+					m_fileName = XMem::createArrayMem<char>(len + 1);
 					if(m_fileName == NULL) return XFalse;
 				}
 				strcpy(m_fileName,fileName);
 			}else
 			{
-				XDELETE_ARRAY(m_fileName);
+				XMem::XDELETE_ARRAY(m_fileName);
 			}
 			m_needSave = XTrue;
 			return XTrue;
@@ -642,17 +606,17 @@ _XBool _XDataBasic::analyzingDataManager(const char *fileName)        //½«Êý¾Ý±£
 		return analyzingData(fileName);
 	}
 }
-_XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ
+XBool XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ
 {
     if(!m_isInited) return XFalse;
     char *fileRealName = NULL;
-    _XBool result = XTrue;
+    XBool result = XTrue;
     ++ m_versionsOrder;
     if(fileName != NULL)
     {
         int len = strlen(fileName);
         if(len <= 0) return XFalse;
-		fileRealName = createArrayMem<char>(len + 2);
+		fileRealName = XMem::createArrayMem<char>(len + 2);
         if(fileRealName == NULL) return XFalse;
         //È·¶¨ÎÄ¼þÃû
         int dotPoint = -1;
@@ -666,7 +630,7 @@ _XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼
         if(dotPoint == -1)
         {
             memcpy(fileRealName,fileName,len);
-            if(m_nowBackOrder == 0)
+            if(m_curBackOrder == 0)
             {
                 fileRealName[len] = 'A';
             }else
@@ -677,7 +641,7 @@ _XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼
         }else
         {
             memcpy(fileRealName,fileName,dotPoint);
-            if(m_nowBackOrder == 0)
+            if(m_curBackOrder == 0)
             {
                 fileRealName[dotPoint] = 'A';
             }else
@@ -688,10 +652,10 @@ _XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼
             fileRealName[len + 1] = '\0';
         }
         result = analyzingDataBack(fileRealName);
-		XDELETE_ARRAY(fileRealName);
+		XMem::XDELETE_ARRAY(fileRealName);
     }else
     {//Ê¹ÓÃÄ¬ÈÏµÄÎÄ¼þÃûÌáÈ¡Êý¾Ý
-        if(m_nowBackOrder == 0)
+        if(m_curBackOrder == 0)
         {
             result = analyzingDataBack(DATABASIC_DEFAULT_FILE_NAME_A);
         }else
@@ -700,27 +664,28 @@ _XBool _XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼
         }
     }
 
-    if(m_nowBackOrder == 0) m_nowBackOrder = 1;
-    else m_nowBackOrder = 0;
+    if(m_curBackOrder == 0) m_curBackOrder = 1;
+    else m_curBackOrder = 0;
     return result;
 }
 //ÍøÂçÓëÊý¾Ý¼äµÄ×ª»»(Ä¿Ç°ÔÝÊ±²¢²»Ìá¹©Õâ¸öÖ§³Ö)
 
 //ÓÃÓÚÒì²½Êý¾Ý±£´æµÄº¯Êý
-DWORD WINAPI _XDataBasic::saveDataThread(void * pParam)
+DWORD WINAPI XDataBasic::saveDataThread(void * pParam)
 {
-	_XDataBasic &pPar = *(_XDataBasic *) pParam;
+	XDataBasic &pPar = *(XDataBasic *) pParam;
 	pPar.m_isEnd = STATE_START;
 	
-	while(true)
+	while(pPar.m_isEnd != STATE_SET_TO_END)
 	{
 		if(pPar.m_needSave)
 		{//ÏÂÃæ½øÐÐÊý¾Ý±£´æ
 			pPar.analyzingData(pPar.m_fileName);
 		}
-		if(pPar.m_isEnd == STATE_SET_TO_END) break;
-		mySleep(1);
+		//if(pPar.m_isEnd == STATE_SET_TO_END) break;
+		XEE::sleep(1);
 	}
 	pPar.m_isEnd = STATE_END;
 	return 1;
+}
 }

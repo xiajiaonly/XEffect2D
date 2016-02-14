@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
@@ -6,8 +7,8 @@
 #include "XLineCtrl.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-
-_XBool _XLineCtrl::init(const _XVector2& position,_XLineCtrlType type,const _XFontUnicode *font)
+namespace XE{
+XBool XLineCtrl::init(const XVector2& position,XLineCtrlType type,const XFontUnicode *font)
 {
 	if(m_isInited) return XFalse;
 	m_position = position;
@@ -22,18 +23,18 @@ _XBool _XLineCtrl::init(const _XVector2& position,_XLineCtrlType type,const _XFo
 		m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 		m_font.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_font);
+		XObjManager.decreaseAObject(&m_font);
 #endif
 		m_stringFont.setACopy(*font);
 		m_stringFont.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 		m_stringFont.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_stringFont);
+		XObjManager.decreaseAObject(&m_stringFont);
 #endif
 	}
-	_XCtrlManger.addACtrl(this);
+	XCtrlManager.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	updateData();
 
@@ -44,7 +45,7 @@ _XBool _XLineCtrl::init(const _XVector2& position,_XLineCtrlType type,const _XFo
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XLineCtrl::draw()
+void XLineCtrl::draw()
 {
 	if(!m_isInited ||
 		!m_isVisible) return;	//如果不可见直接退出
@@ -54,19 +55,19 @@ void _XLineCtrl::draw()
 		//描绘刻度
 		if(m_withRange)
 		{
-			float w = (m_range.y - m_range.x) / XLINE_CTRL_LINE_SUM;
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
+			float w = (m_range.y - m_range.x) / m_lineCtrlLineSum;
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
 			{
-				for(int i = 1;i < XLINE_CTRL_LINE_SUM;++ i)
+				for(int i = 1;i < m_lineCtrlLineSum;++ i)
 				{
-					drawLine(m_range.x + w * i,m_position.y - 3.0f,m_range.x + w * i,m_position.y + 3.0f,1,
+					XRender::drawLine(m_range.x + w * i,m_position.y - 3.0f,m_range.x + w * i,m_position.y + 3.0f,1,
 						m_color.fR,m_color.fG,m_color.fB,0.75f * m_color.fA);
 				}
 			}else
 			{
-				for(int i = 1;i < XLINE_CTRL_LINE_SUM;++ i)
+				for(int i = 1;i < m_lineCtrlLineSum;++ i)
 				{
-					drawLine(m_position.x - 3.0f,m_range.x + w * i,m_position.x + 3.0f,m_range.x + w * i,1,
+					XRender::drawLine(m_position.x - 3.0f,m_range.x + w * i,m_position.x + 3.0f,m_range.x + w * i,1,
 						m_color.fR,m_color.fG,m_color.fB,0.75f * m_color.fA);
 				}
 			}
@@ -75,16 +76,16 @@ void _XLineCtrl::draw()
 		//描绘范围
 		if(m_withRange)
 		{
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
 			{
-				drawLine(m_range.x,m_position.y,m_range.y,m_position.y,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_range.x,m_position.y - 5.0f,m_range.x,m_position.y + 5.0f,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_range.y,m_position.y - 5.0f,m_range.y,m_position.y + 5.0f,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				XRender::drawLine(m_range.x,m_position.y,m_range.y,m_position.y,1.0f,m_color);
+				XRender::drawLine(m_range.x,m_position.y - 5.0f,m_range.x,m_position.y + 5.0f,1.0f,m_color);
+				XRender::drawLine(m_range.y,m_position.y - 5.0f,m_range.y,m_position.y + 5.0f,1.0f,m_color);
 			}else
 			{
-				drawLine(m_position.x,m_range.x,m_position.x,m_range.y,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_position.x - 5.0f,m_range.x,m_position.x + 5.0f,m_range.x,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-				drawLine(m_position.x - 5.0f,m_range.y,m_position.x + 5.0f,m_range.y,1.0f,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+				XRender::drawLine(m_position.x,m_range.x,m_position.x,m_range.y,1.0f,m_color);
+				XRender::drawLine(m_position.x - 5.0f,m_range.x,m_position.x + 5.0f,m_range.x,1.0f,m_color);
+				XRender::drawLine(m_position.x - 5.0f,m_range.y,m_position.x + 5.0f,m_range.y,1.0f,m_color);
 			}
 		}
 	case CTRL_MODE_SIMPLE:
@@ -95,57 +96,57 @@ void _XLineCtrl::draw()
 	{
 		switch(m_type)
 		{
-		case LINE_CTRL_TYPE_X_D:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+		case LINE_CTRL_TYPEX_D:
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
 			break;
-		case LINE_CTRL_TYPE_X_U:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x,m_position.y - 2.0f * m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+		case LINE_CTRL_TYPEX_U:
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x,m_position.y - 2.0f * m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
 			break;
 		case LINE_CTRL_TYPE_Y_L:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x - 2.0f *  m_truePixelSize.x,m_position.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - 2.0f *  m_truePixelSize.x,m_position.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
 			break;
 		case LINE_CTRL_TYPE_Y_R:
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + 2.0f * m_truePixelSize.x,m_position.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + 2.0f * m_truePixelSize.x,m_position.y,2,m_color.fR,0.0f,0.0f,m_color.fA);
 			break;
 		}
 	}else
 	{
 		switch(m_type)
 		{
-		case LINE_CTRL_TYPE_X_D:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		case LINE_CTRL_TYPEX_D:
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,1,m_color);
 			break;
-		case LINE_CTRL_TYPE_X_U:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+		case LINE_CTRL_TYPEX_U:
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x,m_position.y + 2.0f * m_truePixelSize.y,1,m_color);
 			break;
 		case LINE_CTRL_TYPE_Y_L:
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x - 2.0f *  m_truePixelSize.x,m_position.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x - 2.0f *  m_truePixelSize.x,m_position.y,1,m_color);
 			break;
 		case LINE_CTRL_TYPE_Y_R:
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
-			drawLine(m_position.x,m_position.y,m_position.x + 2.0f * m_truePixelSize.x,m_position.y,1,m_color.fR,m_color.fG,m_color.fB,m_color.fA);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y,1,m_color);
+			XRender::drawLine(m_position.x,m_position.y,m_position.x + 2.0f * m_truePixelSize.x,m_position.y,1,m_color);
 			break;
 		}
 	}
 	if(m_withFont) m_font.draw();	//显示文字提示
 	if(m_withString) m_stringFont.draw();
 }
-_XBool _XLineCtrl::mouseProc(float x,float y,_XMouseState mouseState)
+XBool XLineCtrl::mouseProc(float x,float y,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -156,15 +157,17 @@ _XBool _XLineCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 	case MOUSE_MOVE:
 		if(m_isDown) 
 		{
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U) setPosition(x,m_position.y);
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U) setPosition(x,m_position.y);
 			else setPosition(m_position.x,y);
-			if(m_funDataChange != NULL) m_funDataChange(m_pClass,m_objectID);
+			//if(m_funDataChange != NULL) m_funDataChange(m_pClass,m_objectID);
+			if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,LNCTRL_DATA_CHANGE);
+			else XCtrlManager.eventProc(m_objectID,LNCTRL_DATA_CHANGE);
 		}
 		break;
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
 		//鼠标按下
-		if(_XVector2(x,y).getLengthSqure(m_position) < 100.0f)
+		if(XVector2(x,y).getLengthSqure(m_position) < 100.0f)
 		{
 			m_isDown = true;
 			m_isBeChoose = XTrue;
@@ -179,27 +182,27 @@ _XBool _XLineCtrl::mouseProc(float x,float y,_XMouseState mouseState)
 	}
 	return XTrue;
 }
-_XBool _XLineCtrl::setACopy(const _XLineCtrl & temp)
+XBool XLineCtrl::setACopy(const XLineCtrl & temp)
 {
 	if(& temp == this) return XTrue;	//防止自身赋值
 	if(!temp.m_isInited) return XFalse;
-	if(!_XControlBasic::setACopy(temp)) return XFalse;
+	if(!XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
-		_XCtrlManger.addACtrl(this);	//在物件管理器中注册当前物件
+		XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
-		_XObjManger.addAObject(this);
+		XObjManager.addAObject(this);
 #endif
 	}
 
 	m_isInited = temp.m_isInited;
 	m_position = temp.m_position;	//控件的位置
-	m_size = temp.m_size;		//大小
+	m_scale = temp.m_scale;		//大小
 	m_pixelSize = temp.m_pixelSize;	//像素大小
 	m_truePixelSize = temp.m_truePixelSize;	//真实的像素尺寸
 	if(!m_font.setACopy(temp.m_font))	 return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_font);
+	XObjManager.decreaseAObject(&m_font);
 #endif
 	memcpy(m_textStr,temp.m_textStr,64);		//显示的字符串
 
@@ -216,35 +219,35 @@ _XBool _XLineCtrl::setACopy(const _XLineCtrl & temp)
 	m_showString = temp.m_showString;		//需要显示的字符串
 	if(!m_stringFont.setACopy(temp.m_stringFont))	 return XFalse;
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_stringFont);
+	XObjManager.decreaseAObject(&m_stringFont);
 #endif
 
-	m_funDataChange = temp.m_funDataChange;
-	m_pClass = temp.m_pClass;	
+//	m_funDataChange = temp.m_funDataChange;
+//	m_pClass = temp.m_pClass;	
 
 	if(temp.m_withFont)
 	{
 		m_font.setACopy(temp.m_font);
 #if WITH_OBJECT_MANAGER
-		_XObjManger.decreaseAObject(&m_font);
+		XObjManager.decreaseAObject(&m_font);
 #endif
 	}
 
 	return XTrue;
 }
-void _XLineCtrl::release()
+void XLineCtrl::release()
 {
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif
 }
-void _XLineCtrl::updateData()
+void XLineCtrl::updateData()
 {
-	m_truePixelSize = m_pixelSize * m_size;
+	m_truePixelSize = m_pixelSize * m_scale;
 	if(m_withRange)
 	{//检测范围
-		if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
+		if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
 		{
 			if(m_position.x > m_range.y) m_position.x = m_range.y;
 			if(m_position.x < m_range.x) m_position.x = m_range.x;
@@ -256,15 +259,15 @@ void _XLineCtrl::updateData()
 	}
 	if(m_withMap)
 	{//这里进行映射
-		if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
-			m_mapValue = maping1D(m_position.x,m_range.x,m_range.y,m_mapRange.x,m_mapRange.y);
+		if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
+			m_mapValue = XMath::maping1D(m_position.x,m_range.x,m_range.y,m_mapRange.x,m_mapRange.y);
 		else
-			m_mapValue = maping1D(m_position.y,m_range.x,m_range.y,m_mapRange.x,m_mapRange.y);
+			m_mapValue = XMath::maping1D(m_position.y,m_range.x,m_range.y,m_mapRange.x,m_mapRange.y);
 		if(m_withFont)
 		{
 			sprintf(m_textStr,"(%.2f)",m_mapValue);
 			m_font.setString(m_textStr);
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
 			{
 				m_stringFont.setPosition(m_range.x,m_position.y - m_stringFont.getTextSize().y - 5);
 				if(m_position.x <= (m_range.x + m_range.y) * 0.5f) m_font.setPosition(m_position);
@@ -279,11 +282,11 @@ void _XLineCtrl::updateData()
 	{
 		if(m_withFont)
 		{
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U) 
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U) 
 				sprintf(m_textStr,"(%.0f)",m_position.x);
 			else sprintf(m_textStr,"(%.0f)",m_position.y);
 			m_font.setString(m_textStr);
-			if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U)
+			if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U)
 			{
 				m_stringFont.setPosition(m_range.x,m_position.y - m_stringFont.getTextSize().y - 5);
 				if(m_position.x <= (m_range.x + m_range.y) * 0.5f) m_font.setPosition(m_position);
@@ -295,4 +298,8 @@ void _XLineCtrl::updateData()
 			}
 		}
 	}
+}
+#if !WITH_INLINE_FILE
+#include "XLineCtrl.inl"
+#endif
 }

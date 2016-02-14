@@ -13,5 +13,6 @@
 #include "XCloudParticles.h"
 #include "XSmoothLine.h"
 #include "XWindLine.h"
+#include "XTailing.h"
 
 #endif

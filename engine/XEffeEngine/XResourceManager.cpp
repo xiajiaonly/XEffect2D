@@ -1,28 +1,37 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	º÷ §ª™(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
-#include "glew.h"
 #include "XResourceManager.h"
 #include "XResourcePack.h"
-#include "XBasicOpenGl.h"
-#include "XLogBook.h"
 #include "XControl/XControls.h"
-#include "XBasicWindow.h"
-void _XResourceTex::release()
+#include "XMedia/XSoundCommon.h"
+#include "XFile.h"
+namespace XE{
+void XResourceTex::release()
 {
 	if(glIsTexture(m_texID)) 
 	{
+#if WITH_ENGINE_STATISTICS
+		XEG.decStaticsticsTexInfo(m_texID);
+#endif
 		LogNull("delete texture:%d",m_texID);
 		glDeleteTextures(1,&m_texID);
 	}
 }
-_XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫Ø ˝
+void XResourceSound::release()
+{
+	if(m_handle == NULL) return;
+	XCurSndCore.clearSound(m_handle);
+	m_handle = NULL;
+}
+XBool XResourceInfo::load(XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫Ø ˝
 {
 	if(m_isInited) return XTrue;	//∑¿÷π÷ÿ∏¥µƒ‘ÿ»Î
 	if(m_name == NULL) return XFalse;
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = XEE::defaultResourcePosition;
+	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
 	//∏¸æﬂ≤ªÕ¨µƒ¿‡–Õµ˜”√≤ªÕ¨µƒ‘ÿ»Î∫Ø ˝
 	std::string logstr = "";
 	switch(m_type)
@@ -32,157 +41,191 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 		break;
 	case RESOURCE_TYPE_TEXTURE:
 		{
-			_XResourceTex * temp = createMem<_XResourceTex>();
+			XResourceTex * temp = XMem::createMem<XResourceTex>();
 			if(temp == NULL) return XFalse;
-			if(!TextureLoadEx(temp->m_texID,m_name,&temp->m_width,&temp->m_height,resoursePosition)) 
+			if(!XGL::TextureLoadEx(temp->m_texID,m_name,&temp->m_width,&temp->m_height,resoursePosition)) 
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
-			logstr += toString(temp->m_texID) + "|";
+			logstr += XString::toString(temp->m_texID) + "|";
 			m_pointer = temp;
 		}
 		break;
 	case RESOURCE_TYPE_SOUND:
 		{
-			_XResourceSound * temp = createMem<_XResourceSound>();
+			XResourceSound * temp = XMem::createMem<XResourceSound>();
 			if(temp == NULL) return XFalse;
-			if(resoursePosition == RESOURCE_LOCAL_FOLDER)
+			switch(resoursePosition)
 			{
-				if(!_XSoundHandle.loadSound(m_name,temp->m_handle)) 
+			case RESOURCE_LOCAL_FOLDER:	//¥”Œƒº˛º–÷–∂¡»°◊ ‘¥
+				if(!XCurSndCore.loadSound(m_name,temp->m_handle)) 
 				{
 					logstr += "Sound load error!";
 					LogStr(logstr.c_str());
-					XDELETE(temp);
+					XMem::XDELETE(temp);
 					return XFalse;
 				}
-			}else
-			if(resoursePosition == RESOURCE_LOCAL_PACK)
-			{
-				int lengthTemp = _XResourcePack::GetInstance().getFileLength(m_name);
-				unsigned char *p = createArrayMem<unsigned char>(lengthTemp + 1);
-				if(p == NULL) 
+				break;
+			case RESOURCE_LOCAL_PACK:	//¥”◊ ‘¥∞¸÷–∂¡»°◊ ‘¥
 				{
-					XDELETE(temp);
-					return XFalse;
-				}
+					int lengthTemp = XResPack.getFileLength(m_name);
+					unsigned char *p = XMem::createArrayMem<unsigned char>(lengthTemp + 1);
+					if(p == NULL) 
+					{
+						XMem::XDELETE(temp);
+						return XFalse;
+					}
 
-				_XResourcePack::GetInstance().unpackResource(m_name,p);
-				if(!_XSoundHandle.loadSound(p,lengthTemp,temp->m_handle))
+					XResPack.unpackResource(m_name,p);
+					if(!XCurSndCore.loadSound(p,lengthTemp,temp->m_handle))
+					{
+						logstr += "Sound load error!";
+						LogStr(logstr.c_str());
+						XMem::XDELETE(temp);
+						return XFalse;
+					}
+					XMem::XDELETE_ARRAY(p);
+				}
+				break;
+			case RESOURCE_WEB:	//¥”Õ¯“≥÷–∂¡»°◊ ‘¥
+				logstr += "Sound load error!";
+				LogStr(logstr.c_str());
+				XMem::XDELETE(temp);
+				return XFalse;
+				break;
+			case RESOURCE_AUTO:	//“¿¥Œ∂¡»°◊ ‘¥
 				{
+				//packer
+					int lengthTemp = XResPack.getFileLength(m_name);
+					unsigned char *p = XMem::createArrayMem<unsigned char>(lengthTemp + 1);
+					if(p != NULL) 
+					{
+						XResPack.unpackResource(m_name,p);
+						if(XCurSndCore.loadSound(p,lengthTemp,temp->m_handle))
+						{
+							XMem::XDELETE_ARRAY(p);
+							break;
+						}
+						XMem::XDELETE_ARRAY(p);
+					}
+				//folder
+					if(XCurSndCore.loadSound(m_name,temp->m_handle)) 
+						break;
+				//web
 					logstr += "Sound load error!";
 					LogStr(logstr.c_str());
-					XDELETE(temp);
+					XMem::XDELETE(temp);
 					return XFalse;
 				}
-				XDELETE_ARRAY(p);
+				break;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XBUTTON_TEX:
+	case RESOURCE_TYPEXBUTTON_TEX:
 		{
-			_XButtonTexture * temp = createMem<_XButtonTexture>();
+			XButtonSkin * temp = XMem::createMem<XButtonSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XCHECK_TEX:
+	case RESOURCE_TYPEXCHECK_TEX:
 		{
-			_XCheckTexture * temp = createMem<_XCheckTexture>();
+			XCheckSkin * temp = XMem::createMem<XCheckSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XEDIT_TEX:
+	case RESOURCE_TYPEXEDIT_TEX:
 		{
-			_XEditTexture * temp = createMem<_XEditTexture>();
+			XEditSkin * temp = XMem::createMem<XEditSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XSLIDER_TEX:
+	case RESOURCE_TYPEXSLIDER_TEX:
 		{
-			_XSliderTexture * temp = createMem<_XSliderTexture>();
+			XSliderSkin * temp = XMem::createMem<XSliderSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XPROGRESS_TEX:
+	case RESOURCE_TYPEXPROGRESS_TEX:
 		{
-			_XProgressTexture * temp = createMem<_XProgressTexture>();
+			XProgressSkin * temp = XMem::createMem<XProgressSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XMULTILIST_TEX:
+	case RESOURCE_TYPEXMULTILIST_TEX:
 		{
-			_XMultiListTexture * temp = createMem<_XMultiListTexture>();
+			XMultiListSkin * temp = XMem::createMem<XMultiListSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XCOMBO_TEX:
+	case RESOURCE_TYPEXCOMBO_TEX:
 		{
-			_XComboTexture * temp = createMem<_XComboTexture>();
+			XComboSkin * temp = XMem::createMem<XComboSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XDIRLIST_TEX:
+	case RESOURCE_TYPEXDIRLIST_TEX:
 		{
-			_XDirListTexture * temp = createMem<_XDirListTexture>();
+			XDirListSkin * temp = XMem::createMem<XDirListSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
 		}
 		break;
-	case RESOURCE_TYPE_XPASSWORDPAD_TEX:
+	case RESOURCE_TYPEXPASSWORDPAD_TEX:
 		{
-			_XPasswordPadTexture * temp = createMem<_XPasswordPadTexture>();
+			XPasswordPadSkin * temp = XMem::createMem<XPasswordPadSkin>();
 			if(temp == NULL) return XFalse;
 			if(!temp->initEx(m_name,resoursePosition))
 			{
-				XDELETE(temp);
+				XMem::XDELETE(temp);
 				return XFalse;
 			}
 			m_pointer = temp;
@@ -195,101 +238,99 @@ _XBool _XResourceInfo::load(_XResourcePosition resoursePosition)			//◊ ‘¥µƒ‘ÿ»Î∫
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XResourceInfo::release()			//◊ ‘¥µƒ Õ∑≈∫Ø ˝
+void XResourceInfo::release()			//◊ ‘¥µƒ Õ∑≈∫Ø ˝
 {
 	if(!m_isInited) return;
 	// Õ∑≈ µº µƒ◊ ‘¥
-	if(m_counter > 0)
-	{
-		LogNull("There is something wrong! - %d:%s",m_counter,m_name);
-	}
-	XDELETE_ARRAY(m_name);
+	if(m_counter > 0) LogNull("There is something wrong! - %d:%s",m_counter,m_name);
+
+	XMem::XDELETE_ARRAY(m_name);
 	switch(m_type)
 	{
 	case RESOURCE_TYPE_TEXTURE:
 		{
-			_XResourceTex * temp = (_XResourceTex *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XResourceTex * temp = (XResourceTex *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
 	case RESOURCE_TYPE_SOUND:
 		{
-			_XResourceSound * temp = (_XResourceSound *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XResourceSound * temp = (XResourceSound *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XBUTTON_TEX:
+	case RESOURCE_TYPEXBUTTON_TEX:
 		{
-			_XButtonTexture * temp = (_XButtonTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XButtonSkin * temp = (XButtonSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XCHECK_TEX:
+	case RESOURCE_TYPEXCHECK_TEX:
 		{
-			_XCheckTexture * temp = (_XCheckTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XCheckSkin * temp = (XCheckSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XEDIT_TEX:
+	case RESOURCE_TYPEXEDIT_TEX:
 		{
-			_XEditTexture * temp = (_XEditTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XEditSkin * temp = (XEditSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XSLIDER_TEX:
+	case RESOURCE_TYPEXSLIDER_TEX:
 		{
-			_XSliderTexture * temp = (_XSliderTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XSliderSkin * temp = (XSliderSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XPROGRESS_TEX:
+	case RESOURCE_TYPEXPROGRESS_TEX:
 		{
-			_XProgressTexture * temp = (_XProgressTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XProgressSkin * temp = (XProgressSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XMULTILIST_TEX:
+	case RESOURCE_TYPEXMULTILIST_TEX:
 		{
-			_XMultiListTexture * temp = (_XMultiListTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XMultiListSkin * temp = (XMultiListSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XCOMBO_TEX:
+	case RESOURCE_TYPEXCOMBO_TEX:
 		{
-			_XComboTexture * temp = (_XComboTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XComboSkin * temp = (XComboSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XDIRLIST_TEX:
+	case RESOURCE_TYPEXDIRLIST_TEX:
 		{
-			_XDirListTexture * temp = (_XDirListTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XDirListSkin * temp = (XDirListSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
-	case RESOURCE_TYPE_XPASSWORDPAD_TEX:
+	case RESOURCE_TYPEXPASSWORDPAD_TEX:
 		{
-			_XPasswordPadTexture * temp = (_XPasswordPadTexture *)m_pointer;
-			temp->release();
-			XDELETE(m_pointer);
+			XPasswordPadSkin * temp = (XPasswordPadSkin *)m_pointer;
+			XMem::XDELETE(temp);
+			m_pointer = NULL;
 		}
 		break;
 	}
 	m_isInited = XFalse;
 }
-_XResourceInfo *_XResourceManager::loadResource(const char * name,_XResourceType type,_XResourcePosition resoursePosition)	//‘ÿ»Î÷∏∂®◊ ‘¥
+XResourceInfo *XResourceManager::loadResource(const char * name,XResourceType type,XResourcePosition resoursePosition)	//‘ÿ»Î÷∏∂®◊ ‘¥
 {
 	if(name == NULL) return NULL;
-	_XResourceInfo * temp = isLoad(name);
+	XResourceInfo * temp = isLoad(name);
 	if(temp != NULL && temp->m_type == type)
 	{//“—æ≠‘ÿ»Î,≤¢«“◊ ‘¥ «∆•≈‰µƒ
 		++ temp->m_counter;	//‘ˆº”“ª≤„“˝”√
@@ -297,9 +338,9 @@ _XResourceInfo *_XResourceManager::loadResource(const char * name,_XResourceType
 		return temp;
 	}else
 	{//…–Œ¥‘ÿ»Î
-		temp = createMem<_XResourceInfo>();
+		temp = XMem::createMem<XResourceInfo>();
 		if(temp == NULL) return NULL;
-		temp->m_name = createArrayMem<char>(MAX_FILE_NAME_LENGTH);
+		temp->m_name = XMem::createArrayMem<char>(MAX_FILE_NAME_LENGTH);
 		if(temp->m_name == NULL) return NULL;
 		strcpy(temp->m_name,name);
 		temp->m_type = type;
@@ -311,13 +352,13 @@ _XResourceInfo *_XResourceManager::loadResource(const char * name,_XResourceType
 			return temp;	//◊ ‘¥‘ÿ»Î≥…π¶
 		}else
 		{//◊ ‘¥‘ÿ»Î ß∞‹
-			XDELETE_ARRAY(temp->m_name);
-			XDELETE(temp);
+			XMem::XDELETE_ARRAY(temp->m_name);
+			XMem::XDELETE(temp);
 			return NULL;
 		}
 	}
 }
-_XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘¥
+XBool XResourceManager::releaseResource(const XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘¥
 {
 	//for(int i = 0;i < m_resourceSum;++ i)
 	//{
@@ -335,7 +376,7 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 		LogStr("Error!");
 		return XFalse;
 	}
-	std::list<_XResourceInfo *>::iterator it;
+	std::list<XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
 		if(* it == p)
@@ -344,8 +385,8 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 			LogNull("%d:%s",(*it)->m_counter,(*it)->m_name);
 			if((*it)->m_counter <= 0)
 			{// Õ∑≈µÙ’‚∏ˆ◊ ‘¥
-				XDELETE_ARRAY((*it)->m_name);
-				XDELETE((* it));
+				XMem::XDELETE_ARRAY((*it)->m_name);
+				XMem::XDELETE((* it));
 				m_resourceBuff.erase(it);
 				-- m_resourceSum;
 			}
@@ -355,29 +396,29 @@ _XBool _XResourceManager::releaseResource(const _XResourceInfo *p)	// Õ∑≈“ª∏ˆ◊ ‘
 	LogStr("Error:invalid resource!");
 	return XFalse;
 }
-void _XResourceManager::release()				// Õ∑≈À˘”–µƒ◊ ‘¥
+void XResourceManager::release()				// Õ∑≈À˘”–µƒ◊ ‘¥
 {
 	//int sum = m_resourceBuff.size();
 	//if(sum == 0) return;	//∑¿÷π÷ÿ∏¥ Õ∑≈
 	//for(int i = 0;i < sum;++ i)
 	//{
 	//	m_resourceBuff[i]->release();
-	//	XDELETE(m_resourceBuff[i]);
+	//	XMem::XDELETE(m_resourceBuff[i]);
 	//}
 	//m_resourceBuff.clear();
-	//m_resourceBuff.swap(std::vector<_XResourceInfo *>());
-	std::list<_XResourceInfo *>::iterator it;
+	//m_resourceBuff.swap(std::vector<XResourceInfo *>());
+	std::list<XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
 		//(* it)->release();
 		LogNull("%d:%s",(*it)->m_counter,(*it)->m_name);
-		XDELETE_ARRAY((*it)->m_name);
-		XDELETE((* it));
+		XMem::XDELETE_ARRAY((*it)->m_name);
+		XMem::XDELETE((* it));
 	}
 	m_resourceBuff.clear();
 	m_resourceSum = 0;
 }
-_XBool _XResourceManager::isLoaded(const char * name)	//≈–∂œ÷∏∂®◊ ‘¥ «∑Ò“—æ≠‘ÿ»Î
+XBool XResourceManager::isLoaded(const char * name)	//≈–∂œ÷∏∂®◊ ‘¥ «∑Ò“—æ≠‘ÿ»Î
 {
 	if(name == NULL) return XFalse;
 	//for(int i = 0;i < m_resourceSum;++ i)
@@ -387,17 +428,17 @@ _XBool _XResourceManager::isLoaded(const char * name)	//≈–∂œ÷∏∂®◊ ‘¥ «∑Ò“—æ≠‘ÿ»Î
 	//		return XTrue;
 	//	}
 	//}
-	std::list<_XResourceInfo *>::iterator it;
+	std::list<XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
-		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name))
+		if((*it)->isLoaded() && XFile::fileNameCompare(name,(*it)->m_name))
 		{
 			return XTrue;
 		}
 	}
 	return XFalse;
 }
-_XResourceInfo * _XResourceManager::isLoad(const char * name)
+XResourceInfo * XResourceManager::isLoad(const char * name)
 {
 	if(name == NULL) return NULL;
 	//for(int i = 0;i < m_resourceSum;++ i)
@@ -407,13 +448,14 @@ _XResourceInfo * _XResourceManager::isLoad(const char * name)
 	//		return m_resourceBuff[i];
 	//	}
 	//}
-	std::list<_XResourceInfo *>::iterator it;
+	std::list<XResourceInfo *>::iterator it;
 	for(it = m_resourceBuff.begin();it != m_resourceBuff.end();++ it)
 	{
-		if((*it)->isLoaded() && fileNameCompare(name,(*it)->m_name))
+		if((*it)->isLoaded() && XFile::fileNameCompare(name,(*it)->m_name))
 		{
 			return (*it);
 		}
 	}
 	return NULL;
+}
 }

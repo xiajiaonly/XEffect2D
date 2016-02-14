@@ -5,9 +5,12 @@
 //Version:    1.0.0
 //Date:       2014.1.1
 //--------------------------------
-#include "XBasicFun.h"
+//#include "XBasicFun.h"
+#include "XRandomFun.h"
+namespace XE{
+class XCColor;
 //浮点数的颜色 0.0 - 1.0
-class _XFColor
+class XFColor
 {
 //private:
 public:
@@ -17,11 +20,14 @@ public:
     float fA;
 	float fW;	//亮度
 public:
-    _XFColor()
+	XFColor(const XCColor &temp);
+	XFColor& operator = (const XCColor& temp);
+
+    XFColor()
         :fR(0.0f),fG(0.0f),fB(0.0f),fA(0.0f)
     {}
 	void calculateW(){fW = XEE_Max(fR,XEE_Max(fG,fB));}	//计算亮度，在必要的时候计算亮度
-	//_XFColor(float r,float g,float b,float a)
+	//XFColor(float r,float g,float b,float a)
 	//{
 	//	if(r < 0.0f) r = 0.0f;
 	//	if(r > 1.0f) r = 1.0f;
@@ -35,10 +41,10 @@ public:
 	//}
 	operator float* () const {return (float*) this;}
 	operator const float* () const {return (const float*) this;}
-	_XFColor(float r,float g,float b,float a = 1.0f)
+	XFColor(float r,float g,float b,float a = 1.0f)
 		:fR(r),fG(g),fB(b),fA(a)
 	{}
-	_XFColor(unsigned int color)
+	XFColor(unsigned int color)
 	{
 		fR = (color >> 24) / 255.0f;
 		fG = ((color >> 16) % 256) / 255.0f;
@@ -46,7 +52,7 @@ public:
 		fA = (color % 256) / 255.0f;
 	}
     void setColor(float r,float g,float b,float a);
-	_XFColor operator * (const _XFColor& temp) const;
+	XFColor operator * (const XFColor& temp) const;
 	void setR(float r);
 	void setG(float g);
 	void setB(float b);
@@ -57,8 +63,8 @@ public:
 	float getA() const;
 	void randColor();
 	float limit() const {return 1.0f;}
-	_XFColor anti(){return _XFColor(1.0f - fR,1.0f - fG,1.0f - fB,fA);}
-	static const _XFColor white, gray, black, red, green, blue, cyan, magenta,
+	XFColor anti(){return XFColor(1.0f - fR,1.0f - fG,1.0f - fB,fA);}
+	static const XFColor white, gray, black, red, green, blue, cyan, magenta,
         yellow,aliceBlue,antiqueWhite,aqua,aquamarine,azure,beige,bisque,blanchedAlmond,
         blueViolet,brown,burlyWood,cadetBlue,chartreuse,chocolate,coral,cornflowerBlue,cornsilk,
         crimson,darkBlue,darkCyan,darkGoldenRod,darkGray,darkGrey,darkGreen,darkKhaki,
@@ -78,25 +84,29 @@ public:
         springGreen,steelBlue,tan,teal,thistle,tomato,turquoise,violet,wheat,whiteSmoke,
         yellowGreen;
 };
+#if WITH_INLINE_FILE
 #include "XFColor.inl"
-
+#endif
+namespace XColor{
 //两种颜色之间进行差值，rate为差值的位置(0.0 - 1.0)之间
-inline _XFColor getInterpolationColor(const _XFColor &color1,const _XFColor &color2,float rate)	//rate为0.0f - 1.0f
+inline XFColor getInterpolationColor(const XFColor &color1,const XFColor &color2,float rate)	//rate为0.0f - 1.0f
 {
-	return _XFColor(color1.fR + (color2.fR - color1.fR) * rate,
+	return XFColor(color1.fR + (color2.fR - color1.fR) * rate,
 		color1.fG + (color2.fG - color1.fG) * rate,
 		color1.fB + (color2.fB - color1.fB) * rate,
 		color1.fA + (color2.fA - color1.fA) * rate);
 }
 //两种颜色按比例混合的计算公式：rate1 + rate = 1
-extern _XFColor colorMix(const _XFColor &color1,const _XFColor &color2,float rate1,float rate2);
+extern XFColor colorMix(const XFColor &color1,const XFColor &color2,float rate1,float rate2);
 //四种颜色按比例混合的计算公式
-extern _XFColor colorMix(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
+extern XFColor colorMix(const XFColor &color1,const XFColor &color2,const XFColor &color3,const XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4);
 //四种颜色混合，不单独计算明度
-extern _XFColor colorMixEx(const _XFColor &color1,const _XFColor &color2,const _XFColor &color3,const _XFColor &color4,
+extern XFColor colorMixEx(const XFColor &color1,const XFColor &color2,const XFColor &color3,const XFColor &color4,
 						 float rate1,float rate2,float rate3,float rate4);
 //多种颜色混合，目前尚未实现
-extern _XFColor colorMix(const _XFColor *color,const float *rate,int mixSum);	//需要注意参数的匹配问题
-extern _XFColor colorMixEx(const _XFColor *color,const float *rate,int mixSum);	//需要注意参数的匹配问题
+extern XFColor colorMix(const XFColor *color,const float *rate,int mixSum);	//需要注意参数的匹配问题
+extern XFColor colorMixEx(const XFColor *color,const float *rate,int mixSum);	//需要注意参数的匹配问题
+}
+}
 #endif

@@ -41,7 +41,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D &quot;_CRT_SECURE_NO_DEPRECATE&quot;"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\engine\include\SDL;..\..\engine\include\GL;..\..\engine\XEffeEngine;..\..\engine\include\ffmpeg;..\..\engine\include\libpng;..\..\engine\include;..\..\engine\include\fmodex;..\..\engine\XEffeEngine\ThirdPart\tinyXML"
+				AdditionalIncludeDirectories="..\..\engine\include\SDL;..\..\engine\include\GL;..\..\engine\XEffeEngine;..\..\engine\include\ffmpeg;..\..\engine\include\libpng;..\..\engine\include;..\..\engine\include\fmodex;..\..\engine\XEffeEngine\ThirdPart\tinyXML;..\..\seniorModule\XMedia"
+				PreprocessorDefinitions="GLEW_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -61,10 +62,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opengl32.lib glew32s.lib user32.lib ws2_32.lib winmm.lib gdi32.lib advapi32.lib"
+				AdditionalDependencies="user32.lib ws2_32.lib winmm.lib gdi32.lib advapi32.lib"
 				LinkIncremental="0"
 				AdditionalLibraryDirectories="..\..\engine\lib\GL;..\..\engine\lib\ffmpeg;..\..\engine\lib\libpng;..\..\engine\lib"
-				IgnoreDefaultLibraryNames="libcmtd.lib"
+				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -100,7 +101,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			UseOfMFC="1"
+			UseOfMFC="0"
 			UseOfATL="0"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
@@ -123,8 +124,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="..\..\engine\include\SDL;..\..\engine\include\GL;..\..\engine\XEffeEngine;..\..\engine\include\ffmpeg;..\..\engine\include\libpng;..\..\engine\include;..\..\engine\include\fmodex;..\..\engine\XEffeEngine\ThirdPart\tinyXML"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..\..\engine\include\SDL;..\..\engine\include\GL;..\..\engine\XEffeEngine;..\..\engine\include\ffmpeg;..\..\engine\include\libpng;..\..\engine\include;..\..\engine\include\fmodex;..\..\engine\XEffeEngine\ThirdPart\tinyXML;..\..\seniorModule\XMedia"
+				PreprocessorDefinitions="GLEW_STATIC;WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -142,11 +143,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opengl32.lib glew32s.lib user32.lib ws2_32.lib winmm.lib gdi32.lib advapi32.lib"
+				AdditionalDependencies="user32.lib ws2_32.lib winmm.lib gdi32.lib advapi32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\engine\lib\GL;..\..\engine\lib\ffmpeg;..\..\engine\lib\libpng;..\..\engine\lib"
 				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="libcmtd.lib;LIBCMT.lib;"
+				IgnoreDefaultLibraryNames="libcmt.lib;LIBCMT.lib;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -206,22 +207,10 @@
 				</File>
 			</Filter>
 		</Filter>
-		<Filter
-			Name="Icon"
+		<File
+			RelativePath="..\..\Common\XEEIcon.rc"
 			>
-			<File
-				RelativePath=".\icon1.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\XEE_Example.rc"
-				>
-			</File>
-		</Filter>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

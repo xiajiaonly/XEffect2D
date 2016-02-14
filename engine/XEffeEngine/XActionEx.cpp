@@ -1,3 +1,4 @@
+#include "XStdHead.h"
 #include "XActionEx.h"
 //++++++++++++++++++++++++++++++++
 //Author:	  ¼ÖÊ¤»ª(JiaShengHua)
@@ -5,8 +6,9 @@
 //Date:       2015.5.20
 //--------------------------------
 #include "XResourcePack.h"
-
-void _XActionEx::setStart()			//ÉèÖÃ¶¯×÷¿ªÊ¼½øÐÐ
+#include <stdarg.h>
+namespace XE{
+void XActionEx::setStart()			//ÉèÖÃ¶¯×÷¿ªÊ¼½øÐÐ
 {
 	if(m_actionState != ACTION_STATE_END) return;
 	m_actionState = ACTION_STATE_ACTION;
@@ -17,11 +19,11 @@ void _XActionEx::setStart()			//ÉèÖÃ¶¯×÷¿ªÊ¼½øÐÐ
 		return;
 	case ACTION_TYPE_COMPLEX://¿ªÊ¼²¥·ÅµÚÒ»¸ö¶¯×÷
 		if(m_pAction[0] != NULL) m_pAction[0]->setStart();
-		m_nowActionIndex = 0;
+		m_curActionIndex = 0;
 		return;
 	}
 }
-void _XActionEx::move(int stepTime)
+void XActionEx::move(float stepTime)
 {
 	if(!m_isInited ||
 		m_actionState != ACTION_STATE_ACTION) return;
@@ -38,9 +40,9 @@ void _XActionEx::move(int stepTime)
 			m_actionState == ACTION_STATE_END) setStart();
 		return;
 	case ACTION_TYPE_COMPLEX:
-		if(!m_pAction[m_nowActionIndex]->getIsEnd()) return;
-		++ m_nowActionIndex;
-		if(m_nowActionIndex >= m_actionSum)
+		if(!m_pAction[m_curActionIndex]->getIsEnd()) return;
+		++ m_curActionIndex;
+		if(m_curActionIndex >= m_actionSum)
 		{//½áÊø
 			m_actionState = ACTION_STATE_END;
 			if(m_actionIsLoop && m_actionState == ACTION_STATE_END)
@@ -49,12 +51,12 @@ void _XActionEx::move(int stepTime)
 			}
 		}else
 		{//²¥·ÅÏÂÒ»¸ö¶¯×÷
-			m_pAction[m_nowActionIndex]->setStart();
+			m_pAction[m_curActionIndex]->setStart();
 		}
 		return;
 	}
 }
-void _XActionEx::draw()
+void XActionEx::draw()
 {
 	if(!m_isInited || 
 		m_actionState != ACTION_STATE_ACTION) return;	//Õâ¸öÌõ¼þÓÐ´ý´èÉÌ
@@ -64,11 +66,11 @@ void _XActionEx::draw()
 		funDraw();
 		return;
 	case ACTION_TYPE_COMPLEX://¿ÉÒÔ±éÀúËùÓÐ×é¼þ½øÐÐÏÔÊ¾
-		m_pAction[m_nowActionIndex]->draw();
+		m_pAction[m_curActionIndex]->draw();
 		return;
 	}
 }
-void _XActionEx::keepDraw()
+void XActionEx::keepDraw()
 {
 	if(!m_isInited) return;	//Õâ¸öÌõ¼þÓÐ´ý´èÉÌ
 	switch(m_type)
@@ -77,11 +79,14 @@ void _XActionEx::keepDraw()
 		funKeepDraw();
 		return;
 	case ACTION_TYPE_COMPLEX://¿ÉÒÔ±éÀúËùÓÐ×é¼þ½øÐÐÏÔÊ¾
-		m_pAction[m_nowActionIndex]->keepDraw();
+		if((m_curActionIndex >= m_actionSum || m_curActionIndex < 0) && m_actionSum >= 1)
+			m_pAction[m_actionSum - 1]->keepDraw();
+		else
+			m_pAction[m_curActionIndex]->keepDraw();
 		return;
 	}
 }
-void _XActionEx::input(const _XInputEvent &inputEvent)
+void XActionEx::input(const XInputEvent &inputEvent)
 {
 	if(!m_isInited || 
 		m_actionState != ACTION_STATE_ACTION) return;	//Õâ¸öÌõ¼þÓÐ´ý´èÉÌ
@@ -91,11 +96,11 @@ void _XActionEx::input(const _XInputEvent &inputEvent)
 		funInput(inputEvent);
 		return;
 	case ACTION_TYPE_COMPLEX://¿ÉÒÔ±éÀúËùÓÐ×é¼þ½øÐÐÏÔÊ¾
-		m_pAction[m_nowActionIndex]->input(inputEvent);
+		m_pAction[m_curActionIndex]->input(inputEvent);
 		return;
 	}
 }
-_XBool _XActionEx::init(_XResourcePosition resoursePosition,
+XBool XActionEx::init(XResourcePosition resoursePosition,
 	const char *actionName)
 {
 	if(m_isInited) return XFalse;
@@ -111,27 +116,24 @@ _XBool _XActionEx::init(_XResourcePosition resoursePosition,
 	m_isInited = XTrue;
 	return XTrue;
 }
-
-#include <stdarg.h>
-
-_XBool _XActionEx::init(_XResourcePosition resoursePosition,const char *actionName,int actionSum,...)	//¸´ºÏ¶¯×÷µÄ³õÊ¼»¯
+XBool XActionEx::init(XResourcePosition resoursePosition,const char *actionName,int actionSum,...)	//¸´ºÏ¶¯×÷µÄ³õÊ¼»¯
 {
 	if(m_isInited) return XTrue;
 	m_resoursePosition = resoursePosition;
 
 	if(!funInit(resoursePosition)) return XFalse;
 
-	XDELETE(m_pAction);
+	XMem::XDELETE(m_pAction);
 	m_actionSum = actionSum;
 	if(m_actionSum <= 0) return XFalse;
-	m_pAction = createArrayMem<_XActionEx *>(m_actionSum);
+	m_pAction = XMem::createArrayMem<XActionEx *>(m_actionSum);
 	if(m_pAction == NULL) return XFalse;
 	//ÏÂÃæ½âÎöËùÓÐµÄ¶¯×÷
 	va_list arg_ptr;
 	va_start(arg_ptr,actionSum);
 	for(int i = 0;i < m_actionSum;++ i)
 	{
-		m_pAction[i] = _XAExManager.getPAction(va_arg(arg_ptr,const char *));
+		m_pAction[i] = XAExManager.getPAction(va_arg(arg_ptr,const char *));
 	}
 	va_end(arg_ptr);
 
@@ -145,14 +147,14 @@ _XBool _XActionEx::init(_XResourcePosition resoursePosition,const char *actionNa
 }
 
 //ÏÂÃæÊÇ¹ØÓÚÐÂµÄ¶¯×÷¹ÜÀíµÄÀàµÄ½Ó¿Ú
-_XActionExHandle _XActionExManager::pushAction(_XActionEx *action)	//Ïò±íÖÐÍÆÈëÒ»¸ö¶¯×÷£¬·µ»Ø¶¯×÷µÄ¾ä±ú£¬-1±íÊ¾¶¯×÷ÒÑ¾­´æÔÚ
+XActionExHandle XActionExManager::pushAction(XActionEx *action)	//Ïò±íÖÐÍÆÈëÒ»¸ö¶¯×÷£¬·µ»Ø¶¯×÷µÄ¾ä±ú£¬-1±íÊ¾¶¯×÷ÒÑ¾­´æÔÚ
 {
 	if(action == NULL) return 0;
 	int ret = getActionHandle(action);
 	if(ret != -1) return ret;	//·ÀÖ¹ÖØ¸´×¢²á
 	ret = getActionHandle(action->getName().c_str());//ÕâÀïÒª·ÀÖ¹ÖØÃû
 	//Ìî²¹Ô­ÓÐµÄ¿ÕÈ±
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(!m_pActions[i].actionIsEnable)
 		{
@@ -163,7 +165,7 @@ _XActionExHandle _XActionExManager::pushAction(_XActionEx *action)	//Ïò±íÖÐÍÆÈëÒ
 		}
 	}
 	//Èç¹ûÃ»ÓÐ¿ÕÈ±ÔòÕâÀï¼ÓÈëÐÂµÄ
-	_XActionExData tmp;
+	XActionExData tmp;
 	tmp.actionHandle = m_pActions.size();
 	m_actionOrder.push_back(m_pActions.size());
 	m_actionOrderX.push_back(m_pActions.size());
@@ -172,10 +174,10 @@ _XActionExHandle _XActionExManager::pushAction(_XActionEx *action)	//Ïò±íÖÐÍÆÈëÒ
 	m_pActions.push_back(tmp);
 	return tmp.actionHandle;
 }
-_XActionExHandle _XActionExManager::getActionHandle(const char *actionName)
+XActionExHandle XActionExManager::getActionHandle(const char *actionName)
 {
 	if(actionName == NULL) return -1;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL
 			&& m_pActions[i].pAction->isName(actionName))
@@ -183,20 +185,20 @@ _XActionExHandle _XActionExManager::getActionHandle(const char *actionName)
 	}
 	return -1;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
-_XActionExHandle _XActionExManager::getActionHandle(const _XActionEx *action)	//Í¨¹ýÃû×Ö»ñÈ¡¶¯×÷¾ä±ú
+XActionExHandle XActionExManager::getActionHandle(const XActionEx *action)	//Í¨¹ýÃû×Ö»ñÈ¡¶¯×÷¾ä±ú
 {
 	if(action == NULL) return -1;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) 
 			return m_pActions[i].actionHandle;
 	}
 	return -1;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
-_XBool _XActionExManager::popAction(const char *actionName)
+XBool XActionExManager::popAction(const char *actionName)
 {
 	if(actionName == NULL) return XFalse;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL
 			&& m_pActions[i].pAction->isName(actionName)) 
@@ -209,10 +211,10 @@ _XBool _XActionExManager::popAction(const char *actionName)
 	}
 	return XFalse;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
-_XBool _XActionExManager::popAction(_XActionEx *action)		//´Ó±íÖÐÉ¾³ýÒ»¸ö¶¯×÷
+XBool XActionExManager::popAction(XActionEx *action)		//´Ó±íÖÐÉ¾³ýÒ»¸ö¶¯×÷
 {
 	if(action == NULL) return XFalse;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) 
 		{
@@ -224,10 +226,10 @@ _XBool _XActionExManager::popAction(_XActionEx *action)		//´Ó±íÖÐÉ¾³ýÒ»¸ö¶¯×÷
 	}
 	return XFalse;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
-_XBool _XActionExManager::releaseAction(const char *actionName)	//´Ó±íÖÐÉ¾³ýÒ»¸ö¶¯×÷²¢ÊÍ·ÅµôÏàÓ¦µÄ×ÊÔ´
+XBool XActionExManager::releaseAction(const char *actionName)	//´Ó±íÖÐÉ¾³ýÒ»¸ö¶¯×÷²¢ÊÍ·ÅµôÏàÓ¦µÄ×ÊÔ´
 {
 	if(actionName == NULL) return XFalse;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction != NULL
 			&& m_pActions[i].pAction->isName(actionName)) 
@@ -241,10 +243,10 @@ _XBool _XActionExManager::releaseAction(const char *actionName)	//´Ó±íÖÐÉ¾³ýÒ»¸ö
 	}
 	return XFalse;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
-_XBool _XActionExManager::releaseAction(_XActionEx *action)
+XBool XActionExManager::releaseAction(XActionEx *action)
 {
 	if(action == NULL) return XFalse;
-	for(int i = 0;i < m_pActions.size();++ i)
+	for(unsigned int i = 0;i < m_pActions.size();++ i)
 	{
 		if(m_pActions[i].actionIsEnable && m_pActions[i].pAction == action) 
 		{
@@ -258,10 +260,10 @@ _XBool _XActionExManager::releaseAction(_XActionEx *action)
 	return XFalse;	//Ã»ÓÐÕÒµ½Õâ¸ö¶¯×÷
 }
 //ÏÂÃæµÄº¯ÊýÊ¹ÓÃÁ½´ÎÓ³Éä£¬Ð§ÂÊ²»¸ß£¬Òª¿¼ÂÇÓÅ»¯
-_XBool _XActionExManager::moveToBottom(_XActionExHandle actionHandle)
+XBool XActionExManager::moveToBottom(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size()) return XFalse;
-	for(int i = 0;i < m_actionOrder.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 	{
 		if(m_actionOrder[i] < m_actionOrder[actionHandle])
 		{
@@ -273,10 +275,10 @@ _XBool _XActionExManager::moveToBottom(_XActionExHandle actionHandle)
 	m_actionOrderX[0] = actionHandle;
 	return XTrue;
 }
-_XBool _XActionExManager::moveToTop(_XActionExHandle actionHandle)
+XBool XActionExManager::moveToTop(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size()) return XFalse;
-	for(int i = 0;i < m_actionOrder.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 	{
 		if(m_actionOrder[i] > m_actionOrder[actionHandle])
 		{
@@ -284,15 +286,15 @@ _XBool _XActionExManager::moveToTop(_XActionExHandle actionHandle)
 			m_actionOrderX[m_actionOrder[i]] = i;
 		}
 	}
-	m_actionOrder[actionHandle] = m_actionOrder.size() - 1;
-	m_actionOrderX[m_actionOrder.size() - 1] = actionHandle;
+	m_actionOrder[actionHandle] = (int)(m_actionOrder.size()) - 1;
+	m_actionOrderX[(int)(m_actionOrder.size()) - 1] = actionHandle;
 
 	return XTrue;
 }
-_XBool _XActionExManager::moveUp(_XActionExHandle actionHandle)
+XBool XActionExManager::moveUp(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size()) return XFalse;
-	for(int i = 0;i < m_actionOrder.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 	{
 		if(m_actionOrder[i] == m_actionOrder[actionHandle] + 1)
 		{
@@ -306,10 +308,10 @@ _XBool _XActionExManager::moveUp(_XActionExHandle actionHandle)
 	}
 	return XFalse;
 }
-_XBool _XActionExManager::moveDown(_XActionExHandle actionHandle)
+XBool XActionExManager::moveDown(XActionExHandle actionHandle)
 {
 	if(actionHandle < 0 || actionHandle >= m_pActions.size()) return XFalse;
-	for(int i = 0;i < m_actionOrder.size();++ i)
+	for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 	{
 		if(m_actionOrder[i] == m_actionOrder[actionHandle] - 1)
 		{
@@ -323,13 +325,13 @@ _XBool _XActionExManager::moveDown(_XActionExHandle actionHandle)
 	}
 	return XFalse;
 }
-_XBool _XActionExManager::moveUpTo(_XActionExHandle s,_XActionExHandle d)
+XBool XActionExManager::moveUpTo(XActionExHandle s,XActionExHandle d)
 {
 	if(s < 0 || s >= m_pActions.size() ||
 		d < 0 || d >= m_pActions.size() || s == d) return XFalse;
 	if(m_actionOrder[s] < m_actionOrder[d])
 	{
-		for(int i = 0;i < m_actionOrder.size();++ i)
+		for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 		{
 			if(m_actionOrder[i] > m_actionOrder[s] && m_actionOrder[i] <= m_actionOrder[d])
 			{
@@ -341,7 +343,7 @@ _XBool _XActionExManager::moveUpTo(_XActionExHandle s,_XActionExHandle d)
 		m_actionOrderX[m_actionOrder[s]] = s;
 	}else
 	{
-		for(int i = 0;i < m_actionOrder.size();++ i)
+		for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 		{
 			if(m_actionOrder[i] > m_actionOrder[d] && m_actionOrder[i] < m_actionOrder[s])
 			{
@@ -354,13 +356,13 @@ _XBool _XActionExManager::moveUpTo(_XActionExHandle s,_XActionExHandle d)
 	}
 	return XFalse;
 }
-_XBool _XActionExManager::moveDownTo(_XActionExHandle s,_XActionExHandle d)
+XBool XActionExManager::moveDownTo(XActionExHandle s,XActionExHandle d)
 {
 	if(s < 0 || s >= m_pActions.size() ||
 		d < 0 || d >= m_pActions.size() || s == d) return XFalse;
 	if(m_actionOrder[s] < m_actionOrder[d])
 	{
-		for(int i = 0;i < m_actionOrder.size();++ i)
+		for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 		{
 			if(m_actionOrder[i] > m_actionOrder[s] && m_actionOrder[i] < m_actionOrder[d])
 			{
@@ -372,7 +374,7 @@ _XBool _XActionExManager::moveDownTo(_XActionExHandle s,_XActionExHandle d)
 		m_actionOrderX[m_actionOrder[s]] = s;
 	}else
 	{
-		for(int i = 0;i < m_actionOrder.size();++ i)
+		for(unsigned int i = 0;i < m_actionOrder.size();++ i)
 		{
 			if(m_actionOrder[i] >= m_actionOrder[d] && m_actionOrder[i] < m_actionOrder[s])
 			{
@@ -384,4 +386,8 @@ _XBool _XActionExManager::moveDownTo(_XActionExHandle s,_XActionExHandle d)
 		m_actionOrderX[m_actionOrder[s]] = s;
 	}
 	return XFalse;
+}
+#if !WITH_INLINE_FILE
+#include "XActionEx.inl"
+#endif
 }

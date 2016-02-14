@@ -1,20 +1,20 @@
-inline _XBool _XMouseRightButtonMenu::initEx(int menuSum,	//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
-	const _XVector2& position,	
-	const _XMouseRightButtonMenuTexture &tex,	
-	const _XFontUnicode &font,float captionSize)
+INLINE XBool XMouseRightButtonMenu::initEx(int menuSum,	//¶ÔÉÏÃæ½Ó¿ÚµÄ¼ò»¯
+	const XVector2& position,	
+	const XMouseRightButtonMenuSkin &tex,	
+	const XFontUnicode &font,float captionSize)
 {
 	return init(menuSum,position,tex.m_mouseRect,tex,font,captionSize,tex.m_fontPosition);
 }
-inline _XBool _XMouseRightButtonMenu::initPlus(const char * path,int menuSum,	//²Ëµ¥ÖĞµÄÎï¼şÊıÁ¿
-	const _XFontUnicode &font,float captionSize,
-	_XResourcePosition resoursePosition)
+INLINE XBool XMouseRightButtonMenu::initPlus(const char * path,int menuSum,	//²Ëµ¥ÖĞµÄÎï¼şÊıÁ¿
+	const XFontUnicode &font,float captionSize,
+	XResourcePosition resoursePosition)
 {
 	if(m_isInited || path == NULL) return XFalse;
-	m_resInfo = _XResourceManager::GetInstance().loadResource(path,RESOURCE_TYPE_XBUTTON_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXBUTTON_TEX,resoursePosition);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(menuSum,_XVector2::zero,*(_XButtonTexture *)m_resInfo->m_pointer,font,captionSize);
+	return initEx(menuSum,XVector2::zero,*(XButtonSkin *)m_resInfo->m_pointer,font,captionSize);
 }
-inline void _XMouseRightButtonMenu::draw()
+INLINE void XMouseRightButtonMenu::draw()
 {
 	if(!m_isInited ||		//Ã»ÓĞ³õÊ¼»¯Ê±²»ÏÔÊ¾
 		!m_isVisible) return;	//²»¿É¼ûÊ±²»ÏÔÊ¾
@@ -23,14 +23,47 @@ inline void _XMouseRightButtonMenu::draw()
 		m_menu[i].draw();
 	}
 }
-inline void _XMouseRightButtonMenu::update(int stepTime)
+INLINE void XMouseRightButtonMenu::update(float stepTime)
 {
 	for(int i = 0;i < m_menuSum;++ i)
 	{
 		m_menu[i].update(stepTime);
 	}
+	if(m_isInAction)
+	{//ÕâÀï¶Ô¹¤×÷½øĞĞÃèÊö(ÉĞÎ´Íê³É)
+		m_actionMoveData.move(stepTime);
+		float action = m_actionMoveData.getCurData();
+		if(m_actionMoveData.getIsEnd()) 
+		{//¶¯×÷Íê³É
+			m_isInAction = false;
+			for(int i = 0;i < m_menuSum;++ i)
+			{
+				m_menu[i].setWithAction(XTrue);
+			}
+			action = 1.0f;	//ÕâÀïĞèÒª»Ö¸´
+			if(!m_isDraw)
+				m_isVisible = XFalse;
+		}
+		if(m_isDraw)
+		{
+			for(int i = 0;i < m_menuSum;++ i)
+			{
+				m_menu[i].setAlpha(action * m_color.fA);
+				m_menu[i].setPosition(m_position.x + (100.0f + i * 50.0f) * m_scale.y * (1.0f - action),
+					m_position.y + m_mouseRect.getHeight() * i * m_scale.y);
+			}
+		}else
+		{
+			for(int i = 0;i < m_menuSum;++ i)
+			{
+				m_menu[i].setAlpha((1.0f - action) * m_color.fA);
+				m_menu[i].setPosition(m_position.x - (100.0f + i * 50.0f) * m_scale.y * action,
+					m_position.y + m_mouseRect.getHeight() * i * m_scale.y);
+			}
+		}
+	}
 }
-inline void _XMouseRightButtonMenu::drawUp()
+INLINE void XMouseRightButtonMenu::drawUp()
 {
 	if(!m_isInited ||		//Ã»ÓĞ³õÊ¼»¯Ê±²»ÏÔÊ¾
 		!m_isVisible) return;	//²»¿É¼ûÊ±²»ÏÔÊ¾
@@ -39,7 +72,7 @@ inline void _XMouseRightButtonMenu::drawUp()
 		m_menu[i].drawUp();
 	}
 }
-inline _XBool _XMouseRightButtonMenu::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XMouseRightButtonMenu::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -47,53 +80,53 @@ inline _XBool _XMouseRightButtonMenu::canGetFocus(float x,float y)	//ÓÃÓÚÅĞ¶Ïµ±Ç
 		!m_isEnable) return XFalse;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 	return isInRect(x,y);
 }
-inline _XBool _XMouseRightButtonMenu::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XMouseRightButtonMenu::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
 	return m_allArea.isInRect(x,y);
 }
-inline _XVector2 _XMouseRightButtonMenu::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
+INLINE XVector2 XMouseRightButtonMenu::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
 {
-	if(!m_isInited) return _XVector2::zero;
+	if(!m_isInited) return XVector2::zero;
 	switch(order)
 	{
-	case 0:return _XVector2(m_allArea.left,m_allArea.top);
-	case 1:return _XVector2(m_allArea.right,m_allArea.top);
-	case 2:return _XVector2(m_allArea.right,m_allArea.bottom);
-	case 3:return _XVector2(m_allArea.left,m_allArea.bottom);
+	case 0:return XVector2(m_allArea.left,m_allArea.top);
+	case 1:return XVector2(m_allArea.right,m_allArea.top);
+	case 2:return XVector2(m_allArea.right,m_allArea.bottom);
+	case 3:return XVector2(m_allArea.left,m_allArea.bottom);
 	}
-	return _XVector2::zero;
+	return XVector2::zero;
 }
-inline int _XMouseRightButtonMenu::getLastChoose() const										//·µ»Ø×îÖÕÑ¡ÔñµÄÖµ
+INLINE int XMouseRightButtonMenu::getLastChoose() const										//·µ»Ø×îÖÕÑ¡ÔñµÄÖµ
 {
 	return m_lastChoose;
 }
-inline void _XMouseRightButtonMenu::setCallbackFun(void (* funChooseChange)(void *,int),void (* funChooseOver)(void *,int),void *pClass)	//ÉèÖÃ²Ëµ¥µÄ»Øµ÷º¯Êı
-{
-	m_funChooseChange = funChooseChange;
-	m_funChooseOver = funChooseOver;
-	if(pClass != NULL) m_pClass = pClass;
-	else m_pClass = this;
-}
-inline void _XMouseRightButtonMenu::setHotKey(int hotKey,int order)							//ÉèÖÃ²Ëµ¥ÖĞÄ³Ò»ÏîµÄÈÈ¼ü
+//INLINE void XMouseRightButtonMenu::setCallbackFun(void (* funChooseChange)(void *,int),void (* funChooseOver)(void *,int),void *pClass)	//ÉèÖÃ²Ëµ¥µÄ»Øµ÷º¯Êı
+//{
+//	m_funChooseChange = funChooseChange;
+//	m_funChooseOver = funChooseOver;
+//	if(pClass != NULL) m_pClass = pClass;
+//	else m_pClass = this;
+//}
+INLINE void XMouseRightButtonMenu::setHotKey(int hotKey,int order)							//ÉèÖÃ²Ëµ¥ÖĞÄ³Ò»ÏîµÄÈÈ¼ü
 {
 	if(!m_isInited) return;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 	if(order < 0 || order >= m_menuSum) return;
 	m_menu[order].setHotKey(hotKey);
 }
-inline void _XMouseRightButtonMenu::setText(const char *temp,int order)								//¸Ä±ä²Ëµ¥ÖĞÄ³Ò»ÏîµÄÖµ
+INLINE void XMouseRightButtonMenu::setText(const char *temp,int order)								//¸Ä±ä²Ëµ¥ÖĞÄ³Ò»ÏîµÄÖµ
 {
 	if(!m_isInited) return;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 	if(order < 0 || order >= m_menuSum) return;
 	m_menu[order].setCaptionText(temp);
 }
-inline void _XMouseRightButtonMenu::setTexture(const _XMouseRightButtonMenuTexture &tex,int order)	//¸Ä±ä²Ëµ¥ÖĞÄ³Ò»ÏîµÄÌùÍ¼
+INLINE void XMouseRightButtonMenu::setTexture(const XMouseRightButtonMenuSkin &tex,int order)	//¸Ä±ä²Ëµ¥ÖĞÄ³Ò»ÏîµÄÌùÍ¼
 {
 	if(!m_isInited) return;	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 	if(order < 0 || order >= m_menuSum) return;
 	m_menu[order].setTexture(tex);
 }
-inline void _XMouseRightButtonMenu::setColor(float r,float g,float b,float a)
+INLINE void XMouseRightButtonMenu::setColor(float r,float g,float b,float a)
 {
 	m_color.setColor(r,g,b,a);
 	for(int i = 0;i < m_menuSum;++ i)
@@ -102,7 +135,7 @@ inline void _XMouseRightButtonMenu::setColor(float r,float g,float b,float a)
 	}
 	updateChildColor();
 }
-inline void _XMouseRightButtonMenu::setAlpha(float a)
+INLINE void XMouseRightButtonMenu::setAlpha(float a)
 {
 	m_color.setA(a);
 	for(int i = 0;i < m_menuSum;++ i)

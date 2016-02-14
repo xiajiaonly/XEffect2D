@@ -10,7 +10,7 @@
 #pragma comment(lib, "../../engine/lib/MemoryPool/libtcmalloc_minimal.lib")
 //加入强制符号引用__tcmalloc
 #ifdef XEE_OS_WINDOWS
-//#pragma comment( linker, "/INCLUDE:__tcmalloc" )	//隐藏控制台的编译说明
+//#pragma comment( linker, "/INCLUDE:__tcmalloc" )	//使用内存池的编译说明
 #endif
 
 //#include "stdio.h"

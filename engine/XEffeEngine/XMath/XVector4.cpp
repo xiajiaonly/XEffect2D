@@ -1,16 +1,18 @@
+#include "XStdHead.h"
 //++++++++++++++++++++++++++++++++
 //Author:	贾胜华(JiaShengHua)
 //Version:	1.0.0
 //Date:		See the header file
 //--------------------------------
 #include "XVector4.h"
-const _XVector4 _XVector4::zero(0.0f,0.0f,0.0f,0.0f);
+namespace XE{
+const XVector4 XVector4::zero(0.0f,0.0f,0.0f,0.0f);
 
-_XVector4 slerp(const _XVector4& v0,const _XVector4& v1,float r)
+XVector4 slerp(const XVector4& v0,const XVector4& v1,float r)
 {//尚未经过验证
 	if(r <= 0.0f) return v0;
 	if(r >= 1.0f) return v1;
-	_XVector4 ret;
+	XVector4 ret;
 	float cosOmega = v0.dot(v1);
 	if(cosOmega < 0.0f)
 	{
@@ -35,4 +37,8 @@ _XVector4 slerp(const _XVector4& v0,const _XVector4& v1,float r)
 		v0.z * k0 + ret.z * k1,
 		v0.w * k0 + ret.w * k1);
 	return ret;
+}
+#if !WITH_INLINE_FILE
+#include "XVector4.inl"
+#endif
 }

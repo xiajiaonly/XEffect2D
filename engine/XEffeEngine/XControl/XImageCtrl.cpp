@@ -1,7 +1,9 @@
+#include "XStdHead.h"
 #include "XImageCtrl.h"
 #include "XObjectManager.h" 
 #include "XControlManager.h"
-_XBool _XImageCtrl::init(const char *filename)			//从文件中读取图片
+namespace XE{
+XBool XImageCtrl::init(const char *filename)			//从文件中读取图片
 {
 	if(m_isInited) return XFalse;
 	if(filename == NULL) return XFalse;
@@ -9,19 +11,19 @@ _XBool _XImageCtrl::init(const char *filename)			//从文件中读取图片
 	m_sprite.init(m_texture);
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_sprite);
+	XObjManager.decreaseAObject(&m_sprite);
 #endif
 	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
-	_XCtrlManger.addACtrl(this);
+	XCtrlManager.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
 }
-_XBool _XImageCtrl::init(int w,int h,_XColorMode mode)	//建立空的图片
+XBool XImageCtrl::init(int w,int h,XColorMode mode)	//建立空的图片
 {
 	if(m_isInited) return XFalse;
 	if(w <= 0 || h <= 0) return XFalse;
@@ -32,24 +34,28 @@ _XBool _XImageCtrl::init(int w,int h,_XColorMode mode)	//建立空的图片
 	//这里需要对数据进行初始化(尚未完成)
 	m_texture.reset();
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(&m_sprite);
+	XObjManager.decreaseAObject(&m_sprite);
 #endif
 	m_isVisible = XTrue;
 	m_isEnable = XTrue;
 	m_isActive = XTrue;
-	_XCtrlManger.addACtrl(this);
+	XCtrlManager.addACtrl(this);
 #if WITH_OBJECT_MANAGER
-	_XObjManger.addAObject(this);
+	XObjManager.addAObject(this);
 #endif
 	m_isInited = XTrue;
 	return XTrue;
 }
-void _XImageCtrl::release()
+void XImageCtrl::release()
 {
 	if(m_isInited) return;
-	_XCtrlManger.decreaseAObject(this);	//注销这个物件
+	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
-	_XObjManger.decreaseAObject(this);
+	XObjManager.decreaseAObject(this);
 #endif	
 	m_isInited = false;
+}
+#if !WITH_INLINE_FILE
+#include "XImageCtrl.inl"
+#endif
 }
