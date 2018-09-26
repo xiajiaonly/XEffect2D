@@ -7,7 +7,7 @@
 #include <set>
 #include "X3D/XBasic3D.h"
 extern float gBox2DSizerate;
-extern XE::XVector2 gBox2DOffset;
+extern XE::XVec2 gBox2DOffset;
 enum
 {
     TDC_LEFT     = 0x1,
@@ -143,28 +143,28 @@ public:
     }
 	void draw()
 	{
-		XE::XRender::drawBox(gBox2DOffset.x + m_body->GetPosition().x * gBox2DSizerate,
-			gBox2DOffset.y + m_body->GetPosition().y * gBox2DSizerate,0.5f * gBox2DSizerate,1.25f * gBox2DSizerate,-m_body->GetAngle());
+//		XE::XRender::drawBox(gBox2DOffset.x + m_body->GetPosition().x * gBox2DSizerate,
+//			gBox2DOffset.y + m_body->GetPosition().y * gBox2DSizerate,0.5f * gBox2DSizerate,1.25f * gBox2DSizerate,-m_body->GetAngle());
 	}
 	void draw3D()
 	{
-		XE::XVector2 pos(m_body->GetPosition().x,m_body->GetPosition().y);
-		XE::XVector2 size(0.6f,1.3f);
+		XE::XVec2 pos(m_body->GetPosition().x,m_body->GetPosition().y);
+		XE::XVec2 size(0.6f,1.3f);
 		float angle = -m_body->GetAngle();
-		XE::XVector2 P1(pos.x - (size.x * cos(angle) - size.y * sin(angle)),
+		XE::XVec2 P1(pos.x - (size.x * cos(angle) - size.y * sin(angle)),
 			pos.y + (size.x * sin(angle) + size.y * cos(angle)));
-		XE::XVector2 P2(pos.x - (size.x * cos(angle) + size.y * sin(angle)),
+		XE::XVec2 P2(pos.x - (size.x * cos(angle) + size.y * sin(angle)),
 			pos.y + (size.x * sin(angle) - size.y * cos(angle)));
 
-		XE::XVector2 P3(pos.x + (size.x * cos(angle) - size.y * sin(angle)),
+		XE::XVec2 P3(pos.x + (size.x * cos(angle) - size.y * sin(angle)),
 			pos.y - (size.x * sin(angle) + size.y * cos(angle)));
-		XE::XVector2 P4(pos.x + (size.x * cos(angle) + size.y * sin(angle)),
+		XE::XVec2 P4(pos.x + (size.x * cos(angle) + size.y * sin(angle)),
 			pos.y - (size.x * sin(angle) - size.y * cos(angle)));
 
-		XE::XRender::drawLine(XE::XVector3(P1.x,0.0f,P1.y),XE::XVector3(P2.x,0.0f,P2.y));
-		XE::XRender::drawLine(XE::XVector3(P2.x,0.0f,P2.y),XE::XVector3(P3.x,0.0f,P3.y));
-		XE::XRender::drawLine(XE::XVector3(P3.x,0.0f,P3.y),XE::XVector3(P4.x,0.0f,P4.y));
-		XE::XRender::drawLine(XE::XVector3(P4.x,0.0f,P4.y),XE::XVector3(P1.x,0.0f,P1.y));
+		XE::XRender::drawLine(XE::XVec3(P1.x,0.0f,P1.y),XE::XVec3(P2.x,0.0f,P2.y));
+		XE::XRender::drawLine(XE::XVec3(P2.x,0.0f,P2.y),XE::XVec3(P3.x,0.0f,P3.y));
+		XE::XRender::drawLine(XE::XVec3(P3.x,0.0f,P3.y),XE::XVec3(P4.x,0.0f,P4.y));
+		XE::XRender::drawLine(XE::XVec3(P4.x,0.0f,P4.y),XE::XVec3(P1.x,0.0f,P1.y));
 	}
 };
 
@@ -176,7 +176,7 @@ private:
     b2RevoluteJoint *m_flJoint;
 	b2RevoluteJoint *m_frJoint;
 	bool m_isInited;
-	XE::XVector2 m_vertices[4];
+	XE::XVec2 m_vertices[4];
 public:
 	XTDCar()
 		:m_isInited(false)
@@ -189,33 +189,33 @@ public:
         m_vertices[2].set(-3.5, 10.0);
         m_vertices[3].set(-3.5,-10.0);
 	}
-	XE::XVector3 getPosition()const
+	XE::XVec3 getPosition()const
 	{
-		if(!m_isInited) return XE::XVector3::zero;
-		return XE::XVector3(m_body->GetPosition().x,
+		if(!m_isInited) return XE::XVec3::zero;
+		return XE::XVec3(m_body->GetPosition().x,
 			0.0f,
 			m_body->GetPosition().y);
 	}
-	XE::XVector3 getPosition(int index)const
+	XE::XVec3 getPosition(int index)const
 	{
-		if(!m_isInited) return XE::XVector3::zero;
-		if(index < 0 || index >= 4) return XE::XVector3::zero;
-		return XE::XVector3(m_tires[index]->m_body->GetPosition().x,
+		if(!m_isInited) return XE::XVec3::zero;
+		if(index < 0 || index >= 4) return XE::XVec3::zero;
+		return XE::XVec3(m_tires[index]->m_body->GetPosition().x,
 			0.0f,
 			m_tires[index]->m_body->GetPosition().y);
 	}
-	XE::XVector3 getAngle()const
+	XE::XVec3 getAngle()const
 	{
-		if(!m_isInited) return XE::XVector3::zero;
-		return XE::XVector3(0.0f,
+		if(!m_isInited) return XE::XVec3::zero;
+		return XE::XVec3(0.0f,
 			-m_body->GetAngle() * RADIAN2DEGREE,
 			0.0f);
 	}
-	XE::XVector3 getAngle(int index)const
+	XE::XVec3 getAngle(int index)const
 	{
-		if(!m_isInited) return XE::XVector3::zero;
-		if(index < 0 || index >= 4) return XE::XVector3::zero;
-		return XE::XVector3(0.0f,
+		if(!m_isInited) return XE::XVec3::zero;
+		if(index < 0 || index >= 4) return XE::XVec3::zero;
+		return XE::XVec3(0.0f,
 			(m_body->GetAngle() - m_tires[index]->m_body->GetAngle()) * RADIAN2DEGREE,
 			0.0f);
 	}
@@ -228,8 +228,8 @@ public:
 
 		b2Vec2 temp = m_tires[index]->m_body->GetLinearVelocity();
 
-		XE::XVector2 tmpV0(temp.x,temp.y);
-		XE::XVector2 tmpV1(sin(-angle),cos(-angle));
+		XE::XVec2 tmpV0(temp.x,temp.y);
+		XE::XVec2 tmpV1(sin(-angle),cos(-angle));
 		if(tmpV0.dot(tmpV1) <= 0) return -temp.Length();
 		else return temp.Length();
 	}

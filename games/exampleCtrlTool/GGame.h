@@ -68,12 +68,12 @@ public:
 	int isSelect(int id);					//判断指定ID的控件是否已经选择
 	//鼠标拖动片选
 	bool m_isMouseSelect;	//鼠标是否处于片选状态
-	XE::XVector2 m_mouseDownPos;	//鼠标按下的位置
-	XE::XVector2 m_mouseCurPos;		//当前的鼠标位置
+	XE::XVec2 m_mouseDownPos;	//鼠标按下的位置
+	XE::XVec2 m_mouseCurPos;		//当前的鼠标位置
 	void updateMouseSelect();
 	//鼠标拖动控件
 	bool m_isMouseDrag;	//是否鼠标拖动状态
-	XE::XVector2 m_mouseDragPos;
+	XE::XVec2 m_mouseDragPos;
 	//----------------------------------------------------------
 
 	XE::XSubWindow m_subWindow;	//子窗口
@@ -81,7 +81,7 @@ public:
 
 	std::vector<GCtrlInfo> m_ctrls;
 	int m_ctrlID;
-	XE::XVector2 m_curCtrlPos;
+	XE::XVec2 m_curCtrlPos;
 	//下面是关于建立控件的相关操作
 	XE::XBool addACtrl(XE::XCtrlObjType type);	//建立一个控件
 	XE::XBool delACtrl();//删除一个控件

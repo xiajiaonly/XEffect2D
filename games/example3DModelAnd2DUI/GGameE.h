@@ -25,7 +25,7 @@ public:
 	XE::XSlider tmpXSld;
 	XE::XSlider tmpYSld;
 	XE::XSlider tmpZSld;
-	XE::XVector3 angle;
+	XE::XVec3 angle;
 
 	//说明：这个VBO效果需要在release模式下才能看到，目前原因不明
 	XE::XVBO tmpVBO;
@@ -33,7 +33,7 @@ public:
 	float *t;
 	float *n;
 	unsigned int *index;
-	XE::XVector2 mouseVector;
+	XE::XVec2 mouseVector;
 };
 
 #endif

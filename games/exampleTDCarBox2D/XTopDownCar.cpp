@@ -1,7 +1,7 @@
 #include "XTopDownCar.h"
 using namespace XE;
 float gBox2DSizerate = 5.0f;
-XVector2 gBox2DOffset(300.0f,300.0f);
+XVec2 gBox2DOffset(300.0f,300.0f);
 bool XTDTire::init(b2World* world)
 {
 	if(m_isInited) return false;
@@ -180,12 +180,12 @@ void XTDCar::draw()
 	{
 		m_tires[i]->draw();
 	}
-    XVector2 vertices[8];
+    XVec2 vertices[8];
     for(int i = 0;i < 4;++ i)
 	{
 		vertices[i] = m_vertices[i] * gBox2DSizerate;
 	}
-	XRender::drawFillPolygon(vertices,4,XVector2(gBox2DOffset.x + m_body->GetPosition().x * gBox2DSizerate,
+	XRender::drawFillPolygon(vertices,4,XVec2(gBox2DOffset.x + m_body->GetPosition().x * gBox2DSizerate,
 		gBox2DOffset.y + m_body->GetPosition().y * gBox2DSizerate),
 		m_body->GetAngle() * RADIAN2DEGREE,1,1,1);
 }
@@ -196,21 +196,21 @@ void XTDCar::draw3D()
 	{
 		m_tires[i]->draw3D();
 	}
-	XVector2 pos(m_body->GetPosition().x,m_body->GetPosition().y);
-	XVector2 size(3.5f,10.0f);
+	XVec2 pos(m_body->GetPosition().x,m_body->GetPosition().y);
+	XVec2 size(3.5f,10.0f);
 	float angle = -m_body->GetAngle();
-	XVector2 P1(pos.x - (size.x * cos(angle) - size.y * sin(angle)),
+	XVec2 P1(pos.x - (size.x * cos(angle) - size.y * sin(angle)),
 		pos.y + (size.x * sin(angle) + size.y * cos(angle)));
-	XVector2 P2(pos.x - (size.x * cos(angle) + size.y * sin(angle)),
+	XVec2 P2(pos.x - (size.x * cos(angle) + size.y * sin(angle)),
 		pos.y + (size.x * sin(angle) - size.y * cos(angle)));
 
-	XVector2 P3(pos.x + (size.x * cos(angle) - size.y * sin(angle)),
+	XVec2 P3(pos.x + (size.x * cos(angle) - size.y * sin(angle)),
 		pos.y - (size.x * sin(angle) + size.y * cos(angle)));
-	XVector2 P4(pos.x + (size.x * cos(angle) + size.y * sin(angle)),
+	XVec2 P4(pos.x + (size.x * cos(angle) + size.y * sin(angle)),
 		pos.y - (size.x * sin(angle) - size.y * cos(angle)));
 
-	XRender::drawLine(XVector3(P1.x,0.0f,P1.y),XVector3(P2.x,0.0f,P2.y));
-	XRender::drawLine(XVector3(P2.x,0.0f,P2.y),XVector3(P3.x,0.0f,P3.y));
-	XRender::drawLine(XVector3(P3.x,0.0f,P3.y),XVector3(P4.x,0.0f,P4.y));
-	XRender::drawLine(XVector3(P4.x,0.0f,P4.y),XVector3(P1.x,0.0f,P1.y));
+	XRender::drawLine(XVec3(P1.x,0.0f,P1.y),XVec3(P2.x,0.0f,P2.y));
+	XRender::drawLine(XVec3(P2.x,0.0f,P2.y),XVec3(P3.x,0.0f,P3.y));
+	XRender::drawLine(XVec3(P3.x,0.0f,P3.y),XVec3(P4.x,0.0f,P4.y));
+	XRender::drawLine(XVec3(P4.x,0.0f,P4.y),XVec3(P1.x,0.0f,P1.y));
 }

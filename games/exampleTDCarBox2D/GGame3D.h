@@ -8,7 +8,7 @@
 struct GObjectInfo
 {
 	int index;
-	XE::XVector3 pos;
+	XE::XVec3 pos;
 	float angle;
 	float size;
 };
@@ -67,7 +67,7 @@ public:
 			if(index >= 0 && index <= m_objModels.size())
 			{
 
-				m_objModels[index]->setSize(m_objInfo[i].size,m_objInfo[i].size,m_objInfo[i].size);
+				m_objModels[index]->setScale(m_objInfo[i].size,m_objInfo[i].size,m_objInfo[i].size);
 				m_objModels[index]->setPosition(m_objInfo[i].pos);
 				m_objModels[index]->draw();
 			}

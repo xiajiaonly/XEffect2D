@@ -86,8 +86,8 @@ void GGame::move(float stepTime)
 	//遍历模型的所有点，找到离鼠标最近的点并标记出来
 	float len = 100000000.0f;
 	float tempLen;
-	XVector3 tempV3;
-	XVector2 tempV2;
+	XVec3 tempV3;
+	XVec2 tempV2;
 	for(int i = 0;i < tempModel.getVectorSum();++ i)
 	{
 		tempV3 = X3DWld.worldToScreen(tempModel.getVector(i),XRect(0.0f,0.0f,1024.0f,768.0f));
@@ -103,8 +103,8 @@ void GGame::move(float stepTime)
 void GGame::draw()
 {
 	tempSprite.draw();
-	XRender::drawBox(mouseVector.x,mouseVector.y,10,10);
-	XRender::drawBox(getMousePos().x,getMousePos().y,10,10);
+	XRender::drawRect(mouseVector, XVec2(10), 1.0f, XFColor::white);
+	XRender::drawRect(getMousePos(), XVec2(10), 1.0f, XFColor::blue);
 }
 void GGame::ctrlEventProc(int id,int eventID)
 {
@@ -141,10 +141,10 @@ void GGame::draw3D(XBool withTex)
 	glDisable(GL_TEXTURE_2D);
 	XRender::drawOrigin();
 //	tempModel.draw(withTex);
-	angle = XMath::normalize(XVector3(tmpXSld.getCurValue(),tmpYSld.getCurValue(),tmpZSld.getCurValue()));
-	XRender::drawBox(angle * 50.0f,XVector3(2.0f,2.0f,2.0f),XVector3::zero);
+	angle = XMath::normalize(XVec3(tmpXSld.getCurValue(),tmpYSld.getCurValue(),tmpZSld.getCurValue()));
+	XRender::drawCuboid(angle * 50.0f,XVec3(2.0f),XVec3::zero);
 	angle = XMath::getAngleFromDirection(angle);
-	XRender::drawCuboid(XVector3::zero,XVector3(100.0f,1.0f,1.0f),angle * RADIAN2DEGREE,XFColor::white);
+	XRender::drawCuboid(XVec3::zero,XVec3(100.0f,1.0f,1.0f),angle * RADIAN2DEGREE,XFColor::white);
 	//for(int i = 0;i < 127;++ i)
 	//{
 	//	for(int j = 0;j < 127;++ j)

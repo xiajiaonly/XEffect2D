@@ -111,7 +111,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 			case CTRL_OBJ_MUTILIST:
 				{
 					XMultiList *tmp = XMem::createMem<XMultiList>();
-					tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+					tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 						pPar.m_ctrlPixelSizeYEdt.getAsFloat()),
 						pPar.m_cmbAllMenuSumEdt.getAsInt(),
 						pPar.m_cmbShowMenuSumEdt.getAsInt());
@@ -127,7 +127,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 			case CTRL_OBJ_TAB:
 				{
 					XTab *tmp = XMem::createMem<XTab>();
-					tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+					tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 						pPar.m_ctrlPixelSizeYEdt.getAsFloat()));
 					tmp->setPosition(pPar.m_ctrlPosXEdt.getAsInt(),
 						pPar.m_ctrlPosYEdt.getAsInt());
@@ -204,7 +204,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 						pPar.clearAffiliation();
 						XButton *tmp = XMem::createMem<XButton>();
 						tmp->initWithoutSkin(pPar.m_ctrlCaptionEdt.getString(),
-							XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+							XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 							pPar.m_ctrlPixelSizeYEdt.getAsFloat()));
 						tmp->setPosition(pPar.m_ctrlPosXEdt.getAsFloat(),
 							pPar.m_ctrlPosYEdt.getAsFloat());
@@ -242,7 +242,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 					{
 						pPar.clearAffiliation();
 						XEdit *tmp = XMem::createMem<XEdit>();
-						tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+						tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 							pPar.m_ctrlPixelSizeYEdt.getAsFloat()),pPar.m_ctrlCaptionEdt.getString());
 						tmp->setPosition(pPar.m_ctrlPosXEdt.getAsFloat(),
 							pPar.m_ctrlPosYEdt.getAsFloat());
@@ -263,7 +263,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 					{
 						pPar.clearAffiliation();
 						XMultiList *tmp = XMem::createMem<XMultiList>();
-						tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+						tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 							pPar.m_ctrlPixelSizeYEdt.getAsFloat()),
 							pPar.m_cmbAllMenuSumEdt.getAsInt(),
 							pPar.m_cmbShowMenuSumEdt.getAsInt());
@@ -281,7 +281,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 					{
 						pPar.clearAffiliation();
 						XMultiText *tmp = XMem::createMem<XMultiText>();
-						tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+						tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 							pPar.m_ctrlPixelSizeYEdt.getAsFloat()),pPar.m_ctrlCaptionEdt.getString());
 						tmp->setPosition(pPar.m_ctrlPosXEdt.getAsFloat(),
 							pPar.m_ctrlPosYEdt.getAsFloat());
@@ -317,7 +317,7 @@ void ctrlFun(void *pClass,int id,int eventID)
 					{
 						pPar.clearAffiliation();
 						XTab *tmp = XMem::createMem<XTab>();
-						tmp->initWithoutSkin(XVector2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
+						tmp->initWithoutSkin(XVec2(pPar.m_ctrlPixelSizeXEdt.getAsFloat(),
 							pPar.m_ctrlPixelSizeYEdt.getAsFloat()));
 						tmp->setPosition(pPar.m_ctrlPosXEdt.getAsFloat(),
 							pPar.m_ctrlPosYEdt.getAsFloat());
@@ -420,19 +420,19 @@ void drawTop()
 }
 bool GGame::createUI()
 {
-	m_tab.initWithoutSkin(XVector2(512.0f,1200.0f));
+	m_tab.initWithoutSkin(XVec2(512.0f,1200.0f));
 	m_tab.setScale(0.5f);
 	m_tab.setPosition(4.0f,36.0f);
 	m_tab.addATab("控件");
 	m_tab.addATab("属性");
 	m_tab.addATab("系统");
 
-	m_subWindow.initWithoutSkin(XVector2(264.0f,660.0f),"面板");
+	m_subWindow.initWithoutSkin(XVec2(264.0f,660.0f),"面板");
 	m_subWindow.addACtrlObj(&m_tab);
 	m_subWindow.setAutoShrink(true);
 
 	//下面是控件列表
-	m_ctrlChooseRds.initWithoutSkin(30,XVector2(0.0f,32.0f),XVector2(32.0f,32.0f),XVector2(34.0f,16.0f));
+	m_ctrlChooseRds.initWithoutSkin(30,XVec2(0.0f,32.0f),XVec2(32.0f,32.0f),XVec2(34.0f,16.0f));
 	m_ctrlChooseRds.setScale(0.5f);
 	m_ctrlChooseRds.setPosition(6.0f,56.0f);
 	m_ctrlChooseRds.setRadioText("无",0);
@@ -489,7 +489,7 @@ bool GGame::createUI()
 	m_tab.addObjToTab(&m_ctrlChooseRds,"控件");
 	//属性
 	int h = 56;
-	m_chooseCtrlMltlst.initWithoutSkin(XVector2(512.0f,512.0f),3,0);
+	m_chooseCtrlMltlst.initWithoutSkin(XVec2(512.0f,512.0f),3,0);
 	m_chooseCtrlMltlst.setTitleStr("ID",0);
 	m_chooseCtrlMltlst.setRowWidth(64,0);
 	m_chooseCtrlMltlst.setTitleStr("Name",1);
@@ -651,21 +651,21 @@ bool GGame::createUI()
 	m_prjNameTxt.init("工程名称:");
 	m_prjNameTxt.setScale(0.5f);
 	m_prjNameTxt.setPosition(6.0f,h);
-	m_prjNameEdt.initWithoutSkin(XVector2(256.0f,32.0f),"defaultUI");
+	m_prjNameEdt.initWithoutSkin(XVec2(256.0f,32.0f),"defaultUI");
 	m_prjNameEdt.setScale(0.5f);
 	m_prjNameEdt.setPosition(6.0f + 68.0f,h);
 	m_tab.addObjToTab(&m_prjNameTxt,"系统");
 	m_tab.addObjToTab(&m_prjNameEdt,"系统");
 	h += 18;
-	m_saveBtn.initWithoutSkin("保存",XVector2(128.0f,32.0f));
+	m_saveBtn.initWithoutSkin("保存",XVec2(128.0f,32.0f));
 	m_saveBtn.setScale(0.5f);
 	m_saveBtn.setPosition(6.0f,h);
 	m_saveBtn.setEventProc(ctrlFun,this);
-	m_readBtn.initWithoutSkin("读取",XVector2(128.0f,32.0f));
+	m_readBtn.initWithoutSkin("读取",XVec2(128.0f,32.0f));
 	m_readBtn.setScale(0.5f);
 	m_readBtn.setPosition(6.0f + 64.0f,h);
 	m_readBtn.setEventProc(ctrlFun,this);
-	m_codeBtn.initWithoutSkin("生成",XVector2(128.0f,32.0f));
+	m_codeBtn.initWithoutSkin("生成",XVec2(128.0f,32.0f));
 	m_codeBtn.setScale(0.5f);
 	m_codeBtn.setPosition(6.0f + 128.0f,h);
 	m_codeBtn.setEventProc(ctrlFun,this);
@@ -831,7 +831,8 @@ void GGame::move(float stepTime)
 }
 void GGame::draw()
 {
-	XRender::drawBox(0.0f,0.0f,m_winWidth,m_winHeight);	//描绘窗口的界线
+	XRender::drawRect(XVec2(m_winWidth, m_winHeight) * 0.5f, XVec2(m_winWidth, m_winHeight) * 0.5f,
+		1.0f, XFColor::white);	//描绘窗口的界线
 }
 void GGame::drawUp()
 {
@@ -840,7 +841,7 @@ void GGame::drawUp()
 	{
 		if(m_ctrls[i].isMouseOn)
 		{
-			XRender::drawBox(m_ctrls[i].pCtrl->getBox(0),
+			XRender::drawQuad(m_ctrls[i].pCtrl->getBox(0),
 				m_ctrls[i].pCtrl->getBox(1),
 				m_ctrls[i].pCtrl->getBox(2),
 				m_ctrls[i].pCtrl->getBox(3),1.0f,0.0f,0.0f,1.0f);
@@ -850,12 +851,12 @@ void GGame::drawUp()
 			if(m_curChooseCtrls[j] == m_ctrls[i].ctrlID)
 			{
 				if(m_curChooseCtrls[j] == m_curChooseCtrlID)
-					XRender::drawBox(m_ctrls[i].pCtrl->getBox(0),
+					XRender::drawQuad(m_ctrls[i].pCtrl->getBox(0),
 						m_ctrls[i].pCtrl->getBox(1),
 						m_ctrls[i].pCtrl->getBox(2),
 						m_ctrls[i].pCtrl->getBox(3),1.0f,1.0f,0.0f,0.0f);
 				else
-					XRender::drawBox(m_ctrls[i].pCtrl->getBox(0),
+					XRender::drawQuad(m_ctrls[i].pCtrl->getBox(0),
 						m_ctrls[i].pCtrl->getBox(1),
 						m_ctrls[i].pCtrl->getBox(2),
 						m_ctrls[i].pCtrl->getBox(3),1.0f,1.0f,1.0f,0.0f);
@@ -885,7 +886,7 @@ void GGame::input(const XInputEvent &event)
 			for(int i = 0;i < m_ctrls.size();++ i)
 			{
 				if(m_ctrls[i].pCtrl->getVisible() &&
-					m_ctrls[i].pCtrl->isInRect(XEG.getMousePos().x,XEG.getMousePos().y))
+					m_ctrls[i].pCtrl->isInRect(XEG.getMousePos()))
 					m_ctrls[i].isMouseOn = XTrue;
 				else m_ctrls[i].isMouseOn = XFalse;
 			}
@@ -896,7 +897,7 @@ void GGame::input(const XInputEvent &event)
 			}
 			if(m_isMouseDrag)
 			{//鼠标拖动控件
-				XVector2 dPos = XVector2(event.mouseX,event.mouseY) - m_mouseDragPos;
+				XVec2 dPos = XVec2(event.mouseX,event.mouseY) - m_mouseDragPos;
 				m_mouseDragPos.set(event.mouseX,event.mouseY);
 				int index;
 				for(int i = 0;i < m_curChooseCtrls.size();++ i)
@@ -923,7 +924,7 @@ void GGame::input(const XInputEvent &event)
 			break;
 		case MOUSE_LEFT_BUTTON_DOWN:
 			//XEE::makeABeep();
-			if(m_subWindow.isInRect(event.mouseX,event.mouseY)) break;	//如果在子窗口上按下鼠标则这里不做处理
+			if(m_subWindow.isInRect(XVec2(event.mouseX,event.mouseY))) break;	//如果在子窗口上按下鼠标则这里不做处理
 			//下面在制定位置建立相关的控件
 			if(getCurChooseCtrlType() != CTRL_OBJ_NULL)
 			{//鼠标左键创建一个控件
@@ -945,7 +946,7 @@ void GGame::input(const XInputEvent &event)
 						{
 							int index = getCtrlIndexByID(m_curChooseCtrls[i]);
 							if(index >= 0 && m_ctrls[index].pCtrl->getVisible() && 
-								m_ctrls[index].pCtrl->isInRect(event.mouseX,event.mouseY))
+								m_ctrls[index].pCtrl->isInRect(XVec2(event.mouseX,event.mouseY)))
 							{
 								isDrag = true;
 								break;
@@ -1059,7 +1060,7 @@ int GGame::getNewMouseChooseCtrl(float x,float y)			//获取目前鼠标选择的控件的编
 	for(int i = 0;i < m_ctrls.size();++ i)
 	{
 		if(m_ctrls[i].pCtrl->getVisible() && 
-			m_ctrls[i].pCtrl->isInRect(x,y)) return i;
+			m_ctrls[i].pCtrl->isInRect(XVec2(x,y))) return i;
 	}
 	return -1;
 }
@@ -1245,7 +1246,7 @@ XBool GGame::addACtrl(XCtrlObjType type)
 			GCtrlInfo tmp;
 			XMultiList *pObj = XMem::createMem<XMultiList>();
 			if(pObj == NULL) return XFalse;
-			pObj->initWithoutSkin(XVector2(256.0f,256.0f),3,0);
+			pObj->initWithoutSkin(XVec2(256.0f,256.0f),3,0);
 			pObj->setPosition(m_curCtrlPos);
 			tmp.ctrlID = m_ctrlID;
 			tmp.ctrlName = "m_mltLst" + XString::toString(m_ctrlID);
@@ -1264,7 +1265,7 @@ XBool GGame::addACtrl(XCtrlObjType type)
 			GCtrlInfo tmp;
 			XMultiText *pObj = XMem::createMem<XMultiText>();
 			if(pObj == NULL) return XFalse;
-			pObj->initWithoutSkin(XVector2(256.0f,256.0f),"多行文本框");
+			pObj->initWithoutSkin(XVec2(256.0f,256.0f),"多行文本框");
 			pObj->setPosition(m_curCtrlPos);
 			tmp.ctrlID = m_ctrlID;
 			tmp.ctrlName = "m_mltTxt" + XString::toString(m_ctrlID);
@@ -1305,7 +1306,7 @@ XBool GGame::addACtrl(XCtrlObjType type)
 			GCtrlInfo tmp;
 			XTab *pObj = XMem::createMem<XTab>();
 			if(pObj == NULL) return XFalse;
-			pObj->initWithoutSkin(XVector2(256.0f,256.0f));
+			pObj->initWithoutSkin(XVec2(256.0f,256.0f));
 			pObj->setPosition(m_curCtrlPos);
 			for(int i = 0;i < 3;++ i)
 			{
@@ -1363,7 +1364,7 @@ bool GGame::updateCtrlList(float x,float y)
 	for(int i = 0;i < m_ctrls.size();++ i)
 	{
 		if(m_ctrls[i].pCtrl->getVisible() && 
-			m_ctrls[i].pCtrl->isInRect(x,y))
+			m_ctrls[i].pCtrl->isInRect(XVec2(x,y)))
 		{//添加控件
 			ret = true;
 			int index = isSelect(m_ctrls[i].ctrlID);
@@ -1438,13 +1439,13 @@ void GGame::updateCtrlProperty()
 	int order = getCtrlIndexByID(m_curChooseCtrlID);
 	if(order < 0) return;
 	m_ctrlNameEdt.setString(m_ctrls[order].ctrlName.c_str());
-	XVector2 pos = m_ctrls[order].pCtrl->getPosition();
+	XVec2 pos = m_ctrls[order].pCtrl->getPosition();
 	m_ctrlPosXEdt.setString(XString::toString((int)(pos.x)).c_str());
 	m_ctrlPosYEdt.setString(XString::toString((int)(pos.y)).c_str());
-	XVector2 size = m_ctrls[order].pCtrl->getPixelSize();
+	XVec2 size = m_ctrls[order].pCtrl->getPixelSize();
 	m_ctrlPixelSizeXEdt.setString(XString::toString((int)(size.x)).c_str());
 	m_ctrlPixelSizeYEdt.setString(XString::toString((int)(size.y)).c_str());
-	XVector2 scale = m_ctrls[order].pCtrl->getScale();
+	XVec2 scale = m_ctrls[order].pCtrl->getScale();
 	m_ctrlScaleSizeXEdt.setString(XString::toString(scale.x).c_str());
 	m_ctrlScaleSizeYEdt.setString(XString::toString(scale.y).c_str());
 	m_ctrlAffiliationEdt.setString(m_ctrls[order].affiliationStr.c_str());
@@ -1709,9 +1710,9 @@ XBool GGame::loadFromFile()
 		XXml::getXmlAsBool(keyNode,"withCallback",tmpB);
 		tmp.withCallback = tmpB;
 		//下面读取属性建立控件
-		XVector2 pos;
-		XVector2 pixel;
-		XVector2 scale;
+		XVec2 pos;
+		XVec2 pixel;
+		XVec2 scale;
 		XXml::getXmlAsFloat(keyNode,"ctrlPosX",pos.x);
 		XXml::getXmlAsFloat(keyNode,"ctrlPosY",pos.y);
 		XXml::getXmlAsFloat(keyNode,"ctrlPixelX",pixel.x);
@@ -1838,11 +1839,11 @@ XBool GGame::createCode()
 	fprintf(fp,"public:\n");
 	fprintf(fp,"	%s(){}\n",m_prjNameEdt.getString());
 	fprintf(fp,"	~%s(){}\n",m_prjNameEdt.getString());
-	fprintf(fp,"	bool createUI();\n",m_prjNameEdt.getString());
-	fprintf(fp,"	bool disableAll();\n",m_prjNameEdt.getString());
-	fprintf(fp,"	bool enableAll();\n",m_prjNameEdt.getString());
-	fprintf(fp,"	bool visibleAll();\n",m_prjNameEdt.getString());
-	fprintf(fp,"	bool hideAll();\n",m_prjNameEdt.getString());
+	fprintf(fp,"	bool createUI();\n");
+	fprintf(fp,"	bool disableAll();\n");
+	fprintf(fp,"	bool enableAll();\n");
+	fprintf(fp,"	bool visibleAll();\n");
+	fprintf(fp,"	bool hideAll();\n");
 	//下面写入控件的定义
 	for(int i =0;i < m_ctrls.size();++ i)
 	{
@@ -1873,7 +1874,7 @@ XBool GGame::createCode()
 		case CTRL_OBJ_NULL:break;
 		case CTRL_OBJ_BUTTON:
 			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(\"" + 
-				((XButton *)m_ctrls[i].pCtrl)->getCaptionString() + "\",XVector2(" +
+				((XButton *)m_ctrls[i].pCtrl)->getCaptionString() + "\",XVec2(" +
 				XString::toString(((XButton *)m_ctrls[i].pCtrl)->getPixelSize().x) + "," +
 				XString::toString(((XButton *)m_ctrls[i].pCtrl)->getPixelSize().y) + "));\n";
 			fprintf(fp,filename.c_str());
@@ -1937,7 +1938,7 @@ XBool GGame::createCode()
 			break;			
 		case CTRL_OBJ_DIRECTORYLIST:break;		
 		case CTRL_OBJ_EDIT:
-			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(" + "XVector2(" +
+			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(" + "XVec2(" +
 				XString::toString(((XEdit *)m_ctrls[i].pCtrl)->getPixelSize().x) + "," +
 				XString::toString(((XEdit *)m_ctrls[i].pCtrl)->getPixelSize().y) + "),\"" + 
 				((XEdit *)m_ctrls[i].pCtrl)->getString() + "\");\n";
@@ -1963,7 +1964,7 @@ XBool GGame::createCode()
 		case CTRL_OBJ_MENU:break;			
 		case CTRL_OBJ_MOUSERIGHTBUTTONMENU:break;		
 		case CTRL_OBJ_MUTILIST:
-			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVector2(" +
+			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVec2(" +
 				XString::toString(((XMultiList *)m_ctrls[i].pCtrl)->getPixelSize().x) + "," +
 				XString::toString(((XMultiList *)m_ctrls[i].pCtrl)->getPixelSize().y) + ")," + 
 				XString::toString(m_ctrls[i].allMenuSum) + "," + XString::toString(m_ctrls[i].showMenuSum) + ");\n";
@@ -1986,7 +1987,7 @@ XBool GGame::createCode()
 			}
 			break;		
 		case CTRL_OBJ_MUTITEXT:
-			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVector2(" +
+			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVec2(" +
 				XString::toString(((XMultiText *)m_ctrls[i].pCtrl)->getPixelSize().x) + "," +
 				XString::toString(((XMultiText *)m_ctrls[i].pCtrl)->getPixelSize().y) + "),\"" + 
 				((XMultiText *)m_ctrls[i].pCtrl)->getALineString(0) + "\");\n";
@@ -2021,7 +2022,7 @@ XBool GGame::createCode()
 		case CTRL_OBJ_SLIDER:break;		
 		case CTRL_OBJ_SLIDEREX:break;		
 		case CTRL_OBJ_TAB:
-			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVector2(" +
+			filename = "	" + m_ctrls[i].ctrlName + ".initWithoutSkin(XVec2(" +
 				XString::toString(((XTab *)m_ctrls[i].pCtrl)->getPixelSize().x) + "," +
 				XString::toString(((XTab *)m_ctrls[i].pCtrl)->getPixelSize().y) +  "));\n";
 			fprintf(fp,filename.c_str());

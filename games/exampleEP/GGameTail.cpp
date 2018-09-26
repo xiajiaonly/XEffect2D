@@ -10,7 +10,7 @@ void GGame::ThreadFun0(void *p)
 	{
 		pPar.m_tailingObj[i].Update(timer,tmp);
 		if(pPar.m_tailingObj[i].GetIsEnd()) 
-			pPar.m_tailingObj[i].Reset(XVector2(XRand::randomf(-512,512) + 640,-10),XVector2(XRand::randomf(-50,50),XRand::randomf(50,150)),&pPar.m_tailing[i]);
+			pPar.m_tailingObj[i].Reset(XVec2(XRand::randomf(-512,512) + 640,-10),XVec2(XRand::randomf(-50,50),XRand::randomf(50,150)),&pPar.m_tailing[i]);
 	}
 }
 void GGame::ThreadFun1(void *p)
@@ -22,7 +22,7 @@ void GGame::ThreadFun1(void *p)
 	{
 		pPar.m_tailingObj[i].Update(timer,tmp);
 		if(pPar.m_tailingObj[i].GetIsEnd()) 
-			pPar.m_tailingObj[i].Reset(XVector2(XRand::randomf(-512,512) + 640,-10),XVector2(XRand::randomf(-50,50),XRand::randomf(50,150)),&pPar.m_tailing[i]);
+			pPar.m_tailingObj[i].Reset(XVec2(XRand::randomf(-512,512) + 640,-10),XVec2(XRand::randomf(-50,50),XRand::randomf(50,150)),&pPar.m_tailing[i]);
 	}
 }
 #endif
@@ -30,10 +30,10 @@ void GGame::ResetParticles(int index)
 {
 #ifdef WITH_FIELD
 	float angle = XRand::randomf(0,PI2);
-	XVector2 pos = XVector2(640 + m_r[index] * cos(angle),360 + m_r[index] * sin(angle));
-	m_tailingObj[index].Reset(pos,XVector2::zero,&m_tailing[index]);
+	XVec2 pos = XVec2(640 + m_r[index] * cos(angle),360 + m_r[index] * sin(angle));
+	m_tailingObj[index].Reset(pos,XVec2::zero,&m_tailing[index]);
 #else
-	m_tailingObj[index].Reset(XVector2(XRand::randomf(-512,512) + 640,-10),XVector2(XRand::randomf(-50,50),XRand::randomf(50,150)),&m_tailing[index]);
+	m_tailingObj[index].Reset(XVec2(XRand::randomf(-512,512) + 640,-10),XVec2(XRand::randomf(-50,50),XRand::randomf(50,150)),&m_tailing[index]);
 #endif
 }
 #ifdef WITH_GAUSS
@@ -85,7 +85,7 @@ bool GGame::init()
 	m_fboSprite.setShaderClass(&m_shader);
 #endif
 
-	m_frameData.init(XVector2(512,64),2.0f);
+	m_frameData.init(XVec2(512,64),2.0f);
 	m_frameData.setShowInfo(INFO_CUR_VALUE);
 	m_frameData.setSimpleChartType(TYPE_0_BOTTOM);
 	return true;
@@ -109,11 +109,11 @@ void GGame::move(float stepTime)
 	}
 	m_vbo.updateDate2D(m_allSum,m_v,NULL,NULL,m_c);
 #else
-	XVector2 pos;
+	XVec2 pos;
 	for(int i = 0;i < MAX_SUM;++ i)
 	{
 #ifdef WITH_FIELD
-		pos = m_tailingObj[i].GetPosition() * XVector2(0.1f,0.1f);
+		pos = m_tailingObj[i].GetPosition() * XVec2(0.1f,0.1f);
 		pos.y += 28.0f;
 		m_tailingObj[i].SetSpeed(m_tailingObj[i].GetSpeed() + m_field2D.GetVector(pos.x,pos.y));
 #endif
@@ -150,7 +150,7 @@ void GGame::draw()
 	m_fboSprite.draw(m_fbo.getTexture(0));
 #endif
 #ifdef WITH_FIELD
-	//m_field2D.Draw(XVector2(1280,720));
+	//m_field2D.Draw(XVec2(1280,720));
 #endif
 }
 void GGame::input(const XInputEvent &event)
@@ -170,7 +170,7 @@ void GGame::input(const XInputEvent &event)
 //		switch(event.mouseState)
 //		{
 //		case MOUSE_MOVE:
-//			if(m_isMouseDown) m_tailing.AddPoint(XE::XVector2(event.mouseX,event.mouseY));
+//			if(m_isMouseDown) m_tailing.AddPoint(XE::XVec2(event.mouseX,event.mouseY));
 //			break;
 //		case MOUSE_LEFT_BUTTON_DOWN:m_isMouseDown = true;break;
 //		case MOUSE_LEFT_BUTTON_UP:m_isMouseDown = false;break;

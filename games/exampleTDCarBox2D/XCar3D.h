@@ -7,11 +7,11 @@ class XCar3D
 private:
 	XE::XModelObj m_modelCarBody;
 	XE::XModelObj m_modelTire[4];
-	XE::XVector3 m_angle;
-	XE::XVector3 m_position;
+	XE::XVec3 m_angle;
+	XE::XVec3 m_position;
 	bool m_isInited;
 	float m_tireSpeed[4];
-	XE::XVector3 m_tireAngle[4];
+	XE::XVec3 m_tireAngle[4];
 public:
 	XCar3D()
 		:m_isInited(false)
@@ -51,14 +51,14 @@ public:
 	void move(int stepTime)
 	{
 		if(!m_isInited) return;
-		XE::XMatrix3x3 tmp;
-		XE::XMatrix4x4 tmp4x4;
+		XE::XMat3 tmp;
+		XE::XMat4 tmp4x4;
 		for(int i = 0;i < 4;++ i)
 		{
 			m_tireAngle[i].x += m_tireSpeed[i] * stepTime;
 			if(m_tireAngle[i].x >= 360.0f) m_tireAngle[i].x -= 360.0f;
 			m_modelTire[i].setAngle(0.0f,m_tireAngle[i].y,0.0f);
-			m_modelTire[i].setMultRotate(XE::XMath::getRotate(XE::XVector3(m_tireAngle[i].x,0.0f,0.0f)));
+			m_modelTire[i].setMultRotate(XE::XMath::getRotate(XE::XVec3(m_tireAngle[i].x,0.0f,0.0f)));
 		}
 	}
 	void setTireAngle(int index,float y)
@@ -73,7 +73,7 @@ public:
 		if(index != 0 && index != 2) m_tireSpeed[index] = s;
 		else m_tireSpeed[index] = -s;
 	}
-	void setAngle(const XE::XVector3& angle)
+	void setAngle(const XE::XVec3& angle)
 	{
 		setAngle(angle.x,angle.y,angle.z);
 	}
@@ -83,11 +83,11 @@ public:
 		m_modelCarBody.setAngle(m_angle);
 
 	}
-	void setMultMatrix(const XE::XMatrix4x4 &tmp)
+	void setMultMatrix(const XE::XMat4 &tmp)
 	{
 		m_modelCarBody.setMultRotate(tmp);
 	}
-	void setPosition(const XE::XVector3& pos)
+	void setPosition(const XE::XVec3& pos)
 	{
 		setPosition(pos.x,pos.y,pos.z);
 	}
@@ -97,6 +97,6 @@ public:
 		m_modelCarBody.setPosition(m_position);
 
 	}
-	XE::XVector3 getPosition() const{return m_position;}
+	XE::XVec3 getPosition() const{return m_position;}
 };
 #endif

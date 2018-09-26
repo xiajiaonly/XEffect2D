@@ -7,6 +7,10 @@ public:
 	GFaceToolsUI(){}
 	~GFaceToolsUI(){}
 	bool createUI();
+	bool disableAll();
+	bool enableAll();
+	bool visibleAll();
+	bool hideAll();
 	XE::XCheck m_isShowFeatureDataChk;
 	XE::XCombo m_dataResourcesTypeCmb;
 	XE::XButton m_startOrStopBtn;

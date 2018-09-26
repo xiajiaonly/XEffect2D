@@ -682,14 +682,14 @@ void windowExitFun(void *p)
 }
 void GGame::createUI()
 {
-	m_tab.initWithoutSkin(XVector2(1014.0f,725.0f));
+	m_tab.initWithoutSkin(XVec2(1014.0f,725.0f));
 	m_tab.addATab("发送端口设置");
 	m_tab.addATab("发送数据设置");
 	m_tab.addATab("键盘鼠标模拟");
 	m_tab.addATab("接收端设置");
 	m_tab.addATab("系统设置");
 	m_tab.setPosition(5.0f,5.0f);
-	m_mouseRBtnMnu.initWithoutSkin(4,XRect(0,0,200,50),*XEG.m_systemFont,1.0f,XVector2(100,25)); 
+	m_mouseRBtnMnu.initWithoutSkin(4,XRect(0,0,200,50),*XEG.m_systemFont,1.0f,XVec2(100,25)); 
 	m_mouseRBtnMnu.setText("剪切(T)",0);
 	m_mouseRBtnMnu.setText("复制(C)",1);
 	m_mouseRBtnMnu.setText("粘贴(V)",2);
@@ -735,7 +735,7 @@ void GGame::createUI()
 	m_tab.addObjToTab(&m_clearBtn,"发送数据设置");
 	m_tab.addObjToTab(&m_modifyBtn,"发送数据设置");
 
-	m_dataLst.initWithoutSkin(XVector2(709.0f,670.0f),3,0);
+	m_dataLst.initWithoutSkin(XVec2(709.0f,670.0f),3,0);
 	m_dataLst.setPosition(306.0f,h);
 	m_dataLst.setTitleStr("Address;Data;Type;");
 	m_dataLst.setRowWidth(250,0);
@@ -796,7 +796,7 @@ void GGame::createUI()
 	m_sendBtn.setPosition(10.0f,h);
 	m_tab.addObjToTab(&m_sendBtn,"发送数据设置");
 	h = 5 + 40;
-	m_recvText.initWithoutSkin(XVector2(740.0f,670.0f),"Recv:");
+	m_recvText.initWithoutSkin(XVec2(740.0f,670.0f),"Recv:");
 	m_recvText.setPosition(275.0f,h);
 	m_textRPort.init("Port:");
 	m_textRPort.setPosition(10.0f,h);
@@ -838,7 +838,7 @@ void GGame::createUI()
 	m_tab.addObjToTab(&m_readBtn,"系统设置");
 	//下面是键盘鼠标映射
 	h = 5 + 40;
-	m_dataKMLst.initWithoutSkin(XVector2(709.0f,670.0f),5,0);
+	m_dataKMLst.initWithoutSkin(XVec2(709.0f,670.0f),5,0);
 	m_dataKMLst.setPosition(306.0f,h);
 	m_dataKMLst.setTitleStr("Key;State;Address;Data;Type;");
 	m_dataKMLst.setRowWidth(100,0);

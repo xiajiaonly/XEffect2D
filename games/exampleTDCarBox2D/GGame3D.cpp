@@ -60,7 +60,7 @@ bool GGame3D::init()
 	for(int i = 0;i < m_nodeLineInfo.size();++ i)
 	{
 		m_nodeLineInfo[i]->setSpecialPointSpeed(0.08f);
-		m_nodeLineInfo[i]->resetSpecialPoint(XTrue);
+		m_nodeLineInfo[i]->resetSpecialPoint();
 
 	}
 
@@ -72,9 +72,9 @@ void GGame3D::move(float stepTime)
 	m_world.Step(stepTime * 0.001f, 6, 2);
 	for(int i = 0;i < m_nodeLineInfo.size();++ i)
 	{
-		m_nodeLineInfo[i]->moveSpecialPoint(stepTime,1,XTrue);
+		m_nodeLineInfo[i]->moveSpecialPoint(stepTime);
 		if(m_nodeLineInfo[i]->getSpecialPointIsEnd())
-			m_nodeLineInfo[i]->resetSpecialPoint(XTrue);
+			m_nodeLineInfo[i]->resetSpecialPoint();
 	}
 
 	m_car3D.setTireAngle(0,m_carPhysics->getAngle(0).y);
@@ -86,7 +86,7 @@ void GGame3D::move(float stepTime)
 	m_car3D.setTireSpeed(2,m_carPhysics->getTireSpeed(2) * 0.03);
 	m_car3D.setTireSpeed(3,m_carPhysics->getTireSpeed(3) * 0.03);
 
-	XVector3 tmp[4];
+	XVec3 tmp[4];
 
 	float height = 0.0f;
 	for(int i = 0;i < 4;++ i)
@@ -97,21 +97,21 @@ void GGame3D::move(float stepTime)
 	}
 	m_car3D.setPosition(m_carPhysics->getPosition().x,height * 0.25 + 1.4f,m_carPhysics->getPosition().z);
 
-	XMatrix4x4 tmpMat = XMath::getRotate(XVector3(XVector2(12.3f,((tmp[1].y + tmp[0].y) - (tmp[3].y + tmp[2].y)) * 0.5f).getAngle() * RADIAN2DEGREE,0.0f,0.0f));
-	tmpMat = tmpMat * XMath::getRotate(XVector3(0.0f,0.0f,-(XVector2(7.0f,((tmp[2].y + tmp[0].y) - (tmp[3].y + tmp[1].y)) * 0.5f).getAngle() * RADIAN2DEGREE)));
+	XMat4 tmpMat = XMath::getRotate(XVec3(XVec2(12.3f,((tmp[1].y + tmp[0].y) - (tmp[3].y + tmp[2].y)) * 0.5f).getAngle() * RADIAN2DEGREE,0.0f,0.0f));
+	tmpMat = tmpMat * XMath::getRotate(XVec3(0.0f,0.0f,-(XVec2(7.0f,((tmp[2].y + tmp[0].y) - (tmp[3].y + tmp[1].y)) * 0.5f).getAngle() * RADIAN2DEGREE)));
 	m_car3D.setAngle(0.0f,m_carPhysics->getAngle().y,0.0f);
 	m_car3D.setMultMatrix(tmpMat);
 
 	if(m_needDraCar)
 	{
 		X3DWld.m_worldCam.setPosition(m_car3D.getPosition() +
-			XVector3(-50.0f * sin(m_carPhysics->getAngle().y * DEGREE2RADIAN),10.0f,-50.0f * cos(m_carPhysics->getAngle().y * DEGREE2RADIAN)));
+			XVec3(-50.0f * sin(m_carPhysics->getAngle().y * DEGREE2RADIAN),10.0f,-50.0f * cos(m_carPhysics->getAngle().y * DEGREE2RADIAN)));
 		X3DWld.m_worldCam.setAngle(0.0f,m_carPhysics->getAngle().y,0.0f);
 	}
 
 	m_car3D.move(stepTime);
 
-	XVector2 pos = m_nodeLineInfo[0]->getSpecialPointPosition();
+	XVec2 pos = m_nodeLineInfo[0]->getSpecialPointPosition();
 	m_pcCar3D.setPosition(pos.x,getMapHeight(pos.x,pos.y) + 1.4f,pos.y);
 	m_pcCar3D.setAngle(0.0f,-m_nodeLineInfo[0]->getSpecialPointAngle() * RADIAN2DEGREE + 90.0f,0.0f);
 	m_pcCar3D.setTireAngle(0,0.0f);
@@ -259,7 +259,7 @@ bool GGame3D::readNodeLineInfo()
 	{
 		if(keyNode != NULL)
 		{
-			XVector2 point;
+			XVec2 point;
 			keyNodePoint = XXml::getXmlAsString(keyNode,"point",tmpString);
 			XNodeLine *tmpNodeLine = XMem::createMem<XNodeLine>();
 			if(tmpNodeLine == NULL) return false;
@@ -273,7 +273,7 @@ bool GGame3D::readNodeLineInfo()
 				}else break;
 				keyNodePoint = XXml::getNextXmlAsString(keyNodePoint,"point",tmpString);
 			}
-			tmpNodeLine->setLoop();
+			tmpNodeLine->setLoop(true);
 		}else break;
 		keyNode = keyNode->NextSiblingElement("path");
 	}
