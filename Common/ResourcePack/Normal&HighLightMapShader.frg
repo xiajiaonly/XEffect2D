@@ -8,7 +8,7 @@ void main()
 {
 	vec3 highLightColor = texture2D(highLightMapTexture,TexCoord).rgb;
 	vec3 normal = normalize(texture2D(normalTexture,TexCoord).rgb * 2.0 - 1.0);
-	vec3 lightPos = normalize(gl_LightSource[1].position.xyz);
+	vec3 lightPos = normalize(gl_LightSource[0].position.xyz);
 	float diffuse = max(dot(normal,lightPos),0.0);
 
 	//vec3 color = highLightColor.r * diffuse * texture2D(Texture_00,TexCoord).rgb;
@@ -43,9 +43,9 @@ void main()
 	//float power = (nDotL == 0.0) ? 0.0 : pow(nDotH, gl_FrontMaterial.shininess);
 	float power = (nDotL == 0.0) ? 0.0 : nDotH;
 
-	vec4 ambient = gl_FrontLightProduct[1].ambient * atten;
-	vec4 diffuse = gl_FrontLightProduct[1].diffuse * nDotL * atten;
-	vec4 specular = gl_FrontLightProduct[1].specular * power * atten;
+	vec4 ambient = gl_FrontLightProduct[0].ambient * atten;
+	vec4 diffuse = gl_FrontLightProduct[0].diffuse * nDotL * atten;
+	vec4 specular = gl_FrontLightProduct[0].specular * power * atten;
 	vec4 color = gl_FrontLightModelProduct.sceneColor + ambient + diffuse + specular;
 
 	gl_FragColor = color * texture2D(Texture_00,TexCoord);

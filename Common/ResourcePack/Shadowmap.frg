@@ -12,9 +12,9 @@ void main()
 	float LightDistance2 = dot(LightDirection,LightDirection);	//当前点离光的距离的平方
 	float LightDistance = sqrt(LightDistance2);					//当前点离光线的距离
 	float NdotLD = max(dot(normalize(Normal), LightDirection / LightDistance), 0.0);	//这里计算受光的强度
-	float Attenuation = gl_LightSource[1].constantAttenuation;
-	Attenuation += gl_LightSource[1].linearAttenuation * LightDistance;
-	Attenuation += gl_LightSource[1].quadraticAttenuation * LightDistance2;
+	float Attenuation = gl_LightSource[0].constantAttenuation;
+	Attenuation += gl_LightSource[0].linearAttenuation * LightDistance;
+	Attenuation += gl_LightSource[0].quadraticAttenuation * LightDistance2;
 	
 	//NdotLD *= shadow2DProj(ShadowMap, ShadowMapTexCoord).r;
 	vec2 poissonDisk[4] = vec2[](
@@ -51,5 +51,5 @@ void main()
 	
 	gl_FragColor = gl_Color;
 	if(Texturing != 0) gl_FragColor *= texture2D(Texture, gl_TexCoord[0].st);
-	gl_FragColor.rgb *= (gl_LightSource[1].ambient.rgb + gl_LightSource[1].diffuse.rgb * NdotLD) / Attenuation;
+	gl_FragColor.rgb *= (gl_LightSource[0].ambient.rgb + gl_LightSource[0].diffuse.rgb * NdotLD) / Attenuation;
 }

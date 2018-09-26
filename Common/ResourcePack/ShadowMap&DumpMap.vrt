@@ -15,7 +15,7 @@ void main()
 	vec4 Position = gl_ModelViewMatrix * gl_Vertex;
 	ShadowMapTexCoord = ShadowMatrix * Position;
 	Normal = gl_NormalMatrix * gl_Normal;
-	LightDirection = gl_LightSource[1].position.xyz - Position.xyz;
+	LightDirection = gl_LightSource[0].position.xyz - Position.xyz;
 	gl_FrontColor = gl_Color;
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 	gl_Position = gl_ProjectionMatrix * Position;
@@ -32,7 +32,7 @@ void main()
 						t.y, b.y, n.y,
 						t.z, b.z, n.z);
 
-    lightDir = (gl_LightSource[1].position.xyz - vertexPos) / lightRadius;
+    lightDir = (gl_LightSource[0].position.xyz - vertexPos) / lightRadius;
     lightDir = tbnMatrix * lightDir;
 
     viewDir = vertexPos;

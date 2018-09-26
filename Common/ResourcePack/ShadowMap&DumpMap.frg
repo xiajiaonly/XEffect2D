@@ -22,9 +22,9 @@ void main()
 	float LightDistance2 = dot(LightDirection,LightDirection);	//当前点离光的距离的平方
 	float LightDistance = sqrt(LightDistance2);					//当前点离光线的距离
 	float NdotLD = max(dot(normalize(Normal), LightDirection / LightDistance), 0.0);	//这里计算受光的强度
-	float Attenuation = gl_LightSource[1].constantAttenuation;
-	Attenuation += gl_LightSource[1].linearAttenuation * LightDistance;
-	Attenuation += gl_LightSource[1].quadraticAttenuation * LightDistance2;
+	float Attenuation = gl_LightSource[0].constantAttenuation;
+	Attenuation += gl_LightSource[0].linearAttenuation * LightDistance;
+	Attenuation += gl_LightSource[0].quadraticAttenuation * LightDistance2;
 	
 	//NdotLD *= shadow2DProj(ShadowMap, ShadowMapTexCoord).r;
 
@@ -69,13 +69,13 @@ void main()
 	//float power = (nDotL == 0.0) ? 0.0 : pow(nDotH, gl_FrontMaterial.shininess);
 	float power = (nDotL == 0.0) ? 0.0 : nDotH;
 
-	vec4 ambient = gl_FrontLightProduct[1].ambient * atten;
-	vec4 diffuse = gl_FrontLightProduct[1].diffuse * nDotL * atten;
-	vec4 specular = gl_FrontLightProduct[1].specular * power * atten;
+	vec4 ambient = gl_FrontLightProduct[0].ambient * atten;
+	vec4 diffuse = gl_FrontLightProduct[0].diffuse * nDotL * atten;
+	vec4 specular = gl_FrontLightProduct[0].specular * power * atten;
 	vec4 color = gl_FrontLightModelProduct.sceneColor + ambient + diffuse + specular;
 	
 	gl_FragColor = gl_Color;
 	if(withTex != 0) gl_FragColor *= texture2D(Texture,gl_TexCoord[0].st) * color;
-	gl_FragColor.rgb *= (gl_LightSource[1].ambient.rgb + gl_LightSource[1].diffuse.rgb * NdotLD) / Attenuation;
+	gl_FragColor.rgb *= (gl_LightSource[0].ambient.rgb + gl_LightSource[0].diffuse.rgb * NdotLD) / Attenuation;
 
 }
