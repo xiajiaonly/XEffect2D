@@ -14,19 +14,18 @@ namespace XE{
 class XStageInfo
 {
 public:
-	XVector3 m_cameraPosition;	//摄像机的位置
+	XVec3 m_cameraPosition;	//摄像机的位置
 	float m_near;	//场景的近截面	，缩放系数为1.0	，up为0
 	float m_far;	//场景的远截面	，缩放系数为m_scaleRate	，up为m_depthToUpRate
 	float m_scaleRate;	//深度的缩放系数
 	float m_depthToUpRate;	//深度向上走的系数，
-	XVector3 screenToGround(float x,float y)const;	//输入屏幕坐标，返回对应的地面坐标
-	XVector2 worldToScreen(const XVector3&worldPos)const{return worldToScreen(worldPos.x,worldPos.y,worldPos.z);}	//世界坐标转换成屏幕坐标
-	XVector2 worldToScreen(float x,float y,float z)const;//世界坐标转换成屏幕坐标
-	XVector2 getCameraScale(const XVector3&worldPos)const{return getCameraScale(worldPos.x,worldPos.y,worldPos.z);}	//获取摄像机的缩放系数
-	XVector2 getCameraScale(float x,float y,float z)const	//获取摄像机的缩放系数
+	XVec3 screenToGround(float x,float y)const;	//输入屏幕坐标，返回对应的地面坐标
+	XVec2 worldToScreen(const XVec3& worldPos)const{return worldToScreen(worldPos.x,worldPos.y,worldPos.z);}	//世界坐标转换成屏幕坐标
+	XVec2 worldToScreen(float x,float y,float z)const;//世界坐标转换成屏幕坐标
+	XVec2 getCameraScale(const XVec3& worldPos)const{return getCameraScale(worldPos.x,worldPos.y,worldPos.z);}	//获取摄像机的缩放系数
+	XVec2 getCameraScale(float x,float y,float z)const	//获取摄像机的缩放系数
 	{
-		float ret = XMath::maping1DEx(z - m_cameraPosition.z,m_near,m_far,1.0f,m_scaleRate);
-		return XVector2(ret,ret);
+		return XVec2(XMath::mapping1DEx(z - m_cameraPosition.z, m_near, m_far, 1.0f, m_scaleRate));
 	}
 	const bool check()const	//检查参数是否合法
 	{
@@ -69,7 +68,7 @@ public:
 		m_objects.clear();
 		m_isInited = false;
 	}
-	void setCameraPosition(const XVector3 &pos)
+	void setCameraPosition(const XVec3& pos)
 	{
 		m_info.m_cameraPosition = pos;
 	}
@@ -95,8 +94,8 @@ public:
 	bool addAObject(XStageObject *obj);			//向场景中增加一个物件，返回添加是否成功
 	bool removeAObject(XStageObject *obj);		//从场景中移除一个物件
 	bool haveObject(const XStageObject *obj);	//获取场景中指定物体的编号，如果不存在则返回-1
-	XVector3 screenToGround(float x,float y)const{return m_info.screenToGround(x,y);}	//输入屏幕坐标，返回对应的地面坐标
-	XVector2 worldToScreen(float x,float y,float z)const{return m_info.worldToScreen(x,y,z);}	//世界坐标转换成屏幕坐标
+	XVec3 screenToGround(float x,float y)const{return m_info.screenToGround(x,y);}	//输入屏幕坐标，返回对应的地面坐标
+	XVec2 worldToScreen(float x,float y,float z)const{return m_info.worldToScreen(x,y,z);}	//世界坐标转换成屏幕坐标
 };
 }
 #endif

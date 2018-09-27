@@ -14,17 +14,17 @@ class XLineCtrl:public XControlBasic
 public:
 	enum XLineCtrlType
 	{
-		LINE_CTRL_TYPEX_D,
-		LINE_CTRL_TYPEX_U,
+		LINE_CTRL_TYPE_X_D,
+		LINE_CTRL_TYPE_X_U,
 		LINE_CTRL_TYPE_Y_R,
 		LINE_CTRL_TYPE_Y_L,
 	};
 private:
 	static const int m_lineCtrlLineSum = 10;
-//	XVector2 m_position;	//控件的位置
-//	XVector2 m_scale;		//大小
-	XVector2 m_pixelSize;	//像素大小
-	XVector2 m_truePixelSize;	//真实的像素尺寸
+//	XVec2 m_position;	//控件的位置
+//	XVec2 m_scale;		//大小
+	XVec2 m_pixelSize;	//像素大小
+	XVec2 m_truePixelSize;	//真实的像素尺寸
 	XFontUnicode m_font;
 	char m_textStr[64];		//显示的字符串
 
@@ -35,8 +35,8 @@ private:
 	bool m_withRange;	//范围设置是否有效
 	bool m_withMap;		//是否进行映射
 	bool m_withString;			//是否有字符串
-	XVector2 m_range;	//可以移动的范围
-	XVector2 m_mapRange;	//映射的范围
+	XVec2 m_range;	//可以移动的范围
+	XVec2 m_mapRange;	//映射的范围
 	float m_mapValue;
 	std::string m_showString;		//需要显示的字符串
 	XFontUnicode m_stringFont;	//字符串的字体
@@ -56,31 +56,31 @@ public:
 	void setString(const char * str);
 
 	void setCtrlMode(XCtrlMode mode){m_ctrlMode = mode;}
-	void setRange(float min,float max);
+	void setRange(float minRange, float maxRange);
 	void disRange(){m_withRange = false;}
 	float getValue();
 	void setValue(float value);
 	void setMapRange(float min,float max);
 	void disMapRange(){m_withMap = false;}
 public:
-	XBool init(const XVector2& position,XLineCtrlType type = LINE_CTRL_TYPEX_D,const XFontUnicode *font = NULL);
+	XBool init(const XVec2& position,XLineCtrlType type = LINE_CTRL_TYPE_X_D,const XFontUnicode *font = NULL);
 	void draw();
 	void drawUp(){;}
 //	void setCallbackFun(void (* funDataChange)(void *,int),void *pClass = NULL);
 
-	XBool mouseProc(float x,float y,XMouseState mouseState);
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);
 	XBool keyboardProc(int,XKeyState){return XTrue;}		//do nothing
-	XBool canGetFocus(float x,float y);	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
-	XBool canLostFocus(float,float){return XTrue;}	//do nothing
+	XBool canGetFocus(const XVec2& p);	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
+	XBool canLostFocus(const XVec2&){return XTrue;}	//do nothing
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	void insertChar(const char *,int){;}			//do nothing
@@ -90,20 +90,20 @@ public:
 	void enable(){m_isEnable = XTrue;}
 	void release();
 
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	XBool setACopy(const XLineCtrl & temp);
 
 	//virtual void justForTest() {;}
 
 	XLineCtrl()
 		:m_isInited(XFalse)
-	//	,m_position(0.0f,0.0f)
-	//	,m_scale(1.0f,1.0f)
+	//	,m_position(0.0f)
+	//	,m_scale(1.0f)
 		,m_withFont(false)
-		,m_pixelSize(10.0f,10.0f)
+		,m_pixelSize(10.0f)
 		,m_isDown(false)
-		,m_type(LINE_CTRL_TYPEX_D)
+		,m_type(LINE_CTRL_TYPE_X_D)
 		,m_range(0.0f,100.0f)
 		,m_withRange(false)
 		,m_withMap(false)		//是否进行映射

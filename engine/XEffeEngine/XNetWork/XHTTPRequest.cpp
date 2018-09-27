@@ -25,6 +25,7 @@ void XHTTPRequest::memBufferGrow(XMemBuffer *b)
 	sz = b->position - b->buffer;
 	b->size = b->size << 1;
 	b->buffer =(unsigned char *)realloc(b->buffer,b->size);	//这里没有对NULL进行判断处理
+	assert(b->buffer != NULL);
 	b->position = b->buffer + sz; // readjust current position
 }
 //向缓存空间在中写入一个字节的数据
@@ -188,79 +189,79 @@ int XHTTPRequest::sendHTTP(char *url,char * headerReceive,unsigned char *post,in
 
 	if(!*request)
 	{//如果没有请求，则请求为反斜杠
-		strcpy(request,"/");
+		strcpy_s(request,1024,"/");
 	}
 
 	//发送HTTP包头信息
 	if(post == NULL)
 	{//如果不是发送，则作为接收处理
 		sendString(sock,"GET ");
-		strcpy(headerSend, "GET ");
+		strcpy_s(headerSend,1024, "GET ");
 	}else
 	{
 		sendString(sock,"POST ");
-		strcpy(headerSend, "POST ");
+		strcpy_s(headerSend,1024, "POST ");
 	}
 	sendString(sock,request);
-	strcat(headerSend, request);
+	strcat_s(headerSend,1024, request);
 
 	sendString(sock," HTTP/1.0\r\n");
-	strcat(headerSend, " HTTP/1.0\r\n");
+	strcat_s(headerSend,1024, " HTTP/1.0\r\n");
 
 	sendString(sock,"Accept: image/gif, image/x-xbitmap,"
 		" image/jpeg, image/pjpeg, application/vnd.ms-excel,"
 		" application/msword, application/vnd.ms-powerpoint,"
 		" */*\r\n");
-	strcat(headerSend, "Accept: image/gif, image/x-xbitmap,"
+	strcat_s(headerSend,1024, "Accept: image/gif, image/x-xbitmap,"
 		" image/jpeg, image/pjpeg, application/vnd.ms-excel,"
 		" application/msword, application/vnd.ms-powerpoint,"
 		" */*\r\n");
 	sendString(sock,"Accept-Language: en-us\r\n");
-	strcat(headerSend, "Accept-Language: en-us\r\n");
+	strcat_s(headerSend,1024, "Accept-Language: en-us\r\n");
 
 	sendString(sock,"Accept-Encoding: gzip, default\r\n");
-	strcat(headerSend, "Accept-Encoding: gzip, default\r\n");
+	strcat_s(headerSend,1024, "Accept-Encoding: gzip, default\r\n");
 	sendString(sock,"User-Agent: Neeao/4.0\r\n");
-	strcat(headerSend, "User-Agent: Neeao/4.0\r\n");
+	strcat_s(headerSend,1024, "User-Agent: Neeao/4.0\r\n");
 
 	if(postLength)
 	{
-		sprintf(buffer,"Content-Length: %ld\r\n",postLength);
+		sprintf_s(buffer,512,"Content-Length: %ld\r\n",postLength);
 		sendString(sock,buffer);
-		strcat(headerSend, buffer);
+		strcat_s(headerSend,1024, buffer);
 	}
 	//sendString(sock,"Cookie: mycookie=blablabla\r\n");
 	// printf("Cookie: mycookie=blablabla\r\n");
 	sendString(sock,"Host: ");
-	strcat(headerSend, "Host: ");
+	strcat_s(headerSend,1024, "Host: ");
 
 	sendString(sock,host);
-	strcat(headerSend, host);
+	strcat_s(headerSend,1024, host);
 
 	sendString(sock,"\r\n");
-	strcat(headerSend, "\r\n");
+	strcat_s(headerSend,1024, "\r\n");
 
 	if((headerReceive != NULL) && *headerReceive)
 	{
 		sendString(sock,headerReceive);
-		strcat(headerSend, headerReceive);
+		strcat_s(headerSend,1024, headerReceive);
 	}
 
 	sendString(sock,"\r\n"); // Send a blank line to signal end of HTTP headerReceive
-	strcat(headerSend, "\r\n");
+	strcat_s(headerSend,1024, "\r\n");
 
 	if((post != NULL) && postLength)
 	{//发送需要发送的内容
 		send(sock,(const char*)post,postLength,0);
 		post[postLength] = '\0';
 
-		strcat(headerSend, (const char*)post);
+		strcat_s(headerSend,1024, (const char*)post);
 	}
 
 	//strcpy(req->headerSend, headerSend);
 	req->headerSend = (char*) malloc( sizeof(char*) * strlen(headerSend));
 	if(req->headerSend != NULL)
-		strcpy(req->headerSend, (char*) headerSend );
+		strcpy_s(req->headerSend, sizeof(char*) * strlen(headerSend),(char*) headerSend );
 
 	//下面开始解收包头
 	memBufferCreate(&headersBuffer );
@@ -339,7 +340,7 @@ int XHTTPRequest::sendRequest(XBool IsPost,char *url,XHTTPRequestStruct &req)
 	{//发送 
 		int i = strlen(req.headerSend);
 		char *buffer = (char*) malloc(i+1);
-		if(buffer != NULL) strcpy(buffer, req.headerSend);
+		if(buffer != NULL) strcpy_s(buffer,i + 1, req.headerSend);
 		//释放内存空间
 		free(req.headerSend);
 

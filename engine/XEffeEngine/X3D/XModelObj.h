@@ -23,10 +23,16 @@ namespace XE{
 extern void removeRedundantSpace(char *p);	//删除连续的或者行尾的空格符（主要是为了读取OBJ文件时的格式整理）
 //Obj文件中对面的描述
 struct XFaceInfo
-{
+{//只支持三角面
     XVectorIndex3 vIndex;	//顶点的索引
 	XVectorIndex3 tIndex;	//贴图的索引
 	XVectorIndex3 nIndex;	//法线的索引	
+};
+struct XFaceInfoEx
+{//可以支持多边形
+	std::vector<int> vsIndex;
+	std::vector<int> tsIndex;
+	std::vector<int> nsIndex;
 };
 struct XMaterialInfo
 {//材质信息
@@ -40,15 +46,15 @@ struct XMaterialInfo
 	XTextureData dumpTexData;	//法线贴图
 	//XShaderGLSL * normalShader;//法线贴图的shader
 	//需要读取得参数
-	XVector4 ka;
-	XVector4 kd;
-	XVector4 ks;
-	XVector4 ke;
+	XVec4 ka;
+	XVec4 kd;
+	XVec4 ks;
+	XVec4 ke;
 	float shininess;
 	float alpha;
 	//下面的参数有读取但是没有生效
 	float Ni;
-	XVector3 Tf;
+	XVec3 Tf;
 	int illum;
 	void setData()	//使得数据生效
 	{
@@ -81,7 +87,8 @@ struct XGroupInfo
 	std::string groupName;	//组名
 	int materialIndex;
 	std::string materialName;
-	std::vector<XFaceInfo> face;
+	std::vector<XFaceInfo> face;	//经过三角面拆分的面信息
+	std::vector<XFaceInfoEx> originalFaces;	//原始的面信息
 	XVBO vbo;
 
 	XGroupInfo()
@@ -92,6 +99,7 @@ struct XGroupInfo
 	~XGroupInfo(){release();}
 	void release()
 	{
+		originalFaces.clear();
 		face.clear();
 		vbo.release();
 	}
@@ -101,12 +109,14 @@ class XModelObj:public XBasic3DObject
 {
 private:
 	XBool m_isInited;	//是否初始化
-	XVector3 m_bandBox[8];	//模型的包围盒子，实例中可能经过位移、旋转和缩放所以数据会变化。
+	XVec3 m_bandBox[8];	//模型的包围盒子，实例中可能经过位移、旋转和缩放所以数据会变化。
 
-	std::vector<XVector3> m_point;				//顶点	//目前只解析这些数据
-	std::vector<XVector2> m_texturePoint;		//贴图数据
-	std::vector<XVector3> m_normal;			//法线
+	std::vector<XVec3> m_point;				//顶点	//目前只解析这些数据
+	std::vector<XVec2> m_texturePoint;		//贴图数据
+	std::vector<XVec3> m_normal;			//法线
+public:
 	std::vector<XMaterialInfo*> m_material;	//材质信息
+private:
 	std::vector<XGroupInfo *> m_group;			//组
 	std::vector<std::string> m_materialFilename;		//模型中涉及的材质的文件名
 	std::vector<int> m_materialIndex;			//每个材质文件的起始索引
@@ -114,8 +124,8 @@ private:
 	XBool readFaceInfo(XGroupInfo *group,char *lineData);	//从一行数据中读取面的描述
 	XBool loadMaterial(const char *filename);	//读取材质文件
 	XBool saveMaterial();	//遍历材质队列，并保存材质数据
-	int getMaterialIndex(const std::string &str);
-	XMaterialInfo * getMaterialInfo(const std::string &MatName);
+	int getMaterialIndex(const std::string& str);
+	XMaterialInfo * getMaterialInfo(const std::string& MatName);
 	XGroupInfo *getGroup(const char *name);	//通过名字获取组的指针
 public:
 	//XBool setNormalShader(const string &MatName,XShaderGLSL *shader);
@@ -123,51 +133,26 @@ public:
 
 	XBool save(const char *filename);	//将数据保存到文件，格式为OBJ
 	XBool load(const char *filename);	//从文件中载入数据
-	void draw(XBool withTex = XTrue,const XBasic3DObject *base = NULL);			//withTex描绘的时候是否使用贴图信息
-	void drawBandbox()
-	{//暂时先不考虑位移、旋转和缩放(尚未完成)
-		XRender::drawLine(m_bandBox[0],m_bandBox[1]);
-		XRender::drawLine(m_bandBox[1],m_bandBox[2]);
-		XRender::drawLine(m_bandBox[2],m_bandBox[3]);
-		XRender::drawLine(m_bandBox[3],m_bandBox[0]);
-		XRender::drawLine(m_bandBox[4],m_bandBox[5]);
-		XRender::drawLine(m_bandBox[5],m_bandBox[6]);
-		XRender::drawLine(m_bandBox[6],m_bandBox[7]);
-		XRender::drawLine(m_bandBox[7],m_bandBox[4]);
-		XRender::drawLine(m_bandBox[0],m_bandBox[4]);
-		XRender::drawLine(m_bandBox[1],m_bandBox[5]);
-		XRender::drawLine(m_bandBox[2],m_bandBox[6]);
-		XRender::drawLine(m_bandBox[3],m_bandBox[7]);
-	}
+	void draw(XBool withTex = XTrue,const XBasic3DObject *base = NULL,bool withBandbox = false);			//withTex描绘的时候是否使用贴图信息
 private:
 	XBool checkData();	//检查数据的合法性
 public:
+	int getTextureSum()const { return m_texturePoint.size(); }
+	XVec2 getTexture(unsigned int index)const;
 	int getVectorSum() const {return m_point.size();}
-	XVector3 getVector(unsigned int index) const 
-	{
-		if(index >= m_point.size()) return XVector3::zero;
-		return m_point[index];
-	}
-	XVector3 getNormal(unsigned int index)
-	{
-		if(index >= m_normal.size()) return XVector3::zero;
-		return m_normal[index];
-	}
-	XVectorIndex3 getFaceNormalIndex(unsigned int index) const
-	{
-		if(m_group.size() <= 0 || index >= m_group[0]->face.size()) return XVectorIndex3(0.0f,0.0f,0.0f);
-		return m_group[0]->face[index].nIndex;
-	}
-	int getFaceSum() const
-	{
-		if(m_group.size() <= 0) return 0;
-		return m_group[0]->face.size();
-	}
-	XVectorIndex3 getFaceVectorIndex(unsigned int index) const
-	{
-		if(m_group.size() <= 0 || index >= m_group[0]->face.size()) return XVectorIndex3(0.0f,0.0f,0.0f);
-		return m_group[0]->face[index].vIndex;
-	}
+	XVec3 getVector(unsigned int index) const;
+	XVec3 getNormal(unsigned int index)const;
+	int getFaceSum() const;
+	XVectorIndex3 getFaceVectorIndex(unsigned int index) const;
+	XVectorIndex3 getFaceTextureIndex(unsigned int index) const;
+	XVectorIndex3 getFaceNormalIndex(unsigned int index) const;
+	void useMatrix(const XBasic3DObject *base = NULL);	//使用矩阵
+	void endMatrix() { glPopMatrix(); }	//结束矩阵
+	//获取原始数据
+	int getOriFaceSum()const;
+	std::vector<int> getOriFaceVIndex(unsigned int index) const;
+	std::vector<int> getOriFaceTIndex(unsigned int index) const;
+	std::vector<int> getOriFaceNIndex(unsigned int index) const;
 
 	void release();
 	XModelObj()
@@ -175,7 +160,15 @@ public:
 	{}
 	~XModelObj(){release();}
 };
-
+namespace XRender {
+extern void drawModel(const std::vector<XVec3> &v, const std::vector<XVec2> &t,
+	const std::vector<XFaceInfo> &f, const XVec3& offset, const XVec3& scale, unsigned int tex);
+extern void drawModel(const std::vector<XVec3> &v, const std::vector<XVec2> &t,
+	const std::vector<XFaceInfoEx> &f, const XVec3& offset, const XVec3& scale, unsigned int tex);
+}
 //extern std::string getObjInfo0FromStr(const char * p);	//从OBJ文件读取的字符串中获取需要的字符串，如：组名，文件名等
+#if WITH_INLINE_FILE
+#include "XModelObj.inl" 
+#endif
 }
 #endif

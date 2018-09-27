@@ -22,10 +22,10 @@ struct XHTTPRequestStruct
 	char *message;				//接受的HTTP包体的指针
 	long messageLength;			//包体的长度
 	XHTTPRequestStruct()
-		:headerSend(NULL)
-		,headerReceive(NULL)
-		,message(NULL)
-		,messageLength(0)
+		:headerSend(nullptr)
+		, headerReceive(nullptr)
+		, message(nullptr)
+		, messageLength(0)
 	{}
 };
 //缓存结构体
@@ -35,8 +35,8 @@ struct XMemBuffer
 	unsigned char *position;	//缓存的当前位置指针
 	size_t size;				//缓存的大小
 	XMemBuffer()
-		:buffer(NULL)
-		,position(NULL)
+		:buffer(nullptr)
+		,position(nullptr)
 		,size(0)
 	{}
 };

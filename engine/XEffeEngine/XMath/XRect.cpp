@@ -6,6 +6,12 @@
 //--------------------------------
 #include "XRect.h"
 namespace XE{
+XRect::XRect(const XRectEx& r)
+	:left(r.getLeft())
+	, right(r.getRight())
+	, top(r.getTop())
+	, bottom(r.getBottom())
+{}
 #if !WITH_INLINE_FILE
 #include "XRect.inl"
 #endif

@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2014.1.1
 //--------------------------------
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 namespace XE{
 union XBytes
 {
@@ -48,6 +48,13 @@ namespace XByte
 		if(getBit(ch,pos) == 0) ch = ch | temp;
 		else ch = ch & (~temp);
 		return XTrue;
+	}
+	//12345678反转为87654321，顺序反转
+	inline void reverseChar(unsigned char &c)
+	{
+		 c = ( c & 0x55 ) << 1 | ( c & 0xAA ) >> 1;
+		 c = ( c & 0x33 ) << 2 | ( c & 0xCC ) >> 2;
+		 c = ( c & 0x0F ) << 4 | ( c & 0xF0 ) >> 4;
 	}
 	inline void setByteAnti(unsigned char &ch){ch = ~ch;}	//将ch逐位取反
 	template<class T> void setAnti(T& data){data = ~data;}

@@ -3,21 +3,20 @@
 #include "XObjectManager.h" 
 #include "XControlManager.h"
 namespace XE{
-void XToolBar::setPosition(float x,float y)
+void XToolBar::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	float offset = 10.0f;
 	for(unsigned int i = 0;i < m_objects.size();++ i)
 	{
 		m_objects[i].obj->setPosition(m_position.x + offset * m_scale.x,m_position.y);
 		offset += m_objects[i].width;
 	}
-	m_curMouseRect.set(m_position.x,m_position.y,
-		m_position.x + 10.0f * m_scale.x,m_position.y + m_height * m_scale.y);
+	m_curMouseRect.set(m_position, m_position + XVec2(10.0f,m_height) * m_scale);
 }
-void XToolBar::setScale(float x,float y)
+void XToolBar::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	float offset = 10.0f;
 	for(unsigned int i = 0;i < m_objects.size();++ i)
 	{
@@ -25,8 +24,7 @@ void XToolBar::setScale(float x,float y)
 		m_objects[i].obj->setPosition(m_position.x + offset * m_scale.x,m_position.y);
 		offset += m_objects[i].width;
 	}
-	m_curMouseRect.set(m_position.x,m_position.y,
-		m_position.x + 10.0f * m_scale.x,m_position.y + m_height * m_scale.y);
+	m_curMouseRect.set(m_position, m_position + XVec2(10.0f, m_height) * m_scale);
 }
 XBool XToolBar::keyboardProc(int,XKeyState)
 {
@@ -40,7 +38,7 @@ XBool XToolBar::keyboardProc(int,XKeyState)
 	//}
 	return XFalse;
 }
-XBool XToolBar::mouseProc(float x,float y,XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
+XBool XToolBar::mouseProc(const XVec2& p,XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
 {
 	//for(unsigned int i = 0;i < m_objects.size();++ i)
 	//{
@@ -49,14 +47,15 @@ XBool XToolBar::mouseProc(float x,float y,XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
 		!m_isVisible) return XFalse; 	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+	if(m_isSilent) return XFalse;
 	switch(mouseState)
 	{
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
-		if(m_curMouseRect.isInRect(x,y))
+		if(m_curMouseRect.isInRect(p))
 		{
 			m_isMouseDown = XTrue;
-			m_oldMousePosition.set(x,y);
+			m_oldMousePosition = p;
 			return XTrue;
 		}
 		break;
@@ -66,9 +65,9 @@ XBool XToolBar::mouseProc(float x,float y,XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×
 	case MOUSE_MOVE:
 		if(m_isMouseDown)
 		{//·¢ÉúÍÏ¶¯ÊÂ¼þ
-			XVector2 tmp = XVector2(x,y) - m_oldMousePosition;
+			XVec2 tmp = p - m_oldMousePosition;
 			setPosition(m_position.x + tmp.x,m_position.y + tmp.y);
-			m_oldMousePosition.set(x,y);
+			m_oldMousePosition = p;
 			return XTrue;
 		}
 		break;
@@ -113,13 +112,13 @@ void XToolBar::releaseMem()
 }
 void XToolBar::draw()
 {
-	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+	if (!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	XRender::drawFillBoxEx(m_position,XVector2(10.0f * m_scale.x,m_height * m_scale.y),0.75f,0.75f,0.75f,true);
-	XRender::drawLine(m_position.x + 3.0f * m_scale.x,m_position.y,m_position.x + 3.0f * m_scale.x,m_position.y + m_height * m_scale.y,
-		1.0f,0.0f,0.0f,0.0f,1.0f * m_scale.y);
-	XRender::drawLine(m_position.x + 7.0f * m_scale.x,m_position.y,m_position.x + 7.0f * m_scale.x,m_position.y + m_height * m_scale.y,
-		1.0f,0.0f,0.0f,0.0f,1.0f * m_scale.y);
+	XRender::drawFillRectEx(m_position, XVec2(10.0f, m_height) * m_scale, 0.75f, 0.75f, 0.75f, true);
+	XRender::drawLine(m_position + XVec2(3.0f * m_scale.x, 0.0f), m_position + XVec2(3.0f, m_height) * m_scale,
+		1.0f, XFColor(0.0f, 1.0f * m_scale.y));
+	XRender::drawLine(m_position + XVec2(7.0f * m_scale.x, 0.0f), m_position + XVec2(7.0f, m_height) * m_scale,
+		1.0f, XFColor(0.0f, 1.0f * m_scale.y));
 	//ÕâÀïÐèÒªÃè»æËùÓÐ×ÓÎï¼þ
 	//for(unsigned int i = 0;i < m_objects.size();++ i)
 	//{
@@ -138,14 +137,11 @@ void XToolBar::drawUp()
 XBool XToolBar::initWithoutSkin(int height)
 {//¹¤¾ßÀ¸µÄÏñËØ¸ß¶È
 	if(m_isInited) return XFalse;
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
 	m_height = height;
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	m_curMouseRect.set(m_position.x,m_position.y,
-		m_position.x + 10.0f * m_scale.x,m_position.y + m_height * m_scale.y);
+	m_isVisible = m_isEnable = m_isActive = XTrue;
+	m_curMouseRect.set(m_position, m_position + XVec2(10.0f, m_height) * m_scale);
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER

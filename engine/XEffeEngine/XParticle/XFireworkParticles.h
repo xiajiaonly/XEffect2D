@@ -13,8 +13,8 @@ private:
 	char m_isInited;		//是否初始化
 	char m_isEnd;			//是否结束
 
-	XVector2 m_position;		//位置
-	XVector2 m_initSpeed;	//初始速度
+	XVec2 m_position;		//位置
+	XVec2 m_initSpeed;	//初始速度
 	float m_decreaseSpeed;	//速度衰减量
 	float m_gravity;		//重力加速度
 	int m_atomSum;			//粒子的数量
@@ -25,7 +25,7 @@ private:
 //	int m_h;	//贴图的高
 
 public:
-	int init(const XVector2& position,const XVector2& initSpeed,float decreaseSpeed,float gravity,int atomSum,const XTexture *texture);					//初始化
+	int init(const XVec2& position,const XVec2& initSpeed,float decreaseSpeed,float gravity,int atomSum,const XTexture *texture);					//初始化
 	void reset();				//设置动作开始
 	void move(float timeDelay);	//改变
 	void draw() const;				//描绘
@@ -47,10 +47,7 @@ public:
 		}
 	}
 	//设置粒子发生器的位置
-	void setPosition(const XVector2& position)
-	{
-		m_position = position;
-	}
+	void setPosition(const XVec2& position) { m_position = position;}
 
 	XFireWorkParticles();		//构造函数
 };

@@ -8,7 +8,7 @@
 //#include "XBasicClass.h"
 #include "..\XMath\XVector2.h"
 namespace XE{
-//extern XVector2 constGravity(0,9.82);		//重力常量
+//extern XVec2 constGravity(0,9.82);		//重力常量
 union XPhYsicObjectAttribute
 {
 	unsigned short canMove:1;		//物体是否能移动
@@ -33,16 +33,16 @@ private:
 	char m_isEnable;						//物体是否有效
 	XPhYsicObjectAttribute m_attribute;	//物体的一些属性，比如说是否能运动，是否可以穿透等
 	float m_mass;							//物体的质量
-	XVector2 m_speed;						//物体的速度
+	XVec2 m_speed;						//物体的速度
 	float m_density;						//物体的密度
 	float m_volume;							//物体的体积
 	float m_collideEnergyWastageRadio;		//物体碰撞时的能量损耗系数[0 - 1]
 	float m_airResistanceRadio;				//运动过程中由于空气阻力系数：飞行的速度 × 空气阻力系数 = 空气阻力
 	float m_surfaceFrictionCoefficient;		//物体的表面摩擦系数，当这个物体在别的物体表面运动时这个摩擦系数与接触面的摩擦系数相乘或者总的摩擦系数
 
-	XVector2 m_position;					//物体现在的位置
+	XVec2 m_position;					//物体现在的位置
 	float m_rotate;							//物体的旋转角度
-	XVector2 m_centreOfGravity;			//重心的位置（默认在体心）
+	XVec2 m_centreOfGravity;			//重心的位置（默认在体心）
 	float m_rotationSpeed;					//自身旋转的角速度
 public:
 	XBasicPhysic2DObject()

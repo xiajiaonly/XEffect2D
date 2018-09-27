@@ -15,27 +15,27 @@ void XWindLine::draw()
 	//}
 
 	XGL::DisableTexture2D();
-	XGL::EnableBlend();
-	XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	XGL::setBlendAlpha();
 	glLineWidth(2);
 	glBegin(GL_LINE_STRIP);
-	for(unsigned int i = 0;i < m_points.size();++ i)
+	auto itL = m_pointsLife.begin();
+	for(auto it = m_points.begin();it != m_points.end();++ it,++ itL)
 	{
-		rate = m_pointsLife[i] / m_maxLife * m_points[i]->m_percentage;
+		rate = *(itL) / m_maxLife * (*it)->m_percentage;
 		if(rate > 0.666f) rate = (1.0f - rate) * 3.0f;
 		else rate = rate * 1.5f;
-		glColor4f(m_color.fR,m_color.fG,m_color.fB,rate * m_aRate);
-		glVertex2fv(m_points[i]->m_position);
+		glColor4f(m_color.r,m_color.g,m_color.b,rate * m_aRate);
+		glVertex2fv((*it)->m_position);
 	}
 	glEnd();
 }
 void XWindLine::move(float stepTime)	//生命衰减
 {
 	int sum = 0;
-	for(unsigned int i = 0;i < m_pointsLife.size();++ i)
+	for(auto it = m_pointsLife.begin();it != m_pointsLife.end();++ it)
 	{
-		m_pointsLife[i] -= stepTime;
-		if(m_pointsLife[i] <= 0.0f) ++ sum;	//死亡的点的数量
+		*it -= stepTime;
+		if(*it <= 0.0f) ++ sum;	//死亡的点的数量
 	}
 	if(sum > 0)
 	{
@@ -49,7 +49,7 @@ void XWindLine::move(float stepTime)	//生命衰减
 		updateData();	//更新点的状态
 	}
 }
-void XWindLine::addAPoint(const XVector2 & p)	//插入一个点
+void XWindLine::addAPoint(const XVec2& p)	//插入一个点
 {
 	if(!m_isInited) return;
 	if(m_points.size() == 0)
@@ -64,18 +64,20 @@ void XWindLine::addAPoint(const XVector2 & p)	//插入一个点
 	}else
 	{
 		//方案1:线性插值
-		XSmoothPoint * last = m_points[(int)(m_points.size()) - 1];	//获取最后一个点
-		float lastLife = m_pointsLife[(int)(m_points.size()) - 1];
+		XSmoothPoint * last = *(m_points.end() - 1);	//获取最后一个点
+		assert(m_points.size() == m_pointsLife.size());
+		//float lastLife = m_pointsLife[(int)(m_points.size()) - 1];
+		float lastLife = *(m_pointsLife.end() - 1);
 		float len = p.getLength(last->m_position);
 		if(len <= 0.0f)	return;	//与最后一个点重合不需要加入新的点
 		int sum = len / m_insertLength;
-		sum = XEE_Min(m_insertSum,sum);
+		sum = (std::min)(m_insertSum,sum);
 		//尚未完成
 		float d = 1.0f / (sum + 1.0f);
 		float per = d;
 		for(int i = 1;i < sum + 1; ++ i)
 		{//下面插入点
-			pushAPoint(XMath::lineSlerp<XVector2>(last->m_position,p,per),
+			pushAPoint(XMath::lineSlerp<XVec2>(last->m_position,p,per),
 				XMath::lineSlerp<float>(lastLife,m_maxLife,per));
 			per += d;
 		}

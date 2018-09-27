@@ -20,21 +20,21 @@ enum XThreadState
 	STATE_SET_TO_END,		//线程被设置为结束
 	STATE_END,				//线程结束
 };
+//等待指定的线程结束
 extern void waitThreadEnd(XThreadState &state);
-
 typedef DWORD pthread_t;    
 
 struct XThreadInfo
 {
 	XThreadState state;	//线程的状态
 	HANDLE h;				//线程的句柄
-	void (* fun)(void *);	//线程中调用的函数
+	void(*fun)(void *);	//线程中调用的函数
 	void *p;				//线程函数的参数
 	XThreadInfo()
 		:state(STATE_BEFORE_START)
-		,h(0)
-		,fun(NULL)
-		,p(NULL)
+		, h(0)
+		, fun(NULL)
+		, p(NULL)
 	{}
 };
 //对于短线程的调用机制，这个类会存在问题，需要修正
@@ -42,13 +42,13 @@ struct XThreadInfo
 class XThreadManager
 {
 protected:
-    XThreadManager()
+	XThreadManager()
 	{}
-    XThreadManager(const XThreadManager&);
+	XThreadManager(const XThreadManager&);
 	XThreadManager &operator= (const XThreadManager&);
-    virtual ~XThreadManager(){release();}
+	virtual ~XThreadManager() { release(); }
 public:
-    static XThreadManager& GetInstance()
+	static XThreadManager& GetInstance()
 	{
 		static XThreadManager m_instance;
 		return m_instance;
@@ -58,23 +58,22 @@ private:
 	void release();//释放资源
 public:
 	//id,这个线程的编号，fun线程调用的函数，p线程传递的参数
-	bool createAThread(int *id,void (* fun)(void *),void *p);			//建立一个线程
+	bool createAThread(int *id, void(*fun)(void *), void *p);			//建立一个线程
 	bool closeAThread(unsigned int id)			//关闭一个线程
 	{
-		if(id >= m_threadBuff.size() || m_threadBuff[id]->state != STATE_START) return false;	
-		if(TerminateThread(m_threadBuff[id]->h,0))
+		if (id >= m_threadBuff.size() || m_threadBuff[id]->state != STATE_START) return false;
+		if (TerminateThread(m_threadBuff[id]->h, 0))
 		{//线程结束
 			m_threadBuff[id]->state = STATE_END;
 			return true;
-		}else
+		}
+		else
 		{//线程
 			return false;
 		}
 	}
-	bool closeAllThread()			//关闭所有线程
-	{
-		return true;
-	}
+	//关闭所有线程
+	bool closeAllThread() { return true; }
 	XThreadState getThreadState();	//获取一个线程的状态
 	bool suspendAThread();			//挂起一个线程
 	bool resumeAThread();			//恢复一个线程
@@ -86,16 +85,16 @@ public:
 class XThread
 {
 private:
-	void (*m_cbFun)(void *);	//回调函数
+	void(*m_cbFun)(void *);	//回调函数
 	void *m_pClass;				//参数指针
-	bool m_isSetup;	//是否已经建立线程
 	XThreadState m_threadState;	//线程的状态
 
 	static DWORD WINAPI threadFun(LPVOID hParameter);
 	float m_fps;
+	bool m_isSetup;	//是否已经建立线程
 public:
-	float getFps() const {return m_fps;};	//获取当前线程的执行速度
-	bool setup(void (* cbFun)(void *),void *pClass);
+	float getFps() const { return m_fps; };	//获取当前线程的执行速度
+	bool setup(void(*cbFun)(void *), void *pClass);
 	void threadEnd()
 	{
 		waitThreadEnd(m_threadState);
@@ -103,12 +102,12 @@ public:
 	}
 	XThread()
 		:m_isSetup(false)
-		,m_cbFun(NULL)
-		,m_pClass(NULL)
-		,m_threadState(STATE_BEFORE_START)
-		,m_fps(0.0f)
+		, m_cbFun(NULL)
+		, m_pClass(NULL)
+		, m_threadState(STATE_BEFORE_START)
+		, m_fps(0.0f)
 	{}
-	~XThread(){threadEnd();}
+	~XThread() { threadEnd(); }
 };
 }
 #endif

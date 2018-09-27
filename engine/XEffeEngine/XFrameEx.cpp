@@ -8,44 +8,45 @@
 #include "XResourcePack.h"
 #include "XSprite.h"
 #include "XFile.h"
-namespace XE{
+#include "XDirectory.h"
+namespace XE {
 #define FRAME_DEBUG (0)
 #if FRAME_DEBUG
 int frameTestSum = 0;
 #endif
-XBool XFrameEx::init(const char *filename,XResourcePosition resoursePosition)
+XBool XFrameEx::init(const char *filename, XResPos resPos)
 {
-	if(filename == NULL) return false;
-	if(m_isInited) 
+	if (filename == NULL) return false;
+	if (m_isInited)
 	{
 		LogStr("The action have initted!");
 		return XTrue;
 	}
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
+	if (resPos == RES_SYS_DEF) resPos = getDefResPos();
 
-	if(!loadData(filename,resoursePosition)) return false;
-	m_position.set(0.0f,0.0f);	//序列帧的位置
-	setAngle(0);		//序列帧的角度
-	m_scale.set(1.0f,1.0f);	//序列帧的缩放比例
+	if (!loadData(filename, resPos)) return false;
+	m_position.reset();	//序列帧的位置
+	setAngle(0.0f);		//序列帧的角度
+	m_scale.set(1.0f);	//序列帧的缩放比例
 
 	m_isInited = XTrue;
 	return XTrue;
 }
 XBool XFrameEx::releaseMem()
 {
-	if(!m_isInited) return XTrue;
-	if(m_isThreadLoading)//这里需要等待线程结束
+	if (!m_isInited) return XTrue;
+	if (m_isThreadLoading)//这里需要等待线程结束
 		waitThreadEnd(m_loadThread);
 
 	XMem::XDELETE_ARRAY(m_pSprite);
-	
+
 #if FRAME_DEBUG
 	-- frameTestSum;
-	if(frameTestSum == 10)
+	if (frameTestSum == 10)
 	{
 		printf("haha\n");
 	}
-	printf("Frame new sum:%d\n",frameTestSum);
+	printf("Frame new sum:%d\n", frameTestSum);
 #endif
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
 	XObjManager.decreaseAObject(this);
@@ -56,61 +57,64 @@ XBool XFrameEx::releaseMem()
 }
 void XFrameEx::draw()
 {//序列帧精灵
-	if(!m_isVisible ||
+	if (!m_isVisible ||
 		!m_isInited ||
 		(m_isDisappearAtEnd && m_isEnd)) return;	//播放完成之后消失
-	if(m_isThreadLoading) return;	//正在载入的时候不能描绘
+	if (m_isThreadLoading) return;	//正在载入的时候不能描绘
 	int keyFrameIndex = 0;
-	if(m_isEnd)
+	if (m_isEnd)
 	{
-		if(m_isStopAtEnd) keyFrameIndex = m_keyFrameArray[m_allFramesSum - 1];
+		if (m_isStopAtEnd) keyFrameIndex = m_keyFrameArray[m_allFramesSum - 1];
 		else keyFrameIndex = 0;
-	}else
+	}
+	else
 	{
 		keyFrameIndex = m_keyFrameArray[(int)(m_curFramesNumble)];
 	}
-	if(keyFrameIndex >= 0 && keyFrameIndex < m_allKeyFramesSum)
+	if (keyFrameIndex >= 0 && keyFrameIndex < m_allKeyFramesSum)
 	{
-	//	m_pSprite[keyFrameIndex].m_pShaderProc = m_pShaderProc;
+		//	m_pSprite[keyFrameIndex].m_pShaderProc = m_pShaderProc;
 		m_pSprite[keyFrameIndex].setShaderClass(m_pShader);// = m_pShader;
 		m_pSprite[keyFrameIndex].draw();
-	//	m_pSprite[keyFrameIndex].m_isFlash = 0;
-	//	m_pSprite[keyFrameIndex].m_pShaderProc = NULL;
+		//	m_pSprite[keyFrameIndex].m_isFlash = 0;
+		//	m_pSprite[keyFrameIndex].m_pShaderProc = NULL;
 	}
 }
 void XFrameEx::move(float timeDelay)
 {
-	if(!m_isInited || m_isEnd) return;
-	if(m_isThreadLoading || m_isPause) return;	//正在载入的时候不能更新
-	if(m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;
+	if (!m_isInited || m_isEnd ||
+		m_isThreadLoading || m_isPause) return;	//正在载入的时候不能更新
+	if (m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;
 
 	float tmp = m_curFramesNumble;
 	m_curFramesNumble += m_actionSpeed * timeDelay;			//推动序列帧动画
-	if(m_pauseAtIndex >= 0 && 
+	if (m_pauseAtIndex >= 0 &&
 		tmp < m_pauseAtIndex && m_curFramesNumble >= m_pauseAtIndex)
 	{//这里控制播放到指定帧之后暂停
 		m_curFramesNumble = m_pauseAtIndex;
 		m_pauseAtIndex = -1;
 		pause();
 	}
-	if(m_curFramesNumble >= m_allFramesSum) 
+	if (m_curFramesNumble >= m_allFramesSum)
 	{//如果播放到最后一帧，这里回帧
 		m_curFramesNumble = 0.0f;
 
-		if(!m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;//如果不是可以立刻结束的动画，这里播放完成一个循环之后，即可结束
-		if(!m_isLoop) m_isEnd = XTrue;//如果是不循环的动画这里也可以比较结束
-	}else	
-	if(m_curFramesNumble < 0) 
+		if (!m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;//如果不是可以立刻结束的动画，这里播放完成一个循环之后，即可结束
+		if (!m_isLoop) m_isEnd = XTrue;//如果是不循环的动画这里也可以比较结束
+	}
+	else
+	if (m_curFramesNumble < 0.0f)
 	{//如果是倒序播放的话，这里判断是否播放完成(以及进行完成处理)
 		m_curFramesNumble = m_allFramesSum - 0.05f;		//note this 0.05!!
 
-		if(!m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;
-		if(!m_isLoop) m_isEnd = XTrue;
+		if (!m_isEndImmediately && m_isSetEnd) m_isEnd = XTrue;
+		if (!m_isLoop) m_isEnd = XTrue;
 	}
 }
-void XFrameEx::setAttribute(const XVector2& position,XBool loop,XBool endImmediately,int startFrame,float actionSpeed,XBool disappearAtEnd,XBool isOverturn)
+void XFrameEx::setAttribute(const XVec2& position, XBool loop, XBool endImmediately, 
+	int startFrame, float actionSpeed, XBool disappearAtEnd, XBool isOverturn)
 {
-	if(!m_isInited) return;
+	if (!m_isInited) return;
 	m_position = position;	//序列帧的位置
 
 	m_isLoop = loop;
@@ -122,15 +126,16 @@ void XFrameEx::setAttribute(const XVector2& position,XBool loop,XBool endImmedia
 	m_actionSpeed = actionSpeed;
 	m_isDisappearAtEnd = disappearAtEnd;
 
-	if((m_isOverturn && !isOverturn) || (!m_isOverturn && isOverturn))
+	if ((m_isOverturn && !isOverturn) || (!m_isOverturn && isOverturn))
 		m_isOverturn = isOverturn;
-	if(m_isThreadLoading)
+	if (m_isThreadLoading)
 	{
 		m_neadUpdateAttribute = true;
-	}else
+	}
+	else
 	{
 		//将设置的属性设置到精灵内部使之生效
-		for(int i = 0;i < m_allKeyFramesSum;++ i)
+		for (int i = 0; i < m_allKeyFramesSum; ++i)
 		{
 			m_pSprite[i].setPosition(m_position);
 			m_pSprite[i].setOverturn(m_isOverturn);
@@ -138,49 +143,50 @@ void XFrameEx::setAttribute(const XVector2& position,XBool loop,XBool endImmedia
 	}
 }
 XFrameEx::XFrameEx()
-	:m_resoursePosition(RESOURCE_AUTO)
-	,m_pSprite(NULL)
-	,m_angle(0.0f)
-	,m_isVisible(XTrue)
-	,m_position(0.0f,0.0f)
-	,m_scale(1.0f,1.0f)
-	,m_color(1.0f,1.0f,1.0f,1.0f)
+	:m_resoursePosition(RES_AUTO)
+	, m_pSprite(NULL)
+	, m_angle(0.0f)
+	, m_isVisible(XTrue)
+	, m_position(0.0f)
+	, m_scale(1.0f)
+	, m_color(1.0f, 1.0f)
 //	,alpha(1.0f)
 //	,colorRed(1.0f)
 //	,colorGreen(1.0f)
 //	,colorBlue(1.0f)
-	,m_isOverturn(XFalse)	//默认情况下不翻转
-	,m_allFramesSum(0)							//序列帧动画中总帧数
-	,m_allKeyFramesSum(0)						//序列帧动画中关键帧的数量
-	,m_curFramesNumble(0.0f)					//当前播放到第几帧
-	,m_actionSpeed(0.0f)						//序列帧播放的速度
-	,m_isLoop(XFalse)								//序列帧是否可以循环
-	,m_startFrame(0)							//从哪一帧开始
-	,m_isEnd(XFalse)								//序列帧是否播放完成
-	,m_isEndImmediately(XFalse)					//动画是否为立刻结束类型
-	,m_isSetEnd(XFalse)							//is end by user			//是否设置序列帧结束
-	,m_isDisappearAtEnd(XFalse)					//动画帧是否在播放完成之后消失
-	,m_isInited(XFalse)
-	,m_frameName(NULL)
-	,m_keyFrameArray(NULL)
-	,m_isACopy(XFalse)
-	,m_blendTypeScr(4)
-	,m_blendTypeDst(5)
+	, m_isOverturn(XFalse)	//默认情况下不翻转
+	, m_allFramesSum(0)							//序列帧动画中总帧数
+	, m_allKeyFramesSum(0)						//序列帧动画中关键帧的数量
+	, m_curFramesNumble(0.0f)					//当前播放到第几帧
+	, m_actionSpeed(0.0f)						//序列帧播放的速度
+	, m_isLoop(XFalse)								//序列帧是否可以循环
+	, m_startFrame(0)							//从哪一帧开始
+	, m_isEnd(XFalse)								//序列帧是否播放完成
+	, m_isEndImmediately(XFalse)					//动画是否为立刻结束类型
+	, m_isSetEnd(XFalse)							//is end by user			//是否设置序列帧结束
+	, m_isDisappearAtEnd(XFalse)					//动画帧是否在播放完成之后消失
+	, m_isInited(XFalse)
+	, m_frameName(NULL)
+	, m_keyFrameArray(NULL)
+	, m_isACopy(XFalse)
+//	, m_blendTypeScr(4)
+//	, m_blendTypeDst(5)
 	//,m_pShaderProc(NULL)
-	,m_pShader(NULL)
-	,m_cp(NULL)
-	,m_isThreadLoading(STATE_BEFORE_START)
-	,m_neadUpdateAttribute(false)
-	,m_isPause(false)
-	,m_isStopAtEnd(false)
-	,m_pauseAtIndex(-1)
+	, m_pShader(NULL)
+	, m_cp(NULL)
+	, m_isThreadLoading(false)
+	, m_neadUpdateAttribute(false)
+	, m_isPause(false)
+	, m_isStopAtEnd(false)
+	, m_pauseAtIndex(-1)
+	, m_withFileList(false)
 {
 	m_objType = OBJ_FRAMEEX;
 }
 XFrameEx::~XFrameEx()
 {
 	releaseMem();
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
+	if (m_cp != NULL && --m_cp->m_counter <= 0)
 	{
 		XMem::XDELETE_ARRAY(m_keyFrameArray);
 		XMem::XDELETE_ARRAY(m_frameName);
@@ -189,11 +195,11 @@ XFrameEx::~XFrameEx()
 }
 XFrameEx& XFrameEx::operator = (const XFrameEx& temp)
 {
-	if(&temp == this) return *this;			//防止没必要的自我拷贝
+	if (&temp == this) return *this;			//防止没必要的自我拷贝
 	//if(m_isInited != 0) return *this;			//自身已经初始化过，就不能再复制别人
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
+	if (temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	//释放自身的资源
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
+	if (m_cp != NULL && --m_cp->m_counter <= 0)
 	{//自身没有引用需要释放
 		XMem::XDELETE_ARRAY(m_keyFrameArray);
 		XMem::XDELETE_ARRAY(m_frameName);
@@ -202,82 +208,8 @@ XFrameEx& XFrameEx::operator = (const XFrameEx& temp)
 	m_cp = temp.m_cp;
 	XMem::XDELETE_ARRAY(m_pSprite);
 
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
-	//m_pShaderProc = temp.m_pShaderProc;
-	m_pShader = temp.m_pShader;
-	m_isVisible = temp.m_isVisible;					//精灵的角度
-	m_angle = temp.m_angle;					//精灵的角度
-	m_position = temp.m_position;		//精灵的位置
-	m_scale = temp.m_scale;				//精灵的缩放尺寸
-	m_color = temp.m_color;
-//	alpha = temp.alpha;					//透明度
-//	colorRed = temp.colorRed;			//红色
-//	colorGreen = temp.colorGreen;		//绿色
-//	colorBlue = temp.colorBlue;			//蓝色
-	m_isOverturn = temp.m_isOverturn;	//是否x方向左右翻转
-	m_isPause = temp.m_isPause;	
-	m_isStopAtEnd = temp.m_isStopAtEnd;
-	m_pauseAtIndex = temp.m_pauseAtIndex;
-
-	m_allFramesSum = temp.m_allFramesSum;					//序列帧动画中总帧数
-	m_allKeyFramesSum = temp.m_allKeyFramesSum;				//序列帧动画中关键帧的数量
-	m_curFramesNumble = temp.m_curFramesNumble;				//当前播放到第几帧
-	m_actionSpeed = temp.m_actionSpeed;						//序列帧播放的速度
-	m_isLoop = temp.m_isLoop;								//序列帧是否可以循环
-	m_startFrame = temp.m_startFrame;						//从哪一帧开始
-	m_isEnd = temp.m_isEnd;									//序列帧是否播放完成
-	m_isEndImmediately = temp.m_isEndImmediately;			//动画是否为立刻结束类型
-	m_isSetEnd = temp.m_isSetEnd;							//是否设置序列帧结束
-	m_isDisappearAtEnd = temp.m_isDisappearAtEnd;			//动画帧是否在播放完成之后消失
-
-	m_frameName = temp.m_frameName;
-	m_keyFrameArray = temp.m_keyFrameArray;
-	if(temp.m_isInited)
-	{
-#if FRAME_DEBUG
-		++ frameTestSum;
-		printf("Frame new sum:%d\n",frameTestSum);
-#endif
-		m_pSprite = XMem::createArrayMem<XSprite>(m_allKeyFramesSum);
-		if(m_pSprite == NULL)
-		{
-			m_isInited = XFalse;
-			return *this;
-		}
-		for(int i = 0;i < m_allKeyFramesSum;++ i)
-		{
-			m_pSprite[i].setACopy(temp.m_pSprite[i]);
-#if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-			XObjManager.decreaseAObject(&(m_pSprite[i]));
-#endif
-		}
-	}
-#if WITH_OBJECT_MANAGER	//注册序列帧这个物件
-	if(!m_isACopy) XObjManager.addAObject(this);
-#endif
-	m_isInited = temp.m_isInited;
-	m_isACopy = XTrue;
-	return *this;
-}
-void XFrameEx::setACopy(const XFrameEx& temp)
-{
-	if(&temp == this) return;			//防止没必要的自我拷贝
-	if(m_isThreadLoading || temp.m_isThreadLoading) return;	//正在多线程载入的元素不能复制
-	//if(m_isInited != 0) return;			//自身已经初始化过，就不能再复制别人
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-	//释放自身的资源
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
-	{//自身没有引用需要释放
-		XMem::XDELETE_ARRAY(m_keyFrameArray);
-		XMem::XDELETE_ARRAY(m_frameName);
-		XMem::XDELETE(m_cp);
-	}
-	m_cp = temp.m_cp;
-	XMem::XDELETE_ARRAY(m_pSprite);
-
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
 	//m_pShaderProc = temp.m_pShaderProc;
 	m_pShader = temp.m_pShader;
 	m_isVisible = temp.m_isVisible;					//精灵的角度
@@ -307,19 +239,93 @@ void XFrameEx::setACopy(const XFrameEx& temp)
 
 	m_frameName = temp.m_frameName;
 	m_keyFrameArray = temp.m_keyFrameArray;
-	if(temp.m_isInited)
+	if (temp.m_isInited)
 	{
 #if FRAME_DEBUG
 		++ frameTestSum;
-		printf("Frame new sum:%d\n",frameTestSum);
+		printf("Frame new sum:%d\n", frameTestSum);
 #endif
 		m_pSprite = XMem::createArrayMem<XSprite>(m_allKeyFramesSum);
-		if(m_pSprite == NULL)
+		if (m_pSprite == NULL)
+		{
+			m_isInited = XFalse;
+			return *this;
+		}
+		for (int i = 0; i < m_allKeyFramesSum; ++i)
+		{
+			m_pSprite[i].setACopy(temp.m_pSprite[i]);
+#if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
+			XObjManager.decreaseAObject(&(m_pSprite[i]));
+#endif
+		}
+	}
+#if WITH_OBJECT_MANAGER	//注册序列帧这个物件
+	if (!m_isACopy) XObjManager.addAObject(this);
+#endif
+	m_isInited = temp.m_isInited;
+	m_isACopy = XTrue;
+	return *this;
+}
+void XFrameEx::setACopy(const XFrameEx& temp)
+{
+	if (&temp == this) return;			//防止没必要的自我拷贝
+	if (m_isThreadLoading || temp.m_isThreadLoading) return;	//正在多线程载入的元素不能复制
+	//if(m_isInited != 0) return;			//自身已经初始化过，就不能再复制别人
+	if (temp.m_cp != NULL) ++temp.m_cp->m_counter;
+	//释放自身的资源
+	if (m_cp != NULL && --m_cp->m_counter <= 0)
+	{//自身没有引用需要释放
+		XMem::XDELETE_ARRAY(m_keyFrameArray);
+		XMem::XDELETE_ARRAY(m_frameName);
+		XMem::XDELETE(m_cp);
+	}
+	m_cp = temp.m_cp;
+	XMem::XDELETE_ARRAY(m_pSprite);
+
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
+	//m_pShaderProc = temp.m_pShaderProc;
+	m_pShader = temp.m_pShader;
+	m_isVisible = temp.m_isVisible;					//精灵的角度
+	m_angle = temp.m_angle;					//精灵的角度
+	m_position = temp.m_position;		//精灵的位置
+	m_scale = temp.m_scale;				//精灵的缩放尺寸
+	m_color = temp.m_color;
+	//	alpha = temp.alpha;					//透明度
+	//	colorRed = temp.colorRed;			//红色
+	//	colorGreen = temp.colorGreen;		//绿色
+	//	colorBlue = temp.colorBlue;			//蓝色
+	m_isOverturn = temp.m_isOverturn;	//是否x方向左右翻转
+	m_isPause = temp.m_isPause;
+	m_isStopAtEnd = temp.m_isStopAtEnd;
+	m_pauseAtIndex = temp.m_pauseAtIndex;
+
+	m_allFramesSum = temp.m_allFramesSum;					//序列帧动画中总帧数
+	m_allKeyFramesSum = temp.m_allKeyFramesSum;				//序列帧动画中关键帧的数量
+	m_curFramesNumble = temp.m_curFramesNumble;				//当前播放到第几帧
+	m_actionSpeed = temp.m_actionSpeed;						//序列帧播放的速度
+	m_isLoop = temp.m_isLoop;								//序列帧是否可以循环
+	m_startFrame = temp.m_startFrame;						//从哪一帧开始
+	m_isEnd = temp.m_isEnd;									//序列帧是否播放完成
+	m_isEndImmediately = temp.m_isEndImmediately;			//动画是否为立刻结束类型
+	m_isSetEnd = temp.m_isSetEnd;							//是否设置序列帧结束
+	m_isDisappearAtEnd = temp.m_isDisappearAtEnd;			//动画帧是否在播放完成之后消失
+
+	m_frameName = temp.m_frameName;
+	m_keyFrameArray = temp.m_keyFrameArray;
+	if (temp.m_isInited)
+	{
+#if FRAME_DEBUG
+		++ frameTestSum;
+		printf("Frame new sum:%d\n", frameTestSum);
+#endif
+		m_pSprite = XMem::createArrayMem<XSprite>(m_allKeyFramesSum);
+		if (m_pSprite == NULL)
 		{
 			m_isInited = XFalse;
 			return;
 		}
-		for(int i = 0;i < m_allKeyFramesSum;++ i)
+		for (int i = 0; i < m_allKeyFramesSum; ++i)
 		{
 			m_pSprite[i].setACopy(temp.m_pSprite[i]);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
@@ -328,125 +334,189 @@ void XFrameEx::setACopy(const XFrameEx& temp)
 		}
 	}
 #if WITH_OBJECT_MANAGER	//注册序列帧这个物件,这个m_isACopy的判断是为了防止重复注册，不过注册本身就已经避免了重复注册
-	if(!m_isACopy) XObjManager.addAObject(this);
+	if (!m_isACopy) XObjManager.addAObject(this);
 #endif
 	m_isInited = temp.m_isInited;
 	m_isACopy = XTrue;
 }
 XFrameEx::XFrameEx(const XFrameEx &temp)
 {
-	if(&temp == this) return;	//防止资深拷贝
+	if (&temp == this) return;	//防止资深拷贝
 }
 bool XFrameEx::loadFromFolder(const char *filename)	//从文件夹中载入资源
 {
 	FILE *fp = NULL;
-	if((fp = fopen(filename,"rb")) == NULL)
-	{
-		LogStr("Action text file error!");
-		return XFalse;
-	}
-
-	if(fscanf(fp,"%d:",&m_allKeyFramesSum) != 1) {fclose(fp);return XFalse;}
-	if(m_allKeyFramesSum <= 0)
-	{
-		LogNull("Action text file data error:%s!\n",filename);
-		fclose(fp);
-		return XFalse;
-	}
-	if(fscanf(fp,"%d:",&m_allFramesSum) != 1) {fclose(fp);return XFalse;}
-	if(m_allFramesSum <= 0)
-	{
-		LogNull("Action text file data error:%s!\n",filename);
-		fclose(fp);
-		return XFalse;
-	}
-	m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
-	if(m_keyFrameArray == NULL) 
-	{
-		return XFalse;
-	}
-	{//读取标记符	D：default, M：menutrue
-		char tempFlag = ' ';
-		if(fscanf(fp,"%c:",&tempFlag) != 1) {fclose(fp);return XFalse;}
-		if(tempFlag == 'D' || tempFlag == 'd')
+	if ((fp = fopen(filename, "rb")) == NULL)
+	{//如果图片文件不存在则尝试罗列文件夹下面的所有文件
+		XDirectory dir;
+		if (!dir.init(XFile::getFilePath(XFile::getFullPath(m_frameName).c_str()).c_str(), false)) return false;
+		dir.sortFiles();
+		for (int i = 0; i < dir.m_sortResult.size(); ++i)
 		{
-			for(int i =0;i < m_allFramesSum;++ i)
+			if (!getIsImageSupport(XFile::getFileExtension(dir.m_sortResult[i]->filename.c_str()))) continue;
+			m_filesList.push_back(dir.m_sortResult[i]->filename);
+		}
+
+		m_withFileList = !XFile::isExistFileEx(m_frameName);
+
+		m_allKeyFramesSum = m_filesList.size();
+		if (m_allKeyFramesSum == 0)
+		{
+			LogStr("Action text file error!");
+			return XFalse;
+		}
+		m_allFramesSum = m_allKeyFramesSum;
+		m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
+		if (m_keyFrameArray == NULL) return XFalse;
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			m_keyFrameArray[i] = i;
+		}
+		return true;
+	}
+	else
+	{//如果参数文件存在，则图片命名需要是顺序的
+		if (!XFile::isExistFileEx(m_frameName))
+		{//如果指定文件不存在，找到第一个
+			XDirectory dir;
+			if (!dir.init(XFile::getFilePath(XFile::getFullPath(m_frameName).c_str()).c_str(), false)) return false;
+			dir.sortFiles();
+			for (int i = 0; i < dir.m_sortResult.size(); ++i)
 			{
-				m_keyFrameArray[i] = i;
-			}
-		}else
-		{	
-			for(int i =0;i < m_allFramesSum;++ i)
-			{
-				if(fscanf(fp,"%d,",&m_keyFrameArray[i]) != 1) {fclose(fp);return XFalse;}
-				if(m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
+				if (getIsImageSupport(XFile::getFileExtension(dir.m_sortResult[i]->filename.c_str())))
 				{
-					LogNull("Blank frame:%s -> %d!\n",filename,i);
-				//	fclose(fp);
-				//	XMem::XDELETE_ARRAY(m_keyFrameArray);
-				//	return XFalse;
+					int index = XFile::getPathDeepByChar(m_frameName);
+					m_frameName[index + 1] = '\0';
+					strcat_s(m_frameName, MAX_FILE_NAME_LENGTH, dir.m_sortResult[i]->filename.c_str());
+					break;
 				}
 			}
 		}
 	}
+
+	if (fscanf(fp, "%d:", &m_allKeyFramesSum) != 1) { fclose(fp); return XFalse; }
+	if (m_allKeyFramesSum <= 0)
+	{
+		LogNull("Action text file data error:%s!\n", filename);
+		fclose(fp);
+		return XFalse;
+	}
+	if (fscanf(fp, "%d:", &m_allFramesSum) != 1) 
+	{//如果只有第一个参数则后面全部使用默认参数
+		m_allFramesSum = m_allKeyFramesSum;
+		m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
+		if (m_keyFrameArray == NULL) return XFalse;
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			m_keyFrameArray[i] = i;
+		}
+		fclose(fp);
+		return true; 
+	}
+	if (m_allFramesSum <= 0)
+	{
+		LogNull("Action text file data error:%s!\n", filename);
+		fclose(fp);
+		return XFalse;
+	}
+	m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
+	if (m_keyFrameArray == NULL) return XFalse;
+	//读取标记符	D：default, M：menutrue
+	char tempFlag = ' ';
+	if (fscanf(fp, "%c:", &tempFlag) != 1) { fclose(fp); return XFalse; }
+	if (tempFlag == 'D' || tempFlag == 'd')
+	{
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			m_keyFrameArray[i] = i;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			if (fscanf(fp, "%d,", &m_keyFrameArray[i]) != 1) { fclose(fp); return XFalse; }
+			if (m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
+			{
+				LogNull("Blank frame:%s -> %d!\n", filename, i);
+				//	fclose(fp);
+				//	XMem::XDELETE_ARRAY(m_keyFrameArray);
+				//	return XFalse;
+			}
+		}
+	}
+	
 	fclose(fp);
 	return true;
 }
 bool XFrameEx::loadFromPacker(const char *filename)	//从压缩包中载入资源
 {
 	unsigned char *p = XResPack.getFileData(filename);
-	if(p == NULL) return XFalse;
+	if (p == NULL) return XFalse;
 
 	int offset = 0;
-	if(sscanf((char *)(p + offset),"%d:",&m_allKeyFramesSum) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
-	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
-	if(m_allKeyFramesSum <= 0)
+	if (sscanf((char *)(p + offset), "%d:", &m_allKeyFramesSum) != 1) { XMem::XDELETE_ARRAY(p); return XFalse; }
+	offset += XString::getCharPosition((char *)(p + offset), ':') + 1;
+	if (m_allKeyFramesSum <= 0)
 	{
-		LogNull("Action text file data error:%s!\n",filename);
+		LogNull("Action text file data error:%s!\n", filename);
 		XMem::XDELETE_ARRAY(p);
 		XMem::XDELETE_ARRAY(m_frameName);
 		return XFalse;
 	}
-	if(sscanf((char *)(p + offset),"%d:",&m_allFramesSum) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
-	offset += XString::getCharPosition((char *)(p + offset),':') + 1;
-	if(m_allFramesSum <= 0)
+	if (sscanf((char *)(p + offset), "%d:", &m_allFramesSum) != 1) 
+	{//如果只读取到一个参数则使用默认值
+		m_allFramesSum = m_allKeyFramesSum;
+		m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
+		if (m_keyFrameArray == NULL) return XFalse;
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			m_keyFrameArray[i] = i;
+		}
+
+		XMem::XDELETE_ARRAY(p);
+		return true; 
+	}
+	offset += XString::getCharPosition((char *)(p + offset), ':') + 1;
+	if (m_allFramesSum <= 0)
 	{
-		LogNull("Action text file data error:%s!\n",filename);
+		LogNull("Action text file data error:%s!\n", filename);
 		XMem::XDELETE_ARRAY(p);
 		return XFalse;
 	}
 	m_keyFrameArray = XMem::createArrayMem<int>(m_allFramesSum);
-	if(m_keyFrameArray == NULL) 
+	if (m_keyFrameArray == NULL)
 	{
 		XMem::XDELETE_ARRAY(p);
 		return XFalse;
 	}
-	{//读取标记符	D：default, M：menutrue
-		char tempFlag = ' ';
-		if(sscanf((char *)(p + offset),"%c:",&tempFlag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
-		offset += XString::getCharPosition((char *)(p + offset),':') + 1;
-		if(tempFlag == 'D' || tempFlag == 'd')
+	//读取标记符	D：default, M：menutrue
+	char tempFlag = ' ';
+	if (sscanf((char *)(p + offset), "%c:", &tempFlag) != 1) { XMem::XDELETE_ARRAY(p); return XFalse; }
+	offset += XString::getCharPosition((char *)(p + offset), ':') + 1;
+	if (tempFlag == 'D' || tempFlag == 'd')
+	{
+		for (int i = 0; i < m_allFramesSum; ++i)
 		{
-			for(int i =0;i < m_allFramesSum;++ i)
+			m_keyFrameArray[i] = i;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < m_allFramesSum; ++i)
+		{
+			if (sscanf((char *)(p + offset), "%d,", &m_keyFrameArray[i]) != 1) { XMem::XDELETE_ARRAY(p); return XFalse; }
+			offset += XString::getCharPosition((char *)(p + offset), ',') + 1;
+			if (m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
 			{
-				m_keyFrameArray[i] = i;
-			}
-		}else
-		{	
-			for(int i =0;i < m_allFramesSum;++ i)
-			{
-				if(sscanf((char *)(p + offset),"%d,",&m_keyFrameArray[i]) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
-				offset += XString::getCharPosition((char *)(p + offset),',') + 1;
-				if(m_keyFrameArray[i] < 0 || m_keyFrameArray[i] >= m_allKeyFramesSum)
-				{
-					LogNull("Blank frame:%s -> %d!\n",filename,i);
+				LogNull("Blank frame:%s -> %d!\n", filename, i);
 				//	XMem::XDELETE_ARRAY(p);
 				//	XMem::XDELETE_ARRAY(m_keyFrameArray);
 				//	return XFalse;
-				}
 			}
 		}
 	}
+	
 	XMem::XDELETE_ARRAY(p);
 	return true;
 }
@@ -455,81 +525,94 @@ bool XFrameEx::loadFromWeb(const char *filename)		//从网页中读取资源
 	return true;
 }
 bool XFrameEx::loadData(const char *filename,			//图片的名称
-		XResourcePosition resoursePosition)
+	XResPos resPos, bool isInThread)
 {
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 	try
 	{
 		m_cp = new XSCounter;
-		if(m_cp == NULL) return XFalse;
-	}catch(...)
+		if (m_cp == NULL) return XFalse;
+	}
+	catch (...)
 	{
 		return XFalse;
 	}
 	m_frameName = XMem::createArrayMem<char>(MAX_FILE_NAME_LENGTH);
-	if(m_frameName == NULL) 
+	if (m_frameName == NULL)
 	{
 		XMem::XDELETE(m_cp);
 		return XFalse;
 	}
 	m_frameName[0] = '\0';
 
-	strcpy(m_frameName,filename);
+	strcpy_s(m_frameName, MAX_FILE_NAME_LENGTH, filename);
 
 	//依次载入所有的序列帧图片
 	int nameLength = strlen(m_frameName);
-	if(nameLength <= 0)
+	if (nameLength <= 0)
 	{
 		LogStr("Action file path error!");
 		XMem::XDELETE_ARRAY(m_frameName);
 		XMem::XDELETE(m_cp);
 		return XFalse;
 	}
+	std::string tmpExt = XFile::getFileExtension(m_frameName);
+	if (tmpExt.size() == 0 && (m_frameName[nameLength - 1] != '\\' ||
+		m_frameName[nameLength - 1] != '/'))
+	{
+		strcat_s(m_frameName, MAX_FILE_NAME_LENGTH, "/");
+	}
 	//下面读取序列帧动画的文本文档数据
 	char tempFrameName[MAX_FILE_NAME_LENGTH];
-	strcpy(tempFrameName,m_frameName);
-	//for(int i = nameLength -1;i > 0;-- i)
-	//{
-	//	if(tempFrameName[i] == '/' || tempFrameName[i] == '\\') 
-	//	{//find the key char
-	//		tempFrameName[i + 1] = '\0';
-	//		strcat(tempFrameName,"frame.txt");
-	//		break;
-	//	}
-	//}	
+	strcpy_s(tempFrameName, MAX_FILE_NAME_LENGTH, m_frameName);
+
 	int index = XFile::getPathDeepByChar(tempFrameName);
 	tempFrameName[index + 1] = '\0';
-	strcat(tempFrameName,"frame.txt");
-
-	//下面这个要考虑多线程资源互斥，唯一的一个多线程中已经做了互斥处理
-	switch(m_resoursePosition)
+	strcat_s(tempFrameName, MAX_FILE_NAME_LENGTH, "frame.txt");
+	//自动修复文件名，防止出现问题
+	if (index == nameLength)
+	{//不包含文件名则使用默认文件名
+		strcat_s(m_frameName, MAX_FILE_NAME_LENGTH, "frame_000.png");
+		nameLength = strlen(m_frameName);
+	}
+	else
 	{
-	case RESOURCE_LOCAL_PACK:
-		if(!loadFromPacker(tempFrameName)) 
+		if (!getIsImageSupport(tmpExt))
+		{
+			m_frameName[index + 1] = '\0';
+			strcat_s(m_frameName, MAX_FILE_NAME_LENGTH, "frame_000.png");
+			nameLength = strlen(m_frameName);
+		}
+	}
+	//下面这个要考虑多线程资源互斥，唯一的一个多线程中已经做了互斥处理
+	switch (m_resoursePosition)
+	{
+	case RES_LOCAL_PACK:
+		if (!loadFromPacker(tempFrameName))
 		{
 			XMem::XDELETE_ARRAY(m_frameName);
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_LOCAL_FOLDER:
-		if(!loadFromFolder(tempFrameName))
+	case RES_LOCAL_FOLDER:
+		if (!loadFromFolder(tempFrameName))
 		{
 			XMem::XDELETE_ARRAY(m_frameName);
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_WEB:
-		if(!loadFromWeb(tempFrameName))
+	case RES_WEB:
+		if (!loadFromWeb(tempFrameName))
 		{
 			XMem::XDELETE_ARRAY(m_frameName);
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_AUTO:
-		if(!loadFromPacker(tempFrameName) && !loadFromFolder(tempFrameName) &&
+	case RES_AUTO:
+		if (!loadFromPacker(tempFrameName) && !loadFromFolder(tempFrameName) &&
 			!loadFromWeb(tempFrameName))
 		{
 			XMem::XDELETE_ARRAY(m_frameName);
@@ -541,43 +624,80 @@ bool XFrameEx::loadData(const char *filename,			//图片的名称
 
 #if FRAME_DEBUG
 	++ frameTestSum;
-	printf("Frame new sum:%d\n",frameTestSum);
+	printf("Frame new sum:%d\n", frameTestSum);
 #endif
-	if(nameLength < 7) return XFalse;
 	m_pSprite = XMem::createArrayMem<XSprite>(m_allKeyFramesSum);
-	if(m_pSprite == NULL) 
+	if (m_pSprite == NULL)
 	{
 		XMem::XDELETE_ARRAY(m_frameName);
 		XMem::XDELETE(m_cp);
 		XMem::XDELETE_ARRAY(m_keyFrameArray);
 		return XFalse;
 	}
-	strcpy(tempFrameName,m_frameName);
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	if (m_withFileList)
 	{
-		tempFrameName[nameLength - 5] = '0' + i%10;
-		tempFrameName[nameLength - 6] = '0' + (i/10)%10;
-		tempFrameName[nameLength - 7] = '0' + (i/100)%10;
-
-		if(!m_pSprite[i].init(tempFrameName,m_resoursePosition,POINT_CENTER))
+		for (int i = 0; i < m_allKeyFramesSum; ++i)
 		{
-			LogStr("The action pictrue load error!");
-			for(int j = 0;j < i;++ j)
+			tempFrameName[index + 1] = '\0';				//存路径
+			strcat_s(tempFrameName, MAX_FILE_NAME_LENGTH, m_filesList[i].c_str());
+
+			bool ret;
+			if (isInThread) ret = m_pSprite[i].initThread(tempFrameName, m_resoursePosition, POINT_CENTER);
+			else ret = m_pSprite[i].init(tempFrameName, m_resoursePosition, POINT_CENTER);
+			if (!ret)
 			{
-				m_pSprite[j].release();
+				LogStr("The action pictrue load error!");
+				for (int j = 0; j < i; ++j)
+				{
+					m_pSprite[j].release();
+				}
+				XMem::XDELETE_ARRAY(m_pSprite);
+				XMem::XDELETE_ARRAY(m_frameName);
+				XMem::XDELETE(m_cp);
+				XMem::XDELETE_ARRAY(m_keyFrameArray);
+				return XFalse;
 			}
-			XMem::XDELETE_ARRAY(m_pSprite);
-			XMem::XDELETE_ARRAY(m_frameName);
-			XMem::XDELETE(m_cp);
-			XMem::XDELETE_ARRAY(m_keyFrameArray);
-			return XFalse;
-		}
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
-		XObjManager.decreaseAObject(&(m_pSprite[i]));
+			XObjManager.decreaseAObject(&(m_pSprite[i]));
 #endif
-		m_pSprite[i].setPosition(0.0f,0.0f);
-		m_pSprite[i].setAngle(0);
-		m_pSprite[i].setScale(1.0f,1.0f);
+			m_pSprite[i].setPosition(XVec2::zero);
+			m_pSprite[i].setAngle(0.0f);
+			m_pSprite[i].setScale(XVec2::one);
+		}
+	}
+	else
+	{
+		strcpy_s(tempFrameName, MAX_FILE_NAME_LENGTH, m_frameName);	//存文件名
+
+		for (int i = 0; i < m_allKeyFramesSum; ++i)
+		{
+
+			tempFrameName[nameLength - 5] = '0' + i % 10;
+			tempFrameName[nameLength - 6] = '0' + (i / 10) % 10;
+			tempFrameName[nameLength - 7] = '0' + (i / 100) % 10;
+			bool ret;
+			if (isInThread) ret = m_pSprite[i].initThread(tempFrameName, m_resoursePosition, POINT_CENTER);
+			else ret = m_pSprite[i].init(tempFrameName, m_resoursePosition, POINT_CENTER);
+			if (!ret)
+			{
+				LogStr("The action pictrue load error!");
+				for (int j = 0; j < i; ++j)
+				{
+					m_pSprite[j].release();
+				}
+				XMem::XDELETE_ARRAY(m_pSprite);
+				XMem::XDELETE_ARRAY(m_frameName);
+				XMem::XDELETE(m_cp);
+				XMem::XDELETE_ARRAY(m_keyFrameArray);
+				return XFalse;
+			}
+#if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
+			XObjManager.decreaseAObject(&(m_pSprite[i]));
+#endif
+			m_pSprite[i].setPosition(XVec2::zero);
+			m_pSprite[i].setAngle(0.0f);
+			m_pSprite[i].setScale(XVec2::one);
+		}
 	}
 #if WITH_OBJECT_MANAGER	//注册序列帧这个物件
 	XObjManager.addAObject(this);
@@ -592,7 +712,7 @@ DWORD WINAPI XFrameEx::loadThread(void *p)
 	XFrameEx &pPar = *(XFrameEx *)p;
 	pPar.m_loadThread = STATE_START;
 	//下面是数据载入
-	printf("开始载入!\n");
+//	printf("开始载入!\n");
 	if (gFrameworkData.pFrameWork == NULL)
 	{
 		printf("引擎尚未初始化!");
@@ -600,156 +720,157 @@ DWORD WINAPI XFrameEx::loadThread(void *p)
 		pPar.m_isThreadLoading = false;
 		return 1;
 	}
-	wglMakeCurrent(gFrameworkData.pFrameWork->getHDC(), 
-		gFrameworkData.pFrameWork->getCopyHGLRC());
-	if(!pPar.loadData(pPar.m_threadFilename.c_str(),pPar.m_threadResPos))
+//	XEG.hdcLock();
+//	wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	if (!pPar.loadData(pPar.m_threadFilename.c_str(), pPar.m_threadResPos,true))
 	{
 		pPar.m_isInited = false;
 		LogStr("Frame load error!");
 	}
-	if(pPar.m_neadUpdateAttribute)
+//	wglMakeCurrent(NULL, NULL);//nullptr
+//	XEG.hdcUnlock();
+	if (pPar.m_neadUpdateAttribute)
 	{
 		pPar.m_neadUpdateAttribute = false;
-		for(int i = 0;i < pPar.m_allKeyFramesSum;++ i)
+		for (int i = 0; i < pPar.m_allKeyFramesSum; ++i)
 		{
 			pPar.m_pSprite[i].setPosition(pPar.m_position);
 			pPar.m_pSprite[i].setOverturn(pPar.m_isOverturn);
 		}
 	}
-    wglMakeCurrent(NULL, NULL);//nullptr
 
-	printf("载入完成!\n");
+//	printf("载入完成!\n");
 	pPar.m_loadThread = STATE_END;
 	pPar.m_isThreadLoading = false;
 	return 1;
 }
 bool XFrameEx::initThread(const char *filename,			//图片的名称
-		XResourcePosition resoursePosition)
+	XResPos resPos)
 {//这里开启一个线程载入资源
-	if(filename == NULL) return false;
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
+	if (filename == NULL) return false;
+	if (resPos == RES_SYS_DEF) resPos = getDefResPos();
 	//貌似可以不用下面这个判断(注意)
-	if(resoursePosition == RESOURCE_LOCAL_PACK)
-		return init(filename,resoursePosition);	//如果是从资源包中载入资源，则不能进行多线程载入，直接使用普通方式。
+	if (resPos == RES_LOCAL_PACK)
+		return init(filename, resPos);	//如果是从资源包中载入资源，则不能进行多线程载入，直接使用普通方式。
 
-	if(m_isInited) 
+	if (m_isInited)
 	{
 		LogStr("The action have initted!");
 		return XTrue;
 	}
 	//下面开启一个载入线程进行载入操作
 	m_threadFilename = filename;
-	m_threadResPos = resoursePosition;
-	m_position.set(0.0f,0.0f);	//序列帧的位置
-	m_scale.set(1.0f,1.0f);	//序列帧的缩放比例
+	m_threadResPos = resPos;
+	m_position.reset();	//序列帧的位置
+	m_scale.set(1.0f);	//序列帧的缩放比例
 
 	m_isInited = true;
 	m_loadThread = STATE_BEFORE_START;
 	m_isThreadLoading = true;
-	if(CreateThread(0,0,loadThread,this,0,0) == 0)
+	if (CreateThread(0, 0, loadThread, this, 0, 0) == 0)
 	{
-		m_isInited = false; 
+		m_isInited = false;
 		return false;
 	}
-	if(m_isInited)
+	if (m_isInited)
 		setAngle(0);		//序列帧的角度
 	return XTrue;
 }
 char * XFrameExParamData::getStrFromData()
 {
 	char *tempStr = XMem::createArrayMem<char>(256);
-	if(tempStr == NULL) return NULL;
+	if (tempStr == NULL) return NULL;
 	int offset = 0;
-	sprintf(tempStr + offset,"ResPos:%d,\n",resourcePosition);
+	sprintf_s(tempStr + offset, 256 - offset, "ResPos:%d,\n", resourcePosition);
 	offset = strlen(tempStr);
-	sprintf(tempStr + offset,"ObjPos:%f|%f,\n",pos.x,pos.y);
+	sprintf_s(tempStr + offset, 256 - offset, "ObjPos:%f|%f,\n", pos.x, pos.y);
 	offset = strlen(tempStr);
-	if(loop) sprintf(tempStr + offset,"Loop:1,\n");
-	else sprintf(tempStr + offset,"Loop:0,\n");
+	if (loop) sprintf_s(tempStr + offset, 256 - offset, "Loop:1,\n");
+	else sprintf_s(tempStr + offset, 256 - offset, "Loop:0,\n");
 	offset = strlen(tempStr);
-	if(endImmediately) sprintf(tempStr + offset,"EndIMD:1,\n");
-	else sprintf(tempStr + offset,"EndIMD:0,\n");
+	if (endImmediately) sprintf_s(tempStr + offset, 256 - offset, "EndIMD:1,\n");
+	else sprintf_s(tempStr + offset, 256 - offset, "EndIMD:0,\n");
 	offset = strlen(tempStr);
-	sprintf(tempStr + offset,"StartFRM:%d,\n",startFrame);
+	sprintf_s(tempStr + offset, 256 - offset, "StartFRM:%d,\n", startFrame);
 	offset = strlen(tempStr);
-	sprintf(tempStr + offset,"Speed:%f,\n",actionSpeed);
+	sprintf_s(tempStr + offset, 256 - offset, "Speed:%f,\n", actionSpeed);
 	offset = strlen(tempStr);
-	if(disappearAtEnd) sprintf(tempStr + offset,"disappear:1,\n");
-	else sprintf(tempStr + offset,"disappear:0,\n");
+	if (disappearAtEnd) sprintf_s(tempStr + offset, 256 - offset, "disappear:1,\n");
+	else sprintf_s(tempStr + offset, 256 - offset, "disappear:0,\n");
 	offset = strlen(tempStr);
-	if(isOverturn) sprintf(tempStr + offset,"Overturn:1,\n");
-	else sprintf(tempStr + offset,"Overturn:0,\n");
+	if (isOverturn) sprintf_s(tempStr + offset, 256 - offset, "Overturn:1,\n");
+	else sprintf_s(tempStr + offset, 256 - offset, "Overturn:0,\n");
 	offset = strlen(tempStr);
 	return tempStr;
 }
 int XFrameExParamData::getDataFromStr(const char * str)
 {
-	if(str == NULL) return 0;
+	if (str == NULL) return 0;
 	int tempData = 0;
 	int offset = 0;
-	if(sscanf(str + offset,"ResPos:%d,\n",&resourcePosition) != 1) return offset;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"ObjPos:%f|%f,\n",&pos.x,&pos.y) != 2) return offset;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"Loop:%d,\n",&tempData) != 1) return offset;
-	if(tempData == 0) loop = XFalse;
+	if (sscanf(str + offset, "ResPos:%d,\n", &resourcePosition) != 1) return offset;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "ObjPos:%f|%f,\n", &pos.x, &pos.y) != 2) return offset;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "Loop:%d,\n", &tempData) != 1) return offset;
+	if (tempData == 0) loop = XFalse;
 	else loop = XTrue;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"EndIMD:%d,\n",&tempData) != 1) return offset;
-	if(tempData == 0) endImmediately = XFalse;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "EndIMD:%d,\n", &tempData) != 1) return offset;
+	if (tempData == 0) endImmediately = XFalse;
 	else endImmediately = XTrue;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"StartFRM:%d,\n",&startFrame) != 1) return offset;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"Speed:%f,\n",&actionSpeed) != 1) return offset;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"disappear:%d,\n",&tempData) != 1) return offset;
-	if(tempData == 0) disappearAtEnd = XFalse;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "StartFRM:%d,\n", &startFrame) != 1) return offset;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "Speed:%f,\n", &actionSpeed) != 1) return offset;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "disappear:%d,\n", &tempData) != 1) return offset;
+	if (tempData == 0) disappearAtEnd = XFalse;
 	else disappearAtEnd = XTrue;
-	offset += XString::getCharPosition(str + offset,',') + 1;
-	if(sscanf(str + offset,"Overturn:%d,\n",&tempData) != 1) return offset;
-	if(tempData == 0) isOverturn = XFalse;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
+	if (sscanf(str + offset, "Overturn:%d,\n", &tempData) != 1) return offset;
+	if (tempData == 0) isOverturn = XFalse;
 	else isOverturn = XTrue;
-	offset += XString::getCharPosition(str + offset,',') + 1;
+	offset += XString::getCharPosition(str + offset, ',') + 1;
 	return offset;
 }
 XBool XFrameExParamData::getDataFromFile(FILE *fp)
 {
-	if(fp == NULL) return XFalse;
+	if (fp == NULL) return XFalse;
 	int tempData = 0;
-	if(fscanf(fp,"ResPos:%d,\n",&resourcePosition) != 1) return XFalse;
-	if(fscanf(fp,"ObjPos:%f|%f,\n",&pos.x,&pos.y) != 2) return XFalse;
-	if(fscanf(fp,"Loop:%d,\n",&tempData) != 1) return XFalse;
-	if(tempData == 0) loop = XFalse;
+	if (fscanf(fp, "ResPos:%d,\n", &resourcePosition) != 1) return XFalse;
+	if (fscanf(fp, "ObjPos:%f|%f,\n", &pos.x, &pos.y) != 2) return XFalse;
+	if (fscanf(fp, "Loop:%d,\n", &tempData) != 1) return XFalse;
+	if (tempData == 0) loop = XFalse;
 	else loop = XTrue;
-	if(fscanf(fp,"EndIMD:%d,\n",&tempData) != 1) return XFalse;
-	if(tempData == 0) endImmediately = XFalse;
+	if (fscanf(fp, "EndIMD:%d,\n", &tempData) != 1) return XFalse;
+	if (tempData == 0) endImmediately = XFalse;
 	else endImmediately = XTrue;
-	if(fscanf(fp,"StartFRM:%d,\n",&startFrame) != 1) return XFalse;
-	if(fscanf(fp,"Speed:%f,\n",&actionSpeed) != 1) return XFalse;
-	if(fscanf(fp,"disappear:%d,\n",&tempData) != 1) return XFalse;
-	if(tempData == 0) disappearAtEnd = XFalse;
+	if (fscanf(fp, "StartFRM:%d,\n", &startFrame) != 1) return XFalse;
+	if (fscanf(fp, "Speed:%f,\n", &actionSpeed) != 1) return XFalse;
+	if (fscanf(fp, "disappear:%d,\n", &tempData) != 1) return XFalse;
+	if (tempData == 0) disappearAtEnd = XFalse;
 	else disappearAtEnd = XTrue;
-	if(fscanf(fp,"Overturn:%d,\n",&tempData) != 1) return XFalse;
-	if(tempData == 0) isOverturn = XFalse;
+	if (fscanf(fp, "Overturn:%d,\n", &tempData) != 1) return XFalse;
+	if (tempData == 0) isOverturn = XFalse;
 	else isOverturn = XTrue;
 	return XTrue;
 }
-void XFrameEx::setPosition(float a,float b)
+void XFrameEx::setPosition(const XVec2& p)
 {
-	if(!m_isInited) return;
-	m_position.set(a,b);
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	if (!m_isInited) return;
+	m_position = p;
+	for (int i = 0; i < m_allKeyFramesSum; ++i)
 	{
 		m_pSprite[i].setPosition(m_position);
 	}
 	updateChildPos();
 }
-void XFrameEx::setScale(float a,float b)
+void XFrameEx::setScale(const XVec2& s)
 {
-	if(!m_isInited || a < 0 || b < 0) return;
-	m_scale.set(a,b);
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	if (!m_isInited || s.x < 0.0f || s.y < 0.0f) return;
+	m_scale = s;
+	for (int i = 0; i < m_allKeyFramesSum; ++i)
 	{
 		m_pSprite[i].setScale(m_scale);
 	}
@@ -757,50 +878,50 @@ void XFrameEx::setScale(float a,float b)
 }
 void XFrameEx::setAngle(float temp)
 {
-	if(!m_isInited) return;
+	if (!m_isInited) return;
 	m_angle = temp;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	for (int i = 0; i < m_allKeyFramesSum; ++i)
 	{
 		m_pSprite[i].setAngle(m_angle);
 	}
 	updateChildAngle();
 }
-void XFrameEx::setColor(float r,float g,float b,float a)
+void XFrameEx::setColor(const XFColor&c)
 {
-	if(!m_isInited) return;
-	if(r >= 0) m_color.fR = r;
-	if(g >= 0) m_color.fG = g;
-	if(b >= 0) m_color.fB = b;
-	if(a >= 0) m_color.fA = a;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	if (!m_isInited) return;
+	if (c.r >= 0.0f) m_color.r = c.r;
+	if (c.g >= 0.0f) m_color.g = c.g;
+	if (c.b >= 0.0f) m_color.b = c.b;
+	if (c.a >= 0.0f) m_color.a = c.a;
+	for (int i = 0; i < m_allKeyFramesSum; ++i)
 	{
-		m_pSprite[i].setColor(r,g,b,a);
+		m_pSprite[i].setColor(c);
 	}
 	updateChildColor();
 }
 void XFrameEx::setAlpha(float a)
 {
-	if(!m_isInited) return;
-	if(a >= 0) m_color.fA = a;
-	for(int i = 0;i < m_allKeyFramesSum;++ i)
+	if (!m_isInited) return;
+	if (a >= 0) m_color.a = a;
+	for (int i = 0; i < m_allKeyFramesSum; ++i)
 	{
 		m_pSprite[i].setAlpha(a);
 	}
 	updateChildAlpha();
 }
-XBool XFrameEx::isInRect(float a,float b)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+XBool XFrameEx::isInRect(const XVec2& p)	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	int temp = m_curFramesNumble;
-	if(m_curFramesNumble < 0 || m_curFramesNumble >= m_allFramesSum) temp = 0;
-	if(m_keyFrameArray[temp] < 0 || m_keyFrameArray[temp] >= m_allKeyFramesSum) return false;
-	return m_pSprite[m_keyFrameArray[temp]].isInRect(a,b);
+	if (m_curFramesNumble < 0.0f || m_curFramesNumble >= m_allFramesSum) temp = 0;
+	if (m_keyFrameArray[temp] < 0 || m_keyFrameArray[temp] >= m_allKeyFramesSum) return false;
+	return m_pSprite[m_keyFrameArray[temp]].isInRect(p);
 }
 //获取四个顶点的坐标，目前先不考虑旋转和缩放
-XVector2 XFrameEx::getBox(int order)
+XVec2 XFrameEx::getBox(int order)
 {
 	int temp = m_curFramesNumble;
-	if(m_curFramesNumble < 0 || m_curFramesNumble >= m_allFramesSum) temp = 0;
-	if(m_keyFrameArray[temp] < 0 || m_keyFrameArray[temp] >= m_allKeyFramesSum) return XVector2::zero;
+	if (m_curFramesNumble < 0.0f || m_curFramesNumble >= m_allFramesSum) temp = 0;
+	if (m_keyFrameArray[temp] < 0 || m_keyFrameArray[temp] >= m_allKeyFramesSum) return XVec2::zero;
 	return m_pSprite[m_keyFrameArray[temp]].getBox(order);
 }
 #if !WITH_INLINE_FILE

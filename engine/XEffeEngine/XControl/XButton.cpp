@@ -18,20 +18,20 @@ XButtonSkin::XButtonSkin()
 ,m_areaPointSum(0)
 ,m_pArea(NULL)
 {}
-XBool XButtonSkin::init(const char *normal,const char *down,const char *on,const char *disable,XResourcePosition resoursePosition)
+XBool XButtonSkin::init(const char *normal,const char *down,const char *on,const char *disable,XResPos resPos)
 {
 	if(m_isInited) return XFalse;
 	if(normal == NULL) return XFalse;
 	int ret = 1;
 
 	if(normal != NULL && 
-		(buttonNormal = createATextureData(normal,resoursePosition)) == NULL) ret = 0;
+		(buttonNormal = createATextureData(normal,resPos)) == NULL) ret = 0;
 	if(down != NULL && ret != 0 && 
-		(buttonDown = createATextureData(down,resoursePosition)) == NULL) ret = 0;
+		(buttonDown = createATextureData(down,resPos)) == NULL) ret = 0;
 	if(on != NULL && ret != 0 && 
-		(buttonOn = createATextureData(on,resoursePosition)) == NULL) ret = 0;
+		(buttonOn = createATextureData(on,resPos)) == NULL) ret = 0;
 	if(disable != NULL && ret != 0 && 
-		(buttonDisable = createATextureData(disable,resoursePosition)) == NULL) ret = 0;
+		(buttonDisable = createATextureData(disable,resPos)) == NULL) ret = 0;
 	
 	if(ret == 0)
 	{
@@ -42,10 +42,10 @@ XBool XButtonSkin::init(const char *normal,const char *down,const char *on,const
 	return XTrue;
 }
 #define BUTTON_CONFIG_FILENAME "Button.txt"
-bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+bool XButtonSkin::loadFromFolder(const char *filename,XResPos resPos)	//从文件夹中载入资源
 {
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,BUTTON_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,BUTTON_CONFIG_FILENAME);
 	FILE *fp = NULL;
 	if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
 	//下面开始依次读取数据
@@ -59,7 +59,7 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		fclose(fp);
@@ -74,7 +74,7 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonDown = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -90,7 +90,7 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonOn = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -106,7 +106,7 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -123,7 +123,7 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 	if(fscanf(fp,"%d,",&m_areaPointSum) != 1) {fclose(fp);return XFalse;}
 	if(m_areaPointSum > 0)
 	{
-		m_pArea = XMem::createArrayMem<XVector2>(m_areaPointSum);	//rational:MLK
+		m_pArea = XMem::createArrayMem<XVec2>(m_areaPointSum);	//rational:MLK
 		if(m_pArea == NULL)
 		{
 			releaseTex();
@@ -141,10 +141,10 @@ bool XButtonSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	
 	fclose(fp);
 	return true;
 }
-bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+bool XButtonSkin::loadFromPacker(const char *filename,XResPos resPos)	//从压缩包中载入资源
 {
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,BUTTON_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,BUTTON_CONFIG_FILENAME);
 	unsigned char *p = XResPack.getFileData(tempFilename);
 	if(p == NULL) return XFalse;
 	//下面开始依次读取数据
@@ -161,7 +161,7 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		XMem::XDELETE_ARRAY(p);
@@ -178,7 +178,7 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonDown = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -196,7 +196,7 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonOn = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -214,7 +214,7 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((buttonDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -234,7 +234,7 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
 	if(m_areaPointSum > 0)
 	{
-		m_pArea = XMem::createArrayMem<XVector2>(m_areaPointSum);
+		m_pArea = XMem::createArrayMem<XVec2>(m_areaPointSum);
 		if(m_pArea == NULL)
 		{
 			releaseTex();
@@ -253,31 +253,31 @@ bool XButtonSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	
 	XMem::XDELETE_ARRAY(p);
 	return true;
 }
-bool XButtonSkin::loadFromWeb(const char *filename,XResourcePosition resPos)		//从网页中读取资源
+bool XButtonSkin::loadFromWeb(const char *filename,XResPos resPos)		//从网页中读取资源
 {
 	return false;
 }
 
-XBool XButtonSkin::initEx(const char *filename,XResourcePosition resoursePosition)
+XBool XButtonSkin::initEx(const char *filename,XResPos resPos)
 {
 	if(m_isInited) return XFalse;
 	if(filename == NULL) return XFalse;
 	//先打开配置文件
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
-		if(!loadFromPacker(filename,resoursePosition)) return false;
+	case RES_LOCAL_PACK:
+		if(!loadFromPacker(filename,resPos)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
-		if(!loadFromFolder(filename,resoursePosition)) return false;
+	case RES_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_WEB:
-		if(!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_WEB:
+		if(!loadFromWeb(filename,resPos)) return false;
 		break;
-	case RESOURCE_AUTO:
-		if(!loadFromPacker(filename,resoursePosition) && !loadFromFolder(filename,resoursePosition) &&
-			!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_AUTO:
+		if(!loadFromPacker(filename,resPos) && !loadFromFolder(filename,resPos) &&
+			!loadFromWeb(filename,resPos)) return false;
 		break;
 	}
 	m_isInited = XTrue;
@@ -286,27 +286,28 @@ XBool XButtonSkin::initEx(const char *filename,XResourcePosition resoursePositio
 
 XButton::XButton()
 	:m_isInited(XFalse)
-	,m_buttonNormal(NULL)		
-	,m_buttonDown(NULL)	
-	,m_buttonOn(NULL)		
-	,m_buttonDisable(NULL)	
-	,m_hotKey(-1)
-	,m_curButtonState(BUTTON_STATE_NORMAL)
-	,m_upMousePoint(0,0)
-	,m_resInfo(NULL)
-	,m_withoutTex(XFalse)
-	,m_withNormalIcon(XFalse)
-	,m_withDisableIcon(XFalse)
-	,m_iconSize(1.0f,1.0f)
-	,m_iconPosition(0.0f,0.0f)
-	,m_symbolType(BTN_SYMBOL_NULL)
-	,m_buttonStyle(BTN_STYLE_NORMAL)
-	,m_isCheck(false)
+	, m_buttonNormal(NULL)
+	, m_buttonDown(NULL)
+	, m_buttonOn(NULL)
+	, m_buttonDisable(NULL)
+	, m_hotKey(-1)
+	, m_curButtonState(BUTTON_STATE_NORMAL)
+	, m_upMousePoint(-1.0f)
+	, m_resInfo(NULL)
+	, m_withoutTex(XFalse)
+	, m_withNormalIcon(XFalse)
+	, m_withDisableIcon(XFalse)
+	, m_iconSize(1.0f)
+	, m_iconPosition(0.0f)
+	, m_symbolType(BTN_SYMBOL_NULL)
+	, m_buttonStyle(BTN_STYLE_NORMAL)
+	, m_isCheck(false)
 {
 	m_ctrlType = CTRL_OBJ_BUTTON;
 }
 void XButton::release()
 {
+	if (!m_isInited) return;
 	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(this);
@@ -316,6 +317,7 @@ void XButton::release()
 		XResManager.releaseResource(m_resInfo);
 		m_resInfo = NULL;
 	}
+	m_isInited = false;
 }
 void XButton::setTexture(const XButtonSkin& tex)
 {
@@ -330,7 +332,7 @@ void XButton::setTexture(const XButtonSkin& tex)
 	if(tex.buttonDisable != NULL) m_buttonDisable = tex.buttonDisable;
 	else m_buttonDisable = tex.buttonNormal;
 }
-XBool XButton::initProc(const XFontUnicode &font,const char *caption,float captionSize)
+XBool XButton::initProc(const XFontUnicode& font,const char *caption,float captionSize)
 {
 	if(!m_caption.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
@@ -338,28 +340,26 @@ XBool XButton::initProc(const XFontUnicode &font,const char *caption,float capti
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_MIDDLE); //设置字体居中对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	if(m_curButtonState == BUTTON_STATE_DISABLE) m_caption.setColor((m_textColor * m_color).anti());
 	else m_caption.setColor(m_textColor * m_color);							//设置字体的颜色为黑色
 
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	//这里距中对齐，所以这里的位置需要计算
 	m_caption.setString(caption);
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
-	m_textSize.set(captionSize,captionSize);
-	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_caption.setPosition(m_position + m_textPosition * m_scale);
+	m_textSize.set(captionSize);
+	m_caption.setScale(m_textSize * m_scale);
 
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
 
 	m_curButtonState = BUTTON_STATE_NORMAL;
 
 	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,BTN_INIT);
 	else XCtrlManager.eventProc(m_objectID,BTN_INIT);
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -367,10 +367,10 @@ XBool XButton::initProc(const XFontUnicode &font,const char *caption,float capti
 #endif
 	return XTrue;
 }
-XBool XButton::init(const XVector2& position,	//控件所在的位置
+XBool XButton::init(const XVec2& position,	//控件所在的位置
 		const XRect& Area,				//控件鼠标响应的区间
 		const XButtonSkin &tex,		//控件的贴图信息
-		const char *caption,const XFontUnicode &font,float captionSize,const XVector2 &textPosition)	//控件标题的相关信息
+		const char *caption,const XFontUnicode& font,float captionSize,const XVec2& textPosition)	//控件标题的相关信息
 {
 	if(m_isInited) return XTrue;	//如果已经初始化了则防止重复初始化
 	if(captionSize <= 0) return XFalse;
@@ -403,15 +403,15 @@ XBool XButton::init(const XVector2& position,	//控件所在的位置
 	m_isInited = XTrue;
 	return XTrue;
 }
-XBool XButton::initWithoutSkin(const char *caption,const XFontUnicode &font,
-		float captionSize,const XRect& area,const XVector2 &textPosition)	//没有贴图的形式,直接用写屏绘图函数绘图(尚未实现，未完成工作之一)
+XBool XButton::initWithoutSkin(const char *caption,const XFontUnicode& font,
+		float captionSize,const XRect& area,const XVec2& textPosition)	//没有贴图的形式,直接用写屏绘图函数绘图(尚未实现，未完成工作之一)
 {
 	if(m_isInited) return XTrue;	//如果已经初始化了则防止重复初始化
-	if(captionSize <= 0) return XFalse;
-	if(area.getHeight() <= 0 || area.getWidth() <= 0) return XFalse;	//按钮的控件必须要有一个鼠标响应区域
+	if(captionSize <= 0 ||
+		area.getHeight() <= 0 || area.getWidth() <= 0) return XFalse;	//按钮的控件必须要有一个鼠标响应区域
 	m_comment.init();
 	m_mouseRect = area;
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	m_textPosition = textPosition;
 	m_withoutTex = XTrue;
 
@@ -420,74 +420,81 @@ XBool XButton::initWithoutSkin(const char *caption,const XFontUnicode &font,
 	m_isInited = XTrue;
 	return XTrue;
 }
-void XButton::setPosition(float x,float y)
+void XButton::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;
-	m_position.set(x,y);
-	XVector2 tmpPos = m_position;
-	XVector2 tmpSize = m_scale;
+	m_position = p;
+	XVec2 tmpPos = m_position;
+	XVec2 tmpSize = m_scale;
 	if(m_isInAction && !m_actionMoveData.getIsEnd())
 	{
-		tmpPos.set(m_mouseRect.getWidth(),m_mouseRect.getHeight());
+		tmpPos = m_mouseRect.getSize();
 		tmpPos = tmpPos * (m_actionMoveData.getCurData() * m_scale - m_scale) * 0.5f;
 		tmpPos = m_position - tmpPos;
 		tmpSize = m_actionMoveData.getCurData() * m_scale;
 	}
-	m_curMouseRect.set(tmpPos.x + m_mouseRect.left * tmpSize.x,tmpPos.y + m_mouseRect.top * tmpSize.y,
-		tmpPos.x + m_mouseRect.right * tmpSize.x,tmpPos.y + m_mouseRect.bottom * tmpSize.y);
-	m_caption.setPosition(tmpPos.x + m_textPosition.x * tmpSize.x,tmpPos.y + m_textPosition.y * tmpSize.y);
+	m_curMouseRect.set(tmpPos + m_mouseRect.getLT() * tmpSize,
+		tmpPos + m_mouseRect.getRB() * tmpSize);
+	m_caption.setPosition(tmpPos + m_textPosition * tmpSize);
 	if(!m_withoutTex) m_sprite.setPosition(tmpPos);
 
 	if(m_withNormalIcon) m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
 	if(m_withDisableIcon) m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
 
-	mouseProc(m_upMousePoint.x,m_upMousePoint.y,MOUSE_MOVE);
+	mouseProc(m_upMousePoint,MOUSE_MOVE);
 	updateChildPos();
 }
-void XButton::setScale(float x,float y)
+void XButton::setScale(const XVec2& s)
 {
 	if(!m_isInited ||
-		x <= 0 || y <= 0) return;
-	m_scale.set(x,y);
-	XVector2 tmpPos = m_position;
-	XVector2 tmpSize = m_scale;
+		s.x <= 0 || s.y <= 0) return;
+	m_scale = s;
+	XVec2 tmpPos = m_position;
+	XVec2 tmpSize = m_scale;
 	if(m_isInAction && !m_actionMoveData.getIsEnd())
 	{
-		tmpPos.set(m_mouseRect.getWidth(),m_mouseRect.getHeight());
+		tmpPos = m_mouseRect.getSize();
 		tmpPos = tmpPos * (m_actionMoveData.getCurData() * m_scale - m_scale) * 0.5f;
 		tmpPos = m_position - tmpPos;
 		tmpSize = m_actionMoveData.getCurData() * m_scale;
 	}
-	m_curMouseRect.set(tmpPos.x + m_mouseRect.left * tmpSize.x,tmpPos.y + m_mouseRect.top * tmpSize.y,
-		tmpPos.x + m_mouseRect.right * tmpSize.x,tmpPos.y + m_mouseRect.bottom * tmpSize.y);
-	m_caption.setPosition(tmpPos.x + m_textPosition.x * tmpSize.x,tmpPos.y + m_textPosition.y * tmpSize.y);
-	m_caption.setScale(m_textSize.x * tmpSize.x,m_textSize.y * tmpSize.y);
+	m_curMouseRect.set(tmpPos + m_mouseRect.getLT() * tmpSize,
+		tmpPos + m_mouseRect.getRB() * tmpSize);
+	m_caption.setPosition(tmpPos + m_textPosition * tmpSize);
+	m_caption.setScale(m_textSize * tmpSize);
 	if(!m_withoutTex) m_sprite.setScale(tmpSize);
 
-	if(m_withNormalIcon) m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
-	if(m_withNormalIcon) m_normalIcon.setScale(m_iconSize * tmpSize);
-	if(m_withDisableIcon) m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
-	if(m_withDisableIcon) m_disableIcon.setScale(m_iconSize * tmpSize);
+	if (m_withNormalIcon)
+	{
+		m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
+		m_normalIcon.setScale(m_iconSize * tmpSize);
+	}
+	if (m_withDisableIcon)
+	{
+		m_normalIcon.setPosition(tmpPos + m_iconPosition * tmpSize);
+		m_disableIcon.setScale(m_iconSize * tmpSize);
+	}
 
-	mouseProc(m_upMousePoint.x,m_upMousePoint.y,MOUSE_MOVE);
+	mouseProc(m_upMousePoint,MOUSE_MOVE);
 	updateChildScale();
 }
-XBool XButton::mouseProc(float x,float y,XMouseState mouseState)
+XBool XButton::mouseProc(const XVec2& p,XMouseState mouseState)
 {
-	m_upMousePoint.set(x,y);
+	m_upMousePoint = p;
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible) return XFalse; 	//如果不可见直接退出
 	if(m_withAction && m_isInAction) return XTrue;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
+	if(m_isSilent) return XFalse;
 	
-	if(m_curMouseRect.isInRect(x,y))
+	if(m_curMouseRect.isInRect(p))
 	{//鼠标动作在范围内
 		if(!m_isMouseInRect)
 		{
 			m_isMouseInRect = XTrue;
 			m_comment.setShow();
-			setCommentPos(x,y + 16.0f);
 		}
+		m_comment.updatePosition(p + XVec2(0.0f, 16.0f));
 		if(mouseState != MOUSE_MOVE && m_comment.getIsShow())
 			m_comment.disShow();	//鼠标的任意操作都会让说明框消失
 		if(m_isEnable)
@@ -502,8 +509,8 @@ XBool XButton::mouseProc(float x,float y,XMouseState mouseState)
 				if(m_withAction)
 				{//这里测试一个动态效果
 					m_isInAction = XTrue;
-					m_actionMoveData.set(1.0f,1.1f,0.02f,MOVE_DATA_MODE_SIN_MULT,1);
-					m_lightMD.set(1.0f,2.0f,0.002f,MOVE_DATA_MODE_SIN_MULT);
+					m_actionMoveData.set(1.0f,1.1f,0.02f,MD_MODE_SIN_MULT,1);
+					m_lightMD.set(1.0f,2.0f,0.002f,MD_MODE_SIN_MULT);
 					m_oldPos = m_position;
 					m_oldSize = m_scale;
 				}
@@ -532,12 +539,10 @@ XBool XButton::mouseProc(float x,float y,XMouseState mouseState)
 			m_isMouseInRect = XFalse;
 			m_comment.disShow();
 		}
-		if(m_isEnable)
+		if(m_isEnable &&
+			(m_curButtonState == BUTTON_STATE_ON || m_curButtonState == BUTTON_STATE_DOWN))
 		{
-			if(m_curButtonState == BUTTON_STATE_ON || m_curButtonState == BUTTON_STATE_DOWN)
-			{
-				m_curButtonState = BUTTON_STATE_NORMAL;
-			}
+			m_curButtonState = BUTTON_STATE_NORMAL;
 		}
 	}
 	return XTrue;
@@ -549,6 +554,7 @@ XBool XButton::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
 	if(m_withAction && m_isInAction) return XTrue;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
+	if(m_isSilent) return XFalse;
 
 	if(keyState == KEY_STATE_UP &&	//按键弹起时才作相应
 		m_curButtonState == BUTTON_STATE_NORMAL &&	//按钮只有在普通状态下才能响应快捷键，防止冲突
@@ -575,12 +581,11 @@ void XButton::draw()
 		!m_isVisible) return;	//如果不可见直接退出
 	if(m_withoutTex)
 	{
-		XVector2 tmpPos = m_position;
-		XVector2 tmpSize = m_scale;
+		XVec2 tmpPos = m_position;
+		XVec2 tmpSize = m_scale;
 		if(m_isInAction && !m_actionMoveData.getIsEnd())
 		{
-			tmpPos.set(m_mouseRect.getWidth(),m_mouseRect.getHeight());
-			tmpPos = tmpPos * (m_actionMoveData.getCurData() * m_scale - m_scale) * 0.5f;
+			tmpPos = m_mouseRect.getSize() * (m_actionMoveData.getCurData() * m_scale - m_scale) * 0.5f;
 			tmpPos = m_position - tmpPos;
 			tmpSize = m_actionMoveData.getCurData() * m_scale;
 		}
@@ -589,39 +594,39 @@ void XButton::draw()
 		{
 		case BUTTON_STATE_NORMAL:
 			if(m_buttonStyle == BTN_STYLE_CHECK && m_isCheck)
-				XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-					XVector2(m_mouseRect.getWidth() * tmpSize.x,
-					m_mouseRect.getHeight() * tmpSize.y),XCCS::downColor * m_color,true);//,true); 
-			//		m_mouseRect.getHeight() * tmpSize.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);//,true); 
+				XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+					m_mouseRect.getSize() * tmpSize,
+					XCCS::downColor * m_color,true);//,true); 
+			//		m_mouseRect.getHeight()) * tmpSize,0.5f * m_color.r,0.5f * m_color.g,0.5f * m_color.b,m_color.a,true);//,true); 
 			else
-				XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-					XVector2(m_mouseRect.getWidth() * tmpSize.x,
-					m_mouseRect.getHeight() * tmpSize.y),XCCS::normalColor * m_color,true);//,true); 
-			//		m_mouseRect.getHeight() * tmpSize.y),0.75f * m_color.fR,0.75f * m_color.fG,0.75f * m_color.fB,m_color.fA,true);//,true); 
+				XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+					m_mouseRect.getSize() * tmpSize,
+					XCCS::normalColor * m_color,true);//,true); 
+			//		m_mouseRect.getHeight()) * tmpSize,0.75f * m_color.r,0.75f * m_color.g,0.75f * m_color.b,m_color.a,true);//,true); 
 			break;
 		case BUTTON_STATE_DOWN:
-			XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-				XVector2(m_mouseRect.getWidth() * tmpSize.x,
-				m_mouseRect.getHeight() * tmpSize.y),XCCS::downColor * m_color,true);//,true); 
-		//		m_mouseRect.getHeight() * tmpSize.y),0.5f * m_color.fR,0.5f * m_color.fG,0.5f * m_color.fB,m_color.fA,true);//,true); 
+			XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+				m_mouseRect.getSize() * tmpSize,
+				XCCS::downColor * m_color,true);//,true); 
+		//		m_mouseRect.getHeight()) * tmpSize,0.5f * m_color.r,0.5f * m_color.g,0.5f * m_color.b,m_color.a,true);//,true); 
 			break;
 		case BUTTON_STATE_ON:
 			if(m_buttonStyle == BTN_STYLE_CHECK && m_isCheck)
-				XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-					XVector2(m_mouseRect.getWidth() * tmpSize.x,
-					m_mouseRect.getHeight() * tmpSize.y),XCCS::downColor * m_color,true);//,true);
-			//		m_mouseRect.getHeight() * tmpSize.y),0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA,true);//,true); 
+				XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+					m_mouseRect.getSize() * tmpSize,
+					XCCS::downColor * m_color,true);//,true);
+			//		m_mouseRect.getHeight()) * tmpSize,0.85f * m_color.r,0.85f * m_color.g,0.85f * m_color.b,m_color.a,true);//,true); 
 			else
-				XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-					XVector2(m_mouseRect.getWidth() * tmpSize.x,
-					m_mouseRect.getHeight() * tmpSize.y),XCCS::onColor * m_color,true);//,true);
-			//		m_mouseRect.getHeight() * tmpSize.y),0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA,true);//,true); 
+				XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+					m_mouseRect.getSize() * tmpSize,
+					XCCS::onColor * m_color,true);//,true);
+			//		m_mouseRect.getHeight()) * tmpSize,0.85f * m_color.r,0.85f * m_color.g,0.85f * m_color.b,m_color.a,true);//,true); 
 			break;
 		case BUTTON_STATE_DISABLE:
-			XRender::drawFillBoxExA(tmpPos + XVector2(m_mouseRect.left * tmpSize.x,m_mouseRect.top * tmpSize.y),
-				XVector2(m_mouseRect.getWidth() * tmpSize.x,
-				m_mouseRect.getHeight() * tmpSize.y),XCCS::disableColor * m_color,true,false,true);
-		//		m_mouseRect.getHeight() * tmpSize.y),0.35f * m_color.fR,0.35f * m_color.fG,0.35f * m_color.fB,m_color.fA,true);//,true); 
+			XRender::drawFillRectExA(tmpPos + m_mouseRect.getLT() * tmpSize,
+				m_mouseRect.getSize() * tmpSize,
+				XCCS::disableColor * m_color,true,false,true);
+		//		m_mouseRect.getHeight()) * tmpSize,0.35f * m_color.r,0.35f * m_color.g,0.35f * m_color.b,m_color.a,true);//,true); 
 			break;
 		}
 	}else
@@ -653,15 +658,19 @@ void XButton::draw()
 	//下面显示符号
 	if(m_symbolType != BTN_SYMBOL_NULL)
 	{
-		float tmpSize = XEE_Min(m_curMouseRect.getHeight(),m_curMouseRect.getWidth()) * 0.5f * 0.65f;
+		float tmpSize = (std::min)(m_curMouseRect.getHeight(),m_curMouseRect.getWidth()) * 0.5f * 0.65f;
 		if(tmpSize <= 0.0f) tmpSize = 1.0f;
 		switch(m_symbolType)
 		{
+		case BTN_SYMBOL_LINE:		//减号
+			XRender::drawLine(m_caption.getPosition() + XVec2(-tmpSize,0.0f),
+				m_caption.getPosition() + XVec2(tmpSize,0.0f),2.0f,m_caption.getColor());
+			break;
 		case BTN_SYMBOL_CIRCLE:		//圆形
 			XRender::drawCircleLine(m_caption.getPosition(),tmpSize,36,2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_RECT:		//矩形
-			XRender::drawRect(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawRect(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_CROSS:		//十字架
 			XRender::drawCross(m_caption.getPosition(),tmpSize,2.0f,m_caption.getColor());
@@ -670,22 +679,37 @@ void XButton::draw()
 			XRender::drawTriangle(m_caption.getPosition(),tmpSize,2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_MASK_RIGHT:	//对号
-			XRender::drawMaskRight(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawMaskRight(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_MASK_WRONG:	//错号
-			XRender::drawMaskWrong(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawMaskWrong(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_LEFT:		//左
-			XRender::drawLeft(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawLeft(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_RIGHT:		//右
-			XRender::drawRight(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawRight(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_UP:			//上
-			XRender::drawUp(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawUp(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
 			break;
 		case BTN_SYMBOL_DOWN:		//下
-			XRender::drawDown(m_caption.getPosition(),XVector2(tmpSize,tmpSize),2.0f,m_caption.getColor());
+			XRender::drawDown(m_caption.getPosition(),XVec2(tmpSize),2.0f,m_caption.getColor());
+			break;
+		case BTN_SYMBOL_SAVE:
+			XRender::drawSave(m_caption.getPosition(), XVec2(tmpSize), 2.0f, m_caption.getColor());
+			break;
+		case BTN_SYMBOL_LOAD:
+			XRender::drawLoad(m_caption.getPosition(), XVec2(tmpSize), 2.0f, m_caption.getColor());
+			break;
+		case BTN_SYMBOL_DEF:
+			XRender::drawDefault(m_caption.getPosition(), XVec2(tmpSize), 2.0f, m_caption.getColor());
+			break;
+		case BTN_SYMBOL_DOWNLOAD:
+			XRender::drawDownload(m_caption.getPosition(), XVec2(tmpSize), 2.0f, m_caption.getColor());
+			break;
+		case BTN_SYMBOL_UPDATE:
+			XRender::drawUpdate(m_caption.getPosition(), XVec2(tmpSize), 2.0f, m_caption.getColor());
 			break;
 		}
 	}
@@ -693,8 +717,7 @@ void XButton::draw()
 XBool XButton::setACopy(const XButton &temp)
 {
 	if(& temp == this) return XTrue;	//防止自身赋值
-	if(!temp.m_isInited) return XFalse;
-	if(!XControlBasic::setACopy(temp)) return XFalse;
+	if(!temp.m_isInited || !XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
 	{
 		XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
@@ -757,11 +780,11 @@ XBool XButton::setACopy(const XButton &temp)
 	m_symbolType = temp.m_symbolType;
 	return XTrue;
 }
-void XButton::setNormalIcon(const char * filename,XResourcePosition resoursePosition)
+void XButton::setNormalIcon(const char * filename,XResPos resPos)
 {
 	if(filename == NULL) return;
 	if(m_withNormalIcon) m_normalIcon.release();
-	if(m_normalIcon.init(filename,resoursePosition,POINT_LEFT_TOP))
+	if(m_normalIcon.init(filename,resPos,POINT_LEFT_TOP))
 	{
 #if WITH_OBJECT_MANAGER
 		XObjManager.decreaseAObject(&m_normalIcon);
@@ -786,11 +809,11 @@ void XButton::setNormalIcon(const XSprite &icon)
 	m_normalIcon.setPosition(m_position + m_iconPosition * m_scale);
 	m_normalIcon.setScale(m_iconSize * m_scale);
 }
-void XButton::setDisableIcon(const char * filename,XResourcePosition resoursePosition)
+void XButton::setDisableIcon(const char * filename,XResPos resPos)
 {
 	if(filename == NULL) return;
 	if(m_withDisableIcon) m_disableIcon.release();
-	if(m_disableIcon.init(filename,resoursePosition,POINT_LEFT_TOP))
+	if(m_disableIcon.init(filename,resPos,POINT_LEFT_TOP))
 	{
 #if WITH_OBJECT_MANAGER
 		XObjManager.decreaseAObject(&m_disableIcon);
@@ -835,31 +858,17 @@ void XButton::update(float stepTime)
 	{//处于动作过程中计算动作的实施
 		m_actionMoveData.move(stepTime);
 		if(m_actionMoveData.getIsEnd())
-		{
 			m_isInAction = false;	//动作播放完成
-			setScale(m_scale);
-			setPosition(m_position);
-		//+	setScale(m_oldSize);		//注释的这几行会产生弹跳效果，由于弹跳效果会影响到控件的位置设置，所以这里暂时屏蔽这个效果
-		//+	setPosition(m_oldPos);
-		}else
-		{
-			setScale(m_scale);
-			setPosition(m_position);
-		//+	setScale(m_actionMoveData.getCurData() * m_oldSize);
-		//+	XVector2 tmp(m_mouseRect.getWidth(),m_mouseRect.getHeight());
-		//+	tmp = tmp * (m_actionMoveData.getCurData() * m_oldSize - m_oldSize) * 0.5f;
-		//+	setPosition(m_oldPos - tmp);
-		}
+		setScale(m_scale);
+		setPosition(m_position);
 	}
 	//扩散效果的表现
 	if(!m_lightMD.getIsEnd())
 	{
 		m_lightMD.move(stepTime);
-		XVector2 pos(m_oldPos.x + m_mouseRect.getWidth() * m_oldSize.x * 0.5f,
-			m_oldPos.y + m_mouseRect.getHeight() * m_oldSize.y * 0.5f);
-		XVector2 size(m_mouseRect.getWidth() * m_oldSize.x * m_lightMD.getCurData() * 0.5f,
-			m_mouseRect.getHeight() * m_oldSize.y * m_lightMD.getCurData() * 0.5f);
-		m_lightRect.set(pos.x - size.x,pos.y - size.y,pos.x + size.x,pos.y + size.y);
+		XVec2 pos = m_oldPos + m_mouseRect.getSize() * m_oldSize * 0.5f;
+		XVec2 size = m_mouseRect.getSize() * m_oldSize * m_lightMD.getCurData() * 0.5f;
+		m_lightRect.set(pos - size,pos + size);
 	}
 }
 void XButton::setWidth(int width)
@@ -867,10 +876,10 @@ void XButton::setWidth(int width)
 	if(!m_withoutTex || width <= 0 || !m_isInited) return;	//如果使用贴图，则这里直接返回
 	m_mouseRect.right = m_mouseRect.left + width;
 	m_textPosition.x = m_mouseRect.getCenter().x;
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
+	m_caption.setPosition(m_position + m_textPosition * m_scale);
 
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
 }
 #if !WITH_INLINE_FILE
 #include "XButton.inl"

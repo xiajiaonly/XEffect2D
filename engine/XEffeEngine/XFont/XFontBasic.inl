@@ -1,15 +1,15 @@
-INLINE XBool XFontBasic::isInRect(float x,float y)
+INLINE XBool XFontBasic::isInRect(const XVec2& p)
 {
 	if(!m_isInited) return XFalse;
-	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(p,getBox(0),getBox(1),getBox(2),getBox(3));
 }
 INLINE XBool XFontBasic::setString(const char *p)	//设置显示的字符串
 {
 	if(p == NULL) return XFalse;
 	if(strcmp(p,m_string) == 0) return XTrue;	//如果是相同的字符串则不设置
-	if(strlen(p) < m_maxStringLen && m_maxStringLen >= 0)
+	if(m_maxStringLen >= 0 && strlen(p) < m_maxStringLen)
 	{
-		strcpy(m_string,p);
+		strcpy_s(m_string,m_maxStringLen,p);
 	}else
 	{
 		assert(m_maxStringLen > 0);
@@ -17,30 +17,31 @@ INLINE XBool XFontBasic::setString(const char *p)	//设置显示的字符串
 		m_string[m_maxStringLen - 1] = '\0';	//给字符串一个结束符
 		if(XString::isAtUnicodeEnd(m_string,m_maxStringLen - 3))
 		{
-			m_string[m_maxStringLen - 3] = '.';
-			m_string[m_maxStringLen - 2] = '.';
-			m_string[m_maxStringLen - 1] = '\0';
+			memcpy(m_string + m_maxStringLen - 3, &"..", 3);
+			//m_string[m_maxStringLen - 3] = '.';
+			//m_string[m_maxStringLen - 2] = '.';
+			//m_string[m_maxStringLen - 1] = '\0';
 		}else
 		{
-			m_string[m_maxStringLen - 4] = '.';
-			m_string[m_maxStringLen - 3] = '.';
-			m_string[m_maxStringLen - 2] = '\0';
+			memcpy(m_string + m_maxStringLen - 4, &"..", 3);
+			//m_string[m_maxStringLen - 4] = '.';
+			//m_string[m_maxStringLen - 3] = '.';
+			//m_string[m_maxStringLen - 2] = '\0';
 		}
 		//strlen(p) >= m_maxStringLen
 	}
 	m_needUpdateData = XTrue;
 	return XTrue;
 }
-INLINE void XFontBasic::setPosition(float x,float y)			//设置字体显示的位置
+INLINE void XFontBasic::setPosition(const XVec2& p)			//设置字体显示的位置
 {
-	m_setPosition.set(x,y);
+	m_setPosition = p;
 	updateChildPos();
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
+	int x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
 		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
+	int y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
 		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set((int)(tempPosition.x),(int)(tempPosition.y));
+	m_position.set(x,y);
 
 	m_needUpdateData = XTrue;
 }
@@ -62,30 +63,29 @@ INLINE void XFontBasic::setAngle(float angle)	//设置字体显示的角度
 	m_sprite.setAngle(angle);
 	m_angleSin = sin(angle * DEGREE2RADIAN);
 	m_angleCos = cos(angle * DEGREE2RADIAN);
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos
+	int x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos
 		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
+	int y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
 		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set((int)(tempPosition.x),(int)(tempPosition.y));
+	m_position.set(x, y);
 
 	m_needUpdateData = XTrue;
 }
-INLINE void XFontBasic::setScale(float x,float y)	//设置字体的显示大小
+INLINE void XFontBasic::setScale(const XVec2& s)	//设置字体的显示大小
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	updateChildScale();
-	m_sprite.setScale(x,y);
+	m_sprite.setScale(s);
 	m_needUpdateData = XTrue;
 }
-INLINE void XFontBasic::setRotateBasePoint(float x,float y)
+INLINE void XFontBasic::setRotateBasePoint(const XVec2& r)
 {
-	m_rotateBasicPoint.set(x,y);
+	m_rotateBasicPoint = r;
 	setPosition(m_setPosition);
 }
-INLINE void XFontBasic::setColor(float r,float g,float b,float a)
+INLINE void XFontBasic::setColor(const XFColor& c)
 {
-	m_sprite.setColor(r,g,b,a);
+	m_sprite.setColor(c);
 	updateChildColor();
 }
 INLINE void XFontBasic::setAlpha(float a) 
@@ -103,9 +103,9 @@ INLINE void XFontBasic::disVisible()
 	m_isVisible = XFalse;
 	updateChildVisible();
 }
-INLINE void XFontBasic::setClipRect(float left,float top,float right,float bottom)
+INLINE void XFontBasic::setClipRect(const XRect& temp)
 {
-	m_clipRect.set(left,top,right,bottom);
+	m_clipRect = temp;
 	m_isCliped = XTrue;
 	m_needUpdateData = XTrue;
 }

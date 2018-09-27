@@ -4,16 +4,11 @@ INLINE float XTerrain::getHeight(float x,float z) const
 	if(z < 0 || z >= m_height) return 0.0f;
 	return m_terrainData[(int)(z * m_width + x)];
 }
-INLINE XVector2 XTerrain::getTexturePosition(float x,float z) const
+INLINE XVec2 XTerrain::getTexturePosition(float x,float z) const
 {
-	if(x < 0) x = 0;
-	if(x >= m_width) x = m_width;
-	if(z < 0) z = 0;
-	if(z >= m_height) z = m_height;
-	//return XVector2(x,z) / m_texture.textureSize;
-	return XVector2(x / m_width,z / m_height);
+	return XVec2(XMath::clamp<float>(x, 0.0f, m_width) / m_width, XMath::clamp<float>(z, 0.0f, m_height) / m_height);
 }
-INLINE void XTerrain::updateTexture(const unsigned char * data)
+INLINE void XTerrain::updateTexture(const void * data)
 {
 	if(data == NULL ||
 		!m_isInited ||
@@ -47,14 +42,14 @@ INLINE void XTerrain::setReflectRate(float rate)
 	if(rate > 1.0f) rate = 1.0f;
 	m_reflectRate = rate;
 }
-INLINE XVector3 XTerrain::myNormalize(float x,float z) 
+INLINE XVec3 XTerrain::myNormalize(float x,float z) 
 {//经过特定优化的归一化函数
 	float d = 1.0f / sqrt(x * x + 1.0f + z * z);
-	return XVector3(x * d,d,z * d);
+	return XVec3(x * d,d,z * d);
 }
-INLINE XVector3 XTerrain::getMyNormal(int x,bool flag)	
+INLINE XVec3 XTerrain::getMyNormal(int x,bool flag)	
 {//经过特定优化的求法线函数
-	//XVector3 w,v;
+	//XVec3 w,v;
 	if(flag) return myNormalize(m_newH[x] - m_newH[x + 1],m_newH[x] - m_newH[x + m_width]);	//上半个面
 	else return myNormalize(m_newH[x + m_width] - m_newH[x + 1 + m_width],m_newH[x + 1] - m_newH[x + 1 + m_width]);	//下半个面
 }

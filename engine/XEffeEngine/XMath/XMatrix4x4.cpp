@@ -7,120 +7,120 @@
 #include "XMatrix4x4.h"
 #include "XVector4.h"
 namespace XE{
-const XMatrix4x4 XMatrix4x4::identity(1.0f,0.0f,0.0f,0.0f, 0.0f,1.0f,0.0f,0.0f, 0.0f,0.0f,1.0f,0.0f, 0.0f,0.0f,0.0f,1.0f);	//单位矩阵
+const XMat4 XMat4::identity(1.0f,0.0f,0.0f,0.0f, 0.0f,1.0f,0.0f,0.0f, 0.0f,0.0f,1.0f,0.0f, 0.0f,0.0f,0.0f,1.0f);	//单位矩阵
 
-XMatrix4x4 XMatrix4x4::operator*(const XMatrix4x4 & rhs) const
+XMat4 XMat4::operator*(const XMat4 & rhs) const
 {
 	//Optimise for matrices in which bottom row is (0, 0, 0, 1) in both matrices
 	if(data[3] == 0.0f && data[7] == 0.0f && data[11] == 0.0f && data[15] == 1.0f &&
 		rhs.data[3] == 0.0f && rhs.data[7] == 0.0f &&
 		rhs.data[11] == 0.0f && rhs.data[15] == 1.0f)
 	{
-		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
-							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2],
-							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2],
-							0.0f,
-							data[0]*rhs.data[4]+data[4]*rhs.data[5]+data[8]*rhs.data[6],
-							data[1]*rhs.data[4]+data[5]*rhs.data[5]+data[9]*rhs.data[6],
-							data[2]*rhs.data[4]+data[6]*rhs.data[5]+data[10]*rhs.data[6],
-							0.0f,
-							data[0]*rhs.data[8]+data[4]*rhs.data[9]+data[8]*rhs.data[10],
-							data[1]*rhs.data[8]+data[5]*rhs.data[9]+data[9]*rhs.data[10],
-							data[2]*rhs.data[8]+data[6]*rhs.data[9]+data[10]*rhs.data[10],
-							0.0f,
-							data[0]*rhs.data[12]+data[4]*rhs.data[13]+data[8]*rhs.data[14]+data[12],
-							data[1]*rhs.data[12]+data[5]*rhs.data[13]+data[9]*rhs.data[14]+data[13],
-							data[2]*rhs.data[12]+data[6]*rhs.data[13]+data[10]*rhs.data[14]+data[14],
-							1.0f);
+		return XMat4(data[0] * rhs.data[0] + data[4] * rhs.data[1] + data[8] * rhs.data[2],
+			data[1] * rhs.data[0] + data[5] * rhs.data[1] + data[9] * rhs.data[2],
+			data[2] * rhs.data[0] + data[6] * rhs.data[1] + data[10] * rhs.data[2],
+			0.0f,
+			data[0] * rhs.data[4] + data[4] * rhs.data[5] + data[8] * rhs.data[6],
+			data[1] * rhs.data[4] + data[5] * rhs.data[5] + data[9] * rhs.data[6],
+			data[2] * rhs.data[4] + data[6] * rhs.data[5] + data[10] * rhs.data[6],
+			0.0f,
+			data[0] * rhs.data[8] + data[4] * rhs.data[9] + data[8] * rhs.data[10],
+			data[1] * rhs.data[8] + data[5] * rhs.data[9] + data[9] * rhs.data[10],
+			data[2] * rhs.data[8] + data[6] * rhs.data[9] + data[10] * rhs.data[10],
+			0.0f,
+			data[0] * rhs.data[12] + data[4] * rhs.data[13] + data[8] * rhs.data[14] + data[12],
+			data[1] * rhs.data[12] + data[5] * rhs.data[13] + data[9] * rhs.data[14] + data[13],
+			data[2] * rhs.data[12] + data[6] * rhs.data[13] + data[10] * rhs.data[14] + data[14],
+			1.0f);
 	}
 
 	//Optimise for when bottom row of 1st matrix is (0, 0, 0, 1)
 	if(data[3] == 0.0f && data[7] == 0.0f && data[11] == 0.0f && data[15] == 1.0f)
 	{
-		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
-							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2]+data[13]*rhs.data[3],
-							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2]+data[14]*rhs.data[3],
-							rhs.data[3],
-							data[0]*rhs.data[4]+data[4]*rhs.data[5]+data[8]*rhs.data[6]+data[12]*rhs.data[7],
-							data[1]*rhs.data[4]+data[5]*rhs.data[5]+data[9]*rhs.data[6]+data[13]*rhs.data[7],
-							data[2]*rhs.data[4]+data[6]*rhs.data[5]+data[10]*rhs.data[6]+data[14]*rhs.data[7],
-							rhs.data[7],
-							data[0]*rhs.data[8]+data[4]*rhs.data[9]+data[8]*rhs.data[10]+data[12]*rhs.data[11],
-							data[1]*rhs.data[8]+data[5]*rhs.data[9]+data[9]*rhs.data[10]+data[13]*rhs.data[11],
-							data[2]*rhs.data[8]+data[6]*rhs.data[9]+data[10]*rhs.data[10]+data[14]*rhs.data[11],
-							rhs.data[11],
-							data[0]*rhs.data[12]+data[4]*rhs.data[13]+data[8]*rhs.data[14]+data[12]*rhs.data[15],
-							data[1]*rhs.data[12]+data[5]*rhs.data[13]+data[9]*rhs.data[14]+data[13]*rhs.data[15],
-							data[2]*rhs.data[12]+data[6]*rhs.data[13]+data[10]*rhs.data[14]+data[14]*rhs.data[15],
-							rhs.data[15]);
+		return XMat4(data[0] * rhs.data[0] + data[4] * rhs.data[1] + data[8] * rhs.data[2] + data[12] * rhs.data[3],
+			data[1] * rhs.data[0] + data[5] * rhs.data[1] + data[9] * rhs.data[2] + data[13] * rhs.data[3],
+			data[2] * rhs.data[0] + data[6] * rhs.data[1] + data[10] * rhs.data[2] + data[14] * rhs.data[3],
+			rhs.data[3],
+			data[0] * rhs.data[4] + data[4] * rhs.data[5] + data[8] * rhs.data[6] + data[12] * rhs.data[7],
+			data[1] * rhs.data[4] + data[5] * rhs.data[5] + data[9] * rhs.data[6] + data[13] * rhs.data[7],
+			data[2] * rhs.data[4] + data[6] * rhs.data[5] + data[10] * rhs.data[6] + data[14] * rhs.data[7],
+			rhs.data[7],
+			data[0] * rhs.data[8] + data[4] * rhs.data[9] + data[8] * rhs.data[10] + data[12] * rhs.data[11],
+			data[1] * rhs.data[8] + data[5] * rhs.data[9] + data[9] * rhs.data[10] + data[13] * rhs.data[11],
+			data[2] * rhs.data[8] + data[6] * rhs.data[9] + data[10] * rhs.data[10] + data[14] * rhs.data[11],
+			rhs.data[11],
+			data[0] * rhs.data[12] + data[4] * rhs.data[13] + data[8] * rhs.data[14] + data[12] * rhs.data[15],
+			data[1] * rhs.data[12] + data[5] * rhs.data[13] + data[9] * rhs.data[14] + data[13] * rhs.data[15],
+			data[2] * rhs.data[12] + data[6] * rhs.data[13] + data[10] * rhs.data[14] + data[14] * rhs.data[15],
+			rhs.data[15]);
 	}
 
 	//Optimise for when bottom row of 2nd matrix is (0, 0, 0, 1)
 	if(	rhs.data[3] == 0.0f && rhs.data[7] == 0.0f &&
 		rhs.data[11] == 0.0f && rhs.data[15] == 1.0f)
 	{
-		return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2],
-							data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2],
-							data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2],
-							data[3]*rhs.data[0]+data[7]*rhs.data[1]+data[11]*rhs.data[2],
-							data[0]*rhs.data[4]+data[4]*rhs.data[5]+data[8]*rhs.data[6],
-							data[1]*rhs.data[4]+data[5]*rhs.data[5]+data[9]*rhs.data[6],
-							data[2]*rhs.data[4]+data[6]*rhs.data[5]+data[10]*rhs.data[6],
-							data[3]*rhs.data[4]+data[7]*rhs.data[5]+data[11]*rhs.data[6],
-							data[0]*rhs.data[8]+data[4]*rhs.data[9]+data[8]*rhs.data[10],
-							data[1]*rhs.data[8]+data[5]*rhs.data[9]+data[9]*rhs.data[10],
-							data[2]*rhs.data[8]+data[6]*rhs.data[9]+data[10]*rhs.data[10],
-							data[3]*rhs.data[8]+data[7]*rhs.data[9]+data[11]*rhs.data[10],
-							data[0]*rhs.data[12]+data[4]*rhs.data[13]+data[8]*rhs.data[14]+data[12],
-							data[1]*rhs.data[12]+data[5]*rhs.data[13]+data[9]*rhs.data[14]+data[13],
-							data[2]*rhs.data[12]+data[6]*rhs.data[13]+data[10]*rhs.data[14]+data[14],
-							data[3]*rhs.data[12]+data[7]*rhs.data[13]+data[11]*rhs.data[14]+data[15]);
+		return XMat4(data[0] * rhs.data[0] + data[4] * rhs.data[1] + data[8] * rhs.data[2],
+			data[1] * rhs.data[0] + data[5] * rhs.data[1] + data[9] * rhs.data[2],
+			data[2] * rhs.data[0] + data[6] * rhs.data[1] + data[10] * rhs.data[2],
+			data[3] * rhs.data[0] + data[7] * rhs.data[1] + data[11] * rhs.data[2],
+			data[0] * rhs.data[4] + data[4] * rhs.data[5] + data[8] * rhs.data[6],
+			data[1] * rhs.data[4] + data[5] * rhs.data[5] + data[9] * rhs.data[6],
+			data[2] * rhs.data[4] + data[6] * rhs.data[5] + data[10] * rhs.data[6],
+			data[3] * rhs.data[4] + data[7] * rhs.data[5] + data[11] * rhs.data[6],
+			data[0] * rhs.data[8] + data[4] * rhs.data[9] + data[8] * rhs.data[10],
+			data[1] * rhs.data[8] + data[5] * rhs.data[9] + data[9] * rhs.data[10],
+			data[2] * rhs.data[8] + data[6] * rhs.data[9] + data[10] * rhs.data[10],
+			data[3] * rhs.data[8] + data[7] * rhs.data[9] + data[11] * rhs.data[10],
+			data[0] * rhs.data[12] + data[4] * rhs.data[13] + data[8] * rhs.data[14] + data[12],
+			data[1] * rhs.data[12] + data[5] * rhs.data[13] + data[9] * rhs.data[14] + data[13],
+			data[2] * rhs.data[12] + data[6] * rhs.data[13] + data[10] * rhs.data[14] + data[14],
+			data[3] * rhs.data[12] + data[7] * rhs.data[13] + data[11] * rhs.data[14] + data[15]);
 	}	
 	
-	return XMatrix4x4(	data[0]*rhs.data[0]+data[4]*rhs.data[1]+data[8]*rhs.data[2]+data[12]*rhs.data[3],
-						data[1]*rhs.data[0]+data[5]*rhs.data[1]+data[9]*rhs.data[2]+data[13]*rhs.data[3],
-						data[2]*rhs.data[0]+data[6]*rhs.data[1]+data[10]*rhs.data[2]+data[14]*rhs.data[3],
-						data[3]*rhs.data[0]+data[7]*rhs.data[1]+data[11]*rhs.data[2]+data[15]*rhs.data[3],
-						data[0]*rhs.data[4]+data[4]*rhs.data[5]+data[8]*rhs.data[6]+data[12]*rhs.data[7],
-						data[1]*rhs.data[4]+data[5]*rhs.data[5]+data[9]*rhs.data[6]+data[13]*rhs.data[7],
-						data[2]*rhs.data[4]+data[6]*rhs.data[5]+data[10]*rhs.data[6]+data[14]*rhs.data[7],
-						data[3]*rhs.data[4]+data[7]*rhs.data[5]+data[11]*rhs.data[6]+data[15]*rhs.data[7],
-						data[0]*rhs.data[8]+data[4]*rhs.data[9]+data[8]*rhs.data[10]+data[12]*rhs.data[11],
-						data[1]*rhs.data[8]+data[5]*rhs.data[9]+data[9]*rhs.data[10]+data[13]*rhs.data[11],
-						data[2]*rhs.data[8]+data[6]*rhs.data[9]+data[10]*rhs.data[10]+data[14]*rhs.data[11],
-						data[3]*rhs.data[8]+data[7]*rhs.data[9]+data[11]*rhs.data[10]+data[15]*rhs.data[11],
-						data[0]*rhs.data[12]+data[4]*rhs.data[13]+data[8]*rhs.data[14]+data[12]*rhs.data[15],
-						data[1]*rhs.data[12]+data[5]*rhs.data[13]+data[9]*rhs.data[14]+data[13]*rhs.data[15],
-						data[2]*rhs.data[12]+data[6]*rhs.data[13]+data[10]*rhs.data[14]+data[14]*rhs.data[15],
-						data[3]*rhs.data[12]+data[7]*rhs.data[13]+data[11]*rhs.data[14]+data[15]*rhs.data[15]);
+	return XMat4(data[0] * rhs.data[0] + data[4] * rhs.data[1] + data[8] * rhs.data[2] + data[12] * rhs.data[3],
+		data[1] * rhs.data[0] + data[5] * rhs.data[1] + data[9] * rhs.data[2] + data[13] * rhs.data[3],
+		data[2] * rhs.data[0] + data[6] * rhs.data[1] + data[10] * rhs.data[2] + data[14] * rhs.data[3],
+		data[3] * rhs.data[0] + data[7] * rhs.data[1] + data[11] * rhs.data[2] + data[15] * rhs.data[3],
+		data[0] * rhs.data[4] + data[4] * rhs.data[5] + data[8] * rhs.data[6] + data[12] * rhs.data[7],
+		data[1] * rhs.data[4] + data[5] * rhs.data[5] + data[9] * rhs.data[6] + data[13] * rhs.data[7],
+		data[2] * rhs.data[4] + data[6] * rhs.data[5] + data[10] * rhs.data[6] + data[14] * rhs.data[7],
+		data[3] * rhs.data[4] + data[7] * rhs.data[5] + data[11] * rhs.data[6] + data[15] * rhs.data[7],
+		data[0] * rhs.data[8] + data[4] * rhs.data[9] + data[8] * rhs.data[10] + data[12] * rhs.data[11],
+		data[1] * rhs.data[8] + data[5] * rhs.data[9] + data[9] * rhs.data[10] + data[13] * rhs.data[11],
+		data[2] * rhs.data[8] + data[6] * rhs.data[9] + data[10] * rhs.data[10] + data[14] * rhs.data[11],
+		data[3] * rhs.data[8] + data[7] * rhs.data[9] + data[11] * rhs.data[10] + data[15] * rhs.data[11],
+		data[0] * rhs.data[12] + data[4] * rhs.data[13] + data[8] * rhs.data[14] + data[12] * rhs.data[15],
+		data[1] * rhs.data[12] + data[5] * rhs.data[13] + data[9] * rhs.data[14] + data[13] * rhs.data[15],
+		data[2] * rhs.data[12] + data[6] * rhs.data[13] + data[10] * rhs.data[14] + data[14] * rhs.data[15],
+		data[3] * rhs.data[12] + data[7] * rhs.data[13] + data[11] * rhs.data[14] + data[15] * rhs.data[15]);
 }
-XVector4 XMatrix4x4::getRow(int position) const
+XVec4 XMat4::getRow(int position) const
 {
 	switch(position)
 	{
 	case 0:
-		return XVector4(data[0],data[4],data[8],data[12]);
-		break;
+		return XVec4(data[0], data[4], data[8], data[12]);
 	case 1:
-		return XVector4(data[1],data[5],data[9],data[13]);
-		break;
+		return XVec4(data[1], data[5], data[9], data[13]);
 	case 2:
-		return XVector4(data[2],data[6],data[10],data[14]);
-		break;
+		return XVec4(data[2], data[6], data[10], data[14]);
 	case 3:
-		return XVector4(data[3],data[7],data[11],data[15]);
-		break;
+		return XVec4(data[3], data[7], data[11], data[15]);
 	default:
-		return XVector4::zero;
-		break;
+		return XVec4::zero;
 	}
 }
-XVector4 XMatrix4x4::operator*(const XVector4& v) const 
-{
-	return XVector4((data[0]*v.x + data[1]*v.y + data[2]*v.z + data[3]*v.w),
-				 (data[4]*v.x + data[5]*v.y + data[6]*v.z + data[7]*v.w),
-				 (data[8]*v.x + data[9]*v.y + data[10]*v.z + data[11]*v.w),
-				 (data[12]*v.x + data[13]*v.y + data[14]*v.z + data[15]*v.w)) ;
+//#if _MSC_VER
+//#pragma message("Warning : Pre mult and Post mult is Anti.")
+//#elif __GNUC__
+//#warning("Warning : Pre mult and Post mult is Anti. ")
+//#endif
+XVec4 XMat4::operator*(const XVec4& v) const 
+{//注意这里pre_mult和post_mult反了
+	return XVec4((data[0] * v.x + data[1] * v.y + data[2] * v.z + data[3] * v.w),
+		(data[4] * v.x + data[5] * v.y + data[6] * v.z + data[7] * v.w),
+		(data[8] * v.x + data[9] * v.y + data[10] * v.z + data[11] * v.w),
+		(data[12] * v.x + data[13] * v.y + data[14] * v.z + data[15] * v.w));
 }
 inline float det2x2sub(const float *m, int i0, int i1, int i2, int i3)
 {
@@ -136,7 +136,7 @@ inline float det3x3sub(const float *m, int i0, int i1, int i2, int i3, int i4, i
 
 	return det;
 }
-XMatrix4x4 XMatrix4x4::inverse()
+XMat4 XMat4::inverse()
 {
 	float *m = data;
 	float det = 0.0f;
@@ -146,7 +146,7 @@ XMatrix4x4 XMatrix4x4::inverse()
 	det += m[8] * det3x3sub(m, 1, 2, 3, 5, 6, 7, 13, 14, 15);
 	det -= m[12] * det3x3sub(m, 1, 2, 3, 5, 6, 7, 9, 10, 11);
 
-	XMatrix4x4 inverse;
+	XMat4 inverse;
 	det = 1.0f / det; 
 
 	inverse.data[0] = det3x3sub(m, 5, 6, 7, 9, 10, 11, 13, 14, 15) * det;
@@ -169,39 +169,39 @@ XMatrix4x4 XMatrix4x4::inverse()
 	return inverse;
 }
 namespace XMath{
-inline float getDeta(const XVector3 &v0,const XVector3 &v1,const XVector3 &v2)
+inline float getDeta(const XVec3& v0,const XVec3& v1,const XVec3& v2)
 {
 	return v0.x * v1.y * v2.z + v1.x * v2.y * v0.z + v2.x * v0.y * v1.z
 		- v2.x * v1.y * v0.z - v0.x * v2.y * v1.z - v1.x * v0.y * v2.z;
 }
 //计算三个平面的交点
-XVector3 getPoint(const XVector4& v0,const XVector4& v1,const XVector4& v2)
+XVec3 getPoint(const XVec4& v0,const XVec4& v1,const XVec4& v2)
 {
-	XVector3 ret;
-	XVector3 x0(v0.x,v0.y,v0.z);
-	XVector3 x1(v1.x,v1.y,v1.z);
-	XVector3 x2(v2.x,v2.y,v2.z);
-	XVector3 b(v0.w,v1.w,v2.w);
-	float d = -getDeta(x0,x1,x2);
-	x0 = XVector3(v0.w,v0.y,v0.z);
-	x1 = XVector3(v1.w,v1.y,v1.z);
-	x2 = XVector3(v2.w,v2.y,v2.z);
-	ret.x = getDeta(x0,x1,x2)/d;
-	x0 = XVector3(v0.x,v0.w,v0.z);
-	x1 = XVector3(v1.x,v1.w,v1.z);
-	x2 = XVector3(v2.x,v2.w,v2.z);
-	ret.y = getDeta(x0,x1,x2)/d;
-	x0 = XVector3(v0.x,v0.y,v0.w);
-	x1 = XVector3(v1.x,v1.y,v1.w);
-	x2 = XVector3(v2.x,v2.y,v2.w);
-	ret.z = getDeta(x0,x1,x2)/d;
+	XVec3 ret;
+	XVec3 x0(v0.x, v0.y, v0.z);
+	XVec3 x1(v1.x, v1.y, v1.z);
+	XVec3 x2(v2.x, v2.y, v2.z);
+	XVec3 b(v0.w, v1.w, v2.w);
+	float d = -getDeta(x0, x1, x2);
+	x0 = XVec3(v0.w, v0.y, v0.z);
+	x1 = XVec3(v1.w, v1.y, v1.z);
+	x2 = XVec3(v2.w, v2.y, v2.z);
+	ret.x = getDeta(x0, x1, x2) / d;
+	x0 = XVec3(v0.x, v0.w, v0.z);
+	x1 = XVec3(v1.x, v1.w, v1.z);
+	x2 = XVec3(v2.x, v2.w, v2.z);
+	ret.y = getDeta(x0, x1, x2) / d;
+	x0 = XVec3(v0.x, v0.y, v0.w);
+	x1 = XVec3(v1.x, v1.y, v1.w);
+	x2 = XVec3(v2.x, v2.y, v2.w);
+	ret.z = getDeta(x0, x1, x2) / d;
 	return ret;
 }
 }
-XVector3 XMatrix4x4::resolveEquation()
+XVec3 XMat4::resolveEquation()
 {
-	XVector3 ret;
-	XMatrix3x3 m;
+	XVec3 ret;
+	XMat3 m;
 	m.data[0] = data[0];m.data[1] = data[1];m.data[2] = data[2];
 	m.data[3] = data[4];m.data[4] = data[5];m.data[5] = data[6];
 	m.data[6] = data[8];m.data[7] = data[9];m.data[8] = data[10];
@@ -222,6 +222,6 @@ XVector3 XMatrix4x4::resolveEquation()
 	return ret;
 }
 #if !WITH_INLINE_FILE
-#include "XMatrix4x4.inl"
+#include "XMat4.inl"
 #endif
 }

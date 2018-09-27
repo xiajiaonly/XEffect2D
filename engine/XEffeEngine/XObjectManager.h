@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2012.11.9
 //--------------------------------
-#include "XOSDefine.h"
+#include "XCommonDefine.h"
 #include "XMath\XVector2.h"
 #include "XObjectBasic.h"
 #include "XInputEventCommon.h"
@@ -77,15 +77,15 @@ class XMultiListBasic;
 //物件需要使用到的信息
 struct XObjectInfo
 {
-	XVector2 m_position;	//物件的位置
-	XVector2 m_scale;		//物件的尺寸
+	XVec2 m_position;	//物件的位置
+	XVec2 m_scale;		//物件的尺寸
 	float m_angle;			//物件的角度
 //	float m_alpha;			//物件的透明度
 	float length;			//对于NodeLine来说还需要显示他的长度
 
 	XObjectBasic *m_pObject;	//物件的指针
 	XObjectMouseState m_objectMouseState;	//物件的鼠标状态
-	XVector2 m_objectMousePoint;//鼠标按键的位置
+	XVec2 m_objectMousePoint;//鼠标按键的位置
 	XObjectOption m_objectKeyOption;	//物件当前按键按下对应的功能 0：无效，1：移动，2：缩放，3：旋转，4：改变旋转模式，5：设置翻转状态
 	XObjectOptionState m_objectSetState;	//物件当前被设置的状态，0：没有设置状态，1：设置为不能选择状态，2：设置为不接受鼠标操作状态，3：设置为不接受键盘操作状态
 	int m_objectEditParm;	//物件进行编辑的时候的辅助参数，对于NodeLine就是鼠标选中的点的编号
@@ -100,15 +100,15 @@ struct XObjectInfo
 #endif
 	XObjectInfo()
 		:m_pObject(NULL)
-		,m_objectMouseState(OBJ_STATE_NULL)
-		,m_objectKeyOption(OBJ_OPTION_NULL)
-		,m_objectSetState(OBJ_OPTION_STATE_NULL)
-		,m_objLineOrder(-1)
-		,m_lineObjOrder(-1)
-		,m_objCanEdit(XFalse)	//初始化所有的物件都是不可编辑的
-		,m_objBeSelect(XFalse)	//初始化物件不被选择
+		, m_objectMouseState(OBJ_STATE_NULL)
+		, m_objectKeyOption(OBJ_OPTION_NULL)
+		, m_objectSetState(OBJ_OPTION_STATE_NULL)
+		, m_objLineOrder(-1)
+		, m_lineObjOrder(-1)
+		, m_objCanEdit(XFalse)	//初始化所有的物件都是不可编辑的
+		, m_objBeSelect(XFalse)	//初始化物件不被选择
 #if OBJ_MANAGER_WITH_ID
-		,m_fontID(NULL)
+		, m_fontID(NULL)
 #endif
 	{}
 };
@@ -117,16 +117,16 @@ class XObjectManager
 {
 public:
 	XObjectManager();
-	virtual ~XObjectManager(); 
+	virtual ~XObjectManager();
 protected:
 	XObjectManager(const XObjectManager&);
 	XObjectManager &operator= (const XObjectManager&);
 private:
 	int m_curMouseOnObjectSum;			//当前处于鼠标on状态下的物件数量
 	//下面这个变量需要加一个接口来设置
-	XVector2 m_curMousePosition;			//鼠标当前的位置
+	XVec2 m_curMousePosition;			//鼠标当前的位置
 
-	void objectKeyOption(unsigned int order,XObjectOptionType optionType);	//对相应的物件进行操作，OptionType，是动作
+	void objectKeyOption(unsigned int order, XObjectOptionType optionType);	//对相应的物件进行操作，OptionType，是动作
 
 	//需要一个字体的支持用于显示物件信息
 	std::vector<XObjectInfo> m_objInfo;
@@ -147,11 +147,11 @@ private:
 	XMultiListBasic *m_mutiList;	//多列列表框
 	void upDateMultiListData();		//更新多行列表框中的类容
 	//--------------------------------------------------
-	static void ctrlProc(void*,int,int);
+	static void ctrlProc(void*, int, int);
 	XBool m_isShowUI;		//是否显示界面元素
 	XBool m_isOption;		//是否可以操作
 	XBool m_canSelect;		//是否允许鼠标点选物件
-	char m_editWindowsPos;		//编辑窗口的位置	1	0
+	char m_editWindowsPos;	//编辑窗口的位置	1	0
 	void setEditWidowsPos();					//	2	3
 
 	void chengeCanSelectState();	//改变物件是否可以被点选的标签
@@ -161,7 +161,7 @@ private:
 	void disOption();
 public:
 	//下面是为了实现按键的连续动作而定义的
-	XKeyState m_keyState[4];	//对应于上下左右四个按键
+	XKeyState m_keyState[4];//对应于上下左右四个按键
 	int m_keyTimer[4];	//四个按键的计时
 	int m_keyCurTime[4];	//四个按键的当前时间间隔
 	int m_keyMaxTime;	//按键的最长响应时间
@@ -169,7 +169,7 @@ public:
 
 	XKeyState m_ctrlKeyState;	//ctrl按键的案件状态
 public:
-	XBool init(XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool init(XResPos resPos = RES_SYS_DEF);
 	int addAObject(XObjectBasic * object);			//注册一个物件,返回注册的ID，实际上是序列编号，-1为注册失败
 	void decreaseAObject(unsigned int objectID);							//去除一个物件的注册
 	void decreaseAObject(const void * object);					//去除一个物件的注册
@@ -177,8 +177,8 @@ public:
 	XObjectType getObjectType(unsigned int objectID) const;	//获取物件的类型
 	void *getObject(unsigned int objectID) const;				//获取物件的指针
 
-	void mouseProc(int x,int y,XMouseState eventType);	//物件对鼠标事件的响应
-	void keyProc(int keyID,XKeyState keyState);		//keyState:0按下，1弹起
+	void mouseProc(const XVec2& p, XMouseState eventType);	//物件对鼠标事件的响应
+	void keyProc(int keyID, XKeyState keyState);		//keyState:0按下，1弹起
 	int getCurObjectSum() const;				//获取当前注册的物件数量
 	int getCurMouseOnObjectSum() const;			//获取当前处于鼠标On状态下的物件数量
 	int getCurChooseObjectSum() const;			//获取当前被选中的物件数量

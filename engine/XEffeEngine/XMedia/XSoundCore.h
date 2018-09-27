@@ -19,12 +19,23 @@ enum XSoundState
 struct XSoundFadeData
 {
 	XSoundState state;
+#if AUDIO_MATHOD == 0
 	int channel;	//通道编号
+#endif
+#if AUDIO_MATHOD == 1
+	void* channel;	//通道编号
+#endif
 	int soundTimer;
 	int soundFadeTime;
 	int curSoundVolume;	//当前的音量
 	XSoundFadeData()
 		:state(SOUND_STATE_NORMAL)
+#if AUDIO_MATHOD == 0
+		, channel(0)	//通道编号
+#endif
+#if AUDIO_MATHOD == 1
+		, channel(nullptr)	//通道编号
+#endif
 	{}
 };
 
@@ -40,12 +51,18 @@ public:
 	virtual void close() = 0;
 
 	//music部分
-	virtual bool loadMusic(const std::string &filename,void *&p) = 0;
+	virtual bool loadMusic(const std::string& filename,void *&p) = 0;
 	virtual void clearMusic(void *p) = 0;
 	virtual int setMusicVolume(int v) = 0;
 	virtual int getMusicVolume() = 0;
+#if AUDIO_MATHOD == 0
 	virtual int playMusic(void *p,int loop) = 0;
 	virtual int musicFadeIn(void * p,int loop,int ms) = 0;
+#endif
+#if AUDIO_MATHOD == 1
+	virtual void* playMusic(void *p,int loop) = 0;
+	virtual void* musicFadeIn(void * p,int loop,int ms) = 0;
+#endif
 	virtual int musicFadeOut(int ms) = 0;
 
 	virtual void pauseMusic() = 0;
@@ -55,9 +72,10 @@ public:
 	virtual bool isMusicPlaying() = 0;
 	virtual int haltMusic() = 0;
 	//sound部分
-	virtual bool loadSound(const std::string &filename,void *&p) = 0;	//从文件中读取声音资源
+	virtual bool loadSound(const std::string& filename,void *&p) = 0;	//从文件中读取声音资源
 	virtual bool loadSound(void *data,int len,void *&p) = 0;			//从内存中读取声音资源
 	virtual void clearSound(void * p) = 0;
+#if AUDIO_MATHOD == 0
 	virtual int setVolume(int c,int v) = 0;
 	virtual int getVolume(int c) = 0;
 	virtual int playSound(void *p,int loop) = 0;
@@ -68,8 +86,22 @@ public:
 	virtual void resumeSound(int c) = 0;
 	virtual bool isSoundPause(int c) = 0;
 	virtual bool isSoundPlaying(int c) = 0;
-	virtual int haltSound() = 0;
 	virtual int haltSound(int c) = 0;
+#endif
+#if AUDIO_MATHOD == 1
+	virtual int setVolume(void* c,int v) = 0;
+	virtual int getVolume(void* c) = 0;
+	virtual void* playSound(void *p,int loop) = 0;
+
+	virtual void* soundFadeIn(void* p,int loop,int ms) = 0;
+	virtual int soundFadeOut(void* c,int ms) = 0;
+	virtual void pauseSound(void* c) = 0;
+	virtual void resumeSound(void* c) = 0;
+	virtual bool isSoundPause(void* c) = 0;
+	virtual bool isSoundPlaying(void* c) = 0;
+	virtual int haltSound(void* c) = 0;
+#endif
+	virtual int haltSound() = 0;
 
 	//下面是关于回调函数部分
 	virtual void setCallBack(SND_CALLBACK_FUN fun,void *) = 0;

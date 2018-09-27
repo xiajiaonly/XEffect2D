@@ -1,6 +1,6 @@
 #include "XStdHead.h"
 #include "XVideoSynch.h"
-#include "XEffeEngine.h"
+#include "XXml.h"
 namespace XE{
 DWORD WINAPI XBroadcastUdp::recvThread(void * pParam)
 {
@@ -120,7 +120,7 @@ bool XBroadcastUdp::checkData(const unsigned char * p,int len)
 	}
 	return true;
 }
-bool XBroadcastUdp::readFromCFG(const std::string &filename)
+bool XBroadcastUdp::readFromCFG(const std::string& filename)
 {
 	int temp;
 	TiXmlDocument doc(filename);
@@ -138,7 +138,7 @@ bool XBroadcastUdp::readFromCFG(const std::string &filename)
 
 	return true;
 }
-bool XBroadcastUdp::init(const std::string &cfgFileName)
+bool XBroadcastUdp::init(const std::string& cfgFileName)
 {
 	if(m_isInited) return false;
 	if(!readFromCFG(cfgFileName)) return false;	//读取配置文件
@@ -164,7 +164,11 @@ bool XBroadcastUdp::init(const std::string &cfgFileName)
 			memset(&m_addrUDP,0,sizeof(m_addrUDP)); 
 			m_addrUDP.sin_family = AF_INET;
 			m_addrUDP.sin_port = htons(m_port);
+#ifdef WITH_LOCAL_BOARDCAST_IP
+			m_addrUDP.sin_addr.s_addr = inet_addr(BOARDCASR_IP); 
+#else
 			m_addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);   
+#endif
 		}
 		break;
 	case VS_ROLE_CLIENT:	//客户端获取同步数据
@@ -195,7 +199,7 @@ bool XBroadcastUdp::sendInfo()	//向网络发送同步数据
 //头	nameLen		name	videoNameLen	videoName	frameIndex	check	尾
 //0xcc	4Bytes		name	4Bytes			name		4Bytes		1Byte	0xdd
 //frameIndex可以作为功能字段
-void XBroadcastUdp::setCurVideo(const std::string &filename)
+void XBroadcastUdp::setCurVideo(const std::string& filename)
 {
 	m_curVideoName = filename;
 	int len = 1 + 4 + m_name.length() + 4 + m_curVideoName.length() + 4 + 1 + 1;

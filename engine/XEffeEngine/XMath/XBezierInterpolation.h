@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 namespace XE{
 class XBezierInterpolation
 {

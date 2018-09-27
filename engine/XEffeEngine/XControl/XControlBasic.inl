@@ -1,6 +1,6 @@
 namespace XCtrl
 {
-	INLINE XCtrlObjType getCtrlTypeByString(const std::string &name)
+	INLINE XCtrlObjType getCtrlTypeByString(const std::string& name)
 	{
 		if(name == "CTRL_OBJ_NULL") return CTRL_OBJ_NULL;
 		if(name == "CTRL_OBJ_BUTTON") return CTRL_OBJ_BUTTON;	//按钮物件
@@ -35,14 +35,18 @@ namespace XCtrl
 		if(name == "CTRL_OBJ_PROPERTYBOX") return CTRL_OBJ_PROPERTYBOX;		//工具条的控件
 		if(name == "CTRL_OBJ_COLORCHOOSE") return CTRL_OBJ_COLORCHOOSE;		//工具条的控件
 		if(name == "CTRL_OBJ_SUBWINDOW") return CTRL_OBJ_SUBWINDOW;		//工具条的控件
+		if(name == "CTRL_OBJ_SUBWINDOWEX") return CTRL_OBJ_SUBWINDOWEX;		//工具条的控件
 		if(name == "CTRL_OBJ_SOFTBOARD") return CTRL_OBJ_SOFTBOARD;		//工具条的控件
 		if(name == "CTRL_OBJ_PARAMCTRL") return CTRL_OBJ_PARAMCTRL;		//工具条的控件
+		if(name == "CTRL_OBJ_MOVEDATAPAD") return CTRL_OBJ_MOVEDATAPAD;		//工具条的控件
+		if(name == "CTRL_OBJ_SLIDERRING") return CTRL_OBJ_SLIDERRING;		//工具条的控件
+		if(name == "CTRL_OBJ_SLIDERINFINITE") return CTRL_OBJ_SLIDERINFINITE;		//工具条的控件
 		if(name == "CTRL_OBJ_FUNCTION") return CTRL_OBJ_FUNCTION;	//绘图函数	
 		return CTRL_OBJ_NULL;
 	}
 	INLINE std::string getCtrlTypeByString(XCtrlObjType type)
 	{
-		switch(type)
+		switch (type)
 		{
 		case CTRL_OBJ_NULL:return "CTRL_OBJ_NULL";		//无效的物件
 		case CTRL_OBJ_BUTTON:return "CTRL_OBJ_BUTTON";	//按钮物件
@@ -77,11 +81,15 @@ namespace XCtrl
 		case CTRL_OBJ_PROPERTYBOX:return "CTRL_OBJ_PROPERTYBOX";		//属性框
 		case CTRL_OBJ_COLORCHOOSE:return "CTRL_OBJ_COLORCHOOSE";		//属性框
 		case CTRL_OBJ_SUBWINDOW:return "CTRL_OBJ_SUBWINDOW";		//属性框
+		case CTRL_OBJ_SUBWINDOWEX:return "CTRL_OBJ_SUBWINDOWEX";		//属性框
 		case CTRL_OBJ_SOFTBOARD:return "CTRL_OBJ_SOFTBOARD";		//属性框
 		case CTRL_OBJ_PARAMCTRL:return "CTRL_OBJ_PARAMCTRL";		//属性框
+		case CTRL_OBJ_MOVEDATAPAD:return "CTRL_OBJ_MOVEDATAPAD";		//属性框
+		case CTRL_OBJ_SLIDERRING:return "CTRL_OBJ_SLIDERRING";		//属性框
+		case CTRL_OBJ_SLIDERINFINITE:return "CTRL_OBJ_SLIDERINFINITE";		//属性框
 		case CTRL_OBJ_FUNCTION:return "CTRL_OBJ_FUNCTION";	//绘图函数
-		}	
-		return "";
+		}
+		return XString::gNullStr;
 	}
 	INLINE std::string getCtrlNameByType(XCtrlObjType type)
 	{
@@ -120,10 +128,14 @@ namespace XCtrl
 		case CTRL_OBJ_PROPERTYBOX:return"XPropertyBox";
 		case CTRL_OBJ_COLORCHOOSE:return"XColorChoose";
 		case CTRL_OBJ_SUBWINDOW:return"XSubWindow";
+		case CTRL_OBJ_SUBWINDOWEX:return"XSubWindowEx";
 		case CTRL_OBJ_SOFTBOARD:return"XSoftBoard";
 		case CTRL_OBJ_PARAMCTRL:return"XParameterCtrl";
+		case CTRL_OBJ_MOVEDATAPAD:return"XMoveDataPad";
+		case CTRL_OBJ_SLIDERRING:return"XSliderRing";
+		case CTRL_OBJ_SLIDERINFINITE:return"XSliderInfinite";
 		case CTRL_OBJ_FUNCTION:return "NULL";	//绘图函数
 		}	
-		return "";
+		return XString::gNullStr;
 	}
 }

@@ -14,24 +14,24 @@ namespace XE{
 class XBasicParticle
 {
 public:
-	char m_isEnable;			//基本粒子是否有效
+	bool m_isEnable;		//基本粒子是否有效
 
-	XVector2 m_initPosition;	//粒子诞生时的位置
-	XVector2 m_initSize;		//粒子诞生时的尺寸
+	XVec2 m_initPosition;	//粒子诞生时的位置
+	XVec2 m_initSize;		//粒子诞生时的尺寸
 	float m_initAngle;		//粒子诞生时的角度
 	XFColor m_initColor;	//粒子诞生时的初始颜色
 
-	XVector2 m_dPosition;	//粒子位置变化的变化量
-	XVector2 m_dSize;		//粒子尺寸变化的变化量
+	XVec2 m_dPosition;		//粒子位置变化的变化量
+	XVec2 m_dSize;			//粒子尺寸变化的变化量
 	float m_dAngle;			//粒子角度变化的变化量
 	XFColor m_dColor;		//粒子颜色变化的变化量
 
-	XVector2 m_curPosition;	//粒子的当前位置
-	XVector2 m_curSize;		//粒子的当前尺寸
+	XVec2 m_curPosition;	//粒子的当前位置
+	XVec2 m_curSize;		//粒子的当前尺寸
 	float m_curAngle;		//粒子的当前角度
-	XFColor m_curColor;	//粒子的当前颜色
+	XFColor m_curColor;		//粒子的当前颜色
 	XBasicParticle()
-		:m_isEnable(0)
+		:m_isEnable(false)
 	{}
 	virtual~XBasicParticle(){}
 };

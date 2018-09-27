@@ -5,6 +5,7 @@
 //Version:	1.0.0
 //Date:		2011.11.20
 //--------------------------------
+//这个结构设计的通用性太差，需要改进
 /****************************************
 说明：
 这个数据结构使用固定的内存大小
@@ -21,7 +22,7 @@
 2、多个数据输入源，多个数据输出源，这个必须要使用互斥锁才能保证多线程安全
 ****************************************/
 #include "XBasicClass.h"
-#include "XOSDefine.h"
+//#include "XOSDefine.h"
 //#include "XThread.h"
 #include "XCritical.h"
 #ifdef XEE_OS_LINUX
@@ -37,41 +38,41 @@ namespace XE{
 template<class Type> class XCircleGroup
 {
 private:
-    XBool m_isInited;    //是否初始化
-    int m_insertPoint;    //当前的插入点
-    int m_popPoint;        //当前取出点
-    int m_buffSize;        //整个buff的大小
-    
-    struct XElement    //元素的结构
-    {
-        XBool isEnable;
-        Type elementData;
-    };
-    XElement *m_pElement;    //元素队列的指针
-	pthread_mutex_t m_mutex;  
-    int m_mode;            //拥堵处理模式：0：拥堵抛弃最老的数据 1：拥堵等待
+	XBool m_isInited;    //是否初始化
+	int m_insertPoint;    //当前的插入点
+	int m_popPoint;        //当前取出点
+	int m_buffSize;        //整个buff的大小
+
+	struct XElement    //元素的结构
+	{
+		XBool isEnable;
+		Type elementData;
+	};
+	XElement *m_pElement;    //元素队列的指针
+	pthread_mutex_t m_mutex;
+	int m_mode;            //拥堵处理模式：0：拥堵抛弃最老的数据 1：拥堵等待
 private:
-	XCircleGroup(const XCircleGroup & temp){}	//重载拷贝构造函数防止不必要的错误
+	XCircleGroup(const XCircleGroup & temp) {}	//重载拷贝构造函数防止不必要的错误
 public:
-    XCircleGroup()        //构造函数
-    :m_isInited(XFalse)
-    ,m_insertPoint(0)    //当前的插入点
-    ,m_popPoint(0)        //当前取出点
-    ,m_buffSize(0)        //整个buff的大小
-    ,m_pElement(NULL)    //元素队列的指针
-    ,m_mode(0)
-    {}
-	XBool init(int buffsize,int mode = 0);    //初始化，并分配内存空间
+	XCircleGroup()        //构造函数
+		:m_isInited(XFalse)
+		, m_insertPoint(0)    //当前的插入点
+		, m_popPoint(0)        //当前取出点
+		, m_buffSize(0)        //整个buff的大小
+		, m_pElement(NULL)    //元素队列的指针
+		, m_mode(0)
+	{}
+	XBool init(int buffsize, int mode = 0);    //初始化，并分配内存空间
 	int insertOneElement(Type &element);    //插入一个元素
 	XBool popOneElement(Type &element);    //取出一个元素
-    XBool isEmpty() const   //是否为空
-    {
-        if(!m_isInited) return XTrue;
-        return !m_pElement[m_popPoint].isEnable;    //没有可以取出的数据了
-    }
+	XBool isEmpty() const   //是否为空
+	{
+		if (!m_isInited) return XTrue;
+		return !m_pElement[m_popPoint].isEnable;    //没有可以取出的数据了
+	}
 	XBool isFull() const   //是否为满
 	{
-		if(!m_isInited) return XFalse;
+		if (!m_isInited) return XFalse;
 		return m_pElement[m_insertPoint].isEnable;    //没有可以插入的空间了
 	}
 };

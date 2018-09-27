@@ -11,8 +11,9 @@
 namespace XE{
 #define TAB_TITLE_HEIGHT (MIN_FONT_CTRL_SIZE)	//标题的高度
 
-struct XTabObject
+class XTabObject
 {
+public:
 	XBool isEnable;					//是否有效
 	XBool isVisible;					//是否可见
 	std::string srcTitle;				//原始标题没有限制长度的
@@ -23,13 +24,14 @@ struct XTabObject
 	XBool needDraw;
 	int len;	//显示的长度
 	int offset;	//偏移
-	std::vector<XVector2> pos;		//物件的相对位置
-	std::vector<XVector2> scale;	//物件的相对尺寸
+	std::vector<XVec2> pos;		//物件的相对位置
+	std::vector<XVec2> scale;	//物件的相对尺寸
 	XTabObject()
 		:isEnable(XTrue)
 		,isVisible(XTrue)
 		,pFont(NULL)
 	{}
+	virtual ~XTabObject(){}
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面实现界面控件的自身状态的保存(完成)
 public:
@@ -51,8 +53,8 @@ private:
 	static const int m_tabBtnWidth = 20;
 //	XRect m_mouseRect;		//范围
 //	XRect m_curMouseRect;	//范围
-//	XVector2 m_position;	//位置
-//	XVector2 m_scale;		//大小
+//	XVec2 m_position;	//位置
+//	XVec2 m_scale;		//大小
 	XRect m_titleRect;
 
 	XBool m_isInited;
@@ -75,77 +77,85 @@ private:
 	void updateObjState(bool flag = true);
 	static void ctrlProc(void*,int,int);
 
-	std::string m_curChooseTabStr;
+	//std::string m_curChooseTabStr;
 public:
 	enum XTabEvent
 	{
 		TAB_CHOOSE,
 	};
-	std::string getCurChooseTabStr(){return m_curChooseTabStr;}
-//	void (*m_funChooseTab)(void *,int,const std::string &);
+	const std::string& getCurChooseTabStr()const {return m_tabObjects[m_curChooseTabIndex].srcTitle;}
+private:
+//	void (*m_funChooseTab)(void *,int,const std::string& );
 //	void *m_pClass;				//回调函数的参数
+	void(*m_funUpDraw)(void *);
+	void* m_pClass;				//回调函数的参数
 public:
-	XBool initWithoutSkin(const XRect &rect,const XFontUnicode &font);
-	XBool initWithoutSkin(const XRect &rect) {return initWithoutSkin(rect,getDefaultFont());}
-	XBool initWithoutSkin(const XVector2 &pixelSize) 
+	XBool initWithoutSkin(const XRect& rect,const XFontUnicode& font);
+	XBool initWithoutSkin(const XRect& rect) {return initWithoutSkin(rect,getDefaultFont());}
+	XBool initWithoutSkin(const XVec2& pixelSize) 
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),getDefaultFont());
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),getDefaultFont());
 	}
-//	void setChooseTabCB(void (* funChooseTab)(void *,int,const std::string &),void *pClass = NULL);
+//	void setChooseTabCB(void (* funChooseTab)(void *,int,const std::string& ),void *pClass = NULL);
+	void setUpDrawCB(void(*funUpDraw)(void *), void *pClass = NULL);
 protected:
 	void draw();
 	void drawUp();
-	XBool mouseProc(float x,float y,XMouseState mouseState);	
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);
 	XBool keyboardProc(int,XKeyState);		//返回是否触发按键动作
 	void insertChar(const char *ch,int len){m_ctrlManager.insertChar(ch,len);}
-	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(const XVec2& p);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}	//应该是可以随时失去焦点的
 	void setLostFocus();	//设置失去焦点
 
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	void setTextColor(const XFColor& color);	//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	XBool setTabStr(const char *str,unsigned int index);
 	XBool setTabsStr(const char *str);		//;作为分隔符
-	std::string getTabStr(unsigned int index);
+	const std::string& getTabStr(unsigned int index)const;
 	std::string getTabsStr();
-	int getTabIndexByTitle(const std::string &title) const;
-	void addATab(const std::string &title);
+	int getTabIndexByTitle(const std::string& title) const;
+	void addATab(const std::string& title);
+	void addATabs(const std::string& title);
+	void delATab(const std::string& title);
 	void clearAllObj();	//清除所有的从属关系
 	void addObjToTab(XControlBasic *obj,unsigned int index);	//向一个标签中添加物件
-	void addObjToTab(XControlBasic *obj,const std::string &title);	//向一个标签中添加物件
+	void addObjToTab(XControlBasic *obj,const std::string& title);	//向一个标签中添加物件
 	void setTabVisible(bool flag,int index);	//设置标签可见
-	void setTabVisible(bool flag,const std::string &title);	//设置标签可见
+	void setTabVisible(bool flag,const std::string& title);	//设置标签可见
 	XBool getTabVisible(unsigned int index) const;
-	XBool getTabVisible(const std::string &title) const;
+	XBool getTabVisible(const std::string& title) const;
 	void setTabEnable(bool flag,unsigned int index);
-	void setTabEnable(bool flag,const std::string &title);
+	void setTabEnable(bool flag,const std::string& title);
 	XBool getTabEnable(unsigned int index) const;
-	XBool getTabEnable(const std::string &title) const;
+	XBool getTabEnable(const std::string& title) const;
 
 	void delObjFromTab(XControlBasic *obj,int index);
-	void delObjFromTab(XControlBasic *obj,const std::string &title);
+	void delObjFromTab(XControlBasic *obj,const std::string& title);
 	//下面的接口尚未实现
 	void clearObjFromTab(int index);
-	void clearObjFromTab(const std::string &title);
+	void clearObjFromTab(const std::string& title);
 
 	XTab()
 		:m_isInited(XFalse)
-		,m_withoutTex(XTrue)
-		,m_curChooseTabIndex(0)
-		,m_curStartTabIndex(0)
+		, m_withoutTex(XTrue)
+		, m_curChooseTabIndex(0)
+		, m_curStartTabIndex(0)
 //		,m_funChooseTab(NULL)
 //		,m_pClass(NULL)
+		, m_funUpDraw(nullptr)
+		, m_pClass(nullptr)
 	{
 		m_ctrlType = CTRL_OBJ_TAB;
 	}
@@ -157,8 +167,8 @@ public:
 	void setVisible();	//设置显示
 	void disVisible();	//设置不显示
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	////virtual void justForTest() {;}
 private://下面为了防止错误，重载赋值操作符，复制构造函数
 	XTab(const XTab &temp);
@@ -178,7 +188,7 @@ public:
 	virtual XBool loadState(TiXmlNode *e);
 	//---------------------------------------------------------
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	//显示尝试使用控件管理器的方式来设计tab
+	//尝试使用控件管理器的方式来设计tab
 	XCtrlManagerBase m_ctrlManager;	//加入一个控件管理器
 	//---------------------------------------------------------
 };

@@ -1,5 +1,6 @@
 INLINE void XAVStream::closeAudio()		//关闭音频流
 {
+	avcodec_free_context(&m_audioC);
 	avcodec_close(m_audioST->codec);
 	//av_free(m_audioOutbuf);
 	XMem::XDELETE_ARRAY(m_audioOutbuf);
@@ -7,9 +8,10 @@ INLINE void XAVStream::closeAudio()		//关闭音频流
 }
 INLINE void XAVStream::closeVideo()		//关闭视频流
 {
+	avcodec_free_context(&m_videoC);
 	avcodec_close(m_videoST->codec);
 	//av_free(m_videoOutbuf);
-	XMem::XDELETE_ARRAY(m_videoOutbuf);
+	//XMem::XDELETE_ARRAY(m_videoOutbuf);
 }
 INLINE int XAVStream::imgConvert(AVPicture *dst,const AVPicture *src,int src_height)
 {

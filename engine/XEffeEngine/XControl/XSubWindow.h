@@ -18,8 +18,8 @@ namespace XE{
 struct XSubWindowObj
 {
 	XControlBasic *obj;	//控件的指针
-	XVector2 pos;
-	XVector2 scale;
+	XVec2 pos;
+	XVec2 scale;
 	//下面还需要包含其他属性(尚未添加)
 };
 class XSubWindow:public XControlBasic,public XDragObjectBase,public XAutoShrinkBase
@@ -65,52 +65,53 @@ private:
 public:
 	XSubWindow()
 		:m_isInited(XFalse)
-		,m_withTitle(XTrue)
-		,m_titleString("SubWindow")
-		,m_withBackGround(XTrue)
-		,m_windowType(TYPE_NORMAL)
-		,m_windowState(STATE_NORMAL)
+		, m_withTitle(XTrue)
+		, m_titleString("SubWindow")
+		, m_withBackGround(XTrue)
+		, m_windowType(TYPE_NORMAL)
+		, m_windowState(STATE_NORMAL)
 	{
 		m_ctrlType = CTRL_OBJ_SUBWINDOW;
 	}
 	~XSubWindow() {release();}
 	void release();
-	XBool initWithoutSkin(const XVector2 &area,const char * title);	//无皮肤的初始化
+	XBool initWithoutSkin(const XVec2& area,const char * title);	//无皮肤的初始化
 protected:
 	void draw();
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);			//返回是否触发按键动作
 	void insertChar(const char *ch,int len){m_ctrlManager.insertChar(ch,len);}
-	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return true;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(const XVec2& p);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return true;}	//应该是可以随时失去焦点的
 	void setLostFocus();	//设置失去焦点
 	void setFocus();
 public:
 	XBool setACopy(const XSubWindow &){}	//这个不能复制
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
-	virtual XVector2 getPosition() const {return m_position;}
+	void setPosition(const XVec2& p);
+	virtual const XVec2& getPosition() const {return m_position;}
 
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	void setTitle(const char * title);
 	void changeStage(XSubWindowState state);
 
 	XBool addACtrlObj(XControlBasic *obj);	//向窗口中添加一个控件
+	XBool desACtrlObj(XControlBasic* obj);	//从窗口中减少一个控件
 	int getObjectIndex(XControlBasic *obj);
 private:
-	virtual XBool getIsInDragRect(float x,float y);	//判断位置是否在拖拽区域内
-	virtual XVector2 correctPos(const XVector2 &pos);	//更具传入的拖拽位置，修正该位置，当位置出于非法状态时，修正成合法的位置
+	virtual XBool getIsInDragRect(const XVec2& p);	//判断位置是否在拖拽区域内
+	virtual XVec2 correctPos(const XVec2& pos);	//更具传入的拖拽位置，修正该位置，当位置出于非法状态时，修正成合法的位置
 
 	virtual XShrinkDirection calShrinkDir();	//计算当前可能的收缩方向
 	virtual XBool getIsInShrinkRect(){return m_curMouseRect.isInRect(m_curMousePosition);}	//判断位置是否在拖拽区域内

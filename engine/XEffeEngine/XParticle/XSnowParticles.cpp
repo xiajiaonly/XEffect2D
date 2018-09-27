@@ -13,7 +13,7 @@ XSnowParticles::XSnowParticles()
 ,m_atom(NULL)
 ,m_texture(NULL)
 {}
-int XSnowParticles::init(const XVector2& productArea,const XRect& liveArea,const XVector2& flySpeed,
+int XSnowParticles::init(const XVec2& productArea,const XRect& liveArea,const XVec2& flySpeed,
 						  int maxAtomSum,float snowDensity,const XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
@@ -83,11 +83,11 @@ void XSnowParticles::move(float timeDelay)
 					float temp = XRand::random(75)/100.0f + 0.5f;
 				//	m_atom[i].init(&(m_texture->m_texture),m_texture->m_w * temp,m_texture->m_h * temp);
 					m_atom[i].init(m_texture);
-					m_atom[i].m_curSize.set(temp,temp);
+					m_atom[i].m_curSize.set(temp);
 					m_atom[i].m_stage = STAGE_MOVE;
 					m_atom[i].m_dPosition.x = (XRand::random(1000) * 0.002f - 1.0f) * m_flySpeed.x;
 					m_atom[i].m_dPosition.y = m_flySpeed.y * (0.5f + XRand::random(1000) * 0.0005f);
-					m_atom[i].m_curColor.setColor(1.0f,1.0f,1.0f,1.0f);
+					m_atom[i].m_curColor.set(1.0f,1.0f);
 					m_atom[i].m_curPosition.set(m_productArea.x + XRand::random(10000) * 0.0001f * (m_productArea.y - m_productArea.x),m_liveArea.top);
 					break;
 				}

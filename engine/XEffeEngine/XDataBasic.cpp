@@ -8,518 +8,526 @@
 //#include "string.h"
 //#include "XBasicFun.h"
 //#include "XOSDefine.h"
-namespace XE{
+namespace XE {
 #define DEBUGXDB (0)
 
 XDataBasic::XDataBasic()
 	:m_isInited(XFalse)
-	,m_dataLength(0)
-	,m_pData(NULL)
-	,m_checkData(0)
-	,m_secretKeyLength(0)
-	,m_secretKey(NULL)
-	,m_curBackOrder(0)
-	,m_ID(0)
-	,m_versionsOrder(0)
-	,m_isSaveAsynchronous(XFalse)
-	,m_needSave(XFalse)
-	,m_fileName(NULL)
-	,m_saveMode(ANALYZING_BUFFERING)
+	, m_dataLength(0)
+	, m_pData(NULL)
+	, m_checkData(0)
+	, m_secretKeyLength(0)
+	, m_secretKey(NULL)
+	, m_curBackOrder(0)
+	, m_ID(0)
+	, m_versionsOrder(0)
+	, m_isSaveAsynchronous(XFalse)
+	, m_needSave(XFalse)
+	, m_fileName(NULL)
+	, m_saveMode(ANALYZING_BUFFERING)
 {}
 XBool XDataBasic::EncryptData()            //¼ÓÃÜÊý¾Ý
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		m_secretKeyLength <= 0 ||
 		m_secretKey == NULL ||
 		m_dataLength <= 0 ||
 		m_pData == NULL) return XFalse;
-    //Éú³ÉËæ»úµÄÃÜÂë
-    for(int i = 0;i < m_secretKeyLength;++ i)
-    {
-        m_secretKey[i] = XRand::random(256);
-    }
-    //¼ÓÃÜÊý¾Ý
-    unsigned char temp;
-    for(int i = 0,j = 0;i < m_dataLength;++ i,++j)
-    {
-        if(j >= m_secretKeyLength) j = 0;
-        temp = m_secretKey[j] + (i%256);
-        m_pData[i] = temp ^ m_pData[i];
-    }
-    return XTrue;
+	//Éú³ÉËæ»úµÄÃÜÂë
+	for (int i = 0; i < m_secretKeyLength; ++i)
+	{
+		m_secretKey[i] = XRand::random(256);
+	}
+	//¼ÓÃÜÊý¾Ý
+	unsigned char temp;
+	for (int i = 0, j = 0; i < m_dataLength; ++i, ++j)
+	{
+		if (j >= m_secretKeyLength) j = 0;
+		temp = m_secretKey[j] + (i % 256);
+		m_pData[i] = temp ^ m_pData[i];
+	}
+	return XTrue;
 }
 XBool XDataBasic::DeCryptData()            //½âÃÜÊý¾Ý
 {//Í¬ÑùµÄ¼ÓÃÜ²Ù×÷ÔÙ½øÐÐÒ»´Î¾ÍÊÇ½âÃÜ
-    if(!m_isInited ||
+	if (!m_isInited ||
 		m_secretKeyLength <= 0 ||
 		m_secretKey == NULL ||
 		m_dataLength <= 0 ||
 		m_pData == NULL) return XFalse;
-    unsigned char temp;
-    for(int i = 0,j = 0;i < m_dataLength;++ i,++j)
-    {
-        if(j >= m_secretKeyLength) j = 0;
-        temp = m_secretKey[j] + (i%256);
-        m_pData[i] = temp ^ m_pData[i];
-    }
-    return XTrue;
+	unsigned char temp;
+	for (int i = 0, j = 0; i < m_dataLength; ++i, ++j)
+	{
+		if (j >= m_secretKeyLength) j = 0;
+		temp = m_secretKey[j] + (i % 256);
+		m_pData[i] = temp ^ m_pData[i];
+	}
+	return XTrue;
 }
 unsigned char XDataBasic::getCheckData()        //¼ÆËãÐ£ÑéÂë
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		m_dataLength <= 0 ||
 		m_pData == NULL) return 0;
-    unsigned char temp = 0;
-    for(int i = 0;i < m_dataLength;++ i)
-    {
-        temp += m_pData[i];
-    }
-    return temp;
+	unsigned char temp = 0;
+	for (int i = 0; i < m_dataLength; ++i)
+	{
+		temp += m_pData[i];
+	}
+	return temp;
 }
-XBool XDataBasic::init(int ID,XBool isSaveAsynchronous,XAnalyzingFileMode saveMode)
+XBool XDataBasic::init(int ID, XBool isSaveAsynchronous, XAnalyzingFileMode saveMode)
 {
-    if(m_isInited) return XFalse;
-    m_ID = ID;
-    m_secretKeyLength = m_databasicKeyLength;
+	if (m_isInited) return XFalse;
+	m_ID = ID;
+	m_secretKeyLength = m_databasicKeyLength;
 	m_isSaveAsynchronous = isSaveAsynchronous;
 	m_saveMode = saveMode;
 	m_secretKey = XMem::createArrayMem<unsigned char>(m_secretKeyLength);
-	if(m_secretKey == NULL) return XFalse;
-    for(int i = 0;i < m_secretKeyLength;++ i)
-    {
-        m_secretKey[i] = XRand::random(256);
-    }
+	if (m_secretKey == NULL) return XFalse;
+	for (int i = 0; i < m_secretKeyLength; ++i)
+	{
+		m_secretKey[i] = XRand::random(256);
+	}
 
-	if(m_isSaveAsynchronous)
+	if (m_isSaveAsynchronous)
 	{//Èç¹ûÊ¹ÓÃÒì²½Êý¾Ý±£´æ·½Ê½ÕâÀï¿ªÆô±£´æº¯Êý
 		m_isEnd = STATE_BEFORE_START;
 #ifdef XEE_OS_LINUX
-		if(pthread_create(&m_saveDataThreadP, NULL, &saveDataThread, (void*) this) != 0)
+		if (pthread_create(&m_saveDataThreadP, NULL, &saveDataThread, (void*) this) != 0)
 #endif
 #ifdef XEE_OS_WINDOWS
-		if(CreateThread(0,0,saveDataThread,this,0,&m_saveDataThreadP) == 0)
+			if (CreateThread(0, 0, saveDataThread, this, 0, &m_saveDataThreadP) == 0)
 #endif
-		{//¿ªÆôÏß³ÌÊ§°Ü
-			XMem::XDELETE_ARRAY(m_secretKey);
-			return XFalse;
-		}
+			{//¿ªÆôÏß³ÌÊ§°Ü
+				XMem::XDELETE_ARRAY(m_secretKey);
+				return XFalse;
+			}
 	}
 
-    m_isInited = XTrue;
+	m_isInited = XTrue;
 	return XTrue;
 }
 //ÄÚ´æÓëÊý¾Ý¼äµÄ×ª»»
-XBool XDataBasic::mergeData(const unsigned char *pData,int dataLength)        //´ÓÍâ²¿ºÏ²¢Êý¾Ýµ½ÄÚ²¿
+XBool XDataBasic::mergeData(const void *pData, int dataLength)        //´ÓÍâ²¿ºÏ²¢Êý¾Ýµ½ÄÚ²¿
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		pData == NULL ||
 		dataLength <= 0) return XFalse;
 
-    if(m_pData == NULL)
-    {//µÚÒ»´Î´«ÈëÊý¾Ý
-        m_dataLength = dataLength;
+	if (m_pData == NULL)
+	{//µÚÒ»´Î´«ÈëÊý¾Ý
+		m_dataLength = dataLength;
 		m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
-		if(m_pData == NULL) return XFalse;
-        memcpy(m_pData,pData,m_dataLength);
-    }else
-    {
-        if(m_dataLength == dataLength)
-        {//²»ÐèÒªÖØÐÂ·ÖÅäÄÚ´æ¿Õ¼ä
-            memcpy(m_pData,pData,m_dataLength);
-        }else
-        {
+		if (m_pData == NULL) return XFalse;
+		memcpy(m_pData, pData, m_dataLength);
+	}
+	else
+	{
+		if (m_dataLength == dataLength)
+		{//²»ÐèÒªÖØÐÂ·ÖÅäÄÚ´æ¿Õ¼ä
+			memcpy(m_pData, pData, m_dataLength);
+		}
+		else
+		{
 			XMem::XDELETE_ARRAY(m_pData);
-            m_dataLength = dataLength;
+			m_dataLength = dataLength;
 			m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
-			if(m_pData == NULL) return XFalse;
-			memcpy(m_pData,pData,m_dataLength);
-        }
-    }
-    return XTrue;
+			if (m_pData == NULL) return XFalse;
+			memcpy(m_pData, pData, m_dataLength);
+		}
+	}
+	return XTrue;
 }
 XBool XDataBasic::mergeDataBack(const char *fileName)
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		fileName == NULL || strlen(fileName) <= 0) return XFalse;
-    FILE *fp;
-    if((fp = fopen(fileName,"rb")) == NULL) return XFalse;//file open error!
+	FILE *fp;
+	if ((fp = fopen(fileName, "rb")) == NULL) return XFalse;//file open error!
 
-    if(fread(&m_versionsOrder,sizeof(int),1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;
-    }
-#if DEBUGXDB
-	printf("read:%s - %d\n",fileName,m_versionsOrder);
-#endif
-    if(fread(&m_ID,sizeof(int),1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;
-    }
-    if(fread(&m_dataLength,sizeof(int),1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;
-    }
-    if(m_dataLength > 0)
-    {//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
-		XMem::XDELETE_ARRAY(m_pData);
-		m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
-		if(m_pData == NULL)
-		{
-			fclose(fp);
-			return XFalse;    
-		}
-    }
-	if(m_dataLength < 0)
-	{
-        fclose(fp);
-        return XFalse;
-	}
-    if(m_pData == NULL || fread(m_pData,m_dataLength,1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;
-    }
-    if(fread(&m_secretKeyLength,sizeof(int),1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;    
-    }
-    if(m_secretKeyLength > 0)
-    {//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
-		XMem::XDELETE_ARRAY(m_secretKey);
-		m_secretKey = XMem::createArrayMem<unsigned char>(m_secretKeyLength);
-		if(m_secretKey == NULL)
-        {
-            fclose(fp);
-            return XFalse;    
-        }
-    }
-	if(m_secretKeyLength < 0)
+	if (fread(&m_versionsOrder, sizeof(int), 1, fp) < 1)
 	{
 		fclose(fp);
-        return XFalse;
+		return XFalse;
 	}
-    if(m_secretKey == NULL || fread(m_secretKey,m_secretKeyLength,1,fp) < 1)
-    {
-        fclose(fp);
-        return XFalse;    
-    }
-    if(fread(&m_checkData,sizeof(unsigned char),1,fp) < 0)
-    {
-        fclose(fp);
-        return XFalse;    
-    }
-    if(m_checkData != getCheckData())
-    {
-        fclose(fp);
-        return XFalse;    
-    }
-    if(!DeCryptData())
-    {
-        fclose(fp);
-        return XFalse;    
-    }
-    fclose(fp);
-    return XTrue;
+#if DEBUGXDB
+	printf("read:%s - %d\n", fileName, m_versionsOrder);
+#endif
+	if (fread(&m_ID, sizeof(int), 1, fp) < 1)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (fread(&m_dataLength, sizeof(int), 1, fp) < 1)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (m_dataLength > 0)
+	{//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
+		XMem::XDELETE_ARRAY(m_pData);
+		m_pData = XMem::createArrayMem<unsigned char>(m_dataLength);
+		if (m_pData == NULL)
+		{
+			fclose(fp);
+			return XFalse;
+		}
+	}
+	if (m_dataLength < 0)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (m_pData == NULL || fread(m_pData, m_dataLength, 1, fp) < 1)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (fread(&m_secretKeyLength, sizeof(int), 1, fp) < 1)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (m_secretKeyLength > 0)
+	{//ÐèÒªÌáÈ¡Êý¾Ý²¿·Ö
+		XMem::XDELETE_ARRAY(m_secretKey);
+		m_secretKey = XMem::createArrayMem<unsigned char>(m_secretKeyLength);
+		if (m_secretKey == NULL)
+		{
+			fclose(fp);
+			return XFalse;
+		}
+	}
+	if (m_secretKeyLength < 0)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (m_secretKey == NULL || fread(m_secretKey, m_secretKeyLength, 1, fp) < 1)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (fread(&m_checkData, sizeof(unsigned char), 1, fp) < 0)
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (m_checkData != getCheckData())
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	if (!DeCryptData())
+	{
+		fclose(fp);
+		return XFalse;
+	}
+	fclose(fp);
+	return XTrue;
 }
 
-XBool XDataBasic::mergeDataBack(const char *fileNameA,const char *fileNameB)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
+XBool XDataBasic::mergeDataBack(const char *fileNameA, const char *fileNameB)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		fileNameA == NULL || fileNameB == NULL) return XFalse;
-    int version0 = 0;
-    int version1 = 0;
-    int stateFile0 = 1;
-    int stateFile1 = 1;
-    FILE *fp;
-    //ÌáÈ¡µÚÒ»¸öÎÄ¼þµÄ°æ±¾ºÅ
-    if((fp = fopen(fileNameA,"rb")) == NULL)
-    {//file open error!
+	int version0 = 0;
+	int version1 = 0;
+	int stateFile0 = 1;
+	int stateFile1 = 1;
+	FILE *fp;
+	//ÌáÈ¡µÚÒ»¸öÎÄ¼þµÄ°æ±¾ºÅ
+	if ((fp = fopen(fileNameA, "rb")) == NULL)
+	{//file open error!
 		//printf("%s Open Error!\n",fileNameA);
-        stateFile0 = 0;
-    }
-    if(stateFile0 == 1)
-    {
-        if(fread(&version0,sizeof(int),1,fp) < 1)
-        {
-            stateFile0 = 0;
-        }
-        fclose(fp);
-    }
+		stateFile0 = 0;
+	}
+	if (stateFile0 == 1)
+	{
+		if (fread(&version0, sizeof(int), 1, fp) < 1)
+		{
+			stateFile0 = 0;
+		}
+		fclose(fp);
+	}
 #if DEBUGXDB
-	printf("%s - %d\n",fileNameA,version0);
+	printf("%s - %d\n", fileNameA, version0);
 #endif
-    //ÌáÈ¡µÚ¶þ¸öÎÄ¼þµÄ°æ±¾ºÅ
-    if((fp = fopen(fileNameB,"rb")) == NULL)
-    {//file open error!
+	//ÌáÈ¡µÚ¶þ¸öÎÄ¼þµÄ°æ±¾ºÅ
+	if ((fp = fopen(fileNameB, "rb")) == NULL)
+	{//file open error!
 		//printf("%s Open Error!\n",fileNameB);
-        stateFile1 = 0;
-    }
-    if(stateFile1 == 1)
-    {
-        if(fread(&version1,sizeof(int),1,fp) < 1)
-        {
-            stateFile1 = 0;
-        }
-        fclose(fp);
-    }
+		stateFile1 = 0;
+	}
+	if (stateFile1 == 1)
+	{
+		if (fread(&version1, sizeof(int), 1, fp) < 1)
+		{
+			stateFile1 = 0;
+		}
+		fclose(fp);
+	}
 #if DEBUGXDB
-	printf("%s - %d\n",fileNameB,version1);
+	printf("%s - %d\n", fileNameB, version1);
 #endif
-    
-    if(stateFile0 == 0 && stateFile1 == 0)
-    {//Èç¹ûÁ½¸öÎÄ¼þ¶¼²»ÄÜ´ò¿ª£¬ÔòÖ±½Ó·µ»ØÊ§°Ü
-        return XFalse;
-    }
 
-    if(stateFile0 == 0 || stateFile1 == 0)
-    {//ÓÐÒ»¸öÎÄ¼þÒÑ¾­Ëð»µ£¬Ôò´ÓÃ»ÓÐËð»µµÄÎÄ¼þÖÐÌáÈ¡Êý¾Ý
-        if(stateFile0 == 1) return mergeDataBack(fileNameA);	//´ÓµÚÒ»¸öÎÄ¼þÖÐÌáÈ¡Êý¾Ý
-		else return mergeDataBack(fileNameB);        
-    }
+	if (stateFile0 == 0 && stateFile1 == 0)
+	{//Èç¹ûÁ½¸öÎÄ¼þ¶¼²»ÄÜ´ò¿ª£¬ÔòÖ±½Ó·µ»ØÊ§°Ü
+		return XFalse;
+	}
 
-    if(stateFile0 != 0 && stateFile1 != 0)
-    {//Èç¹ûÔÝÊ±Á½¸öÎÄ¼þ¶¼Ã»ÓÐËð»µÔòÏÈÌáÈ¡×î½üµÄ°æ±¾
+	if (stateFile0 == 0 || stateFile1 == 0)
+	{//ÓÐÒ»¸öÎÄ¼þÒÑ¾­Ëð»µ£¬Ôò´ÓÃ»ÓÐËð»µµÄÎÄ¼þÖÐÌáÈ¡Êý¾Ý
+		if (stateFile0 == 1) return mergeDataBack(fileNameA);	//´ÓµÚÒ»¸öÎÄ¼þÖÐÌáÈ¡Êý¾Ý
+		else return mergeDataBack(fileNameB);
+	}
+
+	if (stateFile0 != 0 && stateFile1 != 0)
+	{//Èç¹ûÔÝÊ±Á½¸öÎÄ¼þ¶¼Ã»ÓÐËð»µÔòÏÈÌáÈ¡×î½üµÄ°æ±¾
 //        int tempResult = XTrue;
-        if(version0 > version1)
-        {//ÌáÈ¡µÚÒ»¸öÎÄ¼þ
-            if(mergeDataBack(fileNameA)) return XTrue;
-        }else
-        {//ÌáÈ¡µÚ¶þ¸öÎÄ¼þ
-            if(mergeDataBack(fileNameB)) return XTrue;
-        }
+		if (version0 > version1)
+		{//ÌáÈ¡µÚÒ»¸öÎÄ¼þ
+			if (mergeDataBack(fileNameA)) return XTrue;
+		}
+		else
+		{//ÌáÈ¡µÚ¶þ¸öÎÄ¼þ
+			if (mergeDataBack(fileNameB)) return XTrue;
+		}
 
-        //Èç¹ûÌáÈ¡Ê§°ÜÔò´ÓÁíÒ»¸öÎÄ¼þÖÐÌáÈ¡
-        if(version0 > version1)
-        {//ÌáÈ¡µÚÒ»¸öÎÄ¼þ
-            if(mergeDataBack(fileNameB)) return XTrue;
-        }else
-        {//ÌáÈ¡µÚ¶þ¸öÎÄ¼þ
-            if(mergeDataBack(fileNameA)) return XTrue;
-        }
-        //Èç¹ûÈ«²¿ÌáÈ¡Ê§°ÜÔò·µ»ØÊ§°Ü
-        return XFalse;
-    }
+		//Èç¹ûÌáÈ¡Ê§°ÜÔò´ÓÁíÒ»¸öÎÄ¼þÖÐÌáÈ¡
+		if (version0 > version1)
+		{//ÌáÈ¡µÚÒ»¸öÎÄ¼þ
+			if (mergeDataBack(fileNameB)) return XTrue;
+		}
+		else
+		{//ÌáÈ¡µÚ¶þ¸öÎÄ¼þ
+			if (mergeDataBack(fileNameA)) return XTrue;
+		}
+		//Èç¹ûÈ«²¿ÌáÈ¡Ê§°ÜÔò·µ»ØÊ§°Ü
+		return XFalse;
+	}
 	return XTrue;
 }
 //ÎÄ¼þÓëÊý¾Ý¼äµÄ×ª»»
 XBool XDataBasic::mergeData(const char *fileName)            //´ÓÎÄ¼þÖÐÌáÈ¡Êý¾Ý
 {//´ÓÁ½¸öÎÄ¼þÖÐ·Ö±ðÌáÈ¡Êý¾Ý£¬Èç¹ûÈ«²¿´íÎó£¬Ôò·µ»Ø´íÎó£¬Èç¹ûÈ«²¿³É¹¦£¬ÔòÈ¡×î½üµÄ°æ±¾£¬·ñÔòÌáÈ¡³É¹¦µÄ°æ±¾
-    if(!m_isInited) return XFalse;
-    if(fileName != NULL)
-    {
-        char *fileRealNameA = NULL;
-        char *fileRealNameB = NULL;
-        int len = strlen(fileName);
-        if(len <= 0) return XFalse;
+	if (!m_isInited) return XFalse;
+	if (fileName != NULL)
+	{
+		char *fileRealNameA = NULL;
+		char *fileRealNameB = NULL;
+		int len = strlen(fileName);
+		if (len <= 0) return XFalse;
 		fileRealNameA = XMem::createArrayMem<char>(len + 2);
-		if(fileRealNameA == NULL) return XFalse;
+		if (fileRealNameA == NULL) return XFalse;
 		fileRealNameB = XMem::createArrayMem<char>(len + 2);
-		if(fileRealNameB == NULL) 
+		if (fileRealNameB == NULL)
 		{
 			XMem::XDELETE_ARRAY(fileRealNameA);
 			return XFalse;
 		}
-        //È·¶¨ÎÄ¼þÃû
-        int dotPoint = -1;
-        for(int i = 0;i < len;++ i)
-        {
-            if(fileName[i] == '.')
-            {
-                dotPoint = i;
-            }
-        }
-        if(dotPoint == -1)
-        {
-            memcpy(fileRealNameA,fileName,len);
-            fileRealNameA[len] = 'A';
-            fileRealNameA[len + 1] = '\0';
-            memcpy(fileRealNameB,fileName,len);
-            fileRealNameB[len] = 'B';
-            fileRealNameB[len + 1] = '\0';
-        }else
-        {
-            memcpy(fileRealNameA,fileName,dotPoint);
-            fileRealNameA[dotPoint] = 'A';
-            memcpy(fileRealNameA + dotPoint + 1,fileName + dotPoint,len - dotPoint);
-            fileRealNameA[len + 1] = '\0';
-            memcpy(fileRealNameB,fileName,dotPoint);
-            fileRealNameB[dotPoint] = 'B';
-            memcpy(fileRealNameB + dotPoint + 1,fileName + dotPoint,len - dotPoint);
-            fileRealNameB[len + 1] = '\0';
-        }
-        if(mergeDataBack(fileRealNameA,fileRealNameB))
-        {
+		//È·¶¨ÎÄ¼þÃû
+		int dotPoint = -1;
+		for (int i = 0; i < len; ++i)
+		{
+			if (fileName[i] == '.')
+			{
+				dotPoint = i;
+			}
+		}
+		if (dotPoint == -1)
+		{
+			memcpy(fileRealNameA, fileName, len);
+			fileRealNameA[len] = 'A';
+			fileRealNameA[len + 1] = '\0';
+			memcpy(fileRealNameB, fileName, len);
+			fileRealNameB[len] = 'B';
+			fileRealNameB[len + 1] = '\0';
+		}
+		else
+		{
+			memcpy(fileRealNameA, fileName, dotPoint);
+			fileRealNameA[dotPoint] = 'A';
+			memcpy(fileRealNameA + dotPoint + 1, fileName + dotPoint, len - dotPoint);
+			fileRealNameA[len + 1] = '\0';
+			memcpy(fileRealNameB, fileName, dotPoint);
+			fileRealNameB[dotPoint] = 'B';
+			memcpy(fileRealNameB + dotPoint + 1, fileName + dotPoint, len - dotPoint);
+			fileRealNameB[len + 1] = '\0';
+		}
+		if (mergeDataBack(fileRealNameA, fileRealNameB))
+		{
 			XMem::XDELETE_ARRAY(fileRealNameA);
 			XMem::XDELETE_ARRAY(fileRealNameB);
-            return XTrue;
-        }else
-        {
+			return XTrue;
+		}
+		else
+		{
 			XMem::XDELETE_ARRAY(fileRealNameA);
 			XMem::XDELETE_ARRAY(fileRealNameB);
-            return XFalse;
-        }
-    }else
-    {
-        return mergeDataBack(DATABASIC_DEFAULT_FILE_NAME_A,DATABASIC_DEFAULT_FILE_NAME_B);
-    }
+			return XFalse;
+		}
+	}
+	else
+	{
+		return mergeDataBack(DATABASIC_DEFAULT_FILE_NAME_A, DATABASIC_DEFAULT_FILE_NAME_B);
+	}
 }
 XBool XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ÷ÓÃ£¬ÓÐÖúÓÚÇåÎú»¯´úÂëÂß¼­
 {
-    if(!m_isInited ||
+	if (!m_isInited ||
 		fileName == NULL || strlen(fileName) <= 0) return XFalse;
-	if(m_saveMode == ANALYZING_BUFFERING)
+	if (m_saveMode == ANALYZING_BUFFERING)
 	{
 		FILE *fp;
-		if((fp = fopen(fileName,"wb")) == NULL) return XFalse;//file open error!
+		if ((fp = fopen(fileName, "wb")) == NULL) return XFalse;//file open error!
 		//½«Êý¾ÝÐ´Èëµ½ÎÄ¼þ
-		if(!EncryptData())
+		if (!EncryptData())
 		{
 			fclose(fp);
 			return XFalse;
 		}
 #if DEBUGXDB
-		printf("write:%s - %d\n",m_fileName,m_versionsOrder);
+		printf("write:%s - %d\n", m_fileName, m_versionsOrder);
 #endif	    
-		if(fwrite(&m_versionsOrder,sizeof(int),1,fp) < 1) 
+		if (fwrite(&m_versionsOrder, sizeof(int), 1, fp) < 1)
 		{
 			fclose(fp);
 			return XFalse;
 		}
-		if(fwrite(&m_ID,sizeof(int),1,fp) < 1) 
+		if (fwrite(&m_ID, sizeof(int), 1, fp) < 1)
 		{
 			fclose(fp);
 			return XFalse;
 		}
-		if(m_dataLength < 0) m_dataLength = 0;
-		if(fwrite(&m_dataLength,sizeof(int),1,fp) < 1) 
+		if (m_dataLength < 0) m_dataLength = 0;
+		if (fwrite(&m_dataLength, sizeof(int), 1, fp) < 1)
 		{
 			fclose(fp);
 			return XFalse;
 		}
 
-		if(m_pData != NULL && m_dataLength > 0)
+		if (m_pData != NULL && m_dataLength > 0)
 		{
-			if(fwrite(m_pData,m_dataLength,1,fp) < 1)  
+			if (fwrite(m_pData, m_dataLength, 1, fp) < 1)
 			{
 				fclose(fp);
 				return XFalse;
 			}
 		}
-		if(m_secretKeyLength < 0) m_secretKeyLength = 0;
-		if(fwrite(&m_secretKeyLength,sizeof(int),1,fp) < 1) 
+		if (m_secretKeyLength < 0) m_secretKeyLength = 0;
+		if (fwrite(&m_secretKeyLength, sizeof(int), 1, fp) < 1)
 		{
 			fclose(fp);
 			return XFalse;
 		}
 
-		if(m_secretKey != NULL && m_secretKeyLength > 0)
+		if (m_secretKey != NULL && m_secretKeyLength > 0)
 		{
-			if(fwrite(m_secretKey,m_secretKeyLength,1,fp) < 1) 
+			if (fwrite(m_secretKey, m_secretKeyLength, 1, fp) < 1)
 			{
 				fclose(fp);
 				return XFalse;
 			}
 		}
 		m_checkData = getCheckData();    //¼ÆËãÐ£ÑéÊý¾Ý
-		if(fwrite(&m_checkData,sizeof(unsigned char),1,fp) < 1)  
+		if (fwrite(&m_checkData, sizeof(unsigned char), 1, fp) < 1)
 		{
 			fclose(fp);
 			return XFalse;
 		}
-		if(!DeCryptData())
+		if (!DeCryptData())
 		{//ÕâÊÇÒ»¸ö·Ç³£ÑÏÖØµÄ´íÎó£¬ËùÓÐµÄÊý¾ÝÔÚ»¹Ô­µÄ¹ý³ÌÖÐÔì³ÉÁËÑÏÖØµÄÆÆ»µ£¬ÎÞ·¨ÔÙ»¹Ô­
 		}
 
 		fclose(fp);
-	//	printf("%s:Write well!\n",fileName);
-	}else
+		//	printf("%s:Write well!\n",fileName);
+	}
+	else
 	{
 #ifdef XEE_OS_WINDOWS
-		if(m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
+		if (m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
 		{
 			XMem::XDELETE_ARRAY(m_fileName);
 			m_fileName = XMem::createArrayMem<char>(strlen(fileName) + 1);
-			if(m_fileName == NULL) return XFalse;
+			if (m_fileName == NULL) return XFalse;
 		}
-		strcpy(m_fileName,fileName);
+		strcpy(m_fileName, fileName);
 		HANDLE tempFile;
 		DWORD tempWriteLength;
-/*		int len = strlen(m_fileName)/2 + 1;
-		wchar_t *wText = XMem::createArrayMem<wchar_t>(len);
-		if(wText == NULL) return XFalse;
+		/*		int len = strlen(m_fileName)/2 + 1;
+				wchar_t *wText = XMem::createArrayMem<wchar_t>(len);
+				if(wText == NULL) return XFalse;
 
-		MultiByteToWideChar(CP_ACP,0,m_fileName,strlen(m_fileName),wText,strlen(m_fileName)); 
-		tempFile = CreateFileW(wText,
-								GENERIC_WRITE,
-								FILE_SHARE_WRITE | FILE_SHARE_READ,
-								NULL,CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_WRITE_THROUGH,NULL);*/
+				MultiByteToWideChar(CP_ACP,0,m_fileName,strlen(m_fileName),wText,strlen(m_fileName));
+				tempFile = CreateFileW(wText,
+										GENERIC_WRITE,
+										FILE_SHARE_WRITE | FILE_SHARE_READ,
+										NULL,CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_WRITE_THROUGH,NULL);*/
 		tempFile = CreateFile(m_fileName,
-								GENERIC_WRITE,
-								FILE_SHARE_WRITE | FILE_SHARE_READ,
-								NULL,CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_WRITE_THROUGH,NULL);
-		if(INVALID_HANDLE_VALUE == tempFile) return XFalse;
+			GENERIC_WRITE,
+			FILE_SHARE_WRITE | FILE_SHARE_READ,
+			NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_WRITE_THROUGH, NULL);
+		if (INVALID_HANDLE_VALUE == tempFile) return XFalse;
 		tempWriteLength = 0;
 
 		//½«Êý¾ÝÐ´Èëµ½ÎÄ¼þ
-		if(!EncryptData())
+		if (!EncryptData())
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
 #if DEBUGXDB
-		printf("write:%s - %d\n",m_fileName,m_versionsOrder);
+		printf("write:%s - %d\n", m_fileName, m_versionsOrder);
 #endif
-		if(!WriteFile(tempFile,&m_versionsOrder,sizeof(int),&tempWriteLength,NULL))
+		if (!WriteFile(tempFile, &m_versionsOrder, sizeof(int), &tempWriteLength, NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-		if(!WriteFile(tempFile,&m_ID,sizeof(int),&tempWriteLength,NULL))
+		if (!WriteFile(tempFile, &m_ID, sizeof(int), &tempWriteLength, NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-		if(m_dataLength < 0) m_dataLength = 0;
-		if(!WriteFile(tempFile,&m_dataLength,sizeof(int),&tempWriteLength,NULL))
+		if (m_dataLength < 0) m_dataLength = 0;
+		if (!WriteFile(tempFile, &m_dataLength, sizeof(int), &tempWriteLength, NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-		if(m_pData != NULL && m_dataLength > 0)
+		if (m_pData != NULL && m_dataLength > 0)
 		{
-			if(!WriteFile(tempFile,m_pData,m_dataLength,&tempWriteLength,NULL))
+			if (!WriteFile(tempFile, m_pData, m_dataLength, &tempWriteLength, NULL))
 			{
 				CloseHandle(tempFile);
 				return XFalse;
 			}
 		}
-		if(m_secretKeyLength < 0) m_secretKeyLength = 0;
-		if(!WriteFile(tempFile,&m_secretKeyLength,sizeof(int),&tempWriteLength,NULL))
+		if (m_secretKeyLength < 0) m_secretKeyLength = 0;
+		if (!WriteFile(tempFile, &m_secretKeyLength, sizeof(int), &tempWriteLength, NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
 
-		if(m_secretKey != NULL && m_secretKeyLength > 0)
+		if (m_secretKey != NULL && m_secretKeyLength > 0)
 		{
-			if(!WriteFile(tempFile,m_secretKey,m_secretKeyLength,&tempWriteLength,NULL))
+			if (!WriteFile(tempFile, m_secretKey, m_secretKeyLength, &tempWriteLength, NULL))
 			{
 				CloseHandle(tempFile);
 				return XFalse;
 			}
 		}
 		m_checkData = getCheckData();    //¼ÆËãÐ£ÑéÊý¾Ý
-		if(!WriteFile(tempFile,&m_checkData,sizeof(unsigned char),&tempWriteLength,NULL))
+		if (!WriteFile(tempFile, &m_checkData, sizeof(unsigned char), &tempWriteLength, NULL))
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
 
-		if(!DeCryptData())
+		if (!DeCryptData())
 		{//ÕâÊÇÒ»¸ö·Ç³£ÑÏÖØµÄ´íÎó£¬ËùÓÐµÄÊý¾ÝÔÚ»¹Ô­µÄ¹ý³ÌÖÐÔì³ÉÁËÑÏÖØµÄÆÆ»µ£¬ÎÞ·¨ÔÙ»¹Ô­
 		}
 
@@ -527,158 +535,145 @@ XBool XDataBasic::analyzingDataBack(const char *fileName)    //Õâ¸öº¯ÊýÓÃÓÚÄÚ²¿µ
 		//XMem::XDELETE_ARRAY(wText);
 #endif
 #ifdef XEE_OS_LINUX
-		//LinuxÏÂµÄÊý¾ÝÁ¢¼´±£´æ»¹Ã»ÓÐÍê³É
-		if(m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
+	//LinuxÏÂµÄÊý¾ÝÁ¢¼´±£´æ»¹Ã»ÓÐÍê³É
+		if (m_fileName == NULL || strlen(m_fileName) != strlen(fileName))
 		{
 			XMem::XDELETE_ARRAY(m_fileName);
 			m_fileName = XMem::createArrayMem<char>(strlen(fileName) + 1);
-			if(m_fileName == NULL) return XFalse;
+			if (m_fileName == NULL) return XFalse;
 		}
-		strcpy(m_fileName,fileName);
+		strcpy(m_fileName, fileName);
 		FILE *fp;
-		if((fp = fopen(m_fileName,"wb")) == NULL)
+		if ((fp = fopen(m_fileName, "wb")) == NULL)
 		{
 			return XFalse;
 		}
 		//½«Êý¾ÝÐ´Èëµ½ÎÄ¼þ
-		if(!EncryptData())
+		if (!EncryptData())
 		{
 			CloseHandle(tempFile);
 			return XFalse;
 		}
-		fwrite(&m_versionsOrder,sizeof(int),1,fp);
-		fwrite(&m_ID,sizeof(int),1,fp);
-		if(m_dataLength < 0) m_dataLength = 0;
-		fwrite(&m_dataLength,sizeof(int),1,fp);
-		if(m_pData != NULL && m_dataLength > 0)
+		fwrite(&m_versionsOrder, sizeof(int), 1, fp);
+		fwrite(&m_ID, sizeof(int), 1, fp);
+		if (m_dataLength < 0) m_dataLength = 0;
+		fwrite(&m_dataLength, sizeof(int), 1, fp);
+		if (m_pData != NULL && m_dataLength > 0)
 		{
-			fwrite(m_pData,m_dataLength,1,fp);
+			fwrite(m_pData, m_dataLength, 1, fp);
 		}
-		if(m_secretKeyLength < 0) m_secretKeyLength = 0;
-		fwrite(&m_secretKeyLength,sizeof(int),1,fp);
-		if(m_secretKey != NULL && m_secretKeyLength > 0)
+		if (m_secretKeyLength < 0) m_secretKeyLength = 0;
+		fwrite(&m_secretKeyLength, sizeof(int), 1, fp);
+		if (m_secretKey != NULL && m_secretKeyLength > 0)
 		{
-			fwrite(m_secretKey,m_secretKeyLength,1,fp);
+			fwrite(m_secretKey, m_secretKeyLength, 1, fp);
 		}
 		m_checkData = getCheckData();    //¼ÆËãÐ£ÑéÊý¾Ý
-		fwrite(&m_checkData,sizeof(unsigned char),1,fp);
+		fwrite(&m_checkData, sizeof(unsigned char), 1, fp);
 
-		if(!DeCryptData())
+		if (!DeCryptData())
 		{//ÕâÊÇÒ»¸ö·Ç³£ÑÏÖØµÄ´íÎó£¬ËùÓÐµÄÊý¾ÝÔÚ»¹Ô­µÄ¹ý³ÌÖÐÔì³ÉÁËÑÏÖØµÄÆÆ»µ£¬ÎÞ·¨ÔÙ»¹Ô­
 		}
 
 		fclose(fp);
 #endif
-	//	printf("%s:Write OK!\n",m_fileName);
-	//	system("pause");
+		//	printf("%s:Write OK!\n",m_fileName);
+		//	system("pause");
 	}
-    return XTrue;
+	return XTrue;
 }
 XBool XDataBasic::analyzingDataManager(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬Õâ¸öº¯Êý»á¸ù¾ÝÖ®Ç°ÓÃ»§µÄÉèÖÃ¶Ô±£´æµÄ¾ßÌå²Ù×÷½øÐÐµ÷¶È
 {
-	if(!m_isInited) return XFalse;
-	if(m_isSaveAsynchronous)
+	if (!m_isInited) return XFalse;
+	if (m_isSaveAsynchronous)
 	{
-		if(!m_needSave)
+		if (!m_needSave)
 		{
-			if(fileName != NULL)
+			if (fileName != NULL)
 			{
-				if(m_fileName == NULL || strlen(fileName) != strlen(m_fileName))
+				if (m_fileName == NULL || strlen(fileName) != strlen(m_fileName))
 				{
 					XMem::XDELETE_ARRAY(m_fileName);
 					int len = strlen(fileName);
 					m_fileName = XMem::createArrayMem<char>(len + 1);
-					if(m_fileName == NULL) return XFalse;
+					if (m_fileName == NULL) return XFalse;
 				}
-				strcpy(m_fileName,fileName);
-			}else
+				strcpy(m_fileName, fileName);
+			}
+			else
 			{
 				XMem::XDELETE_ARRAY(m_fileName);
 			}
 			m_needSave = XTrue;
 			return XTrue;
-		}else
+		}
+		else
 		{//ÉÏ´Î±ê¼ÇµÄÊý¾ÝÉÐÎ´±£´æ
 			return XFalse;
 		}
-	}else
+	}
+	else
 	{
 		return analyzingData(fileName);
 	}
 }
 XBool XDataBasic::analyzingData(const char *fileName)        //½«Êý¾Ý±£´æµ½ÎÄ¼þ
 {
-    if(!m_isInited) return XFalse;
-    char *fileRealName = NULL;
-    XBool result = XTrue;
-    ++ m_versionsOrder;
-    if(fileName != NULL)
-    {
-        int len = strlen(fileName);
-        if(len <= 0) return XFalse;
+	if (!m_isInited) return XFalse;
+	char *fileRealName = NULL;
+	XBool result = XTrue;
+	++m_versionsOrder;
+	if (fileName != NULL)
+	{
+		int len = strlen(fileName);
+		if (len <= 0) return XFalse;
 		fileRealName = XMem::createArrayMem<char>(len + 2);
-        if(fileRealName == NULL) return XFalse;
-        //È·¶¨ÎÄ¼þÃû
-        int dotPoint = -1;
-        for(int i = 0;i < len;++ i)
-        {
-            if(fileName[i] == '.')
-            {
-                dotPoint = i;
-            }
-        }
-        if(dotPoint == -1)
-        {
-            memcpy(fileRealName,fileName,len);
-            if(m_curBackOrder == 0)
-            {
-                fileRealName[len] = 'A';
-            }else
-            {
-                fileRealName[len] = 'B';
-            }
-            fileRealName[len + 1] = '\0';
-        }else
-        {
-            memcpy(fileRealName,fileName,dotPoint);
-            if(m_curBackOrder == 0)
-            {
-                fileRealName[dotPoint] = 'A';
-            }else
-            {
-                fileRealName[dotPoint] = 'B';
-            }
-            memcpy(fileRealName + dotPoint + 1,fileName + dotPoint,len - dotPoint);
-            fileRealName[len + 1] = '\0';
-        }
-        result = analyzingDataBack(fileRealName);
+		if (fileRealName == NULL) return XFalse;
+		//È·¶¨ÎÄ¼þÃû
+		int dotPoint = -1;
+		for (int i = 0; i < len; ++i)
+		{
+			if (fileName[i] == '.') dotPoint = i;
+		}
+		if (dotPoint == -1)
+		{
+			memcpy(fileRealName, fileName, len);
+			if (m_curBackOrder == 0) fileRealName[len] = 'A';
+			else fileRealName[len] = 'B';
+			fileRealName[len + 1] = '\0';
+		}
+		else
+		{
+			memcpy(fileRealName, fileName, dotPoint);
+			if (m_curBackOrder == 0) fileRealName[dotPoint] = 'A';
+			else fileRealName[dotPoint] = 'B';
+			memcpy(fileRealName + dotPoint + 1, fileName + dotPoint, len - dotPoint);
+			fileRealName[len + 1] = '\0';
+		}
+		result = analyzingDataBack(fileRealName);
 		XMem::XDELETE_ARRAY(fileRealName);
-    }else
-    {//Ê¹ÓÃÄ¬ÈÏµÄÎÄ¼þÃûÌáÈ¡Êý¾Ý
-        if(m_curBackOrder == 0)
-        {
-            result = analyzingDataBack(DATABASIC_DEFAULT_FILE_NAME_A);
-        }else
-        {
-            result = analyzingDataBack(DATABASIC_DEFAULT_FILE_NAME_B);
-        }
-    }
-
-    if(m_curBackOrder == 0) m_curBackOrder = 1;
-    else m_curBackOrder = 0;
-    return result;
+	}
+	else
+	{//Ê¹ÓÃÄ¬ÈÏµÄÎÄ¼þÃûÌáÈ¡Êý¾Ý
+		if (m_curBackOrder == 0)
+			result = analyzingDataBack(DATABASIC_DEFAULT_FILE_NAME_A);
+		else
+			result = analyzingDataBack(DATABASIC_DEFAULT_FILE_NAME_B);
+	}
+	m_curBackOrder = 1 - m_curBackOrder;
+	return result;
 }
 //ÍøÂçÓëÊý¾Ý¼äµÄ×ª»»(Ä¿Ç°ÔÝÊ±²¢²»Ìá¹©Õâ¸öÖ§³Ö)
 
 //ÓÃÓÚÒì²½Êý¾Ý±£´æµÄº¯Êý
 DWORD WINAPI XDataBasic::saveDataThread(void * pParam)
 {
-	XDataBasic &pPar = *(XDataBasic *) pParam;
+	XDataBasic &pPar = *(XDataBasic *)pParam;
 	pPar.m_isEnd = STATE_START;
-	
-	while(pPar.m_isEnd != STATE_SET_TO_END)
+
+	while (pPar.m_isEnd != STATE_SET_TO_END)
 	{
-		if(pPar.m_needSave)
+		if (pPar.m_needSave)
 		{//ÏÂÃæ½øÐÐÊý¾Ý±£´æ
 			pPar.analyzingData(pPar.m_fileName);
 		}

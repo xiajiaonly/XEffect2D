@@ -31,6 +31,25 @@ XBool XFtpClient::connectServer(const char * serverIP,int port)	//与服务器建立连
 	m_isConnect = XTrue;
 	return XTrue;
 }
+XBool XFtpClient::recvRetCode()
+{
+	int ret = recv(m_cmdsocket,m_commandBuff,RECV_BUFF_SIZE,0);
+	if(ret == SOCKET_ERROR || ret == 0) 
+	{
+		LogStr("Recv error!");
+		return XFalse;
+	}
+	m_commandBuff[ret] = '\0';
+	LogNull("%s",m_commandBuff);
+	if(!getRetCode(m_commandBuff,ret)) return XFalse;
+	return XTrue;
+}
+XBool XFtpClient::sendCommand(const char * cmd)		//向服务器发送命令
+{
+	LogNull("%s",cmd);
+	if(send(m_cmdsocket,cmd,strlen(cmd),0) == SOCKET_ERROR) return XFalse;
+	return recvRetCode();
+}
 //下面是对ftp封装的一些方法
 XBool XFtpClient::setPort(SOCKET &listenSock)	//设置通讯端口
 {
@@ -39,7 +58,7 @@ XBool XFtpClient::setPort(SOCKET &listenSock)	//设置通讯端口
 	//char hname[128];
 	//gethostname(hname,sizeof(hname));
 	//hostent *hent = gethostbyname(hname);
-	//sprintf(hname,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
+	//sprintf_s(hname,128,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
 	//	(unsigned char)(hent->h_addr_list[0][1]),
 	//	(unsigned char)(hent->h_addr_list[0][2]),
 	//	(unsigned char)(hent->h_addr_list[0][3]));
@@ -73,7 +92,7 @@ XBool XFtpClient::setPort(SOCKET &listenSock)	//设置通讯端口
 	while((pos = dip.find(".", pos)) != std::string::npos)
 		dip.replace(pos,1, ",");
 
-	sprintf(m_commandBuff,"PORT %s,%d,%d\r\n",dip.c_str(),dataport >> 8,dataport%256);
+	sprintf_s(m_commandBuff,RECV_BUFF_SIZE + 1,"PORT %s,%d,%d\r\n",dip.c_str(),dataport >> 8,dataport%256);
 	if(!sendCommand(m_commandBuff))
 	{
 		closesocket(listenSock);
@@ -95,7 +114,7 @@ XBool XFtpClient::setPort(SOCKET &listenSock)	//设置通讯端口
 }
 XBool XFtpClient::setPasv(SOCKET &listenSock) 
 { 
-	sprintf(m_commandBuff,"PASV\r\n");
+	sprintf_s(m_commandBuff,RECV_BUFF_SIZE + 1,"PASV\r\n");
 	if(!sendCommand(m_commandBuff)) return XFalse;
 	if(m_retCode != 227) return XFalse;	//返回数据不对
     listenSock = socket(AF_INET,SOCK_STREAM,0); 
@@ -203,9 +222,9 @@ XBool XFtpClient::sendDownloadFile(const char *filename)	//下载指定文件
 	{
 		if(!setPasv(listensocket)) return XFalse;
 	}
-	strcpy(m_commandBuff,"RETR ");
-	strcat(m_commandBuff,filename);
-	strcat(m_commandBuff,"\r\n");
+	strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"RETR ");
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,filename);
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");
 	if(!sendCommand(m_commandBuff) ||
 		m_retCode != 150)
 	{
@@ -283,9 +302,9 @@ XBool XFtpClient::sendUpdateFile(const char *filename)	//上传文件
 		}
 	}
 	//发送文件存储命令
-	strcpy(m_commandBuff,"STOR ");
-	strcat(m_commandBuff,filename);
-	strcat(m_commandBuff,"\r\n");
+	strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"STOR ");
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,filename);
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");
 	if(!sendCommand(m_commandBuff) ||
 		(m_retCode != 150 && m_retCode != 125))
 	{
@@ -369,9 +388,9 @@ XBool XFtpClient::sendUpdateFile(const char *inFilename,const char *outFilename)
 		}
 	}
 	//发送文件上传命令
-	strcpy(m_commandBuff,"STOR ");
-	strcat(m_commandBuff,outFilename);
-	strcat(m_commandBuff,"\r\n");
+	strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"STOR ");
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,outFilename);
+	strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");
 	if(!sendCommand(m_commandBuff) ||
 		(m_retCode != 150 && m_retCode != 125))
 	{

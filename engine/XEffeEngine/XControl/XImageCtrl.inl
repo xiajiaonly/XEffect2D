@@ -2,30 +2,41 @@ INLINE void XImageCtrl::draw()
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
-	m_sprite.draw();
+	if(m_connectWithTex)
+	{
+		m_sprite.draw(m_connectTex);
+	}else
+	{
+		if(m_onlyWithTexture) return m_sprite.draw(m_texID);
+		else m_sprite.draw();
+	}
 }
-INLINE XBool XImageCtrl::canGetFocus(float x,float y)
+INLINE XBool XImageCtrl::canGetFocus(const XVec2& p)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
-INLINE void XImageCtrl::setPosition(float x,float y)
+INLINE void XImageCtrl::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	m_sprite.setPosition(m_position);
 }
-INLINE void XImageCtrl::setScale(float x,float y)
+INLINE void XImageCtrl::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	m_sprite.setScale(m_scale);
 }
-INLINE void XImageCtrl::setColor(float r,float g,float b,float a) 
+INLINE void XImageCtrl::fitScale(float x,float y)
 {
-	m_color.setColor(r,g,b,a);
-	return m_sprite.setColor(r,g,b,a);
+	setScale(x / m_w,y / m_h);
+}
+INLINE void XImageCtrl::setColor(const XFColor& c)
+{
+	m_color = c;
+	return m_sprite.setColor(m_color);
 }
 INLINE void XImageCtrl::setAlpha(float a)
 {

@@ -20,27 +20,27 @@ void XSliderEx::ctrlProc(void*pClass,int id,int eventID)
 			pPar.m_secondarySld.setVisible();
 			float sum = (pPar.m_mainSld.getMaxValue() - pPar.m_mainSld.getMinValue()) * 0.02;
 			float v = pPar.m_mainSld.getCurValue();
-			float min = v - sum * 0.5f;
-			float max = v + sum * 0.5f;
-			if(min < pPar.m_mainSld.getMinValue())
+			float tmpMin = v - sum * 0.5f;
+			float tmpMax = v + sum * 0.5f;
+			if(tmpMin < pPar.m_mainSld.getMinValue())
 			{
-				min = pPar.m_mainSld.getMinValue();
-				max = min + sum;
+				tmpMin = pPar.m_mainSld.getMinValue();
+				tmpMax = tmpMin + sum;
 			}else
-			if(max > pPar.m_mainSld.getMaxValue())
+			if(tmpMax > pPar.m_mainSld.getMaxValue())
 			{
-				max = pPar.m_mainSld.getMaxValue();
-				min = max - sum;
+				tmpMax = pPar.m_mainSld.getMaxValue();
+				tmpMin = tmpMax - sum;
 			}
-			pPar.m_secondarySld.setRange(max,min);
+			pPar.m_secondarySld.setRange(tmpMax, tmpMin, false);
 			pPar.m_secondarySld.setCurValue(v);
 		}
 		return;
 	}
 	if(id == pPar.m_secondarySld.getControlID())
 	{
-		if(eventID == XSlider::SLD_MOUSE_MOVE || eventID == XSlider::SLD_VALUE_CHANGE)
-			pPar.m_mainSld.setCurValue(pPar.m_secondarySld.getCurValue());
+		if (eventID == XSlider::SLD_MOUSE_MOVE || eventID == XSlider::SLD_VALUE_CHANGE)
+			pPar.m_mainSld.setCurValue(pPar.m_secondarySld.getCurValue(), true);
 		return;
 	}
 	if(id == pPar.m_mainSld.getControlID())
@@ -76,23 +76,24 @@ void XSliderEx::stateChangeProc(void *pClass)
 	XSliderEx &pPar = *(XSliderEx *)pClass;
 	pPar.stateChange();
 }
-XBool XSliderEx::initWithoutSkin(const XRect& area,float max,float min,
-		XSliderType type,const XVector2 &fontPosition)
+XBool XSliderEx::initWithoutSkin(const XRect& area,float _max,float _min,
+		XSliderType type,const XVec2& fontPosition)
 {
 	if(m_isInited) return XFalse;	//防止重复初始化
-
-	if(!m_mainSld.initWithoutSkin(area,max,min,type,fontPosition)) return XFalse;
+	m_comment.init();
+	if(!m_mainSld.initWithoutSkin(area, _max, _min,type,fontPosition)) return XFalse;
 	if(m_mainSld.m_typeVorH == SLIDER_TYPE_HORIZONTAL)
 	{//水平模式
-		m_secondarySld.initWithoutSkin(XRect(0.0f,0.0f,area.getWidth(),area.getHeight()),max,min,type);
-		m_chooseBtn.initWithoutSkin("+",getDefaultFont(),1.0f,XRect(0.0f,0.0f,area.getHeight(),area.getHeight()),
-			XVector2(area.getHeight() * 0.5f,area.getHeight() * 0.5f));
+		m_secondarySld.initWithoutSkin(XRect(XVec2::zero,area.getSize()), _max, _min,type);
+		m_chooseBtn.initWithoutSkin("", getDefaultFont(), 1.0f, XRect(XVec2::zero, XVec2(area.getHeight())),
+			XVec2(area.getHeight()) * 0.5f);
 	}else
 	{//垂直模式
-		m_secondarySld.initWithoutSkin(XRect(0.0f,0.0f,area.getWidth(),area.getHeight()),max,min,type);
-		m_chooseBtn.initWithoutSkin("+",getDefaultFont(),1.0f,XRect(0.0f,0.0f,area.getWidth(),area.getWidth()),
-			XVector2(area.getWidth() * 0.5f,area.getWidth() * 0.5f));
+		m_secondarySld.initWithoutSkin(XRect(XVec2::zero, area.getSize()), _max, _min,type);
+		m_chooseBtn.initWithoutSkin("", getDefaultFont(), 1.0f, XRect(XVec2::zero, XVec2(area.getWidth())),
+			XVec2(area.getWidth()) * 0.5f);
 	}
+	m_chooseBtn.setSymbol(BTN_SYMBOL_CROSS);
 	m_mainSld.setEventProc(ctrlProc,this);
 	m_mainSld.setStateChangeCB(stateChangeProc,this);
 	m_secondarySld.disVisible();
@@ -105,9 +106,7 @@ XBool XSliderEx::initWithoutSkin(const XRect& area,float max,float min,
 
 	stateChange();
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.decreaseAObject(&m_mainSld);
 	XCtrlManager.decreaseAObject(&m_secondarySld);
@@ -124,7 +123,7 @@ XBool XSliderEx::initWithoutSkin(const XRect& area,float max,float min,
 #endif
 
 	m_isInited = XTrue;
-	setPosition(0.0f,0.0f);
+	setPosition(XVec2::zero);
 	return XTrue;
 }
 XBool XSliderEx::setACopy(const XSliderEx &temp)			//建立一个副本
@@ -160,13 +159,14 @@ XBool XSliderEx::setACopy(const XSliderEx &temp)			//建立一个副本
 void XSliderEx::update(float steptime)
 {
 	if(!m_isInited) return;	//如果没有初始化直接退出
+	m_comment.update(steptime);
 	m_mainSld.update(steptime);
 	m_secondarySld.update(steptime);
 	m_chooseBtn.update(steptime);
 	//下面做状态判断，理论上应该是在update里面判断，但是由于原来的设计中控件类没有update函数，所以目前在draw中做这个判断，之后需要修整这个问题
 	if(m_timer < 1000)
 	{
-		m_timer += XEG.getLastFrameTime();
+		m_timer += steptime;
 		if(m_timer >= 1000)
 		{
 			m_secondarySld.disVisible();
@@ -174,61 +174,61 @@ void XSliderEx::update(float steptime)
 		}
 	}
 	//if(m_mainSld.getVisible() && m_mainSld.getActive() && m_mainSld.isInRect(x,y))
-	if(m_mainSld.getVisible() && m_mainSld.isInRect(getMousePos().x,getMousePos().y) && 
+	if(m_mainSld.getVisible() && m_mainSld.isInRect(getMousePos()) && 
 		m_mainSld.getEnable())
 	{//显示微分按钮
 		m_timer = 0;
 		m_chooseBtn.setVisible();
 		return;
 	}
-	if(m_chooseBtn.getVisible() && m_chooseBtn.isInRect(getMousePos().x,getMousePos().y) && 
+	if(m_chooseBtn.getVisible() && m_chooseBtn.isInRect(getMousePos()) && 
 		m_mainSld.getEnable())
 	{
 		m_timer = 0;
 		return;
 	}
-	if(m_secondarySld.getVisible() && m_secondarySld.isInRect(getMousePos().x,getMousePos().y) ||
+	if(m_secondarySld.getVisible() && m_secondarySld.isInRect(getMousePos()) ||
 		m_secondarySld.m_curSliderState == SLIDER_STATE_DOWN)
 	{
 		m_timer = 0;
 		return;
 	}
 }
-void XSliderEx::setScale(float x,float y)
+void XSliderEx::setScale(const XVec2& s)
 {
-	if(x <= 0 || y <= 0||
+	if(s.x <= 0 || s.y <= 0||
 		!m_isInited) return;	//如果没有初始化直接退出
-	m_scale.set(x,y);
+	m_scale = s;
 
-	m_mainSld.setScale(x,y);
-	m_secondarySld.setScale(x,y);
-	m_chooseBtn.setScale(x,y);
+	m_mainSld.setScale(m_scale);
+	m_secondarySld.setScale(m_scale);
+	m_chooseBtn.setScale(m_scale);
 	if(m_mainSld.m_typeVorH == SLIDER_TYPE_HORIZONTAL)
 	{//水平模式
-		m_chooseBtn.setPosition(m_mainSld.getBox(1).x + 5.0f * m_scale.x,m_mainSld.getBox(1).y);
-		m_secondarySld.setPosition(m_mainSld.getBox(3).x,m_mainSld.getBox(3).y + 5.0f * m_scale.y);
+		m_chooseBtn.setPosition(m_mainSld.getBox(1) + XVec2(5.0f * m_scale.x,0.0F));
+		m_secondarySld.setPosition(m_mainSld.getBox(3) + XVec2(0.0F,5.0f * m_scale.y));
 	}else
 	{
-		m_chooseBtn.setPosition(m_mainSld.getBox(3).x,m_mainSld.getBox(3).y + 5.0f * m_scale.y);
-		m_secondarySld.setPosition(m_mainSld.getBox(0).x - 5.0f * m_scale.y - m_secondarySld.getMouseRectWidth(),m_mainSld.getBox(0).y);
+		m_chooseBtn.setPosition(m_mainSld.getBox(3) + XVec2(0.0F,5.0f * m_scale.y));
+		m_secondarySld.setPosition(m_mainSld.getBox(0) - XVec2(5.0f * m_scale.y + m_secondarySld.getMouseRectWidth(), 0.0F));
 	}
 	m_curMouseRect = m_mainSld.getMouseRect();
 	updateChildScale();
 }
-void XSliderEx::setPosition(float x,float y)
+void XSliderEx::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;	//如果没有初始化直接退出
-	m_position.set(x,y);
+	m_position = p;
 
-	m_mainSld.setPosition(x,y);
+	m_mainSld.setPosition(m_position);
 	if(m_mainSld.m_typeVorH == SLIDER_TYPE_HORIZONTAL)
 	{//水平模式
-		m_chooseBtn.setPosition(m_mainSld.getBox(1).x + 5.0f * m_scale.x,m_mainSld.getBox(1).y);
-		m_secondarySld.setPosition(m_mainSld.getBox(3).x,m_mainSld.getBox(3).y + 5.0f * m_scale.y);
+		m_chooseBtn.setPosition(m_mainSld.getBox(1) + XVec2(5.0f * m_scale.x, 0.0f));
+		m_secondarySld.setPosition(m_mainSld.getBox(3) + XVec2(0.0f,5.0f * m_scale.y));
 	}else
 	{
-		m_chooseBtn.setPosition(m_mainSld.getBox(3).x,m_mainSld.getBox(3).y + 5.0f * m_scale.y);
-		m_secondarySld.setPosition(m_mainSld.getBox(0).x - 5.0f * m_scale.y - m_secondarySld.getMouseRectWidth(),m_mainSld.getBox(0).y);
+		m_chooseBtn.setPosition(m_mainSld.getBox(3) + XVec2(0.0F, 5.0f * m_scale.y));
+		m_secondarySld.setPosition(m_mainSld.getBox(0) - XVec2(5.0f * m_scale.y + m_secondarySld.getMouseRectWidth(), 0.0F));
 	}
 	m_curMouseRect = m_mainSld.getMouseRect();
 	updateChildPos();

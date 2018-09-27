@@ -18,9 +18,9 @@ private:
 
 	int m_iSum;	//引用数量
 	unsigned int *m_i;	//引用数据
-	XVector3 m_position;	//位置
-	XVector3 m_scale;		//尺寸
-	XVector3 m_angle;		//角度
+	XVec3 m_position;	//位置
+	XVec3 m_scale;		//尺寸
+	XVec3 m_angle;		//角度
 
 	XVBO m_vbo;
 public:
@@ -46,11 +46,11 @@ public:
 	}
 	void draw();
 	void setPosition(float x,float y,float z) {m_position.set(x,y,z);}
-	void setPosition(const XVector3 &pos) {m_position = pos;}
+	void setPosition(const XVec3& pos) {m_position = pos;}
 	void setScale(float x,float y,float z) {m_scale.set(x,y,z);}
-	void setScale(const XVector3 &scale) {m_scale = scale;}
+	void setScale(const XVec3& scale) {m_scale = scale;}
 	void setAngle(float x,float y,float z) {m_angle.set(x,y,z);}
-	void setAngle(const XVector3 &angle) {m_angle = angle;}
+	void setAngle(const XVec3& angle) {m_angle = angle;}
 
 	void updateV(float *v)	//更新顶点数据
 	{

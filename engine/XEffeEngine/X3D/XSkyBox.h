@@ -32,7 +32,7 @@ public:
 		m_back = back;
 	}
 	//传入的文件名大致为：....\top.png
-	XBool init(const char *filename,XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool init(const char *filename,XResPos resourcePosition = RES_SYS_DEF);
 	void draw();
 
 	XSkyBox()

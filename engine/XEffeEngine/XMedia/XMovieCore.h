@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2014.3.20
 //--------------------------------
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 #include "XCommonDefine.h"
 namespace XE{
 //这是影片播放类的基类，所有的影片播放类都是继承自这个基类
@@ -38,12 +38,12 @@ private:
 	XMovieCore *m_pObj;
 public:
 	XMovie(){m_pObj = XMem::createMem<T>();}
-	~XMovie(){XMem::XDELETE(m_pObj);}
+	virtual ~XMovie(){XMem::XDELETE(m_pObj);}
 	XBool load(const char *filename) {return m_pObj->load(filename);}
 	XBool updateFrame() {return m_pObj->updateFrame();}
 	void draw() {m_pObj->draw();}
 	void updateTex(XTexture &tex) {m_pObj->updateTex(tex);}
-	unsigned int * getTexture() {return m_pObj->getTexture();}
+	unsigned int* getTexture() {return m_pObj->getTexture();}
 //	void setPauseOrPlay(void) {m_pObj->setPauseOrPlay();}
 	virtual void pause(){m_pObj->pause();}
 	virtual void play(){m_pObj->play();}
@@ -53,6 +53,9 @@ public:
 	XBool getIsLoop() {return m_pObj->getIsLoop(isLoop);}	//获取是否循环
 	XBool getIsEnd() {return m_pObj->getIsEnd(isLoop);};	//获取是否播放完成
 	double getCurrentPlayingTime() const {return m_pObj->getCurrentPlayingTime();};
+private:
+	XMovie(const XMovie &temp);
+	XMovie& operator = (const XMovie& temp);
 };
 }
 #endif

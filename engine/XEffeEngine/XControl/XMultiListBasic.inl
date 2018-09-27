@@ -58,7 +58,7 @@ INLINE int XMultiListBasic::getSelectIndex() const	//返回选择操作的行号
 INLINE XBool XMultiListBasic::getCheckState(int order,int lineOrder)
 {
 	if(!m_isInited) return XFalse;
-//	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return XFalse;
+//	if(lineOrder < 0 || lineOrder >= (std::min)(m_tableLineSum,m_canShowLineSum)) return XFalse;
 //	if(order == 0) return m_check0[lineOrder].getState();
 //	else return m_check1[lineOrder].getState();
 	if(lineOrder < 0 || lineOrder >= m_tableLineSum) return XFalse;
@@ -68,14 +68,14 @@ INLINE XBool XMultiListBasic::getCheckState(int order,int lineOrder)
 INLINE void XMultiListBasic::setCheckState(int order,int lineOrder,XBool state)
 {
 	if(!m_isInited) return;
-//	if(lineOrder < 0 || lineOrder >= min(m_tableLineSum,m_canShowLineSum)) return;
+//	if(lineOrder < 0 || lineOrder >= (std::min)(m_tableLineSum,m_canShowLineSum)) return;
 //	if(order == 0) m_check0[lineOrder].setState(state);
 //	else m_check1[lineOrder].setState(state);
 	if(lineOrder < 0 || lineOrder >= m_tableLineSum) return;
 	if(order == 0) m_check0State[lineOrder] = state;
 	else m_check1State[lineOrder] = state;
 	//下面更新列表框的选择状态的信息
-	if(lineOrder >= m_showStartLine && lineOrder < XEE_Min(m_showStartLine + m_canShowLineSum,m_tableLineSum))
+	if(lineOrder >= m_showStartLine && lineOrder < (std::min)(m_showStartLine + m_canShowLineSum,m_tableLineSum))
 	{
 		if(m_check0State[lineOrder]) m_check0[lineOrder - m_showStartLine].setState(XTrue);
 		else m_check0[lineOrder - m_showStartLine].setState(XFalse);
@@ -83,11 +83,11 @@ INLINE void XMultiListBasic::setCheckState(int order,int lineOrder,XBool state)
 		else m_check1[lineOrder - m_showStartLine].setState(XFalse);
 	}
 }
-INLINE XBool XMultiListBasic::initEx(const XVector2& position,		//上面接口的简化版本
+INLINE XBool XMultiListBasic::initEx(const XVec2& position,		//上面接口的简化版本
 	const XMultiListSkin &tex,		
 	const XCheckSkin &checktex0,		
 	const XCheckSkin &checktex1,		
-	const XFontUnicode &font,			
+	const XFontUnicode& font,			
 	float strSize,						
 	int rowSum,				
 	int lineSum,			
@@ -103,6 +103,7 @@ INLINE XBool XMultiListBasic::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 
 	if(keyOrder == XKEY_LSHIFT || keyOrder == XKEY_RSHIFT)
 	{
@@ -110,13 +111,13 @@ INLINE XBool XMultiListBasic::keyboardProc(int keyOrder,XKeyState keyState)
 	}
 	return XTrue;
 }
-INLINE XBool XMultiListBasic::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XMultiListBasic::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
 INLINE void XMultiListBasic::setTextColor(const XFColor& color) 
 {
@@ -124,10 +125,10 @@ INLINE void XMultiListBasic::setTextColor(const XFColor& color)
 	m_textColor = color;
 	m_caption.setColor(m_textColor);
 }
-INLINE void XMultiListBasic::setColor(float r,float g,float b,float a) 
+INLINE void XMultiListBasic::setColor(const XFColor& c)
 {
 	if(!m_isInited) return;
-	m_color.setColor(r,g,b,a);;
+	m_color = c;
 	if(!m_withoutTex)
 	{
 		m_spriteBackGround.setColor(m_color);
@@ -144,7 +145,7 @@ INLINE void XMultiListBasic::setColor(float r,float g,float b,float a)
 		{
 			if(tempRow->isEnable && tempRow->isShow != 0)
 			{
-				tempRow->text.setAlpha(a);//显示标题文字
+				tempRow->text.setAlpha(m_color.a);//显示标题文字
 			}
 			if(tempRow->nextRow == NULL) break;
 			else tempRow = tempRow->nextRow;
@@ -154,7 +155,7 @@ INLINE void XMultiListBasic::setColor(float r,float g,float b,float a)
 			XMultiListOneBox *tempBox = m_tableBox;
 			while(true)
 			{
-				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(a);//显示标题文字
+				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(m_color.a);//显示标题文字
 				if(tempBox->nextBox == NULL) break;
 				else tempBox = tempBox->nextBox;
 			}
@@ -210,27 +211,27 @@ INLINE void XMultiListBasic::setAlpha(float a)
 	}
 	updateChildAlpha();
 }
-INLINE XBool XMultiListBasic::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XMultiListBasic::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
-INLINE XVector2 XMultiListBasic::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XMultiListBasic::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0: return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1: return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2: return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3: return XVector2(m_curMouseRect.left,m_curMouseRect.bottom); 
+	case 0: return m_curMouseRect.getLT();
+	case 1: return m_curMouseRect.getRT();
+	case 2: return m_curMouseRect.getRB();
+	case 3: return m_curMouseRect.getLB(); 
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE XBool XMultiListBasic::canLostFocus(float x,float y) 
+INLINE XBool XMultiListBasic::canLostFocus(const XVec2& p)
 {
-	if(m_needShowVSlider && !m_verticalSlider.canLostFocus(x,y)) return XFalse;
-	if(m_needShowHSlider && !m_horizontalSlider.canLostFocus(x,y)) return XFalse;
+	if(m_needShowVSlider && !m_verticalSlider.canLostFocus(p)) return XFalse;
+	if(m_needShowHSlider && !m_horizontalSlider.canLostFocus(p)) return XFalse;
 	return XTrue;
 }
 INLINE void XMultiListBasic::setLostFocus() 

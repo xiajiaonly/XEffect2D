@@ -5,8 +5,8 @@
 //Version:	1.0.0
 //Date:		2011.11.20
 //--------------------------------
-#include "stdio.h" 
-#include "XBasicClass.h"
+//#include "stdio.h" 
+//#include "XBasicClass.h"
 #include "XThread.h"
 namespace XE{
 //这是一个数据转换、存储、格式化、加密、传输的类
@@ -60,8 +60,8 @@ public:
 
     XBool init(int ID,XBool isSaveAsynchronous = XFalse,XAnalyzingFileMode saveMode = ANALYZING_BUFFERING);
     //内存与数据间的转换
-    XBool mergeData(const unsigned char *pData,int dataLength);        //从外部合并数据到内部
-    int analyzingData(unsigned char *pData,int dataLength);			//将内部数据解析到外部,返回内部数据的大小，-1为错误
+    XBool mergeData(const void *pData,int dataLength);        //从外部合并数据到内部
+    int analyzingData(void *pData,int dataLength);			//将内部数据解析到外部,返回内部数据的大小，-1为错误
     //文件与数据间的转换
     XBool mergeData(const char *fileName = NULL);            //从文件中提取数据
     XBool analyzingDataManager(const char *fileName = NULL);        //将数据保存到文件，这个函数会根据之前用户的设置对保存的具体操作进行调度
@@ -97,13 +97,13 @@ inline void XDataBasic::release()
 	XMem::XDELETE_ARRAY(m_secretKey);
 	m_isInited = XFalse;
 }
-inline int XDataBasic::analyzingData(unsigned char *pData,int dataLength)    //将内部数据解析到外部
+inline int XDataBasic::analyzingData(void *pData,int dataLength)    //将内部数据解析到外部
 {
     if(!m_isInited ||
 		dataLength <= 0) return -1;
     if(m_pData == NULL || m_dataLength <= 0) return 0;
     if(dataLength <= m_dataLength) memcpy(pData,m_pData,dataLength);
-    else  memcpy(pData,m_pData,m_dataLength);
+    else memcpy(pData,m_pData,m_dataLength);
     return m_dataLength;
 }
 }

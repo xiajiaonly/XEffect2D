@@ -9,8 +9,32 @@
 #include "XNetWork\XWinSockCommon.h"
 
 namespace XE{
+const char *XStringConverter::ANSI2UTF8(const char*src)
+{
+	if (src == NULL) return NULL;
+	int nRetLen = MultiByteToWideChar(CP_ACP, 0, src, -1, NULL, 0);
+	if (nRetLen == 0) return NULL;
+	if (m_tmpArray.size() < nRetLen + 1) m_tmpArray.resize(nRetLen + 1);	//分配内存空间
+
+	MultiByteToWideChar(CP_ACP, 0, src, -1, &(m_tmpArray[0]), nRetLen);
+	nRetLen = WideCharToMultiByte(CP_UTF8, 0, &(m_tmpArray[0]), -1, NULL, 0, NULL, NULL);
+	if (m_result.size() < nRetLen + 1) m_result.resize(nRetLen + 1);
+	WideCharToMultiByte(CP_UTF8, 0, &(m_tmpArray[0]), -1, &m_result[0], nRetLen, NULL, NULL);
+
+	return m_result.c_str();
+}
 namespace XString
 {
+	XBool binToHex(const unsigned char *in,int len,unsigned char *out)
+	{//尚未经过测试
+		if(in == NULL || out == NULL || len <= 0) return false;
+		char *pTmp = (char *)out;
+		for(int i = 0;i < len;++ i)
+		{
+			sprintf(pTmp + i * 2,"%02x",in[i]);
+		}
+		return true;
+	}
 	XBool getIsNumber(const char * p)
 	{
 		//方案1
@@ -20,8 +44,9 @@ namespace XString
 		//第一个字符可以为'-' '+'
 		//if((p[index] < '0' || p[index] > '9') && p[index] != '+' && p[index] != '-') return XFalse;
 		if(p[index] == '+' || p[index] == '-') ++ index;
-		XBool dotFlag = XFalse;
 		int len = strlen(p);
+		if(len <= index) return XFalse;
+		XBool dotFlag = XFalse;
 		for(;index < len;++ index)
 		{
 			if(p[index] >= '0' && p[index] <= '9') continue;
@@ -128,7 +153,56 @@ namespace XString
 			}
 			return ret;
 		}else
+		{//超出范围
+			for(int i = 0;i < len;++ i)
+			{
+				if((p[i] >= '0' && p[i] <= '9') ||
+					(p[i] >= 'A' && p[i] <= 'F') ||
+					(p[i] >= 'a' && p[i] <= 'f'))
+				{//合法的数据
+					continue;
+				}else
+				if(p[i] == '\0') break; 
+				else
+				{
+					return -1;
+				}
+			}
+			return 1;
+		}
+	}
+	long long getIsHexNumber64(const char * p)
+	{
+		if(p == NULL) return -1;
+		int len = strlen(p);
+		if(len <= 0) return -1;
+		if(p[1] == 'x' || p[1] == 'X')
 		{
+			if(p[0] != '0') return -1;
+			return getIsHexNumber64(p + 2);
+		}
+		if(len <= 16)
+		{//在long long的范围内
+			long long ret = 0;
+			for(int i = 0;i < len;++ i)
+			{
+				if((p[i] >= '0' && p[i] <= '9') ||
+					(p[i] >= 'A' && p[i] <= 'F') ||
+					(p[i] >= 'a' && p[i] <= 'f'))
+				{//合法的数据
+					if(p[i] >= '0' && p[i] <= '9') ret = (ret << 4) + p[i] - '0'; else
+					if(p[i] >= 'A' && p[i] <= 'F') ret = (ret << 4) + p[i] - 'A' + 10; else
+					if(p[i] >= 'a' && p[i] <= 'f') ret = (ret << 4) + p[i] - 'a' + 10; 
+				}else
+				if(p[i] == '\0') break; 
+				else
+				{
+					return -1;
+				}
+			}
+			return ret;
+		}else
+		{//超出范围
 			for(int i = 0;i < len;++ i)
 			{
 				if((p[i] >= '0' && p[i] <= '9') ||
@@ -291,9 +365,9 @@ namespace XString
 	}
 	std::string getCanShowString(const char *str,int canShowLen)
 	{
-		if(str == NULL || canShowLen <= 0) return "";
+		if(str == NULL || canShowLen <= 0) return XString::gNullStr;
 		int len = strlen(str);
-		if(len == 0) return "";
+		if(len == 0) return XString::gNullStr;
 		if(len <= canShowLen) return str;
 		if(canShowLen == 1) return ".";
 		if(canShowLen == 2) return "..";
@@ -332,7 +406,7 @@ namespace XString
 		}
 		return len;
 	}
-	int strToInt(const std::string &temp,int radix)
+	int strToInt(const std::string& temp,int radix)
 	{
 		int ret = 0;
 		if(radix == 16) if(sscanf(temp.c_str(),"%x",&ret) != 1) return  0;else
@@ -362,11 +436,11 @@ namespace XString
 	}
 	std::string ANSI2UTF8(const char * src)
 	{
-		if(src == NULL) return "";
+		if(src == NULL) return XString::gNullStr;
 		int nRetLen = MultiByteToWideChar(CP_ACP, 0, src, -1, NULL, 0);
-		if(nRetLen == 0) return "";
+		if(nRetLen == 0) return XString::gNullStr;
 		wchar_t* unicode_buf = XMem::createArrayMem<wchar_t>(nRetLen + 1);
-		if(unicode_buf == NULL) return "";
+		if(unicode_buf == NULL) return XString::gNullStr;
 		MultiByteToWideChar(CP_ACP, 0, src, -1, unicode_buf, nRetLen);
 		nRetLen = WideCharToMultiByte(CP_UTF8, 0, unicode_buf, -1, NULL, 0, NULL, NULL);
 		std::string ret;
@@ -399,17 +473,17 @@ namespace XString
 	}
 	std::string UTF82ANSI(const char * src)
 	{
-		if(src == NULL) return "";
+		if(src == NULL) return XString::gNullStr;
 		int nRetLen = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
-		if(nRetLen == 0) return "";
+		if(nRetLen == 0) return XString::gNullStr;
 		wchar_t* unicode_buf = XMem::createArrayMem<wchar_t>(nRetLen + 1);
 		if(unicode_buf == NULL) return NULL;
-		if(MultiByteToWideChar(CP_UTF8, 0, src, -1, unicode_buf, nRetLen) == 0) return "";
+		if(MultiByteToWideChar(CP_UTF8, 0, src, -1, unicode_buf, nRetLen) == 0) return XString::gNullStr;
 		nRetLen = WideCharToMultiByte(CP_ACP, 0, unicode_buf, -1, NULL, 0, NULL, NULL);
 
 		std::string ret;
 		ret.resize(nRetLen + 1);
-		if(WideCharToMultiByte(CP_ACP, 0, unicode_buf, -1, &ret[0], nRetLen, NULL, NULL) == 0) return "";
+		if(WideCharToMultiByte(CP_ACP, 0, unicode_buf, -1, &ret[0], nRetLen, NULL, NULL) == 0) return XString::gNullStr;
 		XMem::XDELETE_ARRAY(unicode_buf);
 
 		return ret;
@@ -490,19 +564,19 @@ namespace XString
 	}
 	std::string getTextFromClipboard()
 	{//从粘贴板中读取数据
-		if(!IsClipboardFormatAvailable(CF_TEXT)) return ""; 
+		if(!IsClipboardFormatAvailable(CF_TEXT)) return XString::gNullStr;
 	//	HWND h = FindWindow(NULL,"Control");
-	//	if(!OpenClipboard(h)) return ""; 
-		if(!OpenClipboard(NULL)) return ""; 
+	//	if(!OpenClipboard(h)) return XString::gNullStr;
+		if(!OpenClipboard(NULL)) return XString::gNullStr;
 		HGLOBAL hglb = GetClipboardData(CF_TEXT); 
-		if(hglb == NULL) return "";
+		if(hglb == NULL) return XString::gNullStr;
 		LPVOID lptstr = GlobalLock(hglb);
 		GlobalUnlock(hglb); 
 		CloseClipboard();
 		if(lptstr != NULL) return (char *)lptstr;
-		else return "";
+		else return XString::gNullStr;
 	}
-	void setTextToClipboard(const std::string & str)
+	void setTextToClipboard(const std::string& str)
 	{//将数据写入到粘贴板
 	//	HWND h = FindWindow(NULL,"Control");
 	//	if(!OpenClipboard(h) || !EmptyClipboard()) return; 
@@ -619,18 +693,395 @@ namespace XString
 		for(int i = 0;i < length;++ i)
 		{
 			if(p[i] < 0) 
-			{
-				++ len;
 				++ i;
-			}else
-			{
-				++ len;
-			}
+			++ len;
 		}
 		return len;
 	}
-}
+	int getStrLen(const char * p, int len)
+	{
+		int length = 0;
+		for (int i = 0; i < len; ++i)
+		{
+			if(p[i] < 0) 
+				++ i;
+			++length;
+		}
+		return length;
+	}
+
+	std::string g_strDigit[] = {"零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"};
+	std::string g_strDigitEx[] = {"〇", "一", "二", "三", "四", "五", "六", "七", "八", "九"};
+	std::string g_strUnit[] = {"圆", "拾", "佰", "仟", "万", "拾", "佰", "仟", "亿","拾", "佰", "仟", "万", "拾", "佰"};
+	std::string g_strUnitEx[] = {"元", "十", "百", "千", "万", "十", "百", "千", "亿","十", "百", "千", "万", "十", "百"};
+	std::string g_strUnit2[] = {"角", "分"};
+	int replaceSubStr(std::string &strOrig,std::string strSub,const std::string &strReplace)
+	{
+		int pos = (int)strOrig.find(strSub);
+		int length = (int)strSub.length();
+    
+		if (pos >= 0)
+		{
+			strOrig.replace(pos, length, strReplace);
+			return 0;
+		}
+    
+		return -1;
+	}
+	void replaceSubStrAtHead(std::string &strOrig,std::string strSub,const std::string &strReplace)
+	{
+		int pos = (int)strOrig.find(strSub);
+		int length = (int)strSub.length();
+    
+		if (pos == 0)
+			strOrig.replace(pos, length, strReplace);
+	}
+	std::string floatToRMB(float sum)
+	{
+		#define MAX_NUMBER_LEN 100
+		int i               = 0;
+		int ret             = 0;
+		int length          = 0;
+		char *p             = NULL;
+		char *pcDecimal     = NULL; //保存小数部分字符
+		char czNumber[MAX_NUMBER_LEN]  = {0};  //保存完整数字部分字符
+		std::string strResult;
+
+		//std::cout << "======================================" << std::endl;
+		//std::cout << sum << std::endl;
+
+		//判断是否为小数
+		if (sum < 0)
+		{
+			strResult = "不支持读负数";   
+			return strResult;   
+		}
+
+		//将数字转为数字字符串，利用sprintf_s的正则转换
+		sprintf_s(czNumber, MAX_NUMBER_LEN, "%.15lg", sum);
+		//printf("[No.0]%s\n", czNumber); 
+
+		//如果数字是太大或太小的数，因为已经转为科学计数，所以会含有e字符
+		p = strchr(czNumber,'e');  
+		if (NULL!=p) 
+		{
+			strResult = "不支持读太大或太小的数";
+			return strResult;
+		}
+    
+		p = strchr(czNumber, '.');  
+		if (NULL != p) 
+		{       
+			p[0] = 0;    
+			pcDecimal = p + 1;   
+		}    
+		length = (int)strlen(czNumber);  
+    
+		for (i = 0; i<length; i++) 
+		{        
+			if ('0' == czNumber[i] && 0 != ((length-1-i) % 4))
+			{
+				strResult += g_strDigit[czNumber[i] - '0'];
+			}else 
+			{
+				strResult += g_strDigit[czNumber[i] - '0'] + g_strUnit[length-1-i];
+			}   
+		}
+		//std::cout << "[No.1]把数字直接替换为汉字: \n" << strResult << std::endl;
+
+		//把strResult中的所有"零零"子串替换为"零"
+		while (1)
+		{
+			ret = replaceSubStr(strResult, "零零", "零");
+			if (ret < 0)
+			{
+				break;
+			}
+		}
+		//std::cout << "[No.2]替换所有零零为零: \n" << strResult << std::endl;
+
+		replaceSubStr(strResult, "零亿", "亿");
+		replaceSubStr(strResult, "零万", "万");
+		if (strResult != "零圆")    //如果整数部分全为0，则不要去除元单位前面的零
+		{
+			replaceSubStr(strResult, "零圆", "圆");
+		}
+    
+		//std::cout << "[No.3]去除零亿、零万、零圆前面的零: \n" << strResult << std::endl;
+
+		//小数精确到两位数，即精确到单位分
+		if (NULL != pcDecimal) 
+		{
+			//如果小数部分有数值而整数部分为0，则删除字符串中的零元
+			if (strResult == "零圆")
+			{
+				strResult.clear();
+			}
+			i = 0;
+			while (1) 
+			{           
+				if (0 == pcDecimal[i] || i >= 2) 
+					break;   
+				strResult += g_strDigit[pcDecimal[i] - '0'] + g_strUnit2[i];
+				i++;      
+			}   
+		}
+		//std::cout << "[No.4]小数精确到两位数，即精确到单位分: \n" << strResult << std::endl;
+    
+		return strResult;
+	}
+	std::string floatToChinese(float sum,bool smallStr)
+	{
+		#define MAX_NUMBER_LEN 100
+		int length          = 0;
+		char *p             = NULL;
+		char *pcDecimal     = NULL; //保存小数部分字符
+		char czNumber[MAX_NUMBER_LEN]  = {0};  //保存完整数字部分字符
+		std::string strResult;
+
+		//std::cout << "======================================" << std::endl;
+		//std::cout << sum << std::endl;
+
+		//判断是否为小数
+		if (sum < 0)
+		{
+			strResult = "不支持读负数";   
+			return strResult;   
+		}
+
+		//将数字转为数字字符串，利用sprintf_s的正则转换
+		sprintf_s(czNumber, MAX_NUMBER_LEN, "%.6f", sum);
+		//printf("[No.0]%s\n", czNumber); 
+
+		//如果数字是太大或太小的数，因为已经转为科学计数，所以会含有e字符
+		p = strchr(czNumber,'e');  
+		if (NULL!=p) 
+		{
+			strResult = "不支持读太大或太小的数";
+			return strResult;
+		}
+    
+		p = strchr(czNumber, '.');  
+		if (NULL != p) 
+		{       
+			p[0] = 0;    
+			pcDecimal = p + 1;   
+		}    
+		length = (int)strlen(czNumber);  
+    
+		if(smallStr)
+		{
+			for (int i = 0; i<length;++ i) 
+			{        
+				if ('0' == czNumber[i] && 0 != ((length-1-i) % 4))
+					strResult += g_strDigitEx[czNumber[i] - '0'];
+				else 
+					strResult += g_strDigitEx[czNumber[i] - '0'] + g_strUnitEx[length-1-i];
+			}
+		}else
+		{
+			for (int i = 0; i<length;++ i) 
+			{        
+				if ('0' == czNumber[i] && 0 != ((length-1-i) % 4))
+					strResult += g_strDigit[czNumber[i] - '0'];
+				else 
+					strResult += g_strDigit[czNumber[i] - '0'] + g_strUnit[length-1-i];
+			}
+		}
+		//std::cout << "[No.1]把数字直接替换为汉字: \n" << strResult << std::endl;
+
+		//把strResult中的所有"零零"子串替换为"零"
+		if(smallStr)
+		{
+			while(replaceSubStr(strResult, "〇〇", "〇") >= 0)
+			{}
+			//std::cout << "[No.2]替换所有零零为零: \n" << strResult << std::endl;
+
+			replaceSubStr(strResult, "〇亿", "亿");
+			replaceSubStr(strResult, "〇万", "万");
+			if (strResult != "〇元")    //如果整数部分全为0，则不要去除元单位前面的零
+				replaceSubStr(strResult, "〇元", "元");
+			//如果最前面两个是"一十"，应该去掉"一"
+			replaceSubStrAtHead(strResult,"一十","十");
+		}else
+		{
+			while(replaceSubStr(strResult, "零零", "零") >= 0)
+			{}
+			//std::cout << "[No.2]替换所有零零为零: \n" << strResult << std::endl;
+
+			replaceSubStr(strResult, "零亿", "亿");
+			replaceSubStr(strResult, "零万", "万");
+			if (strResult != "零圆")    //如果整数部分全为0，则不要去除元单位前面的零
+				replaceSubStr(strResult, "零圆", "圆");
+			//如果最前面两个是"一十"，应该去掉"一"
+			replaceSubStrAtHead(strResult,"壹拾","拾");
+		}
+    
+		//std::cout << "[No.3]去除零亿、零万、零圆前面的零: \n" << strResult << std::endl;
+
+		//小数精确到两位数，即精确到单位分
+		if (NULL != pcDecimal) 
+		{
+			int pcDecimalLen = 5;
+			for(pcDecimalLen = 5;pcDecimalLen >= 0;-- pcDecimalLen)
+			{
+				if(pcDecimal[pcDecimalLen] != '0') break;
+			}
+			if(pcDecimalLen <= 0)
+			{//如果小数部分全部为0则   
+				if(smallStr)
+					replaceSubStr(strResult, "元", "");
+				else
+					replaceSubStr(strResult, "圆", "");
+			}else
+			{
+				if(smallStr)
+				{
+					replaceSubStr(strResult, "元", "点");
+					//继续转换小数部分
+					for(int i = 0;i <= pcDecimalLen;++ i)
+					{
+						strResult += g_strDigitEx[pcDecimal[i] - '0'];
+					}
+				}else
+				{
+					replaceSubStr(strResult, "圆", "点");
+					//继续转换小数部分
+					for(int i = 0;i <= pcDecimalLen;++ i)
+					{
+						strResult += g_strDigit[pcDecimal[i] - '0'];
+					}
+				}
+			}
+		}else
+		{
+			if(smallStr)
+				replaceSubStr(strResult, "元", "");
+			else
+				replaceSubStr(strResult, "圆", "");
+		}
+		//std::cout << "[No.4]小数精确到两位数，即精确到单位分: \n" << strResult << std::endl;
+    
+		return strResult;
+	}
+	std::string intToChinese(int sum,bool smallStr)
+	{
+		#define MAX_NUMBER_LEN 100
+		char czNumber[MAX_NUMBER_LEN]  = {0};  //保存完整数字部分字符
+		std::string strResult;
+
+		//std::cout << "======================================" << std::endl;
+		//std::cout << sum << std::endl;
+
+		//判断是否为小数
+		if (sum < 0)
+		{
+			strResult = "不支持读负数";   
+			return strResult;   
+		}
+
+		//将数字转为数字字符串，利用sprintf_s的正则转换
+		sprintf_s(czNumber, MAX_NUMBER_LEN, "%d", sum);
+		//printf("[No.0]%s\n", czNumber); 
+
+		//如果数字是太大或太小的数，因为已经转为科学计数，所以会含有e字符
+		char *p = strchr(czNumber,'e');  
+		if (NULL != p) 
+		{
+			strResult = "不支持读太大的数";
+			return strResult;
+		}  
+		int length = (int)strlen(czNumber);  
+    
+		if(smallStr)
+		{
+			for (int i = 0; i<length; i++) 
+			{        
+				if ('0' == czNumber[i] && 0 != ((length-1-i) % 4))
+				{
+					strResult += g_strDigitEx[czNumber[i] - '0'];
+				}else 
+				{
+					strResult += g_strDigitEx[czNumber[i] - '0'] + g_strUnitEx[length-1-i];
+				}   
+			}
+		}else
+		{
+			for (int i = 0; i<length; i++) 
+			{        
+				if ('0' == czNumber[i] && 0 != ((length-1-i) % 4))
+				{
+					strResult += g_strDigit[czNumber[i] - '0'];
+				}else 
+				{
+					strResult += g_strDigit[czNumber[i] - '0'] + g_strUnit[length-1-i];
+				}   
+			}
+		}
+		//std::cout << "[No.1]把数字直接替换为汉字: \n" << strResult << std::endl;
+
+		//把strResult中的所有"零零"子串替换为"零"
+		if(smallStr)
+		{
+			while(replaceSubStr(strResult, "〇〇", "〇") >= 0)
+			{}
+			//std::cout << "[No.2]替换所有零零为零: \n" << strResult << std::endl;
+
+			replaceSubStr(strResult, "〇亿", "亿");
+			replaceSubStr(strResult, "〇万", "万");
+			if (strResult != "〇元")    //如果整数部分全为0，则不要去除元单位前面的零
+			{
+				replaceSubStr(strResult, "〇元", "元");
+			}
+			//如果最前面两个是"一十"，应该去掉"一"
+			replaceSubStrAtHead(strResult,"一十","十");
+		}else
+		{
+			while(replaceSubStr(strResult, "零零", "零") >= 0)
+			{}
+			//std::cout << "[No.2]替换所有零零为零: \n" << strResult << std::endl;
+
+			replaceSubStr(strResult, "零亿", "亿");
+			replaceSubStr(strResult, "零万", "万");
+			if (strResult != "零圆")    //如果整数部分全为0，则不要去除元单位前面的零
+			{
+				replaceSubStr(strResult, "零圆", "圆");
+			}
+			//如果最前面两个是"一十"，应该去掉"一"
+			replaceSubStrAtHead(strResult,"壹拾","拾");
+		}
+    
+		//std::cout << "[No.3]去除零亿、零万、零圆前面的零: \n" << strResult << std::endl;
+		if(smallStr)
+			replaceSubStr(strResult, "元", "");
+		else
+			replaceSubStr(strResult, "圆", "");
+		//std::cout << "[No.4]小数精确到两位数，即精确到单位分: \n" << strResult << std::endl;
+    
+		return strResult;
+	}
+	wchar_t oneCharToWchar(const char* src)
+	{
+		if(src == NULL) return NULL;
+		wchar_t ret = 0;
+		MultiByteToWideChar(CP_ACP, 0, src, 2,&ret, 1);
+		return ret;
+	}
+	std::string Wchar2ANSI(const wchar_t* src)
+	{
+		if(src == NULL) return NULL;
+		int nRetLen = WideCharToMultiByte(CP_ACP, 0,src, -1, NULL, 0, NULL, NULL);
+ 		std::string ret;
+		ret.resize(nRetLen + 1);
+		WideCharToMultiByte(CP_ACP, 0, src, -1, &ret[0], nRetLen, NULL, NULL);
+		return ret;
+	}
+	int removeAllSpace(char *str, int strlen)
+	{//尚未实现
+		return 0;
+	}
 #if !WITH_INLINE_FILE
 #include "XStringFun.inl"
 #endif
+}
 }

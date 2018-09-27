@@ -76,10 +76,10 @@ XBool XVideoEncode::open(int w,int h,int rate)
 	m_packet.data = NULL;
 	m_packet.size = 0;
 
-	m_videoOutbufSize = w * h * 4;
-    m_videoOutbuf = XMem::createArrayMem<uint8_t>(m_videoOutbufSize);
-	m_pSwsContext = sws_getContext(w,h,PIX_FMT_RGB24,   
-									w,h,PIX_FMT_YUV420P,  
+	//m_videoOutbufSize = w * h * 4;
+    //m_videoOutbuf = XMem::createArrayMem<uint8_t>(m_videoOutbufSize);
+	m_pSwsContext = sws_getContext(w,h,AV_PIX_FMT_RGB24,   
+									w,h,AV_PIX_FMT_YUV420P,  
 									SWS_POINT,NULL,NULL,NULL);//SWS_BICUBIC
 	if(m_pSwsContext == NULL) return XFalse;
 
@@ -102,28 +102,30 @@ XBool XVideoEncode::encodeDataRGB(unsigned char *in)
 	av_init_packet(&m_packet);
 	m_packet.data = NULL;
 	m_packet.size = 0;
-	//m_pFrameYUV->pts = m_videoFrameIndex;
+	m_pFrameYUV->pts = m_videoFrameIndex;
+	++m_videoFrameIndex;
 
-	//int finished = 0;
-	//int ret = avcodec_encode_video2(m_videoCodec,&m_packet,m_pFrameYUV,&finished);
-	//if(ret < 0) return XFalse;
-	//if(finished)
-	//{//压缩成功,这里并没有立即释放数据，注意
-	//	++m_videoFrameIndex;
-	//	return XTrue;
-	//}
-	//++m_videoFrameIndex;
-
-	int outSize = avcodec_encode_video(m_videoCodec,m_videoOutbuf,m_videoOutbufSize,m_pFrameYUV); 
-	if(outSize > 0)
-	{
+	int finished = 0;
+	int ret = avcodec_encode_video2(m_videoCodec,&m_packet,m_pFrameYUV,&finished);
+	if(ret < 0) return XFalse;
+	if(finished)
+	{//压缩成功,这里并没有立即释放数据，注意
 		m_packet.pts= m_videoCodec->coded_frame->pts;
 		if(m_videoCodec->coded_frame->key_frame) m_packet.flags |= AV_PKT_FLAG_KEY;
 		m_packet.stream_index = 0;
-		m_packet.data = m_videoOutbuf;
-		m_packet.size = outSize;
 		return XTrue;
 	}
+
+	//int outSize = avcodec_encode_video(m_videoCodec,m_videoOutbuf,m_videoOutbufSize,m_pFrameYUV); 
+	//if(outSize > 0)
+	//{
+	//	m_packet.pts= m_videoCodec->coded_frame->pts;
+	//	if(m_videoCodec->coded_frame->key_frame) m_packet.flags |= AV_PKT_FLAG_KEY;
+	//	m_packet.stream_index = 0;
+	//	m_packet.data = m_videoOutbuf;
+	//	m_packet.size = outSize;
+	//	return XTrue;
+	//}
 
 	return XFalse;
 }
@@ -133,6 +135,7 @@ void XVideoEncode::release()
 //	XMem::XDELETE_ARRAY(m_pFrameYUV->data[0]);
 //	XMem::XDELETE_ARRAY(m_pFrameYUV->data[1]);
 //	XMem::XDELETE_ARRAY(m_pFrameYUV->data[2]);
+	av_free_packet(&m_packet);
 	av_freep(&m_pFrameYUV->data[0]);
 	av_frame_free(&m_pFrameRGB);
 	av_frame_free(&m_pFrameYUV);
@@ -167,10 +170,10 @@ XBool XVideoDecode::open(int w,int h)
 	if((m_pFrame = av_frame_alloc()) == NULL) return XFalse;
 	m_pixelData = XMem::createArrayMem<unsigned char>(m_videoCodec->width * m_videoCodec->height * 3);	//存储像素数据
 	if(m_pixelData == NULL) return XFalse;
-	avpicture_fill(&m_frameData,m_pixelData,PIX_FMT_RGB24,m_videoCodec->width,m_videoCodec->height);
+	avpicture_fill(&m_frameData,m_pixelData,AV_PIX_FMT_RGB24,m_videoCodec->width,m_videoCodec->height);
 
-	m_pSwsContext = sws_getContext(w,h,PIX_FMT_YUV420P,//m_videoCodec->pix_fmt,    
-									w,h,PIX_FMT_RGB24, 
+	m_pSwsContext = sws_getContext(w,h,AV_PIX_FMT_YUV420P,//m_videoCodec->pix_fmt,    
+									w,h,AV_PIX_FMT_RGB24, 
 									SWS_POINT,NULL,NULL,NULL);//SWS_BICUBIC
 	if(m_pSwsContext == NULL) return XFalse;
 	av_init_packet(&m_packet);
@@ -191,8 +194,8 @@ XBool XVideoDecode::decodeData(void * data,int len)
 	int isFinished = 0;
 	int ret;
 	int time = XTime::getCurrentTicks();
-	while(true)
-	{//avcodec_decode_video2这个函数有两个警告，不知道是否会造成问题
+	while (m_packet.size > 0)
+	{
 		ret = avcodec_decode_video2(m_videoCodec,m_pFrame,&isFinished,&m_packet);
 		if(ret < 0) return XFalse;	//解码失败
 		if(ret > 0) time = XTime::getCurrentTicks();
@@ -211,7 +214,6 @@ XBool XVideoDecode::decodeData(void * data,int len)
 		}
 		m_packet.size -= ret;
 		m_packet.data += ret;
-		if(m_packet.size <= 0) break;
 	}
 	return flag;
 }

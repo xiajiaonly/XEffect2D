@@ -1,16 +1,17 @@
 #ifndef _JIA_XWINDOWSDL_
 #define _JIA_XWINDOWSDL_
+#if CREATE_WINDOW_METHOD == 0
 //++++++++++++++++++++++++++++++++
 //Author:	¼ÖÊ¤»ª(JiaShengHua)
 //Version:	1.0.0
 //Date:		2014.3.25
 //--------------------------------
 #include "XWindowCore.h"
-#include "XSDL.h"
 //#include "windows.h"
 #include "XStringFun.h"
+struct SDL_Surface;
 namespace XE{
-class XWindowSDL:public XWindowCore
+class XWindowSDL :public XWindowCore
 {
 public:
 	XWindowSDL()
@@ -24,32 +25,17 @@ protected:
 	SDL_Surface *m_screen;
 	//bool m_isFullScreen;
 public:
-	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame);
-	virtual void setWindowTitle(const std::string &title) {SDL_WM_SetCaption(XString::ANSI2UTF8(title.c_str()).c_str(), NULL);}
-	virtual void setCurcor(bool flag) 
+	virtual bool createWindow(int width, int height, const char *windowTitle, bool isFullScreen, bool withFrame);
+	virtual void setWindowTitle(const std::string& title);
+	virtual void setCurcor(bool flag)
 	{
 		//SDL_ShowCursor(flag);
 		ShowCursor(flag);
 	}
-	virtual unsigned char *getWindowBuff()
-	{
-		if(m_screen == NULL) return NULL;
-		return (unsigned char *)m_screen->pixels;
-	}
-	virtual bool getCurcor() 
-	{
-		return SDL_ShowCursor(-1) == 1;
-	}
-	virtual void release() 
-	{
-		SDL_FreeSurface(m_screen);
-		SDL_Quit();
-	}
-	virtual void update()
-	{
-		//glFlush();
-		SDL_GL_SwapBuffers();
-	}
+	virtual unsigned char *getWindowBuff();
+	virtual bool getCurcor();
+	virtual void release();
+	virtual void update();
 	virtual int mapKey(int key);
 	//virtual void toggleFullScreen()
 	//{
@@ -81,4 +67,5 @@ public:
 	//virtual bool getIsFullScreen(){return m_isFullScreen;}
 };
 }
+#endif
 #endif

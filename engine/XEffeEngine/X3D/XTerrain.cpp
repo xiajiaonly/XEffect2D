@@ -44,7 +44,7 @@ bool XTerrain::loadFromWeb(const char *filename,unsigned char *data)		//从网页中
 
 XBool XTerrain::init(const char *mapFilename,const char *texFilename,int w,int h,
 					   XBool withColor,
-					   XResourcePosition resourcePosition)
+					   XResPos resourcePosition)
 {
 	if(m_isInited) return XTrue;
 	if(mapFilename == NULL) return XFalse;
@@ -55,19 +55,19 @@ XBool XTerrain::init(const char *mapFilename,const char *texFilename,int w,int h
 	m_withColor = withColor;
 	unsigned char *tempTerrainData = XMem::createArrayMem<unsigned char>(m_width * m_height);
 	if(tempTerrainData == NULL) return XFalse;
-	if(resourcePosition == RESOURCE_SYSTEM_DEFINE) resourcePosition = getDefResPos();
+	if(resourcePosition == RES_SYS_DEF) resourcePosition = getDefResPos();
 	switch(resourcePosition)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(mapFilename,tempTerrainData)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(mapFilename,tempTerrainData)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(mapFilename,tempTerrainData)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(mapFilename,tempTerrainData) && !loadFromFolder(mapFilename,tempTerrainData) &&
 			!loadFromWeb(mapFilename,tempTerrainData)) return false;
 		break;
@@ -130,7 +130,7 @@ XBool XTerrain::init(const char *mapFilename,const char *texFilename,int w,int h
 	}
 	m_v = XMem::createArrayMem<float>(m_allPointSum * 3);	//顶点
 	m_n = XMem::createArrayMem<float>(m_allPointSum * 3);	//法线
-	m_faceN = XMem::createArrayMem<XVector3>(m_allFaceSum);	//面法线
+	m_faceN = XMem::createArrayMem<XVec3>(m_allFaceSum);	//面法线
 	if(m_n == NULL || m_v == NULL || m_faceN == NULL)// || m_pointN == NULL)
 	{
 		releaseMemory();
@@ -213,7 +213,7 @@ XBool XTerrain::init(const char *mapFilename,const char *texFilename,int w,int h
 	return XTrue;
 }
 XBool XTerrain::initEx(const char *picFilename,const char * texFilename,
-						 XBool withColor,XResourcePosition resourcePosition)
+						 XBool withColor,XResPos resourcePosition)
 {
 	if(m_isInited) return XTrue;
 	XCurPixel tmpPixel;
@@ -255,7 +255,7 @@ XBool XTerrain::initEx(const char *picFilename,const char * texFilename,
 	return XTrue;
 }
 XBool XTerrain::init(const float *mapData,const char * texFilename,int w,int h,
-		XBool withColor,XResourcePosition resourcePosition)	//直接从数组中读取数据
+		XBool withColor,XResPos resourcePosition)	//直接从数组中读取数据
 {
 	if(m_isInited) return XTrue;
 	if(mapData == NULL ||
@@ -264,7 +264,7 @@ XBool XTerrain::init(const float *mapData,const char * texFilename,int w,int h,
 	m_width = w;
 	m_height = h;
 	m_withColor = withColor;
-	if(resourcePosition == RESOURCE_SYSTEM_DEFINE) resourcePosition = getDefResPos();
+	if(resourcePosition == RES_SYS_DEF) resourcePosition = getDefResPos();
 //	//写入数据 For Test
 //	if((fp = fopen("Test.dat","wb")) == NULL) return XFalse;	//打开数据文件失败
 //	for(int i = 0;i < h;i += 2)
@@ -318,7 +318,7 @@ XBool XTerrain::init(const float *mapData,const char * texFilename,int w,int h,
 	}
 	m_v = XMem::createArrayMem<float>(m_allPointSum * 3);	//顶点
 	m_n = XMem::createArrayMem<float>(m_allPointSum * 3);	//法线
-	m_faceN = XMem::createArrayMem<XVector3>(m_allFaceSum);	//面法线
+	m_faceN = XMem::createArrayMem<XVec3>(m_allFaceSum);	//面法线
 	if(m_n == NULL || m_v == NULL || m_faceN == NULL)// || m_pointN == NULL)
 	{
 		releaseMemory();
@@ -420,7 +420,7 @@ void XTerrain::draw(XBool withTex)
 	glScalef(m_scale.x,m_scale.y,m_scale.z);
 
 	if(gFrameworkData.p3DWorld != NULL)
-		gFrameworkData.p3DWorld->m_worldMaterial.usetMaterial();
+		gFrameworkData.p3DWorld->m_worldMaterial.bindMaterial();
 	if(m_withTexture && withTex)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -437,8 +437,7 @@ void XTerrain::draw(XBool withTex)
 		gFrameworkData.p3DWorld->useShadow(m_withTexture && withTex,SHADER_SHADOW);
 	if(m_withTexGen)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glDisable(GL_LIGHTING);
 		glColor4f(1.0f,1.0f,1.0f,m_reflectRate);
 	}
@@ -448,6 +447,9 @@ void XTerrain::draw(XBool withTex)
 
 	if(m_pShader != NULL) m_pShader->disShader();
 	glPopMatrix();
+	if(gFrameworkData.p3DWorld != NULL)
+		gFrameworkData.p3DWorld->m_worldMaterial.unbindMaterial();
+
 	if(m_withTexGen)
 	{
 		XGL::DisableBlend();
@@ -459,17 +461,15 @@ void XTerrain::draw(XBool withTex)
 //	XGL::EnableBlend();
 //	XGL::DisableTexture2D();
 }
-XBool XTerrain::updateVBO(bool v,bool n,bool c,bool t,bool i)
+XBool XTerrain::updateVBO(bool v, bool n, bool c, bool t, bool i)
 {
-	if(!m_isInited) return XFalse;
+	if (!m_isInited) return XFalse;
 
-	int sum;
-	sum = m_allPointSum;
-	if(v) m_vbo.updateDataV(sum,m_v);
-	if(n) m_vbo.updateDataN(sum,m_n);
-	if(c) m_vbo.updateDataC(sum,m_c);
-	if(t) m_vbo.updateDataT(sum,m_t);
-	if(i) m_vbo.updateDataI(sum * 3,m_index);
+	if (v) m_vbo.updateDataV(m_allPointSum, m_v);
+	if (n) m_vbo.updateDataN(m_allPointSum, m_n);
+	if (c) m_vbo.updateDataC(m_allPointSum, m_c);
+	if (t) m_vbo.updateDataT(m_allPointSum, m_t);
+	if (i) m_vbo.updateDataI(m_allPointSum * 3, m_index);
 
 	return XTrue;
 }
@@ -580,7 +580,7 @@ XBool XTerrain::updateHeight(const float *heights,const bool *flags)
 {//根据高度信息更新数据
 	if(!m_isInited) return XFalse;
 	//下面更具实际的数值填充数据
-	//XVector3 tempNormal;
+	//XVec3 tempNormal;
 	int i,j;
 	if(flags == NULL)
 	{
@@ -629,12 +629,10 @@ XBool XTerrain::updateHeight(const float *heights,const bool *flags)
 					{
 						m_faceN[index] = getMyNormal(lIndex,true);
 						m_faceN[index + 1] = getMyNormal(lIndex,false);
-					}else
-					if(m_terrainData[lIndex] != heights[lIndex])
+					}else if(m_terrainData[lIndex] != heights[lIndex])
 					{
 						m_faceN[index] = getMyNormal(lIndex,true);
-					}else
-					if(m_terrainData[lIndex + m_width + 1] != heights[lIndex + m_width + 1])
+					}else if(m_terrainData[lIndex + m_width + 1] != heights[lIndex + m_width + 1])
 					{
 						m_faceN[index] = getMyNormal(lIndex,false);
 					}
@@ -725,7 +723,7 @@ XBool XTerrain::updateHeight(const float *heights,const bool *flags)
 void XTerrain::updateNormal(const float *heights)
 {
 	int faceSumW = (m_width - 1) * 2;
-	XVector3 tempPointN;
+	XVec3 tempPointN;
 	int upIndex = 0;
 	int index = 0,i,j;
 	int lIndex = 0;
@@ -1074,14 +1072,14 @@ void XTerrain::updateNormal(const float *heights)
 		}
 	}
 }
-bool XTerrain::getMousePoint(XVector2 &outPoint)
+bool XTerrain::getMousePoint(XVec2& outPoint)
 {
 	if(!m_isInited) return false;
 	if(gFrameworkData.p3DWorld == NULL) return false;
 	//遍历所有的点
 	float len = 10.0f;
 	float tempLen;
-	XVector3 tempV3;
+	XVec3 tempV3;
 	bool isTrue = false;
 	int index = 0;
 	for(int i = 0;i < m_height;i += 2)	//这里降低精度减少计算量
@@ -1104,14 +1102,14 @@ bool XTerrain::getMousePoint(XVector2 &outPoint)
 	}
 	return isTrue;
 }
-bool XTerrain::getMousePointEx(const XVector3 &n,const XVector3 &f,XVector2 &outPoint)
+bool XTerrain::getMousePointEx(const XVec3& n,const XVec3& f,XVec2& outPoint)
 {
 	if(!m_isInited) return false;
-	XVector3 out,p[3];//n;
+	XVec3 out,p[3];//n;
 	float tempD = -1.0f;
 	float ret = 0.0f;
 	//int index;
-	//XVector3 tempN(0.0f,1.0f,0.0f);
+	//XVec3 tempN(0.0f,1.0f,0.0f);
 	//下面遍历所有的面
 	//int pIndex;
 	unsigned int *pIndex = m_index;
@@ -1134,20 +1132,21 @@ bool XTerrain::getMousePointEx(const XVector3 &n,const XVector3 &f,XVector2 &out
 void XTerrain::drawNormal(int step)
 {
 	if(!m_isInited) return;
-	XVector3 ps;
+	XVec3 ps;
 
 	for(int i = 0,index = 0;i < m_allFaceSum;i += step,index += step * 3)
 	{
 		ps.set(m_v[m_index[index + 0] * 3 + 0],m_v[m_index[index + 0] * 3 + 1],m_v[m_index[index + 0] * 3 + 2]);
-		ps += XVector3(m_v[m_index[index + 1] * 3 + 0],m_v[m_index[index + 1] * 3 + 1],m_v[m_index[index + 1] * 3 + 2]);
-		ps += XVector3(m_v[m_index[index + 2] * 3 + 0],m_v[m_index[index + 2] * 3 + 1],m_v[m_index[index + 2] * 3 + 2]);
+		ps += XVec3(m_v[m_index[index + 1] * 3 + 0],m_v[m_index[index + 1] * 3 + 1],m_v[m_index[index + 1] * 3 + 2]);
+		ps += XVec3(m_v[m_index[index + 2] * 3 + 0],m_v[m_index[index + 2] * 3 + 1],m_v[m_index[index + 2] * 3 + 2]);
 		ps *= 0.333333f;
 		XRender::drawLine(ps,m_faceN[i],20.0f);
 	}
 }
 namespace X3D
 {
-	void fitTerrain(const float *inData,int inX,int inY,float *outData,int outX,int outY)//地形适应,将任意尺寸的地形按照3次贝塞尔差值成需要的地形
+	//地形适应,将任意尺寸的地形按照3次贝塞尔插值成需要的地形
+	void fitTerrain(const float *inData,int inX,int inY,float *outData,int outX,int outY)
 	{
 		if(inX < 2 || inY < 2) return;	//最小的差值
 		float *tempData = XMem::createArrayMem<float>(outX * inY);	//中间变量
@@ -1219,10 +1218,10 @@ namespace X3D
 		//XMem::XDELETE_ARRAY(tempData);
 	}
 }
-void XTerrain::myFitTerrain(const float *inData,int inX,int inY,float *outData)
+void XTerrain::myFitTerrain(const float *inData, int inX, int inY, float *outData)
 {
 	if(inX < 2 || inY < 2) return;	//最小的差值
-	//3次贝塞尔差值
+	//3次贝塞尔插值
 //	int outX = m_width;
 //	int outY = m_height;
 //	if(m_tempFitTerrain == NULL) 
@@ -1299,7 +1298,7 @@ void XTerrain::myFitTerrain(const float *inData,int inX,int inY,float *outData)
 //			}
 //		}
 //	}
-	//双线性差值
+	//双线性插值
 	float zoom = (float)m_width / (float)inX;
 	float tempSize = 1.0f / zoom;
 	float xx,yy;
@@ -1443,9 +1442,10 @@ bool XTerrain::saveToObj(const char * filename)	//将数据保存为obj格式的模型文件(
 	if(m_withTexture)
 	{//有贴图
 		std::string mtlName = filename;
-		mtlName[mtlName.length() - 3] = 'm';
-		mtlName[mtlName.length() - 2] = 't';
-		mtlName[mtlName.length() - 1] = 'l';
+		memcpy(&mtlName[mtlName.length() - 3], &"mtl", 3);
+		//mtlName[mtlName.length() - 3] = 'm';
+		//mtlName[mtlName.length() - 2] = 't';
+		//mtlName[mtlName.length() - 1] = 'l';
 		fprintf(fp,"mtllib %s\n",mtlName.c_str());
 		saveMtl(mtlName.c_str());
 	}
@@ -1470,11 +1470,11 @@ bool XTerrain::saveToObj(const char * filename)	//将数据保存为obj格式的模型文件(
 		}
 	}
 	//下面写入法线数据
-	XVector3 tempPointN;
+	XVec3 tempPointN;
 	for(int j = 0;j < m_height;++ j)
 	{
 		index = (j * m_width - j) << 1;
-		int upIndex = index - (m_width - 1) * 2;;
+		int upIndex = index - (m_width - 1) * 2;
 		for(int i = 0;i < m_width;++ i,index += 2,upIndex += 2)
 		{
 			if(i == 0)
@@ -1666,9 +1666,9 @@ XBool XTerrainOptimization::init(const float *data,int w,int h)
 				tmpFInfo.index[0] = index;
 				tmpFInfo.index[1] = index + w - 1;
 				tmpFInfo.index[2] = index + w;
-				tmpFInfo.normal = XMath::getNormal(XVector3(m_vertexInfos[tmpFInfo.index[0]].x,m_vertexInfos[tmpFInfo.index[0]].h,m_vertexInfos[tmpFInfo.index[0]].y),
-					XVector3(m_vertexInfos[tmpFInfo.index[1]].x,m_vertexInfos[tmpFInfo.index[1]].h,m_vertexInfos[tmpFInfo.index[1]].y),
-					XVector3(m_vertexInfos[tmpFInfo.index[2]].x,m_vertexInfos[tmpFInfo.index[2]].h,m_vertexInfos[tmpFInfo.index[2]].y));	//这里需要计算
+				tmpFInfo.normal = XMath::getNormal(XVec3(m_vertexInfos[tmpFInfo.index[0]].x,m_vertexInfos[tmpFInfo.index[0]].h,m_vertexInfos[tmpFInfo.index[0]].y),
+					XVec3(m_vertexInfos[tmpFInfo.index[1]].x,m_vertexInfos[tmpFInfo.index[1]].h,m_vertexInfos[tmpFInfo.index[1]].y),
+					XVec3(m_vertexInfos[tmpFInfo.index[2]].x,m_vertexInfos[tmpFInfo.index[2]].h,m_vertexInfos[tmpFInfo.index[2]].y));	//这里需要计算
 				m_faceInfos.push_back(tmpFInfo);
 				//更新顶点信息
 				m_vertexInfos[tmpFInfo.index[0]].faceIndex[4] = (int)(m_faceInfos.size()) - 1;
@@ -1685,9 +1685,9 @@ XBool XTerrainOptimization::init(const float *data,int w,int h)
 				tmpFInfo.index[0] = index;
 				tmpFInfo.index[1] = index + w;
 				tmpFInfo.index[2] = index + 1;
-				tmpFInfo.normal = XMath::getNormal(XVector3(m_vertexInfos[tmpFInfo.index[0]].x,m_vertexInfos[tmpFInfo.index[0]].h,m_vertexInfos[tmpFInfo.index[0]].y),
-					XVector3(m_vertexInfos[tmpFInfo.index[1]].x,m_vertexInfos[tmpFInfo.index[1]].h,m_vertexInfos[tmpFInfo.index[1]].y),
-					XVector3(m_vertexInfos[tmpFInfo.index[2]].x,m_vertexInfos[tmpFInfo.index[2]].h,m_vertexInfos[tmpFInfo.index[2]].y));	//这里需要计算
+				tmpFInfo.normal = XMath::getNormal(XVec3(m_vertexInfos[tmpFInfo.index[0]].x,m_vertexInfos[tmpFInfo.index[0]].h,m_vertexInfos[tmpFInfo.index[0]].y),
+					XVec3(m_vertexInfos[tmpFInfo.index[1]].x,m_vertexInfos[tmpFInfo.index[1]].h,m_vertexInfos[tmpFInfo.index[1]].y),
+					XVec3(m_vertexInfos[tmpFInfo.index[2]].x,m_vertexInfos[tmpFInfo.index[2]].h,m_vertexInfos[tmpFInfo.index[2]].y));	//这里需要计算
 				m_faceInfos.push_back(tmpFInfo);
 				//更新顶点信息
 				m_vertexInfos[tmpFInfo.index[0]].faceIndex[5] = (int)(m_faceInfos.size()) - 1;
@@ -1711,9 +1711,10 @@ XBool XTerrainOptimization::saveToObj(const char * filename,const char *texName)
 	fprintf(fp,"# xiajia_1981@163.com\n");
 	//写入材质文件名
 	std::string mtlName = filename;
-	mtlName[mtlName.length() - 3] = 'm';
-	mtlName[mtlName.length() - 2] = 't';
-	mtlName[mtlName.length() - 1] = 'l';
+	memcpy(&mtlName[mtlName.length() - 3], &"mtl", 3);
+	//mtlName[mtlName.length() - 3] = 'm';
+	//mtlName[mtlName.length() - 2] = 't';
+	//mtlName[mtlName.length() - 1] = 'l';
 	fprintf(fp,"mtllib %s\n",mtlName.c_str());
 	//下面写入顶点数据
 	int tmpSum = 0;
@@ -1740,8 +1741,8 @@ XBool XTerrainOptimization::saveToObj(const char * filename,const char *texName)
 		}
 	}
 	//写入法线数据,法线的数据可以优化，对于相同的法线可以缩减掉
-	std::vector<XVector3> normals;	//法线的列表
-	XVector3 n;
+	std::vector<XVec3> normals;	//法线的列表
+	XVec3 n;
 	float sum = 0.0f;
 	tmpSum = 0;
 	bool flag = true;
@@ -1749,7 +1750,7 @@ XBool XTerrainOptimization::saveToObj(const char * filename,const char *texName)
 	{
 		if(m_vertexInfos[i].faceSum > 0)
 		{
-			n = XVector3::zero;
+			n = XVec3::zero;
 			sum = 0.0f;
 			for(int j = 0;j < 6;++ j)
 			{
@@ -1837,8 +1838,8 @@ void XTerrainOptimization::optimization()
 {//优化函数，至关重要的一个函数
 	//正方形优化(好像不使用正方形优化最终的优化效果更好)
 	int tmpIndex[9];	//参与减面的6个点的索引
-	XVector3 tmpNormal[8];
-/*	int minSize = XEE_Min(m_w,m_h);
+	XVec3 tmpNormal[8];
+/*	int minSize = (std::min)(m_w,m_h);
 	for(int i = 1;i < minSize;i *= 2)
 	{
 		int tmpW = m_w * i;
@@ -1948,18 +1949,18 @@ void XTerrainOptimization::optimization()
 				int tmpIndexT = m_vertexInfos[tmpIndex[2]].faceIndex[5];
 				m_faceInfos[tmpIndexT].index[1] = tmpIndex[4];
 				m_faceInfos[tmpIndexT].index[2] = tmpIndex[8];
-				m_faceInfos[tmpIndexT].normal = getNormal(XVector3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
-					XVector3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
-					XVector3(m_vertexInfos[tmpIndex[8]].x,m_vertexInfos[tmpIndex[8]].h,m_vertexInfos[tmpIndex[8]].y));
+				m_faceInfos[tmpIndexT].normal = getNormal(XVec3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
+					XVec3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
+					XVec3(m_vertexInfos[tmpIndex[8]].x,m_vertexInfos[tmpIndex[8]].h,m_vertexInfos[tmpIndex[8]].y));
 				m_vertexInfos[tmpIndex[4]].faceIndex[1] = tmpIndexT;
 				m_vertexInfos[tmpIndex[8]].faceIndex[3] = tmpIndexT;
 
 				tmpIndexT = m_vertexInfos[tmpIndex[6]].faceIndex[0];
 				m_faceInfos[tmpIndexT].index[0] = tmpIndex[8];
 				m_faceInfos[tmpIndexT].index[1] = tmpIndex[4];
-				m_faceInfos[tmpIndexT].normal = getNormal(XVector3(m_vertexInfos[tmpIndex[8]].x,m_vertexInfos[tmpIndex[8]].h,m_vertexInfos[tmpIndex[8]].y),
-					XVector3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
-					XVector3(m_vertexInfos[tmpIndex[6]].x,m_vertexInfos[tmpIndex[6]].h,m_vertexInfos[tmpIndex[6]].y));
+				m_faceInfos[tmpIndexT].normal = getNormal(XVec3(m_vertexInfos[tmpIndex[8]].x,m_vertexInfos[tmpIndex[8]].h,m_vertexInfos[tmpIndex[8]].y),
+					XVec3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
+					XVec3(m_vertexInfos[tmpIndex[6]].x,m_vertexInfos[tmpIndex[6]].h,m_vertexInfos[tmpIndex[6]].y));
 				m_vertexInfos[tmpIndex[4]].faceIndex[2] = tmpIndexT;
 				m_vertexInfos[tmpIndex[8]].faceIndex[4] = tmpIndexT;
 			}
@@ -2005,13 +2006,13 @@ void XTerrainOptimization::optimization()
 			m_faceInfos[m_vertexInfos[j].faceIndex[5]].isEnable = false;
 
 			m_faceInfos[m_vertexInfos[j].faceIndex[3]].index[2] = tmpIndex[5];	//重新计算面的法线
-			m_faceInfos[m_vertexInfos[j].faceIndex[3]].normal = XMath::getNormal(XVector3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
-					XVector3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
-					XVector3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y));
+			m_faceInfos[m_vertexInfos[j].faceIndex[3]].normal = XMath::getNormal(XVec3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
+					XVec3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
+					XVec3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y));
 			m_faceInfos[m_vertexInfos[tmpIndex[4]].faceIndex[0]].index[1] = tmpIndex[2];
-			m_faceInfos[m_vertexInfos[tmpIndex[4]].faceIndex[0]].normal = XMath::getNormal(XVector3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y),
-					XVector3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
-					XVector3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y));
+			m_faceInfos[m_vertexInfos[tmpIndex[4]].faceIndex[0]].normal = XMath::getNormal(XVec3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y),
+					XVec3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y),
+					XVec3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y));
 			m_vertexInfos[tmpIndex[5]].faceIndex[3] = m_vertexInfos[j].faceIndex[3];
 			m_vertexInfos[tmpIndex[2]].faceIndex[2] = m_vertexInfos[tmpIndex[3]].faceIndex[2];
 			//修改临接的角点
@@ -2062,13 +2063,13 @@ void XTerrainOptimization::optimization()
 			m_faceInfos[m_vertexInfos[j].faceIndex[5]].isEnable = false;
 
 			m_faceInfos[m_vertexInfos[j].faceIndex[1]].index[1] = tmpIndex[1];
-			m_faceInfos[m_vertexInfos[j].faceIndex[1]].normal = XMath::getNormal(XVector3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y),
-					XVector3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
-					XVector3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y));
+			m_faceInfos[m_vertexInfos[j].faceIndex[1]].normal = XMath::getNormal(XVec3(m_vertexInfos[tmpIndex[5]].x,m_vertexInfos[tmpIndex[5]].h,m_vertexInfos[tmpIndex[5]].y),
+					XVec3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
+					XVec3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y));
 			m_faceInfos[m_vertexInfos[tmpIndex[2]].faceIndex[0]].index[0] = tmpIndex[4];
-			m_faceInfos[m_vertexInfos[tmpIndex[2]].faceIndex[0]].normal = XMath::getNormal(XVector3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
-					XVector3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
-					XVector3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y));;
+			m_faceInfos[m_vertexInfos[tmpIndex[2]].faceIndex[0]].normal = XMath::getNormal(XVec3(m_vertexInfos[tmpIndex[4]].x,m_vertexInfos[tmpIndex[4]].h,m_vertexInfos[tmpIndex[4]].y),
+					XVec3(m_vertexInfos[tmpIndex[1]].x,m_vertexInfos[tmpIndex[1]].h,m_vertexInfos[tmpIndex[1]].y),
+					XVec3(m_vertexInfos[tmpIndex[2]].x,m_vertexInfos[tmpIndex[2]].h,m_vertexInfos[tmpIndex[2]].y));
 			m_vertexInfos[tmpIndex[1]].faceIndex[1] = m_vertexInfos[j].faceIndex[1];
 			m_vertexInfos[tmpIndex[4]].faceIndex[4] = m_vertexInfos[tmpIndex[3]].faceIndex[4];
 			//修改临接的角点

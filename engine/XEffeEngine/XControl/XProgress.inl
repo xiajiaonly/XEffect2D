@@ -19,34 +19,40 @@ INLINE void XProgress::disable()
 	m_isEnable = XFalse;
 	m_isBeChoose = XFalse;
 }
-INLINE XBool XProgress::initEx(const XVector2& position,//对上面接口的简化
+INLINE XBool XProgress::initEx(const XVec2& position,//对上面接口的简化
 	const XProgressSkin &tex,	
-	XNumber* font,float captionSize,
+	const XFontUnicode* font,float captionSize,
 	int mode)
 {
 	return init(position,tex.m_mouseRect,tex,font,captionSize,tex.m_fontPosition,mode);
 }
 INLINE XBool XProgress::initPlus(const char * path,
-	XNumber* font,float captionSize,	//控件的文字
-	int mode,XResourcePosition resoursePosition)
+	const XFontUnicode* font,float captionSize,	//控件的文字
+	int mode,XResPos resPos)
 {
 	if(m_isInited || path == NULL) return XFalse;
-	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXPROGRESS_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXPROGRESS_TEX,resPos);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(XVector2::zero,*(XProgressSkin *)m_resInfo->m_pointer,font,captionSize,mode);
+	return initEx(XVec2::zero,*(XProgressSkin *)m_resInfo->m_pointer,font,captionSize,mode);
 }
 INLINE void XProgress::setTextColor(const XFColor& color) 
 {
 	m_textColor = color;
-	m_caption.setColor(m_textColor * m_color);
+	if(m_withNumber)
+		m_captionN.setColor(m_textColor * m_color);
+	else
+		m_caption.setColor(m_textColor * m_color);
 }
-INLINE void XProgress::setColor(float r,float g,float b,float a) 
+INLINE void XProgress::setColor(const XFColor&c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_spriteBackground.setColor(m_color);
 	m_spriteMove.setColor(m_color);
 	m_spriteUpon.setColor(m_color);
-	m_caption.setColor(m_textColor * m_color);
+	if(m_withNumber)
+		m_captionN.setColor(m_textColor * m_color);
+	else
+		m_caption.setColor(m_textColor * m_color);
 }	//设置按钮的颜色
 INLINE void XProgress::setAlpha(float a) 
 {
@@ -54,22 +60,25 @@ INLINE void XProgress::setAlpha(float a)
 	m_spriteBackground.setColor(m_color);
 	m_spriteMove.setColor(m_color);
 	m_spriteUpon.setColor(m_color);
-	m_caption.setColor(m_textColor * m_color);
+	if(m_withNumber)
+		m_captionN.setColor(m_textColor * m_color);
+	else
+		m_caption.setColor(m_textColor * m_color);
 }
-INLINE XBool XProgress::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XProgress::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
-INLINE XVector2 XProgress::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XProgress::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0: return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1: return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2: return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3: return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
+	case 0: return m_curMouseRect.getLT();
+	case 1: return m_curMouseRect.getRT();
+	case 2: return m_curMouseRect.getRB();
+	case 3: return m_curMouseRect.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }

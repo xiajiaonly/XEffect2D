@@ -1,9 +1,9 @@
-INLINE XBool XComment::init(const XFontUnicode &font)
+INLINE XBool XComment::init(const XFontUnicode& font)
 {
 	if(m_isInited) return XFalse;
 	if(!m_font.setACopy(font)) return XFalse;
-	m_font.setColor(0.0f,0.0f,0.0f,1.0f);
-	m_font.setScale(0.5f,0.5f);
+	m_font.setColor(XFColor::black);
+	m_font.setScale(0.5f);
 	m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_font.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
 	//m_font.setMaxStrLen(128);
@@ -25,21 +25,23 @@ INLINE XBool XComment::setACopy(const XComment & temp)
 	m_timer = temp.m_timer;
 	return XTrue;
 }
-INLINE void XComment::setPosition(float x,float y)
+INLINE void XComment::setPosition(const XVec2& p)
 {
-	int w = (int)m_bgRect.getWidth();
-	int h = (int)m_bgRect.getHeight();
-	m_bgRect.set(x,y,x + w,y + h);
-	m_font.setPosition(x + 2.0f,y + 2.0f);
+	m_bgRect.set(p, p + m_bgRect.getSize());
+	m_font.setPosition(p + XVec2(2.0f));
+}
+INLINE void XComment::updatePosition(const XVec2& p)
+{
+	if (!m_needShow || m_timer >= m_appearTime) return;
+	setPosition(p);
 }
 INLINE void XComment::draw()
 {
 	if(m_isInited && m_haveString && m_visible && m_needShow && m_timer > m_appearTime)	//1秒之后才显示
 	{
 		XFColor tmp = XCCS::normalColor;
-		tmp.fA = m_alpha;
-		XRender::drawFillBoxA(XVector2(m_bgRect.left,m_bgRect.top),XVector2(m_bgRect.getWidth(),
-			m_bgRect.getHeight()),tmp,true);
+		tmp.a = m_alpha;
+		XRender::drawFillRectA(m_bgRect.getLT(),m_bgRect.getSize(),tmp,true);
 		m_font.draw();
 	}
 }

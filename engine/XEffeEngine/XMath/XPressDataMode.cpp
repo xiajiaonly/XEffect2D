@@ -218,4 +218,55 @@ void XPressDataDouble::move(float stepTime)
 		}
 	}
 }
+bool XKeyPressModel::init(XKeyValue key,int sensitivity,int pressSpeed)
+{
+	if(m_isInited) return false;
+	XEG.addEventProc(this,&XKeyPressModel::updateState);
+	m_keyValue = key;
+	m_sensitivity = sensitivity; 
+	m_pressSpeed = pressSpeed;
+
+	m_isPress = false;
+	m_isKeyDown = false;
+	m_timer = 0;
+	m_isInited = true;
+	return true;
+}
+bool XKeyPressModel::move(float stepTime)	//返回是否触发按下事件
+{
+	if(!m_isInited) return false;
+	if(m_isKeyDown)
+	{
+		m_timer += stepTime;
+		if(m_timer >= m_sensitivity)
+		{//下面产生连续按下时间
+			m_isPress = true;
+			m_timer -= m_pressSpeed;
+		}
+	}
+	if(m_isPress)
+	{
+		m_isPress = false;
+		return true;
+	}
+	return false;
+}
+void XKeyPressModel::updateState(const XInputEvent &e)
+{
+	if(!m_isInited) return;
+	if(e.type == EVENT_KEYBOARD && e.keyValue == m_keyValue)
+	{
+		if(e.keyState == KEY_STATE_DOWN)
+		{
+			m_isPress = true;
+			m_isKeyDown = true; 
+			m_timer = 0;
+		}else
+		if(e.keyState == KEY_STATE_UP)
+		{
+			m_isPress = false;
+			m_isKeyDown = false; 
+		}
+	}
+}
 }

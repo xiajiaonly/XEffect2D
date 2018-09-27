@@ -6,7 +6,7 @@
 //Date:       2011.7.12
 //--------------------------------
 //这是一个封装了用于FTP通讯的客户端的类
-#include "XStdHead.h"
+//#include "XStdHead.h"
 #include "XFtpCommon.h"
 namespace XE{
 class XFtpClient
@@ -19,19 +19,7 @@ private:
 	char m_commandBuff[RECV_BUFF_SIZE + 1];	//命令交互的缓存
 	bool m_withPortMode;	//通讯模式有PORT模式和Pasv模式，默认使用pasv模式，即主动连接服务器接口
 
-	XBool recvRetCode()
-	{
-		int ret = recv(m_cmdsocket,m_commandBuff,RECV_BUFF_SIZE,0);
-		if(ret == SOCKET_ERROR || ret == 0) 
-		{
-			LogStr("Recv error!");
-			return XFalse;
-		}
-		m_commandBuff[ret] = '\0';
-		LogNull("%s",m_commandBuff);
-		if(!getRetCode(m_commandBuff,ret)) return XFalse;
-		return XTrue;
-	}
+	XBool recvRetCode();
 	XBool getRetCode(const char *buf,int len)
 	{
 		if(len > 4 && buf[0] >= '0' && buf[0] <= '9'
@@ -44,12 +32,7 @@ private:
 		}
 		return XFalse;
 	}
-	XBool sendCommand(const char * cmd)		//向服务器发送命令
-	{
-		LogNull("%s",cmd);
-		if(send(m_cmdsocket,cmd,strlen(cmd),0) == SOCKET_ERROR) return XFalse;
-		return recvRetCode();
-	}
+	XBool sendCommand(const char * cmd);		//向服务器发送命令
 public:
 	XBool connectServer(const char * serverIP,int port = FTP_SOCKET_PORT);	//与服务器建立连接
 	XBool sendClose()
@@ -66,9 +49,9 @@ public:
 	{
 		if(userName == NULL) return XFalse;
 		if(!m_isConnect) return XFalse;
-		strcpy(m_commandBuff,"USER ");
-		strcat(m_commandBuff,userName);
-		strcat(m_commandBuff,"\r\n");
+		strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"USER ");
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,userName);
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");
 		if(!sendCommand(m_commandBuff)) return XFalse;
 		if(m_retCode != 331) return XFalse;	//需要密码
 		return XTrue;
@@ -77,9 +60,9 @@ public:
 	{
 		if(password == NULL) return XFalse;
 		if(!m_isConnect) return XFalse;
-		strcpy(m_commandBuff,"PASS ");
-		strcat(m_commandBuff,password);
-		strcat(m_commandBuff,"\r\n");
+		strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"PASS ");
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,password);
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");
 		if(!sendCommand(m_commandBuff)) return XFalse;
 		if(m_retCode != 230) return XFalse;	//登录成功
 		return XTrue;
@@ -91,9 +74,9 @@ public:
 	{
 		if(!m_isConnect) return XFalse;
 		if(filename == NULL) return XFalse;
-		strcpy(m_commandBuff,"DELE ");
-		strcat(m_commandBuff,filename);
-		strcat(m_commandBuff,"\r\n");	
+		strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"DELE ");
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,filename);
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");	
 		if(!sendCommand(m_commandBuff)) return XFalse;
 		if(m_retCode != 250) return XFalse;	//delete成功
 		return XTrue;
@@ -105,9 +88,9 @@ public:
 	{
 		if(!m_isConnect) return XFalse;
 		if(dir == NULL) return XFalse;
-		strcpy(m_commandBuff,"CWD ");
-		strcat(m_commandBuff,dir);
-		strcat(m_commandBuff,"\r\n");	
+		strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"CWD ");
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,dir);
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");	
 		if(!sendCommand(m_commandBuff)) return XFalse;
 		if(m_retCode != 250) return XFalse;	//CWD成功
 		if(!sendCommand("PWD\r\n")) return XFalse;
@@ -118,9 +101,9 @@ public:
 	{
 		if(!m_isConnect) return -1;
 		if(filename == NULL) return -1;
-		strcpy(m_commandBuff,"SIZE ");
-		strcat(m_commandBuff,filename);
-		strcat(m_commandBuff,"\r\n");	
+		strcpy_s(m_commandBuff,RECV_BUFF_SIZE + 1,"SIZE ");
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,filename);
+		strcat_s(m_commandBuff,RECV_BUFF_SIZE + 1,"\r\n");	
 		if(!sendCommand(m_commandBuff)) return -1;
 		if(m_retCode != 213) return -1;
 		int size = -1;

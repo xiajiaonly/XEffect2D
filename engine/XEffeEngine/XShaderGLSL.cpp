@@ -45,16 +45,16 @@ void XShaderDataInfo::updateData()	//更新数据
 		glUniformMatrix4fv(m_handle,m_size,GL_FALSE,(float *)(m_p));
 		break;
 	case DATA_TYPE_2INT:
-		glUniform2i(m_handle,((XVector2 *)m_p)->x,((XVector2 *)m_p)->y);
+		glUniform2i(m_handle,((XVec2 *)m_p)->x,((XVec2 *)m_p)->y);
 		break;
 	case DATA_TYPE_2FLOAT:
-		glUniform2f(m_handle,((XVector2 *)m_p)->x,((XVector2 *)m_p)->y);
+		glUniform2f(m_handle,((XVec2 *)m_p)->x,((XVec2 *)m_p)->y);
 		break;
 	case DATA_TYPE_3INT:
-		glUniform3i(m_handle,((XVector3 *)m_p)->x,((XVector3 *)m_p)->y,((XVector3 *)m_p)->z);
+		glUniform3i(m_handle,((XVec3 *)m_p)->x,((XVec3 *)m_p)->y,((XVec3 *)m_p)->z);
 		break;
 	case DATA_TYPE_3FLOAT:
-		glUniform3f(m_handle,((XVector3 *)m_p)->x,((XVector3 *)m_p)->y,((XVector3 *)m_p)->z);
+		glUniform3f(m_handle,((XVec3 *)m_p)->x,((XVec3 *)m_p)->y,((XVec3 *)m_p)->z);
 		break;
 	case DATA_TYPE_4FLOAT:
 		glUniform4f(m_handle,((float *)m_p)[0],((float *)m_p)[1],((float *)m_p)[2],((float *)m_p)[3]);
@@ -69,12 +69,28 @@ XBool XShaderGLSL::connectData(const char *name,XShaderDataType type,int size,vo
 		name == NULL ||
 		!m_isInited ||
 		m_dataInfos.size() >= m_maxShaderGLSLDataSum - 1) return XFalse;
-	XShaderDataInfo tmp;
-	tmp.m_handle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
-	tmp.m_type = type;
-	tmp.m_p = p;
-	tmp.m_size = size;
-	m_dataInfos.push_back(tmp);
+	int handle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
+	int index = -1;
+	for(unsigned int i = 0;i < m_dataInfos.size(); ++ i)
+	{
+		if (m_dataInfos[i].m_handle != handle) continue;
+		index = i;
+		break;
+	}
+	if(index < 0)
+	{
+		XShaderDataInfo tmp;
+		tmp.m_handle = handle;
+		tmp.m_type = type;
+		tmp.m_p = p;
+		tmp.m_size = size;
+		m_dataInfos.push_back(tmp);
+	}else
+	{
+		m_dataInfos[index].m_type = type;
+		m_dataInfos[index].m_p = p;
+		m_dataInfos[index].m_size = size;
+	}
 	return XTrue;
 }
 //链接贴图
@@ -84,11 +100,26 @@ XBool XShaderGLSL::connectTexture(const char *name,unsigned int * tex,XShaderTex
 		(m_texInfos.size() != 0 && tex == NULL) ||
 		m_texInfos.size() >= 32 - 1) return XFalse;
 
-	XSaderTexInfo tmp;
-	tmp.texHandle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
-	tmp.texID = tex;
-	tmp.texType = type;
-	m_texInfos.push_back(tmp);
+	int handle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
+	int index = -1;
+	for(unsigned int i = 0;i < m_texInfos.size(); ++ i)
+	{
+		if (m_texInfos[i].texHandle != handle) continue;
+		index = i;
+		break;
+	}
+	if(index < 0)
+	{
+		XShaderTexInfo tmp;
+		tmp.texHandle = glGetUniformLocation(m_shaderHandle.shaderHandle,name);
+		tmp.texID = tex;
+		tmp.texType = type;
+		m_texInfos.push_back(tmp);
+	}else
+	{
+		m_texInfos[index].texID = tex;
+		m_texInfos[index].texType = type;
+	}
 	return XTrue;
 }
 XBool XShaderGLSL::getUBOInfo(XShaderUBOData &uboData,int valueSum,const char *uboName,const char **valueNames)	//连接UBO
@@ -108,13 +139,13 @@ void XShaderGLSL::updateData()
 {
 	if(!m_isInited) return;
 	//下面更新数据
-	for(unsigned int i = 0;i < m_dataInfos.size();++ i)
+	for(auto it = m_dataInfos.begin();it != m_dataInfos.end();++ it)
 	{
-		m_dataInfos[i].updateData();
+		it->updateData();
 	}
-	for(unsigned int i = 0;i < m_UBOInfos.size();++ i)
+	for(auto it = m_UBOInfos.begin();it != m_UBOInfos.end();++ it)
 	{
-		m_UBOInfos[i].updateData();
+		it->updateData();
 	}
 }
 void XShaderGLSL::useShader(bool withTex0)	//使用shader
@@ -123,27 +154,45 @@ void XShaderGLSL::useShader(bool withTex0)	//使用shader
 	glUseProgram(m_shaderHandle.shaderHandle);
 	//glUseProgramObjectARB(m_shaderHandle);
 	updateData();
-	unsigned int i = 1;
-	if(withTex0) i = 0;
-	else
 	if(m_texInfos.size() > 0)
-	{
-		i = 1;
 		glUniform1i(m_texInfos[0].texHandle,0);
+
+	if(withTex0 && m_texInfos.size() > 0 && m_texInfos[0].texID != NULL)
+	{//这里绑定0
+		glActiveTexture(GL_TEXTURE0);
+		switch(m_texInfos[0].texType)
+		{
+		case TEX_TYPE_2D:
+			XGL::EnableTexture2D();
+			XGL::BindTexture2D(*(m_texInfos[0].texID),0);
+			break;
+		case TEX_TYPE_CUBE://GL_TEXTURE_CUBE_MAP贴图
+			glEnable(GL_TEXTURE_CUBE_MAP);
+			glBindTexture(GL_TEXTURE_CUBE_MAP,*(m_texInfos[0].texID));
+			break;
+		}
 	}
-	for(;i < m_texInfos.size();++ i)
+	bindTex(1);
+	glActiveTexture(GL_TEXTURE0);
+}
+void XShaderGLSL::bindTex(int index)
+{
+	for(unsigned int i = index;i < m_texInfos.size();++ i)
 	{
 		glUniform1i(m_texInfos[i].texHandle,i);
+		if(m_texInfos[i].texID == NULL) continue;
 		glActiveTexture(GL_TEXTURE0 + i);
 		switch(m_texInfos[i].texType)
 		{
 		case TEX_TYPE_2D:
 			XGL::EnableTexture2D();
 			XGL::BindTexture2D(*(m_texInfos[i].texID),i);
+			XGL::DisableTexture2D();
 			break;
 		case TEX_TYPE_CUBE://GL_TEXTURE_CUBE_MAP贴图
 			glEnable(GL_TEXTURE_CUBE_MAP);
 			glBindTexture(GL_TEXTURE_CUBE_MAP,*(m_texInfos[i].texID));
+			glDisable(GL_TEXTURE_CUBE_MAP);
 			break;
 		}
 	}
@@ -156,9 +205,9 @@ void XShaderGLSL::useShaderEx(unsigned int tex0,XShaderTexType type)
 	updateData();
 	//绑定第一张贴图
 	if(m_texInfos.size() > 0)
-	{
 		glUniform1i(m_texInfos[0].texHandle,0);
-	}
+
+	if(tex0 == 0) return;	//不需要绑定贴图
 	glActiveTexture(GL_TEXTURE0);
 	switch(type)
 	{
@@ -171,23 +220,8 @@ void XShaderGLSL::useShaderEx(unsigned int tex0,XShaderTexType type)
 		glBindTexture(GL_TEXTURE_CUBE_MAP,tex0);
 		break;
 	}
-	//绑定其他的贴图
-	for(unsigned int i = 1;i < m_texInfos.size();++ i)
-	{
-		glUniform1i(m_texInfos[i].texHandle,i);
-		glActiveTexture(GL_TEXTURE0 + i);
-		switch(m_texInfos[i].texType)
-		{
-		case TEX_TYPE_2D:
-			XGL::EnableTexture2D();
-			XGL::BindTexture2D(*(m_texInfos[i].texID),i);
-			break;
-		case TEX_TYPE_CUBE://GL_TEXTURE_CUBE_MAP贴图
-			glEnable(GL_TEXTURE_CUBE_MAP);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,*(m_texInfos[i].texID));
-			break;
-		}
-	}
+	bindTex(1);
+	glActiveTexture(GL_TEXTURE0);
 }
 void XShaderGLSL::disShader()
 {
@@ -242,6 +276,27 @@ XBool XUBO::init(int size,const void * p)
 	m_isInited = XTrue;
 	return XTrue;
 }
+XBool XSSBO::init(int size,int sum, const void * p)
+{
+	if (m_isInited || p == NULL) return XFalse;
+	int maxS = 0;
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxS);
+	if (size > maxS) return XFalse;
+	m_coreSum = sum;
+	m_size = size;
+	glGenBuffersARB(1, &m_ssboHandle);
+	glBindBufferARB(GL_SHADER_STORAGE_BUFFER, m_ssboHandle);
+	glBufferDataARB(GL_SHADER_STORAGE_BUFFER, size, p, GL_DYNAMIC_COPY);
+
+//	glDispatchCompute(m_coreSum, 1, 1);
+//	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	m_isInited = XTrue;
+	return XTrue;
+}
 XBool XPBO::init(int w,int h,int px,int py,int wx,int wy,XColorMode colorType,XPboMode mode)
 {
 	if(m_isInited) return XTrue;
@@ -263,6 +318,7 @@ XBool XPBO::init(int w,int h,int px,int py,int wx,int wy,XColorMode colorType,XP
 	case COLOR_RED:
 	case COLOR_GRAY:m_dataSize = m_w * m_h;break;
 	case COLOR_RGBA_F:m_dataSize = m_w * (m_h << 2) * sizeof(float);break;
+	case COLOR_RGB_F:m_dataSize = m_w * (m_h * 3) * sizeof(float);break;
 	case COLOR_GRAY_F:m_dataSize = m_w * m_h * sizeof(float);break;
 	default:	//其他格式不支持该操作
 		return XFalse;
@@ -299,14 +355,15 @@ XBool XPBO::getPixel(unsigned char * buff,int target)
 	glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB,m_pboID[m_curPBOIndex]);
 	switch(m_colorType)
 	{
-	case COLOR_RGBA:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_BGRA:glReadPixels(m_px,m_py,m_wx,m_wy,GL_BGRA,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_RGB:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGB,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_BGR:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_BGR,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_RED:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_RED,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_GRAY:glReadPixels(m_px,m_py,m_wx,m_wy,GL_LUMINANCE,GL_UNSIGNED_BYTE,0);break;
-	case COLOR_RGBA_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_FLOAT,0);break;
-	case COLOR_GRAY_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RED,GL_FLOAT,0);break;
+	case COLOR_RGBA:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_BGRA:glReadPixels(m_px,m_py,m_wx,m_wy,GL_BGRA,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_RGB:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGB,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_BGR:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_BGR,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_RED:	glReadPixels(m_px,m_py,m_wx,m_wy,GL_RED,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_GRAY:glReadPixels(m_px,m_py,m_wx,m_wy,GL_LUMINANCE,GL_UNSIGNED_BYTE,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_RGBA_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGBA,GL_FLOAT,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_RGB_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RGB,GL_FLOAT,0);break;	//注意尺寸4字节对齐，否则会造成crash
+	case COLOR_GRAY_F:glReadPixels(m_px,m_py,m_wx,m_wy,GL_RED,GL_FLOAT,0);break;	//注意尺寸4字节对齐，否则会造成crash
 	default:	//其他格式不支持该操作
 		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB,0);
 		glDrawBuffer(GL_BACK);
@@ -363,7 +420,7 @@ XBool XVBO::initX(int size,const float *v,const float *t,const float *n,const fl
 	if(i == NULL) m_withI = XFalse; else m_withI = XTrue;
 	m_withVAO = withVAO;
 	m_size = size;
-	m_indexSize = iSize;
+	m_curISize = m_indexSize = iSize;
 	if(m_withV)
 	{
 		glGenBuffersARB(1,&m_v);
@@ -392,7 +449,7 @@ XBool XVBO::initX(int size,const float *v,const float *t,const float *n,const fl
 	{
 		glGenBuffersARB(1,&m_i);
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
-		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * sizeof(int),i,GL_DYNAMIC_DRAW_ARB);
+		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, iSize * sizeof(int),i,GL_DYNAMIC_DRAW_ARB);
 	}
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 	
@@ -516,6 +573,7 @@ XBool XVBO::setAsSubject(const XVBO &temp,XBool v,XBool n,XBool c,XBool t,XBool 
 		if(ci)
 		{
 			m_indexSize = temp.m_indexSize;
+			m_curISize = temp.m_curISize;
 			if(m_withI && !m_subjectI) glDeleteBuffersARB(1,&m_i);	//释放掉原有的资源
 			m_i = temp.m_i;
 			m_subjectI = XTrue;
@@ -600,25 +658,26 @@ XBool XVBO::updateDateX(int size,const float *v,const float *t,const float *n,co
 	}
 	if(m_indexSize < iSize)
 	{
+		m_curISize = m_indexSize = iSize;
 		if(m_withI && i != NULL)
 		{
 			glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
-			glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_indexSize * sizeof(int),i,GL_DYNAMIC_DRAW_ARB);
+			glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, iSize * sizeof(int),i,GL_DYNAMIC_DRAW_ARB);
 		}
 	}else
 	{
+		m_curISize = iSize;
 		if(m_withI && i != NULL)
 		{
 			glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,m_i);
-			if(m_indexSize > 8192)
+			if(iSize > 8192)
 			{
-				memcpy(glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,GL_WRITE_ONLY_ARB),i,m_indexSize * sizeof(int));
+				memcpy(glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,GL_WRITE_ONLY_ARB),i, iSize * sizeof(int));
 				glUnmapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB);
 			}else
-				glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,0,m_indexSize * sizeof(int),i);
+				glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,0, iSize * sizeof(int),i);
 		}
 	}
-	m_indexSize = iSize;
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 	return XTrue;
 }
@@ -719,30 +778,335 @@ namespace XGL
 			return XFalse;
 		}
 	}
+	XBool getIsFramebufferReadyN()
+	{
+		//检查FBO状态
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		switch (status)
+		{
+		case GL_FRAMEBUFFER_COMPLETE:
+			LogStr("Framebuffer complete.");
+			return XTrue;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			LogStr("[ERROR] Framebuffer incomplete: Attachment is NOT complete.");
+			return XFalse;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			LogStr("[ERROR] Framebuffer incomplete: No image is attached to FBO.");
+			return XFalse;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+			LogStr("[ERROR] Framebuffer incomplete: Draw buffer.");
+			return XFalse;
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+			LogStr("[ERROR] Framebuffer incomplete: Read buffer.");
+			return XFalse;
+		case GL_FRAMEBUFFER_UNSUPPORTED:
+			LogStr("[ERROR] Unsupported by FBO implementation.");
+			return XFalse;
+		default:
+			LogStr("[ERROR] Unknow error.");
+			return XFalse;
+		}
+	}
 }
-XBool XFBO::init(int w,int h,XColorMode type)
+std::vector<XFBOInfo> XFboBase::m_fboBuffer;
+void XFboBase::opertion(XFBOOpertion op,bool isNew,int w,int h,const std::vector<int>*indexs)
+{//为了防止FBO嵌套造成问题，这里需要做相应的队列处理(尚未完成)
+//	if(m_fboBuffer.size() <= 0) return;	//开启这一行将会造成FBO无法嵌套
+	switch (op)
+	{
+	case XE::OPER_USEFBO:
+		//下面检查数据的合法性
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				if(m_fboBuffer[i].pClass == this)
+					LogStr("Warning:重复调用useFbo()");
+				m_fboBuffer.push_back(XFBOInfo(this,op,isNew,w,h));
+				return;
+			case XE::OPER_BIND:
+				if(m_fboBuffer[i].pClass == this)
+					LogStr("Warning:重复调用bind()");
+				m_fboBuffer.push_back(XFBOInfo(this,op,isNew,w,h));
+				return;
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				break;
+			}
+		}
+		m_fboBuffer.push_back(XFBOInfo(this,op,isNew,w,h));
+		break;
+	case XE::OPER_REMOVEFBO:
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				if(m_fboBuffer[i].pClass != this)
+				{
+					LogStr("Warning:FBO错误的调用关系");
+					m_fboBuffer.pop_back();
+					break;
+				}else
+				{
+					m_fboBuffer.pop_back();	//正确的
+					resumeBuff();
+					return;
+				}
+			case XE::OPER_BIND:
+				LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.pop_back();
+				break;
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				m_fboBuffer.pop_back();
+				break;
+			}
+		}
+		break;
+	case XE::OPER_BIND:
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				if(m_fboBuffer[i].pClass == this)
+					LogStr("Warning:重复调用useFbo()");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_BIND));
+				return;
+			case XE::OPER_BIND:
+				if(m_fboBuffer[i].pClass == this)
+					LogStr("Warning:重复调用bind()");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_BIND));
+				return;
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				break;
+			}
+		}
+		m_fboBuffer.push_back(XFBOInfo(this,OPER_BIND));
+		break;
+	case XE::OPER_UNBIND:
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.pop_back();
+				break;
+			case XE::OPER_BIND:
+				if(m_fboBuffer[i].pClass != this)
+				{
+					LogStr("Warning:FBO错误的调用关系");
+					m_fboBuffer.pop_back();
+					break;
+				}else
+				{
+					m_fboBuffer.pop_back();	//正确的
+					resumeBuff();
+					return;
+				}
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				m_fboBuffer.pop_back();
+				break;
+			}
+		}
+		break;
+	case XE::OPER_ATTACHTEX:
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				if(m_fboBuffer[i].pClass != this)
+					LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_ATTACHTEX));
+				//m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs.push_back((*indexs)[0]);
+				m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs.push_back(w);
+				return;
+			case XE::OPER_BIND:
+				if(m_fboBuffer[i].pClass != this)
+					LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_ATTACHTEX));
+				//m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs.push_back((*indexs)[0]);
+				m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs.push_back(w);
+				return;
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				m_fboBuffer.pop_back();
+				break;
+			}
+		}
+		LogStr("Warning:FBO错误的调用关系");
+		break;
+	case XE::OPER_ATTACHTEXS:
+		for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+		{
+			switch (m_fboBuffer[i].opertion)
+			{
+			case XE::OPER_USEFBO:
+				if(m_fboBuffer[i].pClass != this)
+					LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_ATTACHTEXS));
+				m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs = *indexs;
+				return;
+			case XE::OPER_BIND:
+				if(m_fboBuffer[i].pClass != this)
+					LogStr("Warning:FBO错误的调用关系");
+				m_fboBuffer.push_back(XFBOInfo(this,OPER_ATTACHTEXS));
+				m_fboBuffer[int(m_fboBuffer.size()) - 1].texIndexs = *indexs;
+				return;
+			case XE::OPER_REMOVEFBO:	//不会有的记录
+			case XE::OPER_UNBIND:		//不会有的记录
+			case XE::OPER_ATTACHTEX:	//不重要的记录
+			case XE::OPER_ATTACHTEXS:	//不重要的记录
+				m_fboBuffer.pop_back();
+				break;
+			}
+		}
+		LogStr("Warning:FBO错误的调用关系");
+		break;
+	}
+}
+void XFBOInfo::doIt()
 {
-	if(m_pTextures.size() != 0) return XTrue;
+	switch (opertion)
+	{
+	case XE::OPER_USEFBO:
+		pClass->_useFBO(isNewSize,width,height);
+		break;
+	case XE::OPER_REMOVEFBO:	//不可能存在的数据
+		pClass->_removeFBO();
+		break;
+	case XE::OPER_BIND:
+		pClass->_bind();
+		break;
+	case XE::OPER_UNBIND:	//不可能存在的数据
+		pClass->_unbind();
+		break;
+	case XE::OPER_ATTACHTEX:
+		pClass->_attachTex(texIndexs[0]);
+		break;
+	case XE::OPER_ATTACHTEXS:
+		pClass->_attachTexs(texIndexs);
+		break;
+	}
+}
+void XFboBase::reset()
+{
+	if(m_fboBuffer.size() <= 0) return;	//没有动作直接返回
+	for(int i = int(m_fboBuffer.size()) - 1;i >= 0;-- i)
+	{
+		switch (m_fboBuffer[i].opertion)
+		{
+		case XE::OPER_USEFBO:	//下面的代码可以优化
+			m_fboBuffer[i].pClass->_removeFBO();	//这样会形成记录，这一步不需要记录
+			return;
+		case XE::OPER_BIND:	//下面的代码可以优化
+			return;
+		case XE::OPER_REMOVEFBO:	//不会有的记录
+		case XE::OPER_UNBIND:		//不会有的记录
+		case XE::OPER_ATTACHTEX:	//不重要的记录
+		case XE::OPER_ATTACHTEXS:	//不重要的记录
+			break;
+		}
+	}
+}
+void XFboBase::resumeBuff()
+{
+	if(m_fboBuffer.size() <= 0) return;	//没有动作直接返回
+	int sum = m_fboBuffer.size();
+	for(int i = sum - 1;i >= 0;-- i)
+	{
+		switch (m_fboBuffer[i].opertion)
+		{
+		case XE::OPER_USEFBO:	//下面的代码可以优化
+			for(int j = i;j < sum;++ j)
+			{
+				m_fboBuffer[j].doIt();
+			}
+			return;
+		case XE::OPER_BIND:	//下面的代码可以优化
+			for(int j = i;j < sum;++ j)
+			{
+				m_fboBuffer[j].doIt();
+			}
+			return;
+		case XE::OPER_REMOVEFBO:	//不会有的记录
+		case XE::OPER_UNBIND:		//不会有的记录
+		case XE::OPER_ATTACHTEX:	//不重要的记录
+		case XE::OPER_ATTACHTEXS:	//不重要的记录
+			break;
+		}
+	}
+}
+XBool XFBO::init(int w, int h, XColorMode type, bool withRBO, int filter, int MSSum)
+{
+	if (m_pTextures.size() != 0) return XTrue;
 	//检查是否支持FBO
-	if(!XEG.getIsFBOSupported()) return XFalse;
-
+	if (!XEG.getIsFBOSupported()) return XFalse;
+	m_MSSum = MSSum;
+	if (w % 4 != 0) return false;	//宽度必须要四字节对齐
 //	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &m_maxTextureSum);
 	//建立贴图
-	addOneTexture(w,h,type);
+	addOneTexture(w, h, type, filter);
 	m_type = type;
-	if(type == COLOR_DEPTH)	//这里需要测试是否可以合并这种判断
+	if (type == COLOR_DEPTH)	//这里需要测试是否可以合并这种判断
 	{
-		glGenFramebuffersEXT(1,&m_fboId);					//建立FBO
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);	//绑定FBO
-		glGenRenderbuffersEXT(1, &m_rboId);					
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,m_rboId);
-		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_RGBA,w,h);
+#ifdef FBO_WITH_EXT
+		glGenFramebuffersEXT(1, &m_fboId);					//建立FBO
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fboId);	//绑定FBO
+		glGenRenderbuffersEXT(1, &m_rboId);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rboId);
+		//老逻辑(感觉这里存在逻辑问题，需要检查代码，找到修改成这样的原因)
+		//if (m_MSSum == 0) glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, w, h);
+		//else glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_MSSum, GL_RGBA, w, h);
+		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, m_rboId);//挂接深度渲染点
+		//认为正确的代码
+		if (m_MSSum == 0) glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, w, h);
+		else glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_MSSum, GL_DEPTH_COMPONENT, w, h);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rboId);//挂接深度渲染点
 
-		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT,m_rboId);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D,m_pTextures[0]->m_texture,0);
-		m_zeroTexIndex = 0;
-	}else
+		if (m_MSSum == 0)
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_pTextures[0]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[0]->m_texture, 0);
+#else
+		glGenFramebuffers(1, &m_fboId);					//建立FBO
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fboId);	//绑定FBO
+		glGenRenderbuffers(1, &m_rboId);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_rboId);
+		//老逻辑(感觉这里存在逻辑问题，需要检查代码，找到修改成这样的原因)
+		//if (m_MSSum == 0) glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, w, h);
+		//else glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_MSSum, GL_RGBA, w, h);
+		//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rboId);//挂接深度渲染点
+		//认为正确的代码
+		if (m_MSSum == 0) glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+		else glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_MSSum, GL_DEPTH_COMPONENT, w, h);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboId);//挂接深度渲染点
+
+		if (m_MSSum == 0)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_pTextures[0]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[0]->m_texture, 0);
+#endif
+	}
+	else
 	{
+#ifdef FBO_WITH_EXT
 		//建立一个framebuffer object，当退出时需要删除
 		glGenFramebuffersEXT(1, &m_fboId);					//建立FBO
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fboId);	//绑定FBO
@@ -751,32 +1115,128 @@ XBool XFBO::init(int w,int h,XColorMode type)
 		//glRenderbufferStorageMultisample(GL_RENDERBUFFER,GL_RGBA32F_ARB,GL_DEPTH_STENCIL,w,h);
 		//glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_RENDERBUFFER,m_fboId);
 
-		//建立深度渲染buff，不建立对于不需要深度计算的应用貌似也没有问题
-		//glGenRenderbuffersEXT(1, &m_rboId);					
-		//glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rboId);
-		//glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, w, h);
-		//glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+		if (withRBO)
+		{//建立深度渲染buff，不建立对于不需要深度计算的应用貌似也没有问题
+			glGenRenderbuffersEXT(1, &m_rboId);
+			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rboId);
+			//老逻辑(感觉这里存在逻辑问题，需要检查代码，找到修改成这样的原因)
+			//if (m_MSSum == 0) glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, w, h);
+			//else glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_MSSum, GL_DEPTH_COMPONENT, w, h);    //启用多重采样
+			//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rboId);
+			//认为正确的代码
+			if (m_MSSum == 0) glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, w, h);
+			else glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_MSSum, GL_RGBA, w, h);    //启用多重采样
+			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, m_rboId);
+		}
+		if (m_MSSum == 0)
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_pTextures[0]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[0]->m_texture, 0);
+#else
+		//建立一个framebuffer object，当退出时需要删除
+		glGenFramebuffers(1, &m_fboId);					//建立FBO
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fboId);	//绑定FBO
+		//glRenderbufferStorage(GL_RENDERBUFFER,GL_RGBA,w,h);
+		//使用浮点的GL_RGBA32F_ARB，可以避免残影不消退的问题，尚未搞好
+		//glRenderbufferStorageMultisample(GL_RENDERBUFFER,GL_RGBA32F_ARB,GL_DEPTH_STENCIL,w,h);
+		//glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_STENCIL_ATTACHMENT,GL_RENDERBUFFER,m_fboId);
 
-		//挂接贴图
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_pTextures[0]->m_texture, 0);
-		m_zeroTexIndex = 0;
-		//挂接深度渲染点
-		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT,m_rboId);
+		if (withRBO)
+		{//建立深度渲染buff，不建立对于不需要深度计算的应用貌似也没有问题
+			glGenRenderbuffers(1, &m_rboId);
+			glBindRenderbuffer(GL_RENDERBUFFER, m_rboId);
+			//老逻辑(感觉这里存在逻辑问题，需要检查代码，找到修改成这样的原因)
+			//if (m_MSSum == 0) glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+			//else glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_MSSum, GL_DEPTH_COMPONENT, w, h);    //启用多重采样
+			//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboId);
+			//认为正确的代码
+			if (m_MSSum == 0) glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, w, h);
+			else glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_MSSum, GL_RGBA, w, h);    //启用多重采样
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rboId);
+		}
+		if (m_MSSum == 0)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_pTextures[0]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[0]->m_texture, 0);
+#endif
 	}
+	m_zeroTexIndex = 0;
 
-    //如果你没有挂接贴图的话就取消颜色缓存
-    //例如当你只需要对贴图进行深度渲染的时候
-    //否则glCheckFramebufferStatusEXT将不会准备就绪.
-    //glDrawBuffer(GL_NONE);
-    //glReadBuffer(GL_NONE);
+	//如果你没有挂接贴图的话就取消颜色缓存
+	//例如当你只需要对贴图进行深度渲染的时候
+	//否则glCheckFramebufferStatusEXT将不会准备就绪.
+	//glDrawBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
 
-	if(!XGL::getIsFramebufferReady()) return XFalse;
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+#ifdef FBO_WITH_EXT
+	if (!XGL::getIsFramebufferReady()) return XFalse;
+	if (m_MSSum != 0) glEnable(GL_MULTISAMPLE);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+#else
+	if (!XGL::getIsFramebufferReadyN()) return XFalse;
+	if (m_MSSum != 0) glEnable(GL_MULTISAMPLE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
 	return XTrue;
 }
-void XFBO::useFBO(bool newSize,int w,int h)
+void XFBO::draw(unsigned int index, bool verticalFlip)
 {
+	if(index >= m_pTextures.size()) return;
+	if(m_MSSum > 0)
+	{//OF中是使用两个fbo进行倒(下面的逻辑有问题，当不使用FBO嵌套时图像方向不对)
+		LogStr("纹理多重采样下建议不要直接使用这个方法而是通过非多重采样的FBO调用getPixelFromFbo中转数据之后在描绘");
+		_bind();	//useFBO;
+		_attachTex(index);
+		_unbind();	//removeFBO;
+		//useFBO();
+		//attachTex(index);
+		//removeFBO();
+#ifdef FBO_WITH_EXT
+		glBindFramebufferEXT(GL_READ_FRAMEBUFFER, m_fboId); // Make sure your multisampled FBO is the read framebuffer
+		if(verticalFlip) glBlitFramebuffer(0, getH(), getW(), 0, 0, 0, getW(), getH(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		else glBlitFramebuffer(0, 0, getW(), getH(),0,0,getW(), getH(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebufferEXT(GL_READ_FRAMEBUFFER, 0); // Make sure your multisampled FBO is the read framebuffer
+#else
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fboId); // Make sure your multisampled FBO is the read framebuffer
+		if (verticalFlip) glBlitFramebuffer(0, getH(), getW(), 0, 0, 0, getW(), getH(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		else glBlitFramebuffer(0, 0, getW(), getH(), 0, 0, getW(), getH(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0); // Make sure your multisampled FBO is the read framebuffer
+#endif
+	}else
+	{
+		glColor4fv(XFColor::white);
+		XRender::drawBlankPlane(XVec2(getW(),getH()),getTexture(index));
+	}
+}
+void XFBO::_bind()
+{
+#ifdef FBO_WITH_EXT
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);
+#else
+	glBindFramebuffer(GL_FRAMEBUFFER,m_fboId);
+#endif
+	if(!XEG.getIsMultiSampleSupported()) return;
+//	glDisable(GL_MULTISAMPLE);
+	glDisable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+//	glDisable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+//	if(XEG.getIsLineSmooth()) glDisable(GL_LINE_SMOOTH);
+}
+void XFBO::_unbind()
+{
+#ifdef FBO_WITH_EXT
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // unbind
+#else
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind
+#endif
+	if(!XEG.getIsMultiSampleSupported()) return;
+//	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_POLYGON_SMOOTH);			//开启这里会造成贴图破损
+//	glEnable(GL_POINT_SMOOTH);		//开启各种抗锯齿功能
+//	if(XEG.getIsLineSmooth()) glEnable(GL_LINE_SMOOTH);
+}
+void XFBO::_useFBO(bool newSize,int w,int h)
+{
+	reset();
 	if(newSize)
 	{
 		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
@@ -785,22 +1245,16 @@ void XFBO::useFBO(bool newSize,int w,int h)
 		switch(XEG.m_windowData.rotateMode)
 		{
 		case WINDOW_ROTATE_MODE_0:
-			glOrtho(0,w,0,h,-1,1);
-			glViewport(0,0,w,h);
-			break;
-		case WINDOW_ROTATE_MODE_90:
-			glOrtho(w,0,h,0,-1,1);
-			glViewport(0,0,w,h);
-			break;
 		case WINDOW_ROTATE_MODE_180:
 			glOrtho(0,w,0,h,-1,1);
-			glViewport(0,0,w,h);
 			break;
+		case WINDOW_ROTATE_MODE_90:
 		case WINDOW_ROTATE_MODE_270:
 			glOrtho(w,0,h,0,-1,1);
-			glViewport(0,0,w,h);
 			break;
 		}
+		glViewport(0,0,w,h);
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
@@ -808,15 +1262,11 @@ void XFBO::useFBO(bool newSize,int w,int h)
 		{
 		case WINDOW_ROTATE_MODE_0: break;	//do nothing
 		case WINDOW_ROTATE_MODE_90: 
-			glTranslatef(w,h,0);
-			glRotatef(180,0,0,1);
-			break;
-		case WINDOW_ROTATE_MODE_180: 
-			break;
 		case WINDOW_ROTATE_MODE_270: 
-			glTranslatef(w,h,0);
-			glRotatef(180,0,0,1);
+			glTranslatef(w,h,0.0f);
+			glRotatef(180.0f,0.0f,0.0f,1.0f);
 			break;
+		case WINDOW_ROTATE_MODE_180: break;
 		}	
 	}else
 	{
@@ -826,22 +1276,16 @@ void XFBO::useFBO(bool newSize,int w,int h)
 		switch(XEG.m_windowData.rotateMode)
 		{
 		case WINDOW_ROTATE_MODE_0:
-			glOrtho(0,XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+		case WINDOW_ROTATE_MODE_180:
+			glOrtho(0.0,XEG.m_windowData.sceneW,0.0,XEG.m_windowData.sceneH,-1.0,1.0);
 			break;
 		case WINDOW_ROTATE_MODE_90:
-			glOrtho(XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,0,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
-			break;
-		case WINDOW_ROTATE_MODE_180:
-			glOrtho(0,XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
-			break;
 		case WINDOW_ROTATE_MODE_270:
-			glOrtho(XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,0,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+			glOrtho(XEG.m_windowData.sceneW,0.0,XEG.m_windowData.sceneH,0.0,-1.0,1.0);
 			break;
 		}
+		glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
@@ -849,40 +1293,42 @@ void XFBO::useFBO(bool newSize,int w,int h)
 		{
 		case WINDOW_ROTATE_MODE_0: break;	//do nothing
 		case WINDOW_ROTATE_MODE_90: 
-			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0);
-			glRotatef(180,0,0,1);
-			break;
-		case WINDOW_ROTATE_MODE_180: 
-			break;
 		case WINDOW_ROTATE_MODE_270: 
-			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0);
-			glRotatef(180,0,0,1);
+			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0.0f);
+			glRotatef(180.0f,0.0f,0.0f,1.0f);
 			break;
+		case WINDOW_ROTATE_MODE_180: break;
 		}
 	}
-	bind();
+	_bind();
 }
 //同时绑定多个FBO
 XBool XFBO::attachTexs(int sum,int index,...)
 {
 	if(sum <= 0 ||
 		sum > XEG.getMaxTextureSum()) return XFalse;
-	int indexs[16] = {-1,-1,-1,-1,-1,
-						-1,-1,-1,-1,-1,
-						-1,-1,-1,-1,-1,-1};	//最多可以使用16个贴图
+	std::vector<int> indexs;
 	va_list arg_ptr;
 	va_start(arg_ptr,index);
-	indexs[0] = index;
+	indexs.push_back(index);
 	for(int i = 1;i < sum;++ i)
 	{
-		indexs[i] = va_arg(arg_ptr, int);
+		indexs.push_back(va_arg(arg_ptr, int));
 		if(indexs[i] < 0) return XFalse;
 	}
 	va_end(arg_ptr);
+	return attachTexs(indexs);
+}
+XBool XFBO::_attachTexs(const std::vector<int> &indexs)
+{
+#ifdef FBO_WITH_EXT
 	//然后开始分别绑定贴图
-	for(int i = 0;i < sum;++ i)
+	for(unsigned int i = 0;i < indexs.size();++ i)
 	{
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + i,GL_TEXTURE_2D,m_pTextures[indexs[i]]->m_texture,0);
+		if(m_MSSum == 0)
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, m_pTextures[indexs[i]]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[indexs[i]]->m_texture, 0 );
 	}
 	m_zeroTexIndex = indexs[0];
 	//m_upTextureSum = sum;
@@ -894,14 +1340,34 @@ XBool XFBO::attachTexs(int sum,int index,...)
 		GL_COLOR_ATTACHMENT10_EXT,GL_COLOR_ATTACHMENT11_EXT,
 		GL_COLOR_ATTACHMENT12_EXT,GL_COLOR_ATTACHMENT13_EXT,
 		GL_COLOR_ATTACHMENT14_EXT,GL_COLOR_ATTACHMENT15_EXT};
-	glDrawBuffers(sum,buffers);
-	if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
-		return XFalse;
-	return XTrue;
+	glDrawBuffers(indexs.size(),buffers);
+	return glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) == GL_FRAMEBUFFER_COMPLETE_EXT;
+#else
+	//然后开始分别绑定贴图
+	for (unsigned int i = 0; i < indexs.size(); ++i)
+	{
+		if (m_MSSum == 0)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, m_pTextures[indexs[i]]->m_texture, 0);//挂接贴图		
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, m_pTextures[indexs[i]]->m_texture, 0);
+	}
+	m_zeroTexIndex = indexs[0];
+	//m_upTextureSum = sum;
+	GLenum buffers[] = { GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,
+		GL_COLOR_ATTACHMENT2,GL_COLOR_ATTACHMENT3,
+		GL_COLOR_ATTACHMENT4,GL_COLOR_ATTACHMENT5,
+		GL_COLOR_ATTACHMENT6,GL_COLOR_ATTACHMENT7,
+		GL_COLOR_ATTACHMENT8,GL_COLOR_ATTACHMENT9,
+		GL_COLOR_ATTACHMENT10,GL_COLOR_ATTACHMENT11,
+		GL_COLOR_ATTACHMENT12,GL_COLOR_ATTACHMENT13,
+		GL_COLOR_ATTACHMENT14,GL_COLOR_ATTACHMENT15 };
+	glDrawBuffers(indexs.size(), buffers);
+	return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+#endif
 }
-void XFBO::removeFBO()
+void XFBO::_removeFBO()
 {
-	unbind();
+	_unbind();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
@@ -909,14 +1375,10 @@ void XFBO::removeFBO()
 	switch(XEG.m_windowData.rotateMode)
 	{
 	case WINDOW_ROTATE_MODE_0:
-		glViewport(0,0,getWindowWidth(),getWindowHeight());
-		break;
-	case WINDOW_ROTATE_MODE_90:
-		glViewport(0,0,getWindowHeight(),getWindowWidth());
-		break;
 	case WINDOW_ROTATE_MODE_180:
 		glViewport(0,0,getWindowWidth(),getWindowHeight());
 		break;
+	case WINDOW_ROTATE_MODE_90:
 	case WINDOW_ROTATE_MODE_270:
 		glViewport(0,0,getWindowHeight(),getWindowWidth());
 		break;
@@ -929,11 +1391,31 @@ void XFBO::release()
 		XMem::XDELETE(m_pTextures[i]);
 	}
 	m_pTextures.clear();
-
-	glDeleteFramebuffersEXT(1, &m_fboId);
-	if(m_type == COLOR_DEPTH) glDeleteRenderbuffersEXT(1, &m_rboId);
+#ifdef FBO_WITH_EXT
+	if(m_fboId != 0)
+	{
+		glDeleteFramebuffersEXT(1, &m_fboId);
+		m_fboId = 0;
+	}
+	if(m_type == COLOR_DEPTH && m_rboId != 0)
+	{
+		glDeleteRenderbuffersEXT(1, &m_rboId);
+		m_rboId = 0;
+	}
+#else
+	if (m_fboId != 0)
+	{
+		glDeleteFramebuffers(1, &m_fboId);
+		m_fboId = 0;
+	}
+	if (m_type == COLOR_DEPTH && m_rboId != 0)
+	{
+		glDeleteRenderbuffers(1, &m_rboId);
+		m_rboId = 0;
+	}
+#endif
 }
-bool XFBOEx::init(int w,int h,XColorMode type)
+bool XFBOEx::init(int w,int h,XColorMode type, int MSSum)
 {
 	if(m_isInited) return false;
 	m_w = w;
@@ -945,32 +1427,57 @@ bool XFBOEx::init(int w,int h,XColorMode type)
 	case COLOR_RGB:	colorMode = GL_RGB;break;
 	case COLOR_DEPTH:colorMode = GL_DEPTH_COMPONENT;break;
 	case COLOR_RGBA_F:colorMode = GL_RGBA;break;
+	case COLOR_RGB_F:colorMode = GL_RGB;break;
 	default:	//其他格式不支持该操作
 		return false;
 	}
+#ifdef FBO_WITH_EXT
 	glGenFramebuffersEXT(1,&m_fboId);				//建立FBO
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);  
 
 	glGenRenderbuffersEXT(1,&m_rboId);			//建立渲染目标
 	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,m_rboId);	
-	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,4,colorMode,w,h);  //启用多重采样
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
+	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, MSSum,colorMode,w,h);  //启用多重采样
+	//glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_RENDERBUFFER_EXT,m_rboId);//挂接渲染目标
 
 	glGenRenderbuffersEXT(1,&m_rbdId);			//建立深度渲染目标
 	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,m_rbdId);  
-	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,4,GL_DEPTH_COMPONENT,w,h);    //启用多重采样
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
+	glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, MSSum,GL_DEPTH_COMPONENT,w,h);    //启用多重采样
+	//glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER,m_rbdId);  //挂接深度渲染目标
 
 	if(!XGL::getIsFramebufferReady()) return false;
+	glEnable(GL_MULTISAMPLE);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);		//FBO建立完成
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,0);  
+#else
+	glGenFramebuffers(1,&m_fboId);				//建立FBO
+	glBindFramebuffer(GL_FRAMEBUFFER,m_fboId);  
 
+	glGenRenderbuffers(1,&m_rboId);			//建立渲染目标
+	glBindRenderbuffer(GL_RENDERBUFFER,m_rboId);	
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, MSSum,colorMode,w,h);  //启用多重采样
+	//glBindRenderbuffer(GL_RENDERBUFFER,0);  
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,m_rboId);//挂接渲染目标
+
+	glGenRenderbuffers(1,&m_rbdId);			//建立深度渲染目标
+	glBindRenderbuffer(GL_RENDERBUFFER,m_rbdId);  
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, MSSum,GL_DEPTH_COMPONENT,w,h);    //启用多重采样
+	//glBindRenderbuffer(GL_RENDERBUFFER,0);  
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,m_rbdId);  //挂接深度渲染目标
+
+	if(!XGL::getIsFramebufferReadyN()) return false;
+	glEnable(GL_MULTISAMPLE);
+	glBindFramebuffer(GL_FRAMEBUFFER,0);		//FBO建立完成
+	glBindRenderbuffer(GL_RENDERBUFFER,0);  
+#endif
 	m_isInited = true;
 	return true;
 }
-void XFBOEx::useFBO(bool newSize,int w,int h)
+void XFBOEx::_useFBO(bool newSize,int w,int h)
 {
+	reset();
 	if(newSize)
 	{
 		glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
@@ -979,22 +1486,16 @@ void XFBOEx::useFBO(bool newSize,int w,int h)
 		switch(XEG.m_windowData.rotateMode)
 		{
 		case WINDOW_ROTATE_MODE_0:
-			glOrtho(0,w,0,h,-1,1);
-			glViewport(0,0,w,h);
+		case WINDOW_ROTATE_MODE_180:
+			glOrtho(0.0,w,0.0,h,-1.0,1.0);
 			break;
 		case WINDOW_ROTATE_MODE_90:
-			glOrtho(w,0,h,0,-1,1);
-			glViewport(0,0,w,h);
-			break;
-		case WINDOW_ROTATE_MODE_180:
-			glOrtho(0,w,0,h,-1,1);
-			glViewport(0,0,w,h);
-			break;
 		case WINDOW_ROTATE_MODE_270:
-			glOrtho(w,0,h,0,-1,1);
-			glViewport(0,0,w,h);
+			glOrtho(w,0.0,h,0.0,-1.0,1.0);
 			break;
 		}
+		glViewport(0,0,w,h);
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
@@ -1002,15 +1503,11 @@ void XFBOEx::useFBO(bool newSize,int w,int h)
 		{
 		case WINDOW_ROTATE_MODE_0: break;	//do nothing
 		case WINDOW_ROTATE_MODE_90: 
-			glTranslatef(w,h,0);
-			glRotatef(180,0,0,1);
-			break;
-		case WINDOW_ROTATE_MODE_180: 
-			break;
 		case WINDOW_ROTATE_MODE_270: 
-			glTranslatef(w,h,0);
-			glRotatef(180,0,0,1);
+			glTranslatef(w,h,0.0f);
+			glRotatef(180.0f,0.0f,0.0f,1.0f);
 			break;
+		case WINDOW_ROTATE_MODE_180: break;
 		}	
 	}else
 	{
@@ -1020,22 +1517,16 @@ void XFBOEx::useFBO(bool newSize,int w,int h)
 		switch(XEG.m_windowData.rotateMode)
 		{
 		case WINDOW_ROTATE_MODE_0:
-			glOrtho(0,XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+		case WINDOW_ROTATE_MODE_180:
+			glOrtho(0.0,XEG.m_windowData.sceneW,0.0,XEG.m_windowData.sceneH,-1.0,1.0);
 			break;
 		case WINDOW_ROTATE_MODE_90:
-			glOrtho(XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,0,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
-			break;
-		case WINDOW_ROTATE_MODE_180:
-			glOrtho(0,XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
-			break;
 		case WINDOW_ROTATE_MODE_270:
-			glOrtho(XEG.m_windowData.sceneW,0,XEG.m_windowData.sceneH,0,-1,1);
-			glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+			glOrtho(XEG.m_windowData.sceneW,0.0,XEG.m_windowData.sceneH,0.0,-1.0,1.0);
 			break;
 		}
+		glViewport(0,0,XEG.m_windowData.sceneW,XEG.m_windowData.sceneH);
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
@@ -1043,22 +1534,18 @@ void XFBOEx::useFBO(bool newSize,int w,int h)
 		{
 		case WINDOW_ROTATE_MODE_0: break;	//do nothing
 		case WINDOW_ROTATE_MODE_90: 
-			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0);
-			glRotatef(180,0,0,1);
-			break;
-		case WINDOW_ROTATE_MODE_180: 
-			break;
 		case WINDOW_ROTATE_MODE_270: 
-			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0);
-			glRotatef(180,0,0,1);
+			glTranslatef(XEG.m_windowData.sceneW,XEG.m_windowData.sceneH,0.0f);
+			glRotatef(180.0f,0.0f,0.0f,1.0f);
 			break;
+		case WINDOW_ROTATE_MODE_180: break;
 		}
 	}
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,m_fboId);
+	_bind();
 }
-void XFBOEx::removeFBO()
+void XFBOEx::_removeFBO()
 {
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // unbind
+	_unbind();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式 （对投影矩阵应用之后的矩阵操作）
@@ -1067,14 +1554,10 @@ void XFBOEx::removeFBO()
 	switch (gFrameworkData.pFrameWork->m_windowData.rotateMode)
 	{
 	case WINDOW_ROTATE_MODE_0:
-		glViewport(0,0,getWindowWidth(),getWindowHeight());
-		break;
-	case WINDOW_ROTATE_MODE_90:
-		glViewport(0,0,getWindowHeight(),getWindowWidth());
-		break;
 	case WINDOW_ROTATE_MODE_180:
 		glViewport(0,0,getWindowWidth(),getWindowHeight());
 		break;
+	case WINDOW_ROTATE_MODE_90:
 	case WINDOW_ROTATE_MODE_270:
 		glViewport(0,0,getWindowHeight(),getWindowWidth());
 		break;
@@ -1082,31 +1565,151 @@ void XFBOEx::removeFBO()
 }
 namespace XRender
 {
-	void drawBlankPlane(int w,int h,unsigned int tex,XShaderGLSL *pShader)
+	void drawBlankPlane(const XVec2& p, const XVec2& s, unsigned int tex, 
+		XShaderGLSL *pShader, const XFColor&color)
 	{
-		if(pShader != NULL)
+		if (tex == 0) return; //无效的图片
+		glColor4fv(color);
+		if (pShader != NULL) pShader->useShaderEx(tex);
+		else
 		{
-			glPushAttrib(GL_ALL_ATTRIB_BITS);
-			pShader->useShader();
+			glActiveTexture(GL_TEXTURE0);
+			XGL::EnableTexture2D();
+			XGL::BindTexture2D(tex);
 		}
-		glActiveTexture(GL_TEXTURE0);
-		XGL::EnableTexture2D();
-		XGL::BindTexture2D(tex);
 		glBegin(GL_QUADS);
-			glTexCoord2f(0,0);
-			glVertex2f(0,0);
-			glTexCoord2f(0,1);
-			glVertex2f(0,h);
-			glTexCoord2f(1,1);
-			glVertex2f(w,h);
-			glTexCoord2f(1,0);
-			glVertex2f(w,0);
+		glNormal3f(0, 0, -1);
+		glTexCoord2fv(XVec2::zero);
+		glVertex2fv(p);
+
+		glNormal3f(0, 0, -1);
+		glTexCoord2fv(XVec2::zeroOne);
+		glVertex2f(p.x, p.y + s.y);
+
+		glNormal3f(0, 0, -1);
+		glTexCoord2fv(XVec2::one);
+		glVertex2fv(p + s);
+
+		glNormal3f(0, 0, -1);
+		glTexCoord2fv(XVec2::oneZero);
+		glVertex2f(p.x + s.x, p.y);
 		glEnd();
-		if(pShader != NULL)
+		if (pShader != NULL) pShader->disShader();
+	}
+	void drawBlankPlanePlus(const XVec2& p, const XVec2& s, unsigned int tex,
+		XShaderGLSL *pShader, const XFColor&color)
+	{
+		if (tex == 0) return; //无效的图片
+		glColor4fv(color);
+		if (pShader != NULL)
 		{
-			pShader->disShader();
-			glPopAttrib();
+			pShader->useShaderEx(tex);
+		//	pShader->bindDefaults();
 		}
+		else
+		{
+			glActiveTexture(GL_TEXTURE0);
+			XGL::EnableTexture2D();
+			XGL::BindTexture2D(tex);
+		}
+		glBegin(GL_QUADS);
+//		glVertexAttrib3f(NOR_ATT, 0, 0, -1);
+//		glVertexAttrib4fv(COL_ATT, XFColor::white);
+		glVertexAttrib2fv(TEX_ATT, XVec2::zero);
+		glVertexAttrib2fv(POS_ATT, p);
+
+//		glVertexAttrib3f(NOR_ATT, 0, 0, -1);
+//		glVertexAttrib4fv(COL_ATT, XFColor::white);
+		glVertexAttrib2fv(TEX_ATT, XVec2::zeroOne);
+		glVertexAttrib2f(POS_ATT, p.x, p.y + s.y);
+
+//		glVertexAttrib3f(NOR_ATT, 0, 0, -1);
+//		glVertexAttrib4fv(COL_ATT, XFColor::white);
+		glVertexAttrib2fv(TEX_ATT, XVec2::one);
+		glVertexAttrib2fv(POS_ATT, p + s);
+
+//		glVertexAttrib3f(NOR_ATT, 0, 0, -1);
+//		glVertexAttrib4fv(COL_ATT, XFColor::white);
+		glVertexAttrib2fv(TEX_ATT, XVec2::oneZero);
+		glVertexAttrib2f(POS_ATT, p.x + s.x, p.y);
+		glEnd();
+		if (pShader != NULL) pShader->disShader();
+	}
+	void drawBlankPlane(const std::vector<XVec2>& pos, unsigned int tex, XShaderGLSL* pShader, const XFColor& color)
+	{
+		if (pos.size() < 4) return;	//数据数量不够
+		glColor4fv(color);
+		if (pShader != NULL)
+		{
+			pShader->useShaderEx(tex);
+		}
+		else
+		{
+			glActiveTexture(GL_TEXTURE0);
+			XGL::EnableTexture2D();
+			XGL::BindTexture2D(tex);
+		}
+		glBegin(GL_QUADS);
+		glTexCoord2fv(XVec2::zero);
+		glVertex2fv(pos[0]);
+		glTexCoord2fv(XVec2::zeroOne);
+		glVertex2fv(pos[1]);
+		glTexCoord2fv(XVec2::one);
+		glVertex2fv(pos[2]);
+		glTexCoord2fv(XVec2::oneZero);
+		glVertex2fv(pos[3]);
+		glEnd();
+		if (pShader != NULL)
+			pShader->disShader();
+	}
+	void drawBlankPlaneEx(const std::vector<XVec2>& pos, unsigned int tex, XShaderGLSL* pShader, const XFColor& color, int subSum)
+	{
+		if (subSum == 1) return drawBlankPlane(pos, tex, pShader, color);
+		if (pos.size() < 4 || subSum < 1) return;	//数据数量不够
+		glColor4fv(color);
+		if (pShader != NULL)
+		{
+			pShader->useShaderEx(tex);
+		}
+		else
+		{
+			glActiveTexture(GL_TEXTURE0);
+			XGL::EnableTexture2D();
+			XGL::BindTexture2D(tex);
+		}
+		float step = 1.0f / static_cast<float>(subSum);
+		XVec2 ul, dl, ur, dr, pu, pd, pou, pod;
+		float tmpH = 0.0f, tmpW = 0.0f;
+		dl = pos[0];
+		dr = pos[3];
+		XVec2 offsetL = (pos[1] - pos[0]) * step;
+		XVec2 offsetR = (pos[2] - pos[3]) * step;
+		for (int h = 0; h < subSum; ++h, tmpH += step)
+		{
+			ul = dl;
+			dl += offsetL;
+			ur = dr;
+			dr += offsetR;
+			tmpW = 0.0f;
+			pu = ul;
+			pd = dl;
+			pou = (ur - ul) * step;
+			pod = (dr - dl) * step;
+			glBegin(GL_TRIANGLE_STRIP);
+			for (int w = 0; w <= subSum; ++w, tmpW += step)
+			{
+				glTexCoord2fv(XVec2(tmpW, tmpH));
+				glVertex2fv(pu);
+
+				glTexCoord2fv(XVec2(tmpW, tmpH + step));
+				glVertex2fv(pd);
+				pu += pou;
+				pd += pod;
+			}
+			glEnd();
+		}
+		if (pShader != NULL)
+			pShader->disShader();
 	}
 }
 #if !WITH_INLINE_FILE

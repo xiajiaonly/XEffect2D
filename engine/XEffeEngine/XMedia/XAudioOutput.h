@@ -16,10 +16,10 @@ class XAudioOutput
 {
 protected:
     XAudioOutput()
-		:m_audioBuff(NULL)
-		,m_buffSize(0)
-		,m_curUsage(0)
-		,m_isStart(false)
+		:m_isStart(false)
+//		,m_audioBuff(NULL)
+//		,m_buffSize(0)
+//		,m_curUsage(0)
 		,m_pSwrContext(NULL)
 		,m_tmpBuffer(NULL)
 		,m_withConversion(false)
@@ -34,9 +34,10 @@ public:
 		return m_instance;
 	}
 private:
-	unsigned char *m_audioBuff;	//用于放音频数据
-	int m_buffSize;	//缓存的大小
-	int m_curUsage;	//当前的使用量
+	XBuffer m_audioBuff;
+//	unsigned char *m_audioBuff;	//用于放音频数据
+//	int m_buffSize;	//缓存的大小
+//	int m_curUsage;	//当前的使用量
 	bool m_isStart;
 	XCritical m_mutex;
 	static void audioCallBack(void *userdata,Uint8 *stream,int len);	//声音的回调函数
@@ -48,19 +49,26 @@ private:
 	int m_conversionPerFrame;	//转换时的采样转化率
 	float m_conversionRate;	//转换率
 	//--------------------------------------------------
-	bool insertDataX(const unsigned char *data,int dataLen);	//插入数据
+	bool insertDataX(const void *data, int dataLen)	//插入数据
+	{
+		m_mutex.Lock();
+		bool ret = m_audioBuff.pushData(data, dataLen);
+		m_mutex.Unlock();
+		return ret;
+	}
 public:
 	void release();
 	AVSampleFormat getSampleFormat()const{return AV_SAMPLE_FMT_S16;}
 	bool getIsStart()const{return m_isStart;}
 	bool start();	//开始回放
-	int getBuffUsage()const{return m_curUsage;}
-	float getCurCanPlayTime()const;//返回当前缓存中的数据可以在播放多长的时间	
+	int getBuffUsage()const{return m_audioBuff.getUsage();}
+	float getCurCanPlayTime()const;//返回当前缓存中的数据可以在播放多长的时间	//单位秒
 	bool insertData(const unsigned char *data,int dataLen);	//插入数据
 	bool stop();	//停止回放
 	void setConversion(int channelSum,AVSampleFormat format,int sampleRate);	//设置转换参数
 	void useConversion(bool flag){m_withConversion = flag;}	//启用转换
 	bool getIsConversion()const{return m_withConversion;}
+	void clearBuff() { m_audioBuff.clear(); }
 };
 #define XAudioOut XAudioOutput::GetInstance()
 #if WITH_INLINE_FILE

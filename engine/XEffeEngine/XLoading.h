@@ -18,9 +18,9 @@ namespace XE{
 class XLoadingScene
 {
 public:
-	XLoadingScene(){}
-	virtual ~XLoadingScene(){}
-	virtual int init(XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE) = 0;
+	XLoadingScene() {}
+	virtual ~XLoadingScene() {}
+	virtual int init(XResPos resPos = RES_SYS_DEF) = 0;
 	virtual void move(float stepTime) = 0;
 	virtual void draw() = 0;
 	virtual void release() = 0;
@@ -29,13 +29,13 @@ public:
 class XLoading
 {
 private:
-	XResourcePosition m_resoursePosition;	//资源位置
+	XResPos m_resoursePosition;	//资源位置
 public:
 	float m_loadPresent;		//载入进度
 	XBool m_isShow;			//是否显示载入内容
 	XThreadState m_isEnd;			//0没有结束 1资源载入完成 2结束
 
-	//XVector2 m_windowSize;	//窗口的尺寸
+	//XVec2 m_windowSize;	//窗口的尺寸
 
 	HDC m_hDC;				//绘图句柄
 	XLoadingScene *m_pScene;
@@ -44,19 +44,19 @@ public:
 public:
 	static DWORD WINAPI loadingProc(void * pParam);	//载入的线程
 	void init(XLoadingScene * scene,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		XResPos resPos = RES_SYS_DEF);
 	void move();				//进度条动作
 	void draw();				//描绘进度条
 	void setStart();			//设置开始进度条
 	void setEnd();				//设置结束进度条
 	void release();				//释放资源
 	void setLoadPresent(float present);		//设置加载进度
-	void setSpeed(float speed) {m_speed = speed;}
+	void setSpeed(float speed) { m_speed = speed; }
 
 	XLoading()
 		:m_pScene(NULL)
-		,m_isEnd(STATE_BEFORE_START)
-		,m_speed(1.0f)
+		, m_isEnd(STATE_BEFORE_START)
+		, m_speed(1.0f)
 	{}
 };
 inline void XLoading::setLoadPresent(float present)		//设置加载进度
@@ -103,7 +103,7 @@ public:
 
 	XSprite m_loadingBG;		//载入画面背景
 	XProgress m_process;
-	XVector2 m_windowSize;
+	XVec2 m_windowSize;
 
 	XNumber Number;
 	XProgressSkin ProgressTexture;
@@ -111,7 +111,7 @@ public:
 public:
     static void *loadingProc(void * pParam);	//载入的线程
 
-	void init(const XVector2 &windowSize,int resoursePosition = 0);
+	void init(const XVec2& windowSize,int resPos = 0);
 	void move();				//进度条动作
 	void draw();				//描绘进度条
 	void setStart();			//设置开始进度条
@@ -147,12 +147,11 @@ inline void XLoading::release()
 	ProgressTexture.release();
 }
 #endif
-
 extern XBool isLoadingStart;
 extern XLoading *xLoading;
 extern XLoadingScene *xLoadingScene;
 extern XBool startLoading(XLoadingScene * scene,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		XResPos resPos = RES_SYS_DEF);
 extern XBool endLoading();
 }
 #endif

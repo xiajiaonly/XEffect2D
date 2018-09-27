@@ -1,28 +1,27 @@
 #include "XStdHead.h"
 #include "XAudioOutput.h"
 namespace XE{
-void XAudioOutput::audioCallBack(void *userData,Uint8 *stream,int len)
+void XAudioOutput::audioCallBack(void *userData, Uint8 *stream, int len)
 {
 	XAudioOutput &pPar = *(XAudioOutput *)userData;
 	//下面向其中填充数据
-	if(pPar.m_curUsage == 0)
+	if (pPar.m_audioBuff.getUsage() == 0)
 	{//没有数据
-		memset(stream,0,len);
-	}else
+		memset(stream, 0, len);
+	}
+	else
 	{
 		pPar.m_mutex.Lock();
-		if(pPar.m_curUsage >= len)
+		if (pPar.m_audioBuff.getUsage() >= len)
 		{//填充满数据
-			memcpy(stream,pPar.m_audioBuff,len);
-			//去掉已经使用过的数据
-			pPar.m_curUsage -= len;
-			memmove(pPar.m_audioBuff,pPar.m_audioBuff + len,pPar.m_curUsage);
-		}else
+			pPar.m_audioBuff.popData(stream, len);
+		}
+		else
 		{//不够的补零
-			memcpy(stream,pPar.m_audioBuff,pPar.m_curUsage);
+			memcpy(stream, pPar.m_audioBuff.getBuffer(), pPar.m_audioBuff.getUsage());
 			//剩下的部分补0
-			memset(stream + pPar.m_curUsage,0,len - pPar.m_curUsage);
-			pPar.m_curUsage = 0;
+			memset(stream + pPar.m_audioBuff.getUsage(), 0, len - pPar.m_audioBuff.getUsage());
+			pPar.m_audioBuff.clear();
 		}
 		pPar.m_mutex.Unlock();
 	}
@@ -70,39 +69,23 @@ bool XAudioOutput::insertData(const unsigned char *data,int dataLen)	//插入数据
 		while(true)
 		{
 			uint8_t *out[] = {m_tmpBuffer}; 
-			const uint8_t *in[] = {data + pos,data + dataLen / 2 + pos}; 
+			const uint8_t *in[] = {data + pos,data + dataLen / 2 + pos};//对输入数据进行切分，没有问题
 			if((dataLen - pos) / m_conversionPerFrame < sampleSum)
 			{
 				int ret = swr_convert(m_pSwrContext,out,MAX_TMP_BUFF_SIZE / m_conversionPerFrame,in,(dataLen - pos) / m_conversionPerFrame);  
-				if(!insertDataX(m_tmpBuffer,ret * m_conversionPerFrame)) return false;
+				if(!insertDataX(m_tmpBuffer,ret * XEG.getAudioChannelSum() * m_conversionPerFrame)) return false;
 				break;
 			}else
 			{
 				int ret = swr_convert(m_pSwrContext,out,MAX_TMP_BUFF_SIZE / m_conversionPerFrame,in,sampleSum);  
-				if(!insertDataX(m_tmpBuffer,ret * m_conversionPerFrame)) return false;
+				assert(ret * XEG.getAudioChannelSum() * m_conversionPerFrame <= MAX_TMP_BUFF_SIZE);
+				if(!insertDataX(m_tmpBuffer,ret * XEG.getAudioChannelSum() * m_conversionPerFrame)) return false;
 				pos += sampleSum * m_conversionPerFrame;
 			}
 		}
 		return true;
 	}else
 		return insertDataX(data,dataLen);
-}
-bool XAudioOutput::insertDataX(const unsigned char *data,int dataLen)	//插入数据
-{
-	m_mutex.Lock();
-	if(m_buffSize - m_curUsage < dataLen)
-	{
-		if(!XMem::resizeMem(m_audioBuff,m_curUsage,m_curUsage + dataLen))
-		{
-			LogStr("内存分配失败!");
-			return false;
-		}
-		m_buffSize = m_curUsage + dataLen;
-	}
-	memcpy(m_audioBuff + m_curUsage,data,dataLen);
-	m_curUsage += dataLen;
-	m_mutex.Unlock();
-	return true;
 }
 #if !WITH_INLINE_FILE
 #include "XAudioOutput.inl"

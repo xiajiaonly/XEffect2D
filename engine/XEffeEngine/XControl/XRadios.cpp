@@ -9,27 +9,27 @@
 #include "XControlManager.h"
 namespace XE{
 XRadios::XRadios()
-:m_isInited(XFalse)			//空间时都已经初始化
-,m_radioSum(1)			//选项的数量
-,m_curChoose(0)			//当前所选的项的编号
-,m_radio(NULL)			//所有单选项的指针
-,m_checkPosition(NULL)
-//,m_funStateChange(NULL)
-,m_resInfo(NULL)
-,m_withoutTex(XFalse)
+	:m_isInited(XFalse)			//空间时都已经初始化
+	, m_radioSum(1)			//选项的数量
+	, m_curChoose(0)			//当前所选的项的编号
+	, m_radio(NULL)			//所有单选项的指针
+	, m_checkPosition(NULL)
+	//,m_funStateChange(NULL)
+	, m_resInfo(NULL)
+	, m_withoutTex(XFalse)
 {
 	m_ctrlType = CTRL_OBJ_RADIOS;
 }
 void XRadios::release()	//释放分配的资源
 {
-	if(!m_isInited) return;
+	if (!m_isInited) return;
 	XMem::XDELETE_ARRAY(m_radio);
 	XMem::XDELETE_ARRAY(m_checkPosition);
 	XCtrlManager.decreaseAObject(this);	//注销这个物件
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(this);
 #endif
-	if(m_resInfo != NULL)
+	if (m_resInfo != NULL)
 	{
 		XResManager.releaseResource(m_resInfo);
 		m_resInfo = NULL;
@@ -37,17 +37,16 @@ void XRadios::release()	//释放分配的资源
 	m_isInited = XFalse;
 }
 XBool XRadios::init(int radioSum,			//选项的数量
-		const XVector2& distance,
-		const XVector2& position,	//控件的位置
-		const XRect &Area,			//选择图标的鼠标响应范围
-		const XRadiosSkin *tex,const XFontUnicode &font,float captionSize,
-		const XVector2& textPosition)	//单选框初始化
+		const XVec2& distance,
+		const XVec2& position,	//控件的位置
+		const XRect& area,			//选择图标的鼠标响应范围
+		const XRadiosSkin *tex,const XFontUnicode& font,float captionSize,
+		const XVec2& textPosition)	//单选框初始化
 {
-	if(m_isInited) return XFalse;
-	if(Area.getHeight() <= 0 || Area.getWidth() <= 0) return XFalse;	//空间必须要有一个响应区间，不然会出现除零错误
+	if(m_isInited || area.getHeight() <= 0 || area.getWidth() <= 0) return XFalse;	//空间必须要有一个响应区间，不然会出现除零错误
 	if(radioSum < 1) return XFalse;	//不能没有选项，必须要有一个选项
 	if(captionSize <= 0) return XFalse;
-	m_mouseRect = Area;
+	m_mouseRect = area;
 	m_position = position;
 	m_distance = distance;
 	m_withoutTex = XFalse;
@@ -58,13 +57,13 @@ XBool XRadios::init(int radioSum,			//选项的数量
 	m_radioSum = radioSum;
 	m_radio = XMem::createArrayMem<XCheck>(m_radioSum);
 	if(m_radio == NULL) return XFalse;//如果内存分配失败，直接返回错误
-	m_checkPosition = XMem::createArrayMem<XVector2>(m_radioSum);
+	m_checkPosition = XMem::createArrayMem<XVec2>(m_radioSum);
 	if(m_checkPosition == NULL)
 	{
 		XMem::XDELETE_ARRAY(m_radio);
 		return XFalse;
 	}
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 
 	m_texture = tex;
 	if(!m_caption.setACopy(font)) return XFalse;
@@ -73,7 +72,7 @@ XBool XRadios::init(int radioSum,			//选项的数量
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 	m_captionSize = captionSize;
 	m_textPosition = textPosition;
@@ -84,8 +83,8 @@ XBool XRadios::init(int radioSum,			//选项的数量
 	//初始化所有的选项
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
-		if(!m_radio[i].init(XVector2(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y),
+		m_checkPosition[i].set(m_distance * i);
+		if(!m_radio[i].init(m_position + m_checkPosition[i] * m_scale,
 			m_mouseRect,* m_texture," ",m_caption,m_captionSize,m_textPosition))
 		{
 			XMem::XDELETE_ARRAY(m_radio);
@@ -93,7 +92,7 @@ XBool XRadios::init(int radioSum,			//选项的数量
 			return XFalse;
 		}
 		m_radio[i].setState(XFalse);
-		m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y);
+		m_radio[i].setPosition(m_position + m_checkPosition[i] * m_scale);
 
 		//在物件管理器中注销掉这些物件
 		XCtrlManager.decreaseAObject(&(m_radio[i]));
@@ -108,9 +107,7 @@ XBool XRadios::init(int radioSum,			//选项的数量
 	m_curChoose = 0;
 	m_radio[0].setState(XTrue);
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -120,16 +117,16 @@ XBool XRadios::init(int radioSum,			//选项的数量
 	return XTrue;
 }
 XBool XRadios::initWithoutSkin(int radioSum,
-		const XVector2& distance,
-		const XRect &area,
-		const XFontUnicode &font,float captionSize,
-		const XVector2& textPosition)
+		const XVec2& distance,
+		const XRect& area,
+		const XFontUnicode& font,float captionSize,
+		const XVec2& textPosition)
 {
 	if(m_isInited ||
 		radioSum < 1 ||	//不能没有选项，必须要有一个选项
 		captionSize <= 0) return XFalse;
 	m_mouseRect = area;
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	m_distance = distance;
 	m_withoutTex = XTrue;
 
@@ -137,13 +134,13 @@ XBool XRadios::initWithoutSkin(int radioSum,
 	m_radioSum = radioSum;
 	m_radio = XMem::createArrayMem<XCheck>(m_radioSum);
 	if(m_radio == NULL) return XFalse;//如果内存分配失败，直接返回错误
-	m_checkPosition = XMem::createArrayMem<XVector2>(m_radioSum);
+	m_checkPosition = XMem::createArrayMem<XVec2>(m_radioSum);
 	if(m_checkPosition == NULL)
 	{
 		XMem::XDELETE_ARRAY(m_radio);
 		return XFalse;
 	}
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 
 	if(!m_caption.setACopy(font)) XFalse;
 #if WITH_OBJECT_MANAGER
@@ -151,7 +148,7 @@ XBool XRadios::initWithoutSkin(int radioSum,
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 	m_captionSize = captionSize;
 	m_textPosition = textPosition;
@@ -162,7 +159,7 @@ XBool XRadios::initWithoutSkin(int radioSum,
 	//初始化所有的选项
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
+		m_checkPosition[i].set(m_distance * i);
 		if(!m_radio[i].initWithoutSkin(" ",m_caption,m_captionSize,m_mouseRect,m_textPosition))
 		{
 			XMem::XDELETE_ARRAY(m_radio);
@@ -170,7 +167,7 @@ XBool XRadios::initWithoutSkin(int radioSum,
 			return XFalse;
 		}
 		m_radio[i].setState(XFalse);
-		m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y);
+		m_radio[i].setPosition(m_position + m_checkPosition[i] * m_scale);
 	//在物件管理器中注销掉这些物件
 		XCtrlManager.decreaseAObject(&(m_radio[i]));
 #if WITH_OBJECT_MANAGER
@@ -185,9 +182,7 @@ XBool XRadios::initWithoutSkin(int radioSum,
 	m_radio[0].setState(XTrue);
 	stateChange();
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -209,17 +204,18 @@ void XRadios::setChoosed(int temp)
 	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,RDS_STATE_CHANGE);
 	else XCtrlManager.eventProc(m_objectID,RDS_STATE_CHANGE);
 }
-XBool XRadios::mouseProc(float x,float y,XMouseState mouseState)
+XBool XRadios::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 
 	int tempOrder = -1;	//记录被操作的选项的编号
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		if(m_radio[i].mouseProc(x,y,mouseState))
+		if(m_radio[i].mouseProc(p,mouseState))
 		{//这里默认只会有一个选项被操作
 			if(m_curChoose != i) tempOrder = i;
 			else m_radio[m_curChoose].setState(XTrue);
@@ -247,6 +243,7 @@ XBool XRadios::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 
 	if(keyState == KEY_STATE_UP && m_isBeChoose)
 	{//按键弹起时才作相应
@@ -279,11 +276,11 @@ XBool XRadios::keyboardProc(int keyOrder,XKeyState keyState)
 	}
 	return XTrue;
 }
-void XRadios::setScale(float x,float y)
+void XRadios::setScale(const XVec2& s)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
-		x <= 0 || y <= 0) return;
-	m_scale.set(x,y);
+		s.x <= 0 || s.y <= 0) return;
+	m_scale = s;
 	//移动所有选项控件的相对位置
 	for(int i = 0;i < m_radioSum;++ i)
 	{
@@ -292,10 +289,10 @@ void XRadios::setScale(float x,float y)
 		m_radio[i].setScale(m_scale);
 	}
 }
-void XRadios::setPosition(float x,float y)
+void XRadios::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;	//如果没有初始化直接退出
-	m_position.set(x,y);
+	m_position = p;
 	//移动所有选项控件的相对位置
 	for(int i = 0;i < m_radioSum;++ i)
 	{
@@ -323,7 +320,7 @@ XBool XRadios::setRadioSum(int radioSum)
 #if WITH_OBJECT_MANAGER
 	//printf("Cur obj sum:%d\n",XObjManager.getCurObjectSum());
 #endif
-	m_checkPosition = XMem::createArrayMem<XVector2>(m_radioSum);
+	m_checkPosition = XMem::createArrayMem<XVec2>(m_radioSum);
 	if(m_checkPosition == NULL)
 	{
 		XMem::XDELETE_ARRAY(m_radio);
@@ -333,8 +330,8 @@ XBool XRadios::setRadioSum(int radioSum)
 	//初始化所有的选项
 	for(int i = 0;i < m_radioSum;++ i)
 	{
-		m_checkPosition[i].set(m_distance.x * i,m_distance.y * i);
-	//	if((!m_withoutTex && !m_radio[i].init(XVector2(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y),
+		m_checkPosition[i].set(m_distance * i);
+	//	if((!m_withoutTex && !m_radio[i].init(XVec2(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y),
 		if((!m_withoutTex && !m_radio[i].init(m_position + m_checkPosition[i] * m_scale,
 			m_mouseRect,* m_texture," ",m_caption,m_captionSize,m_textPosition))
 			|| (m_withoutTex && !m_radio[i].initWithoutSkin(" ",m_caption,m_captionSize,m_mouseRect,m_textPosition)))
@@ -343,7 +340,7 @@ XBool XRadios::setRadioSum(int radioSum)
 			XMem::XDELETE_ARRAY(m_checkPosition);
 			return XFalse;
 		}
-		m_radio[i].setPosition(m_position.x + m_checkPosition[i].x * m_scale.x,m_position.y + m_checkPosition[i].y * m_scale.y);
+		m_radio[i].setPosition(m_position + m_checkPosition[i] * m_scale);
 		//在控件管理器中注销掉这些物件
 		XCtrlManager.decreaseAObject(&(m_radio[i]));	
 #if WITH_OBJECT_MANAGER
@@ -361,8 +358,8 @@ XBool XRadios::setRadioSum(int radioSum)
 }
 XBool XRadios::setACopy(const XRadios &temp)
 {
-	if(&temp == this) return XFalse;
-	if(!temp.m_isInited) return XFalse;
+	if(&temp == this ||
+		!temp.m_isInited) return XFalse;
 	if(m_isInited) release();
 	if(!XControlBasic::setACopy(temp)) return XFalse;
 	if(!m_isInited)
@@ -393,7 +390,7 @@ XBool XRadios::setACopy(const XRadios &temp)
 	m_radio = XMem::createArrayMem<XCheck>(m_radioSum);
 	if(m_radio == NULL) return XFalse;//如果内存分配失败，直接返回错误
 
-	m_checkPosition = XMem::createArrayMem<XVector2>(m_radioSum);
+	m_checkPosition = XMem::createArrayMem<XVec2>(m_radioSum);
 	if(m_checkPosition == NULL)
 	{
 		XMem::XDELETE_ARRAY(m_radio);
@@ -414,11 +411,11 @@ XBool XRadios::setACopy(const XRadios &temp)
 	m_pClass = temp.m_pClass;
 	return XTrue;
 }
-XVector2 XRadios::getBox(int order)
+XVec2 XRadios::getBox(int order)
 {
-	if(!m_isInited) return XVector2::zero;
-	XVector2 ret;
-	XVector2 temp;
+	if(!m_isInited) return XVec2::zero;
+	XVec2 ret;
+	XVec2 temp;
 	//遍历所有的按钮，找到最外围的框，每次都遍历，会不会太吃效率
 	switch(order)
 	{
@@ -459,7 +456,7 @@ XVector2 XRadios::getBox(int order)
 		}
 		return ret;
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 void XRadios::setRadiosText(const char * temp)
 {

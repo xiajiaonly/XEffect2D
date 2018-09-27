@@ -3,6 +3,7 @@
 #include "XScene.h"
 #include "../XShaderGLSL.h"
 #include "../XSprite.h"
+#include "XString.h"
 namespace XE{
 XSceneManager::XSceneManager()
 	:m_currentScene(NULL)
@@ -54,7 +55,7 @@ void XSceneManager::draw()
 			break;
 		case SCENE_MODE_FADE_IN:	//场景淡入
 			m_sceneFbo->useFBO();
-			XEG.clearScreen(XFColor(0.0f,0.0f,0.0f,1.0f));
+			XEG.clearScreen(XFColor::black);
 			if(m_futureScene != NULL) m_futureScene->draw();
 			m_sceneFbo->removeFBO();
 
@@ -65,7 +66,7 @@ void XSceneManager::draw()
 			break;
 		case SCENE_MODE_FADE_OUT:	//场景淡出
 			m_sceneFbo->useFBO();
-			XEG.clearScreen(XFColor(0.0f,0.0f,0.0f,1.0f));
+			XEG.clearScreen(XFColor::black);
 			if(m_currentScene != NULL) m_currentScene->draw();
 			m_sceneFbo->removeFBO();
 
@@ -78,22 +79,22 @@ void XSceneManager::draw()
 			if(m_timer < 0.5f)
 			{
 				if(m_currentScene != NULL) m_currentScene->draw();
-				XRender::drawFillBox(0.0f,0.0f,getWindowWidth(),getWindowHeight(),0,0,0,m_timer * 2.0f);
+				XRender::drawFillRect(XVec2::zero,getWindowSize(),XFColor(0.0f,m_timer * 2.0f));
 			}else
 			{
 				if(m_futureScene != NULL) m_futureScene->draw();
-				XRender::drawFillBox(0.0f,0.0f,getWindowWidth(),getWindowHeight(),0,0,0,(1.0f - m_timer) * 2.0f);
+				XRender::drawFillRect(XVec2::zero, getWindowSize(),XFColor(0.0f,(1.0f - m_timer) * 2.0f));
 			}
 			break;
 		case SCENE_MODE_WHITE:		//淡白
 			if(m_timer < 0.5f)
 			{
 				if(m_currentScene != NULL) m_currentScene->draw();
-				XRender::drawFillBox(0.0f,0.0f,getWindowWidth(),getWindowHeight(),1.0f,1.0f,1.0f,m_timer * 2.0f);
+				XRender::drawFillRect(XVec2::zero, getWindowSize(),XFColor(1.0f,m_timer * 2.0f));
 			}else
 			{
 				if(m_futureScene != NULL) m_futureScene->draw();
-				XRender::drawFillBox(0.0f,0.0f,getWindowWidth(),getWindowHeight(),1.0f,1.0f,1.0f,(1.0f - m_timer) * 2.0f);
+				XRender::drawFillRect(XVec2::zero, getWindowSize(),XFColor(1.0f,(1.0f - m_timer) * 2.0f));
 			}
 			break;
 		}
@@ -102,7 +103,7 @@ void XSceneManager::draw()
 		if(m_currentScene != NULL) m_currentScene->draw();
 	}
 }
-bool XSceneManager::goToScene(const std::string &name,XSceneChangeMode mode,float time)	//设置场景更换
+bool XSceneManager::goToScene(const std::string& name,XSceneChangeMode mode,float time)	//设置场景更换
 {
 	if(m_isChange) return false;	//正在变换场景的时候不能变换场景
 	XScene * tmp = getScene(name);
@@ -153,9 +154,9 @@ void XSceneManager::input(const XInputEvent &event)
 		if(m_currentScene != NULL) m_currentScene->input(event);
 	}
 }
-std::string XSceneManager::getCurrentSceneName()const
+const std::string& XSceneManager::getCurrentSceneName()const
 {
-	if(m_currentScene == NULL) return "";
+	if(m_currentScene == NULL) return XString::gNullStr;
 	return m_currentScene->getSceneName();
 }
 

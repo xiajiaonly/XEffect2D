@@ -13,12 +13,12 @@ class XArcBall
 {
 protected:
 	bool m_isInited;	//是否初始化
-	XVector3 m_clickVector;
-	XVector3 m_dragVector;
+	XVec3 m_clickVector;
+	XVec3 m_dragVector;
 	float m_sizeWRate;	//尺寸的转换率
 	float m_sizeHRate;
 
-	void mapToSphere(const XVector2 &point,XVector3& vec) const;	//将2D坐标映射成3D坐标
+	void mapToSphere(const XVec2& point,XVec3& vec) const;	//将2D坐标映射成3D坐标
 public:
 	XArcBall(float width,float height)
 		:m_isInited(false)
@@ -37,8 +37,8 @@ public:
 		m_isInited = true;
 		return true;
 	}
-	void click(const XVector2 &point){mapToSphere(point,m_clickVector);}	//鼠标按下记录鼠标的状态
-	void drag(const XVector2 &point,XVector4& rotate); //根据鼠标的拖动计算旋转的四元素
+	void click(const XVec2& point){mapToSphere(point,m_clickVector);}	//鼠标按下记录鼠标的状态
+	void drag(const XVec2& point,XVec4& rotate); //根据鼠标的拖动计算旋转的四元素
 };
 }
 #endif

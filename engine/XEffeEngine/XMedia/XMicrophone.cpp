@@ -12,7 +12,7 @@ void XMicrophone::printAllCaptureDevice()
 	const ALCchar *ptr = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER); 
 	while (*ptr)
 	{ 
-		LogNull("   %s\n", ptr); 
+		LogNull("   %s", ptr); 
 		ptr += strlen(ptr) + 1; 
 	}
 }
@@ -30,7 +30,7 @@ XBool XMicrophone::openDevice(const ALCchar *devicename,ALCuint frequency,ALCenu
 		return XFalse; 
 	} 
 	//const ALCchar * devices = alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER); 
-	LogNull("   已经打开录音设备 %s\n", alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER));
+	LogNull("   已经打开录音设备 %s", alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER));
 
 	m_dataBuffMaxSize = 10000;	//默认的最大数据大小
 	m_captureData = XMem::createArrayMem<unsigned char>(m_dataBuffMaxSize);
@@ -80,7 +80,7 @@ XBool XMicrophone::openDeviceByIndex(int index,ALCuint frequency, ALCenum format
 		return XFalse; 
 	} 
 	//const ALCchar devices = alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER); 
-	LogNull("   已经打开录音设备 %s\n",alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER));
+	LogNull("   已经打开录音设备 %s",alcGetString(m_pCaptureDev, ALC_CAPTURE_DEVICE_SPECIFIER));
 
 	m_dataBuffMaxSize = 10000;	//默认的最大数据大小
 	m_captureData = XMem::createArrayMem<unsigned char>(m_dataBuffMaxSize);
@@ -101,8 +101,8 @@ XBool XMicrophone::openDeviceByIndex(int index,ALCuint frequency, ALCenum format
 unsigned char * XMicrophone::getCaptureData(int * size)
 {
 	int ret = 0;
-	if(size == NULL) size = & ret; 
-	(* size) = 0;
+	if(size == NULL) size = &ret; 
+	else *size = 0;
 	if(!m_isInited) return NULL;
 	alcGetIntegerv(m_pCaptureDev,ALC_CAPTURE_SAMPLES,1,size); 
 	if((*size) > 0)	//有录音采样数据 

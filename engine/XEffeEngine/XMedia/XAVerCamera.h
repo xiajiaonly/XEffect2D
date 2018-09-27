@@ -10,7 +10,7 @@
 #include "AVer/AVerCapAPI.h"
 #pragma comment(lib,"../lib/AVer/AVerCapAPI.lib")
 namespace XE{
-class XAVerCamera:public XCameraBasic
+class XAVerCamera:public XPixelsInputBasic
 {
 private:
 	HANDLE m_hHDCaptureDevice;		//摄像头的设备指针
@@ -27,7 +27,7 @@ private:
 	friend BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO VideoInfo, BYTE *pbData,LONG lLength, __int64 tRefTime, LONG lUserData);
 	XBool m_isNewFrame;
 
-	XBool setPixels(const XCameraInfo &data);
+	XBool setPixels(const XPixelsInputInfo &data);
 public:
 	void setUp2Down(XBool flag){m_isUp2Down = flag;}
 	void setLeft2Right(XBool flag){m_isLeft2Right = flag;}
@@ -43,7 +43,7 @@ public:
 		return m_pixelsData;
 	}
 	//int getBuffSize() const {return m_buffSize;}
-	XBool init(XCameraInfo &data);
+	XBool init(XPixelsInputInfo &data);
 	XBool updateFrame();
 	//void draw();
 	XAVerCamera()

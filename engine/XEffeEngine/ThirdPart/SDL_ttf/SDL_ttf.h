@@ -202,10 +202,16 @@ extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderGlyph_Shaded(TTF_Font *font,
 */
 extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderText_Blended(TTF_Font *font,
                 const char *text, SDL_Color fg);
+//+++++++ 原始版本 +++++++
+//extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderUTF8_Blended(TTF_Font *font,
+//                const char *text, SDL_Color fg);
+//+++++++ 经过优化 +++++++
 extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderUTF8_Blended(TTF_Font *font,
-                const char *text, SDL_Color fg);
+				const char *text, SDL_Color fg, SDL_Surface *dst = NULL);
+//------------------------
 extern DECLSPEC SDL_Surface * SDLCALL TTF_RenderUNICODE_Blended(TTF_Font *font,
                 const Uint16 *text, SDL_Color fg);
+
 
 
 /* Create a 32-bit ARGB surface and render the given text at high quality,

@@ -21,7 +21,7 @@ XMenuItem *XMenuGroup::getItemByHotChooseKey(char k)
 	}
 	return NULL;
 }
-void XMenuGroup::setAllCallBackFun(void (*callbackFun)(void *,const std::string &),void *p)
+void XMenuGroup::setAllCallBackFun(void (*callbackFun)(void *,const std::string& ),void *p)
 {
 	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
@@ -157,7 +157,7 @@ void XMenuGroup::initIndex(XBool orderFlag)
 void XMenuGroup::updatePos()
 {
 	if(m_items.size() <= 0) return;
-	XVector2 pos;	//组第一个菜单项所在的位置
+	XVec2 pos;	//组第一个菜单项所在的位置
 	if(m_parent->m_owner == NULL) pos = m_parent->m_position;
 	else
 	{
@@ -171,7 +171,7 @@ void XMenuGroup::updatePos()
 			pos.y += m_parent->m_size.y * m_parent->m_scaleSize.y;
 		}
 	}
-	m_items[0]->setPosition(pos.x,pos.y);
+	m_items[0]->setPosition(pos);
 	//下面遍历所有的控件并设置其位置
 	if(m_type == MENU_TYPE_VERTICAL)
 	{
@@ -179,7 +179,7 @@ void XMenuGroup::updatePos()
 		for(unsigned int i = 1; i < m_items.size();++ i)
 		{
 			tmpItem = m_items[i - 1];
-			m_items[i]->setPosition(tmpItem->m_position.x,tmpItem->m_position.y + tmpItem->m_size.y * tmpItem->m_scaleSize.y);
+			m_items[i]->setPosition(tmpItem->m_position + XVec2(0.0f, tmpItem->m_size.y * tmpItem->m_scaleSize.y));
 		}
 	}else
 	{
@@ -187,7 +187,7 @@ void XMenuGroup::updatePos()
 		for(unsigned int i = 1; i < m_items.size();++ i)
 		{
 			tmpItem = m_items[i - 1];
-			m_items[i]->setPosition(tmpItem->m_position.x + tmpItem->m_size.x * tmpItem->m_scaleSize.x,tmpItem->m_position.y);
+			m_items[i]->setPosition(tmpItem->m_position + XVec2(tmpItem->m_size.x * tmpItem->m_scaleSize.x, 0.0f));
 		}
 	}
 }
@@ -204,10 +204,10 @@ void XMenuGroup::updateSize()
 	if(m_items.size() <= 0) return;
 	for(unsigned int i = 0; i < m_items.size();++ i)
 	{
-		m_items[i]->setScale(m_parent->m_scaleSize.x,m_parent->m_scaleSize.y);
+		m_items[i]->setScale(m_parent->m_scaleSize);
 	}
 }
-XBool XMenuItem::init(const std::string &name,const XFontUnicode &font,float/*fontsize*/,XMenuGroup *owner,XMenuItemType type)
+XBool XMenuItem::init(const std::string& name,const XFontUnicode& font,float/*fontsize*/,XMenuGroup *owner,XMenuItemType type)
 {
 	if(owner == NULL) return XFalse;
 	if(owner != NULL && type != MENU_ITEM_TYPE_DLT && owner->getItemByNameInGroup(name) != NULL) return XFalse;//检查名字的唯一性
@@ -220,7 +220,7 @@ XBool XMenuItem::init(const std::string &name,const XFontUnicode &font,float/*fo
 	if(owner->m_parent != NULL)
 		m_scaleSize = owner->m_parent->m_scaleSize;
 	else 
-		m_scaleSize.set(1.0f,1.0f);
+		m_scaleSize.set(1.0f);
 
 	m_isEnable = XTrue;
 
@@ -248,7 +248,7 @@ XBool XMenuItem::init(const std::string &name,const XFontUnicode &font,float/*fo
 	{//这里需要计算显示的字符串的长度
 		m_size.x = m_owner->m_width;
 	}
-	if(m_levelIndex < 2 && owner->m_type == MENU_TYPE_HORIZONTA) m_font.setPosition(m_position + XVector2(m_size.x * 0.5f,16));
+	if(m_levelIndex < 2 && owner->m_type == MENU_TYPE_HORIZONTA) m_font.setPosition(m_position + XVec2(m_size.x * 0.5f,16));
 	else
 	{
 		m_font.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
@@ -257,10 +257,10 @@ XBool XMenuItem::init(const std::string &name,const XFontUnicode &font,float/*fo
 		{
 			if(m_isChecked) m_showName = "X " + m_showName;
 			else m_showName = "* " + m_showName;
-			m_font.setPosition(m_position + XVector2(2.0f,0.0f));
+			m_font.setPosition(m_position + XVec2(2.0f,0.0f));
 		}else
 		{
-			m_font.setPosition(m_position + XVector2(36.0f,0.0f));
+			m_font.setPosition(m_position + XVec2(36.0f,0.0f));
 		}
 	}
 	if(owner->m_parent != NULL && owner->m_parent->m_isOpen) m_isVisible = XTrue;
@@ -280,7 +280,7 @@ XBool XMenuItem::init(const std::string &name,const XFontUnicode &font,float/*fo
 	}
 	return XTrue;
 }
-void XMenuItem::setString(const std::string &name)
+void XMenuItem::setString(const std::string& name)
 {
 	if(m_levelIndex == 0 ||	//根层不需要处理
 		m_type == MENU_ITEM_TYPE_DLT) return;	//分隔符不能设置字体
@@ -296,7 +296,7 @@ void XMenuItem::setString(const std::string &name)
 	{//这里需要计算显示的字符串的长度
 		m_size.x = m_owner->m_width;	//需要计算宽度
 	}
-	if(m_levelIndex < 2 && m_owner->m_type == MENU_TYPE_HORIZONTA) m_font.setPosition(m_position + XVector2(m_size.x * 0.5f,16));
+	if(m_levelIndex < 2 && m_owner->m_type == MENU_TYPE_HORIZONTA) m_font.setPosition(m_position + XVec2(m_size.x * 0.5f,16));
 }
 void XMenuItem::beTriggered()	//菜单项被触发时调用这个函数
 {
@@ -324,41 +324,41 @@ std::string XMenuItem::getFullStr() const	//获取当前菜单项的全路径
 	}
 	return ret;
 }
-void XMenuItem::setPosition(float x,float y)
+void XMenuItem::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);	//设置自身的位置
+	m_position = p;	//设置自身的位置
 	if(m_withIcon &&  m_type == MENU_ITEM_TYPE_BTN)
 		m_spriteIcon.setPosition(m_position);
 	if(m_type != MENU_ITEM_TYPE_DLT)
 	{
 		if(m_levelIndex < 2 && (m_owner == NULL || m_owner->m_type == MENU_TYPE_HORIZONTA)) 
-			m_font.setPosition(m_position + XVector2(m_size.x * 0.5f * m_scaleSize.x,16 * m_scaleSize.y));
+			m_font.setPosition(m_position + XVec2(m_size.x * 0.5f,16.0f) * m_scaleSize);
 		else
 		{
 			if(m_type == MENU_ITEM_TYPE_CHK)
-				m_font.setPosition(m_position + XVector2(2.0f,0.0f) * m_scaleSize);
+				m_font.setPosition(m_position + XVec2(2.0f,0.0f) * m_scaleSize);
 			else
-				m_font.setPosition(m_position + XVector2(36.0f,0.0f) * m_scaleSize);
+				m_font.setPosition(m_position + XVec2(36.0f,0.0f) * m_scaleSize);
 		}
 	}
 	//所有子菜单的位置都需要修改
 	if(m_child != NULL) m_child->updatePos();
 }
-void XMenuItem::setColor(const XFColor &c)
+void XMenuItem::setColor(const XFColor& c)
 {
 	m_color = c;
 	if(m_withIcon &&  m_type == MENU_ITEM_TYPE_BTN)
 		m_spriteIcon.setColor(c);
 	if(m_type != MENU_ITEM_TYPE_DLT)
 	{
-		m_font.setAlpha(c.fA);
+		m_font.setAlpha(c.a);
 	}
 	//所有子菜单的位置都需要修改
 	if(m_child != NULL) m_child->updateColor();
 }
-void XMenuItem::setScale(float x,float y)
+void XMenuItem::setScale(const XVec2& s)
 {
-	m_scaleSize.set(x,y);
+	m_scaleSize = s;
 	m_font.setScale(m_scaleSize);
 	if(m_withIcon &&  m_type == MENU_ITEM_TYPE_BTN)
 	{
@@ -369,16 +369,16 @@ void XMenuItem::setScale(float x,float y)
 	//尚未完成
 	if(m_child != NULL) m_child->updateSize();
 }
-XBool XMenuItem::mouseProc(float x,float y,XMouseState mouseState)
+XBool XMenuItem::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(m_type == MENU_ITEM_TYPE_DLT) return XFalse;
 
 	if(m_isEnable && m_isVisible)//判断是否悬浮
 	{
-		m_isMouseOn = XRect(m_position.x,m_position.y,m_position.x + m_size.x * m_scaleSize.x,m_position.y + m_size.y * m_scaleSize.y).isInRect(x,y);
+		m_isMouseOn = XRect(m_position,m_position + m_size * m_scaleSize).isInRect(p);
 		if(m_child != NULL)
 		{
-			if(m_isOpen && m_child->mouseProc(x,y,mouseState)) return XTrue;
+			if(m_isOpen && m_child->mouseProc(p,mouseState)) return XTrue;
 		}else
 		{//判断菜单项事件是否触发
 			if((mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
@@ -391,7 +391,7 @@ XBool XMenuItem::mouseProc(float x,float y,XMouseState mouseState)
 	}
 	return XFalse;
 }
-XBool XMenuItem::setIcon(const char *filename,XResourcePosition res)
+XBool XMenuItem::setIcon(const char *filename,XResPos res)
 {
 	if(m_type != MENU_ITEM_TYPE_BTN ||
 		filename == NULL) return XFalse;
@@ -412,8 +412,7 @@ void XMenuItem::draw()
 	if(!m_isVisible) return;
 	if(m_type == MENU_ITEM_TYPE_DLT)
 	{
-		XRender::drawFillBox(m_position.x,m_position.y,m_size.x * m_scaleSize.x,m_size.y * m_scaleSize.y,
-			XCCS::normalColor * m_color);
+		XRender::drawFillRect(m_position,m_size * m_scaleSize,XCCS::normalColor * m_color);
 		XRender::drawLine(m_position.x,m_position.y + m_size.y * 0.5f * m_scaleSize.y,
 			m_position.x + m_size.x * m_scaleSize.x,m_position.y + m_size.y * 0.5f * m_scaleSize.y,2.0f,
 			XCCS::blackOnColor * m_color);
@@ -422,12 +421,9 @@ void XMenuItem::draw()
 			XCCS::mouseColor * m_color);
 	}else
 	{
-		if(!m_isEnable) XRender::drawFillBox(m_position.x,m_position.y,m_size.x * m_scaleSize.x,m_size.y * m_scaleSize.y,
-			XCCS::mouseColor * m_color); else
-		if(m_isMouseOn) XRender::drawFillBox(m_position.x,m_position.y,m_size.x * m_scaleSize.x,m_size.y * m_scaleSize.y,
-			XCCS::onColor * m_color); else
-		XRender::drawFillBox(m_position.x,m_position.y,m_size.x * m_scaleSize.x,m_size.y * m_scaleSize.y,
-			XCCS::normalColor * m_color);
+		if(!m_isEnable) XRender::drawFillRect(m_position,m_size * m_scaleSize,XCCS::mouseColor * m_color); else
+		if(m_isMouseOn) XRender::drawFillRect(m_position,m_size * m_scaleSize,XCCS::onColor * m_color); else
+		XRender::drawFillRect(m_position,m_size * m_scaleSize,XCCS::normalColor * m_color);
 
 		m_font.draw();
 		if(m_child != NULL && m_isOpen) m_child->draw();
@@ -465,19 +461,20 @@ void XMenuItem::updateStr()
 				return;	//长度非法
 			}
 			char p[m_maxMenuItemLength];
-			strcpy(p,m_originalName.c_str());
+			strcpy_s(p,m_maxMenuItemLength,m_originalName.c_str());
 			if(XString::isAtUnicodeEnd(m_originalName.c_str(),stringShowWidth - 2))
 			{
-
-				p[stringShowWidth] = '\0';
-				p[stringShowWidth - 1] = '.';
-				p[stringShowWidth - 2] = '.';
+				memcpy(p + stringShowWidth - 2, &"..", 3);
+				//p[stringShowWidth] = '\0';
+				//p[stringShowWidth - 1] = '.';
+				//p[stringShowWidth - 2] = '.';
 			}else
 			{
-				p[stringShowWidth] = '\0';
-				p[stringShowWidth - 1] = '.';
-				p[stringShowWidth - 2] = '.';
-				p[stringShowWidth - 3] = '.';
+				memcpy(p + stringShowWidth - 3, &"...", 4);
+				//p[stringShowWidth] = '\0';
+				//p[stringShowWidth - 1] = '.';
+				//p[stringShowWidth - 2] = '.';
+				//p[stringShowWidth - 3] = '.';
 			} 
 			m_showName = p;
 		}else
@@ -551,7 +548,7 @@ XMenuItem * XMenu::getItemFromGroup(char *p,XMenuGroup *g)
 	}
 	//return NULL;
 }
-XBool XMenu::setMenuItemStr(const std::string &pos,const std::string &name)
+XBool XMenu::setMenuItemStr(const std::string& pos,const std::string& name)
 {//设置菜单项的名字
 	if(name.length() >= XMenuItem::m_maxMenuItemLength - 1) return XFalse;	//字符串太长
 	XMenuItem * tmpX = getItemByName(pos);
@@ -564,21 +561,21 @@ XBool XMenu::setMenuItemStr(const std::string &pos,const std::string &name)
 		int size = tmpX->m_owner->m_items.size();
 		for(int i = 1;i < size;++ i)
 		{
-			tmpX->m_owner->m_items[i]->setPosition(tmpX->m_owner->m_items[i - 1]->m_position.x + tmpX->m_owner->m_items[i - 1]->m_size.x,
-				tmpX->m_owner->m_items[i - 1]->m_position.y);
+			tmpX->m_owner->m_items[i]->setPosition(tmpX->m_owner->m_items[i - 1]->m_position +
+				XVec2(tmpX->m_owner->m_items[i - 1]->m_size.x, 0.0f));
 		}
 		tmpX->m_owner->m_insertPos.x = tmpX->m_owner->m_items[size - 1]->m_position.x + tmpX->m_owner->m_items[size - 1]->m_size.x;
 	}
 	return XTrue;
 }
-void XMenu::ctrlProc(void *pClass,const std::string &pos)
+void XMenu::ctrlProc(void *pClass,const std::string& pos)
 {
 	XMenu &pPar = *(XMenu *)pClass;
 	pPar.m_curChooseMenuStr = pos;
 	if(pPar.m_eventProc != NULL) pPar.m_eventProc(pPar.m_pClass,pPar.m_objectID,MNU_CHOOSE);
 	else XCtrlManager.eventProc(pPar.m_objectID,MNU_CHOOSE);
 }
-XBool XMenu::addAItem(const std::string &pos,const std::string &name,int width,XMenuItemType type)
+XBool XMenu::addAItem(const std::string& pos,const std::string& name,int width,XMenuItemType type)
 {//向菜单中增加一个内容
 	if(name.length() >= XMenuItem::m_maxMenuItemLength - 1) return XFalse;	//字符串太长
 	if(XString::getCharPosition(name.c_str(),';') >= 0) return XFalse;	//名字中不能有分隔符
@@ -655,7 +652,7 @@ XBool XMenu::addAItem(const std::string &pos,const std::string &name,int width,X
 	m_needPostProcess = XTrue;
 	return XTrue;
 }
-XMenuItem * XMenu::getItemByName(const std::string &name)
+XMenuItem * XMenu::getItemByName(const std::string& name)
 {//尚未完成
 	if(name == "root" || name == "root;") return &m_rootItem;
 	int offset = XString::getCharPosition(name.c_str(),';');
@@ -666,18 +663,19 @@ XMenuItem * XMenu::getItemByName(const std::string &name)
 	if(strcmp(tmp,"root") != 0) return NULL;
 	char *p = XMem::createArrayMem<char>(name.length() + 1);
 	if(p == NULL) return NULL;
-	strcpy(p,name.c_str());
+	strcpy_s(p,name.length() + 1,name.c_str());
 	XMenuItem * ret = getItemFromGroup(p + offset + 1,m_rootItem.m_child);
 	XMem::XDELETE_ARRAY(p);
 	return ret;
 }
-XBool XMenu::mouseProc(float x,float y,XMouseState mouseState)
+XBool XMenu::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	if(m_rootItem.mouseProc(x,y,mouseState))
+	if(m_isSilent) return XFalse;
+	if(m_rootItem.mouseProc(p,mouseState))
 	{//触发菜单项
 		if(m_hotChooseKeyIsActive)
 		{
@@ -699,9 +697,9 @@ XBool XMenu::mouseProc(float x,float y,XMouseState mouseState)
 			m_oldChooseItem = NULL;
 			m_isClicked = XFalse;
 		}
-		if(m_rootItem.isInRect(x,y))
+		if(m_rootItem.isInRect(p))
 		{//点击事件发生在菜单上
-			XMenuItem * tmp = m_rootItem.getItem(x,y);
+			XMenuItem * tmp = m_rootItem.getItem(p);
 			if(!m_isClicked)
 			{
 				m_isClicked = XTrue;
@@ -731,7 +729,7 @@ XBool XMenu::mouseProc(float x,float y,XMouseState mouseState)
 	if(m_isClicked && mouseState == MOUSE_MOVE)
 	{//打开相关的菜单(尚未完成)
 		//获取当前鼠标所在位置的菜单项
-		XMenuItem * tmp = m_rootItem.getItem(x,y);
+		XMenuItem * tmp = m_rootItem.getItem(p);
 		if(tmp != NULL && tmp != m_oldChooseItem)
 		{
 			tmp->setOpen();	//如果可以则打开当前选项
@@ -759,6 +757,7 @@ XBool XMenu::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 	if(keyState == KEY_STATE_DOWN)
 	{
 		switch(keyOrder)
@@ -1032,16 +1031,14 @@ void XMenu::closeAll()	//折叠所有的菜单项
 		m_rootItem.m_child->resetChoose();
 	}
 }
-//XBool XMenu::setAllCBFunction(void (*callbackFun)(void *,const std::string &),void *p)
+//XBool XMenu::setAllCBFunction(void (*callbackFun)(void *,const std::string& ),void *p)
 //{//尚未实现
 //	m_rootItem.setAllCallBackFun(callbackFun,p);
 //	return XTrue;
 //}
-XBool XMenu::initWithoutSkin(const XFontUnicode &font,float captionSize,XMenuType type)
+XBool XMenu::initWithoutSkin(const XFontUnicode& font,float captionSize,XMenuType type)
 {
-	if(m_isInited) return XFalse;
-	if(captionSize <= 0.0f) return XFalse;
-	if(!m_font.setACopy(font)) return XFalse;
+	if(m_isInited || captionSize <= 0.0f || !m_font.setACopy(font)) return XFalse;
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_font);
 #endif
@@ -1049,15 +1046,12 @@ XBool XMenu::initWithoutSkin(const XFontUnicode &font,float captionSize,XMenuTyp
 	m_fontSize = captionSize;
 	m_type = type;
 
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
 	m_rootItem.m_originalName = "root";
 	m_rootItem.m_position = m_position;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	m_isInited = XTrue;
+	m_isVisible = m_isEnable = m_isActive = m_isInited = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER

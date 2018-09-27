@@ -6,7 +6,7 @@
 #ifndef _JIA_XFFMPEG_
 #define _JIA_XFFMPEG_
 
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 
 #ifdef XEE_OS_WINDOWS
 #include <Windows.h>
@@ -25,14 +25,24 @@ extern "C"
 #include "avformat.h"
 #include "avcodec.h"
 #endif
-
-#pragma comment(lib, "../../engine/lib/ffmpeg/avcodec.lib")
-#pragma comment(lib, "../../engine/lib/ffmpeg/avformat.lib")
-#pragma comment(lib, "../../engine/lib/ffmpeg/avutil.lib")
-#pragma comment(lib, "../../engine/lib/ffmpeg/swresample.lib")
-#pragma comment(lib, "../../engine/lib/ffmpeg/swscale.lib")
-
-#include "SDL.h"
+#ifdef _WIN64
+	#pragma comment(lib, "ffmpeg/x64/avcodec.lib")
+	#pragma comment(lib, "ffmpeg/x64/avformat.lib")
+	#pragma comment(lib, "ffmpeg/x64/avutil.lib")
+	#pragma comment(lib, "ffmpeg/x64/swresample.lib")
+	#pragma comment(lib, "ffmpeg/x64/swscale.lib")
+#else
+	#pragma comment(lib, "ffmpeg/avcodec.lib")
+	#pragma comment(lib, "ffmpeg/avformat.lib")
+	#pragma comment(lib, "ffmpeg/avutil.lib")
+	#pragma comment(lib, "ffmpeg/swresample.lib")
+	#pragma comment(lib, "ffmpeg/swscale.lib")
+#endif
+//#include "SDL.h"
+#include "XCritical.h"
+#ifndef Uint8
+typedef unsigned char      Uint8;
+#endif
 
 namespace XE{
 #ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
@@ -60,8 +70,8 @@ struct XVideoFrameDataEx	//强化版
 	bool isOverFrame;	//是否是结束帧，流的结束会插入一个结束帧，用于标记流已经结束
 	XVideoFrameDataEx()
 		:pict(NULL)
-		,next(NULL)
-		,isOverFrame(false)
+		, next(NULL)
+		, isOverFrame(false)
 	{}
 };
 //视频帧队列
@@ -70,7 +80,8 @@ struct XVideoQueue
 	XVideoFrameData *first_pict;	//第一帧
 	XVideoFrameData *last_pict;	//最后一帧
 	int nb_pict;			//序列中总的帧的数量
-	SDL_mutex *mutex;		//线程锁
+	//SDL_mutex *mutex;		//线程锁
+	XCritical* mutex;		//线程锁
 	XVideoQueue()
 		:first_pict(NULL)
 		,last_pict(NULL)
@@ -83,7 +94,8 @@ struct XVideoQueueEx	//强化版
 	XVideoFrameDataEx *first_pict;	//第一帧
 	XVideoFrameDataEx *last_pict;	//最后一帧
 	int nb_pict;			//序列中总的帧的数量
-	SDL_mutex *mutex;		//线程锁
+	//SDL_mutex *mutex;		//线程锁
+	XCritical* mutex;		//线程锁
 	XVideoQueueEx()
 		:first_pict(NULL)
 		,last_pict(NULL)
@@ -109,7 +121,8 @@ struct XAudioQueueEx
 	XAudioFrameData *last_pkt;	//最后一个音频包的指针
 	int nb_packets;			//音频包的数量
 	int size;				//总的音频数据的尺寸
-	SDL_mutex *mutex;		//线程锁
+//	SDL_mutex *mutex;		//线程锁
+	XCritical* mutex;		//线程锁
 //	SDL_cond *cond;			//用于同步
 	XAudioQueueEx()
 		:first_pkt(NULL)
@@ -127,13 +140,16 @@ struct XAudioQueue
 	AVPacketList *last_pkt;	//最后一个音频包的指针
 	int nb_packets;			//音频包的数量
 	int size;				//总的音频数据的尺寸
-	SDL_mutex *mutex;		//线程锁
-	SDL_cond *cond;			//用于同步
+	//SDL_mutex *mutex;		//线程锁
+	XCritical* mutex;		//线程锁
+	//SDL_cond *cond;			//用于同步
+	//bool cFlag;
 	XAudioQueue()
 		:first_pkt(NULL)
 		,last_pkt(NULL)
 		,mutex(NULL)
-		,cond(NULL)
+		//,cond(NULL)
+		//, cFlag(false)
 		,nb_packets(0)
 		,size(0)
 	{}

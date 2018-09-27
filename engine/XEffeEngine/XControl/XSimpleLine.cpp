@@ -3,34 +3,31 @@
 #include "XObjectManager.h" 
 #include "XControlManager.h"
 namespace XE{
-XBool XSimpleLine::init(float lineLen,float lineWidth,XSimpleLineType type)
+XBool XSimpleLine::init(float lineLen, float lineWidth, XSimpleLineType type)
 {
-	if(m_isInited) return XFalse;
+	if (m_isInited) return XFalse;
 
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
+	m_color.set(1.0f, 1.0f);
 	m_lineLen = lineLen;
 	m_lineWidth = lineWidth;
 	m_type = type;
-	m_mouseRect.set(0.0f,0.0f,lineLen,lineWidth);
+	m_mouseRect.set(0.0f, 0.0f, lineLen, lineWidth);
 
-	switch(m_type)
+	switch (m_type)
 	{
 	case SIMPLELINE_TYPE_VERTICAL:
-		m_curMouseRect.set(m_position.x - 5.0f * m_scale.x,m_position.y,
-			m_position.x + 5.0f * m_scale.x,m_position.y + m_lineLen * m_scale.y);
+		m_curMouseRect.set(m_position.x - 5.0f * m_scale.x, m_position.y,
+			m_position.x + 5.0f * m_scale.x, m_position.y + m_lineLen * m_scale.y);
 		break;
 	case SIMPLELINE_TYPE_HORIZONTAL:
-		m_curMouseRect.set(m_position.x,m_position.y - 5.0f * m_scale.y,
-			m_position.x + m_lineLen * m_scale.x,m_position.y + 5.0f * m_scale.y);
+		m_curMouseRect.set(m_position.x, m_position.y - 5.0f * m_scale.y,
+			m_position.x + m_lineLen * m_scale.x, m_position.y + 5.0f * m_scale.y);
 		break;
 	}
 
-	m_isInited = XTrue;
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isInited = m_isVisible = m_isEnable = m_isActive = XTrue;
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
@@ -44,19 +41,19 @@ void XSimpleLine::draw()
 	switch(m_type)
 	{
 	case SIMPLELINE_TYPE_VERTICAL:
-		XRender::drawLine(m_position.x - 1,m_position.y,m_position.x - 1,m_position.y + m_lineLen,m_lineWidth,
+		XRender::drawLine(m_position - XVec2::oneZero,m_position + XVec2(-1,m_lineLen),m_lineWidth,
 			XCCS::downColor * m_color);
-		XRender::drawLine(m_position.x + 1,m_position.y,m_position.x + 1,m_position.y + m_lineLen,m_lineWidth,
+		XRender::drawLine(m_position + XVec2::oneZero,m_position + XVec2(1,m_lineLen),m_lineWidth,
 			XCCS::normalColor * m_color);
-		XRender::drawLine(m_position.x,m_position.y,m_position.x,m_position.y + m_lineLen,m_lineWidth,
+		XRender::drawLine(m_position,m_position + XVec2(0.0f,m_lineLen),m_lineWidth,
 			XCCS::darkColor * m_color);
 		break;
 	case SIMPLELINE_TYPE_HORIZONTAL:
-		XRender::drawLine(m_position.x,m_position.y - 1,m_position.x + m_lineLen,m_position.y - 1,m_lineWidth,
+		XRender::drawLine(m_position - XVec2::zeroOne, m_position + XVec2(m_lineLen, -1), m_lineWidth,
 			XCCS::downColor * m_color);
-		XRender::drawLine(m_position.x,m_position.y + 1,m_position.x + m_lineLen,m_position.y + 1,m_lineWidth,
+		XRender::drawLine(m_position + XVec2::zeroOne, m_position + XVec2(m_lineLen, +1), m_lineWidth,
 			XCCS::normalColor * m_color);
-		XRender::drawLine(m_position.x,m_position.y,m_position.x + m_lineLen,m_position.y,m_lineWidth,
+		XRender::drawLine(m_position,m_position + XVec2(m_lineLen,0.0f),m_lineWidth,
 			XCCS::darkColor * m_color);
 		break;
 	}

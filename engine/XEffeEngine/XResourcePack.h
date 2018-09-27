@@ -6,7 +6,6 @@
 //Date:		2011.4.9
 //目前这里个类里面存在问题
 //--------------------------------
-#include "XOSDefine.h"
 #include "XCommonDefine.h"
 #include "XMemory.h"
 
@@ -37,7 +36,7 @@ private:
 	static const int m_md5CodeSize = 16;
 public:
 	XResourcePack();
-	virtual ~XResourcePack(); 
+	virtual ~XResourcePack();
 protected:
 	XResourcePack(const XResourcePack&);
 	XResourcePack &operator= (const XResourcePack&);
@@ -55,9 +54,9 @@ public:
 	XBool m_haveReadedFileList;								//是否已经读取索引信息
 	XBool m_haveReadedNormalFileList;						//是否已经读取了普通文件索引信息
 	long m_headLength;										//资源包中文件头的长度
-	unsigned char tempCode[m_lockCodeLength ];				//资源包中的加密码
+	unsigned char tempCode[m_lockCodeLength];				//资源包中的加密码
 	unsigned char m_lockKey[m_allLockCodeLength];			//掩码
-	unsigned char m_hardLockKey[m_lockCodeLength ];			//密钥部分中来自硬件的加密密钥
+	unsigned char m_hardLockKey[m_lockCodeLength];			//密钥部分中来自硬件的加密密钥
 
 	char m_outFileName[MAX_FILE_NAME_LENGTH];				//输出文件的名字
 	void setOutFileName(const char *temp = NULL);			//设置输出文件的名字
@@ -76,24 +75,24 @@ public:
 															//			当packMode = 1时封装的是经过加密和校验的资源
 	//目前下面这个函数对于压缩的资源还存在问题
 	int unpackAllResource();								//解包所有的资源	//由于没有目录建立的处理，所以这里只能解压本地目录的文件
-	int unpackResource(const char *fileName);						//解包某一个资源	//由于没有目录建立的处理，所以这里只能解压本地目录的文件
-	int unpackResource(const char *fileName,unsigned char *p);	//解包某一个资源到一段内存空间
-	int getStringLength(const char *p) const;							//获得字符串的长度
-	void setHardLockKey(const unsigned char *p);							//设置硬件段加密密钥
+	int unpackResource(const char *fileName);				//解包某一个资源	//由于没有目录建立的处理，所以这里只能解压本地目录的文件
+	int unpackResource(const char *fileName, unsigned char *p);	//解包某一个资源到一段内存空间
+	int getStringLength(const char *p) const;				//获得字符串的长度
+	void setHardLockKey(const void *p);						//设置硬件段加密密钥
 
-	int checkFileCode(const char *p) const;								//检查文件特征码是否正确
+	int checkFileCode(const char *p) const;					//检查文件特征码是否正确
 	//int xFileNameCMP(char *p1,char *p2);					//比较两个文件路径是否相同
 
 	//int getPathDeep(char *p);								//获取路径深度
 	int readFileListFromResouce();							//从压缩包中读取文件索引信息		//这个函数需要重构
 	int readNormalFileListFromResouce();					//从压缩包中读取普通文件的索引信息	//这个函数需要重构
-	int getFileLength(const char *fileName);						//资源包中资源文件的大小
+	int getFileLength(const char *fileName);				//资源包中资源文件的大小
 	unsigned char *getFileData(const char *filename);		//获取指定文件的文件内容
 
 	int writeCheckData();	//向资源文件中写入校验和
 	XBool checkCheckData();	//校验资源文件的校验和
 
-	void lockOrUnlockProc(unsigned char *p,int startPoint,int length) const;	//对子数据p进行加密或者解密 startPoint为起始位置 length为数据长度
+	void lockOrUnlockProc(unsigned char *p, int startPoint, int length) const;	//对子数据p进行加密或者解密 startPoint为起始位置 length为数据长度
 	void getlockKey();		//计算掩码
 
 	int isOptimized(const char *p) const;	//判断这个文件是否被优化 0:没有参与优化 1:已经参与优化
@@ -109,7 +108,7 @@ inline int XResourcePack::getStringLength(const char *p) const
 //	}
 //	return 0;
 }
-inline void XResourcePack::setHardLockKey(const unsigned char *p)
+inline void XResourcePack::setHardLockKey(const void *p)
 {
 	memcpy(m_hardLockKey,p,32);
 }

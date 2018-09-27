@@ -15,8 +15,8 @@ INLINE void XCColor::randColor()
 }
 INLINE void XCColor::getHsb(float& hue, float& saturation, float& brightness) const 
 {
-	float tempMax = XEE_Max(r,XEE_Max(g,b));
-	float tempMin = XEE_Min(r,XEE_Min(g,b));
+	float tempMax = (std::max)(r,(std::max)(g,b));
+	float tempMin = (std::min)(r,(std::min)(g,b));
 	
 	if(tempMax == tempMin) 
 	{ // grays

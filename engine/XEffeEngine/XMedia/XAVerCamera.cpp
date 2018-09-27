@@ -16,7 +16,7 @@ BOOL WINAPI avCameraCB(VIDEO_SAMPLE_INFO/*VideoInfo*/, BYTE *pbData,LONG lLength
 	}
 	return TRUE;
 }
-XBool XAVerCamera::setPixels(const XCameraInfo &data)
+XBool XAVerCamera::setPixels(const XPixelsInputInfo &data)
 {
 	DWORD sum = VIDEORESOLUTION_640X480;
 	if(data.w == 640 && data.h == 480) sum = VIDEORESOLUTION_640X480;else
@@ -61,7 +61,7 @@ XBool XAVerCamera::setPixels(const XCameraInfo &data)
 	if(AVerSetVideoResolution(m_hHDCaptureDevice,sum) != CAP_EC_SUCCESS) return XFalse;
 	return XTrue;
 }
-XBool XAVerCamera::init(XCameraInfo &data)
+XBool XAVerCamera::init(XPixelsInputInfo &data)
 {
 	if(m_isInited) return XTrue;
 	DWORD sum;
@@ -93,9 +93,9 @@ XBool XAVerCamera::init(XCameraInfo &data)
 	//	if(!setPixels(data)) return XFalse;
 	//	if(AVerStartStreaming(m_hHDCaptureDevice) != CAP_EC_SUCCESS) return XFalse;
 	//}
-	m_cameraWidth = data.w;
-	m_cameraHeight = data.h;
-	m_buffSize = m_cameraWidth * m_cameraHeight * 3;
+	m_pixelsWidth = data.w;
+	m_pixelsHeight = data.h;
+	m_buffSize = m_pixelsWidth * m_pixelsHeight * 3;
 	m_deviceOrder = data.deviceOrder;
 
 	VIDEO_CAPTURE_INFO info;
@@ -116,30 +116,34 @@ XBool XAVerCamera::init(XCameraInfo &data)
 		XMem::XDELETE_ARRAY(m_frameDataBuff);
 		return XFalse;
 	}
-	if(m_cameraSprite.init(m_cameraWidth,m_cameraHeight) == 0) return XFalse;
+#ifdef WITH_GL_TEXTRUE
+	if(!m_pixelsSprite.init(m_pixelsWidth,m_pixelsHeight,0)) return XFalse;
+#endif
 	//判断贴图尺寸
-	if(XMath::isNPOT(m_cameraWidth,m_cameraHeight))
-	{
-		m_cameraTexWidth = XMath::getMinWellSize2n(m_cameraWidth);
- 		m_cameraTexHeight = XMath::getMinWellSize2n(m_cameraHeight);
-		m_texDataBuff = XMem::createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
-		if(m_texDataBuff == NULL)
-		{
-			XMem::XDELETE_ARRAY(m_frameDataBuff);
-			XMem::XDELETE_ARRAY(m_frameDataBuff1);
-			return XFalse;
-		}
-		memset(m_texDataBuff,0,m_cameraTexHeight * m_cameraTexHeight * 3);
-		m_px = (m_cameraTexWidth - m_cameraWidth) >> 1;
-		m_py = (m_cameraTexHeight - m_cameraHeight) >> 1;
-	}else
-	{
-		m_cameraTexWidth = m_cameraWidth;
-		m_cameraTexHeight = m_cameraHeight;
-	}
+	//if(XMath::isNPOT(m_cameraWidth,m_cameraHeight))
+	//{
+	//	m_cameraTexWidth = XMath::getMinWellSize2n(m_cameraWidth);
+ //		m_cameraTexHeight = XMath::getMinWellSize2n(m_cameraHeight);
+	//	m_texDataBuff = XMem::createArrayMem<unsigned char>(m_cameraTexWidth * m_cameraTexHeight * 3);
+	//	if(m_texDataBuff == NULL)
+	//	{
+	//		XMem::XDELETE_ARRAY(m_frameDataBuff);
+	//		XMem::XDELETE_ARRAY(m_frameDataBuff1);
+	//		return XFalse;
+	//	}
+	//	memset(m_texDataBuff,0,m_cameraTexHeight * m_cameraTexHeight * 3);
+	//	m_px = (m_cameraTexWidth - m_cameraWidth) >> 1;
+	//	m_py = (m_cameraTexHeight - m_cameraHeight) >> 1;
+	//}else
+	//{
+	//	m_cameraTexWidth = m_cameraWidth;
+	//	m_cameraTexHeight = m_cameraHeight;
+	//}
 	//建立贴图
-	m_cameraTex.createTexture(m_cameraTexWidth,m_cameraTexHeight,COLOR_RGB);
-
+	m_colorMode = COLOR_RGB;
+#ifdef WITH_GL_TEXTRUE
+	m_pixelsTex.createTexture(m_pixelsWidth,m_pixelsHeight,m_colorMode);
+#endif
 	m_isInited = XTrue;
 	return XTrue;
 }
@@ -168,15 +172,16 @@ XBool XAVerCamera::updateFrame()
 				m_pixelsData = m_frameDataBuff1;
 				int tempH = 0;
 				int tempH1 = 0;
-				for(int h = 0;h < m_cameraHeight;++ h)
+				for(int h = 0;h < m_pixelsHeight;++ h)
 				{
-					tempH = (m_cameraHeight - 1 - h) * m_cameraWidth * 3;
-					tempH1 = h * m_cameraWidth * 3 + (m_cameraWidth - 1) * 3;
-					for(int w = 0,k = 0;w < m_cameraWidth;++ w)
+					tempH = (m_pixelsHeight - 1 - h) * m_pixelsWidth * 3;
+					tempH1 = h * m_pixelsWidth * 3 + (m_pixelsWidth - 1) * 3;
+					for(int w = 0,k = 0;w < m_pixelsWidth;++ w)
 					{
-						*(m_pixelsData + tempH + k) = *(m_frameDataBuff + tempH1 - k);
-						*(m_pixelsData + tempH + k + 1) = *(m_frameDataBuff + tempH1 - k + 1);
-						*(m_pixelsData + tempH + k + 2) = *(m_frameDataBuff + tempH1 - k + 2);
+						memcpy(m_pixelsData + tempH + k,m_frameDataBuff + tempH1 - k,3);
+						//*(m_pixelsData + tempH + k) = *(m_frameDataBuff + tempH1 - k);
+						//*(m_pixelsData + tempH + k + 1) = *(m_frameDataBuff + tempH1 - k + 1);
+						//*(m_pixelsData + tempH + k + 2) = *(m_frameDataBuff + tempH1 - k + 2);
 						k += 3;
 					}
 				}
@@ -185,15 +190,16 @@ XBool XAVerCamera::updateFrame()
 				m_pixelsData = m_frameDataBuff1;
 				int tempH = 0;
 				int tempH1 = 0;
-				for(int h = 0;h < m_cameraHeight;++ h)
+				for(int h = 0;h < m_pixelsHeight;++ h)
 				{
-					tempH = h * m_cameraWidth * 3;
-					tempH1 = tempH + (m_cameraWidth - 1) * 3;
-					for(int w = 0,k = 0;w < m_cameraWidth;++ w)
+					tempH = h * m_pixelsWidth * 3;
+					tempH1 = tempH + (m_pixelsWidth - 1) * 3;
+					for(int w = 0,k = 0;w < m_pixelsWidth;++ w)
 					{
-						*(m_pixelsData + tempH + k) = *(m_frameDataBuff + tempH1 - k);
-						*(m_pixelsData + tempH + k + 1) = *(m_frameDataBuff + tempH1 - k + 1);
-						*(m_pixelsData + tempH + k + 2) = *(m_frameDataBuff + tempH1 - k + 2);
+						memcpy(m_pixelsData + tempH + k,m_frameDataBuff + tempH1 - k,3);
+					//	*(m_pixelsData + tempH + k) = *(m_frameDataBuff + tempH1 - k);
+					//	*(m_pixelsData + tempH + k + 1) = *(m_frameDataBuff + tempH1 - k + 1);
+					//	*(m_pixelsData + tempH + k + 2) = *(m_frameDataBuff + tempH1 - k + 2);
 						k += 3;
 					}
 				}
@@ -202,26 +208,27 @@ XBool XAVerCamera::updateFrame()
 		if(m_isUp2Down)
 		{//上下翻转
 			m_pixelsData = m_frameDataBuff1;
-			int dataSum = m_cameraWidth * 3;
-			for(int h = 0;h < m_cameraHeight;++ h)
+			int dataSum = m_pixelsWidth * 3;
+			for(int h = 0;h < m_pixelsHeight;++ h)
 			{
-				memcpy(m_pixelsData + (m_cameraHeight - 1 - h) * dataSum,m_frameDataBuff + h * dataSum,m_cameraWidth * 3);
+				memcpy(m_pixelsData + (m_pixelsHeight - 1 - h) * dataSum,m_frameDataBuff + h * dataSum,m_pixelsWidth * 3);
 			}
 		}
-
-		if(m_cameraTexWidth == m_cameraWidth && m_cameraTexHeight == m_cameraHeight)
-		{
-			m_cameraTex.updateTextureR2B(m_pixelsData);
-		}else
-		{//进行图像扩展
-			int TW = m_cameraTexWidth * 3;
-			int CW = m_cameraWidth * 3;
-			for(int i = m_py;i < m_cameraHeight + m_py;++ i)
-			{
-				memcpy(m_texDataBuff + i * TW + m_px * 3,m_pixelsData + (i - m_py) * CW,CW);
-			}
-			m_cameraTex.updateTextureR2B(m_texDataBuff);
-		}
+#ifdef WITH_GL_TEXTRUE
+//		if(m_cameraTexWidth == m_cameraWidth && m_cameraTexHeight == m_cameraHeight)
+//		{
+			m_pixelsTex.updateTextureR2B(m_pixelsData);
+//		}else
+//		{//进行图像扩展
+//			int TW = m_cameraTexWidth * 3;
+//			int CW = m_cameraWidth * 3;
+//			for(int i = m_py;i < m_cameraHeight + m_py;++ i)
+//			{
+//				memcpy(m_texDataBuff + i * TW + m_px * 3,m_pixelsData + (i - m_py) * CW,CW);
+//			}
+//			m_cameraTex.updateTextureR2B(m_texDataBuff);
+//		}
+#endif
 	}
 	return m_isNewFrame;
 }

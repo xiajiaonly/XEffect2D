@@ -18,9 +18,9 @@ class XDirListSkin
 private:
 	XBool m_isInited;
 
-	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
-	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
-	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
+	bool loadFromFolder(const char *filename,XResPos resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResPos resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResPos resPos);		//从网页中读取资源
 public:
 	XTextureData *dirListNormal;			//普通状态
 	XTextureData *dirListDisable;			//无效状态
@@ -29,8 +29,8 @@ public:
 
 	XDirListSkin();
 	~XDirListSkin(){release();}
-	XBool init(const char *normal,const char *disable,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool init(const char *normal,const char *disable,XResPos resPos = RES_SYS_DEF);
+	XBool initEx(const char *filename,XResPos resPos = RES_SYS_DEF);
 	void release();
 };
 //目录列表框的一行信息
@@ -43,7 +43,7 @@ public:
 	XBool m_needCheck;
 	XBool m_isEnable;		//是否有效
 
-	//XVector2 m_pos;		//当前行所在的位置
+	//XVec2 m_pos;		//当前行所在的位置
 	XFileInfo *m_file;			//指向文件信息的指针
 	XDirListOneLine()
 		:m_isEnable(XFalse)
@@ -100,7 +100,7 @@ private:
 	int m_showPixHight;				//显示区域的像素高度
 
 	XFontUnicode m_caption;
-	XVector2 m_fontSize;
+	XVec2 m_fontSize;
 	XFColor m_textColor;			//文字的颜色
 	float m_curTextWidth;			//当前的字体宽度
 	float m_curTextHeight;			//当前的字体高度
@@ -119,19 +119,19 @@ public:
 	XBool getCanChangePath() const {return m_canChangePath;}
 	void setCanChangePath(XBool flag);
 public:
-	XBool init(const XVector2& position,
+	XBool init(const XVec2& position,
 		const XRect& Area,	
 		XDirListSkin & tex,
-		const XFontUnicode &font,
+		const XFontUnicode& font,
 		float fontSize,
 		const XCheck &check,
 		const XButton &button,
 		const XEdit &edit,
 		const XSlider &vSlider,	//垂直滑动条
 		const XSlider &hSlider);
-	XBool initEx(const XVector2& position,	//对上面接口的简化
+	XBool initEx(const XVec2& position,	//对上面接口的简化
 		XDirListSkin & tex,
-		const XFontUnicode &font,
+		const XFontUnicode& font,
 		float fontSize,
 		const XCheck &check,
 		const XButton &button,
@@ -139,14 +139,14 @@ public:
 		const XSlider &vSlider,
 		const XSlider &hSlider);
 	XBool initPlus(const char * path,
-		const XFontUnicode &font,float fontSize = 1.0f,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const XFontUnicode& font,float fontSize = 1.0f,
+		XResPos resPos = RES_SYS_DEF);
 	XBool initWithoutSkin(const XRect& area,	
-		const XFontUnicode &font,float fontSize = 1.0f);
+		const XFontUnicode& font,float fontSize = 1.0f);
 	XBool initWithoutSkin(const XRect& area) {return initWithoutSkin(area,getDefaultFont(),1.0f);}
-	XBool initWithoutSkin(const XVector2& pixelSize) 
+	XBool initWithoutSkin(const XVec2& pixelSize) 
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),getDefaultFont(),1.0f);
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),getDefaultFont(),1.0f);
 	}
 	const char * getSelectFileName() const;	//获取全路径
 	int getSelectLineOrder() const;
@@ -155,24 +155,24 @@ protected:
 	void draw();
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);					//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);
 	void insertChar(const char *,int) {;}
-	XBool canGetFocus(float x,float y);//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(const XVec2& p);//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2& ){return XTrue;}
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);			//设置尺寸
+	void setScale(const XVec2& s);			//设置尺寸
 
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);						//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);						//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);						//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);						//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	virtual void setColor(float r,float g,float b,float a);
+	virtual void setColor(const XFColor& c);
 	virtual void setAlpha(float a);
 	//virtual void justForTest() {;}
 

@@ -30,8 +30,8 @@ public:
 	
 	virtual void input(const XInputEvent &) {}
 	
-	std::string getSceneName()const{return m_sceneName;}
-	void setSceneName(const std::string & name){m_sceneName = name;}
+	const std::string& getSceneName()const{return m_sceneName;}
+	void setSceneName(const std::string& name){m_sceneName = name;}
 private:
 	std::string m_sceneName;
 };

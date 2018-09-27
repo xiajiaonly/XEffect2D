@@ -107,7 +107,7 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 			}else
 			if(strncmp("pwd",recvBuf,3) == 0 || strncmp("PWD",recvBuf,3) == 0)
 			{//设置当前路径
-				sprintf(retStr,returnStr257,clientInfo->curPath);
+				sprintf_s(retStr,RECV_BUFF_SIZE,returnStr257,clientInfo->curPath);
 				pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 			}else
 			if(strncmp("cwd",recvBuf,3) == 0 || strncmp("CWD",recvBuf,3) == 0)
@@ -118,12 +118,12 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 				//判断路径是否存在
 				if(XFile::isExistFileEx(retStr) && XFile::isFolderEx(retStr))	//是文件夹并存在
 				{//存在则返回路径设置成功
-					strcpy(clientInfo->curPath,retStr);
-					sprintf(retStr,returnStr250,clientInfo->curPath);
+					strcpy_s(clientInfo->curPath,MAX_FILE_NAME_LENGTH,retStr);
+					sprintf_s(retStr,RECV_BUFF_SIZE,returnStr250,clientInfo->curPath);
 					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}else
 				{//不存在则返回路径设置失败
-					sprintf(retStr,"550 %s is not exist!\r\n",retStr);
+					sprintf_s(retStr,RECV_BUFF_SIZE,"550 %s is not exist!\r\n",retStr);
 					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
 			}else
@@ -134,14 +134,14 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 				memcpy(filename,recvBuf + 5,len - 7);
 				filename[len - 7] = '\0';
 				//判断是否删除成功
-				sprintf(retStr,"%s/%s",clientInfo->curPath + 1,filename);
+				sprintf_s(retStr,RECV_BUFF_SIZE,"%s/%s",clientInfo->curPath + 1,filename);
 				if(XFile::isExistFileEx(retStr) && !XFile::isFolderEx(retStr) && XFile::deleteFile(retStr))
 				{//文件存在
-					sprintf(retStr,"250 \"%s\" is deleted!\r\n",filename);
+					sprintf_s(retStr,RECV_BUFF_SIZE,"250 \"%s\" is deleted!\r\n",filename);
 					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}else
 				{//如果删除失败
-					sprintf(retStr,"550 %s is not exist!\r\n",filename);
+					sprintf_s(retStr,RECV_BUFF_SIZE,"550 %s is not exist!\r\n",filename);
 					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
 			}else
@@ -151,7 +151,7 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 				//开始传输list数据
 				char curPath[MAX_FILE_NAME_LENGTH];
 				GetCurrentDirectory(MAX_FILE_NAME_LENGTH,curPath);
-				sprintf(retStr,"%s/%s/*.*",curPath,clientInfo->curPath);
+				sprintf_s(retStr,RECV_BUFF_SIZE,"%s/%s/*.*",curPath,clientInfo->curPath);
 				std::string needStr = "";
 				HANDLE hFind;
 				WIN32_FIND_DATA fileInfo;
@@ -166,11 +166,11 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 							FileTimeToSystemTime(&fileInfo.ftCreationTime,&systemTime);
 							if(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 							{//文件夹
-								sprintf(curPath,"%02d-%02d-%02d %02d:%02d  <DIR>  %s\n",systemTime.wMonth,systemTime.wDay,systemTime.wYear,systemTime.wHour,systemTime.wMinute,
+								sprintf_s(curPath,RECV_BUFF_SIZE,"%02d-%02d-%02d %02d:%02d  <DIR>  %s\n",systemTime.wMonth,systemTime.wDay,systemTime.wYear,systemTime.wHour,systemTime.wMinute,
 									fileInfo.cFileName);
 							}else
 							{
-								sprintf(curPath,"%02d-%02d-%02d %02d:%02d  %8d  %s\n",systemTime.wMonth,systemTime.wDay,systemTime.wYear,systemTime.wHour,systemTime.wMinute,
+								sprintf_s(curPath,RECV_BUFF_SIZE,"%02d-%02d-%02d %02d:%02d  %8d  %s\n",systemTime.wMonth,systemTime.wDay,systemTime.wYear,systemTime.wHour,systemTime.wMinute,
 									(fileInfo.nFileSizeHigh << 16) + fileInfo.nFileSizeLow,fileInfo.cFileName);
 							}
 							needStr += curPath;
@@ -212,7 +212,7 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 						printf("connect error!\n");
 						return 1;	//这里需要注意
 					}
-					sprintf(retStr,returnStr200,"PORT");
+					sprintf_s(retStr,RECV_BUFF_SIZE,returnStr200,"PORT");
 					pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 				}
 			}else
@@ -221,7 +221,7 @@ DWORD WINAPI XFtpServer::serverRequestThread(void * pParam)	//服务器请求回应线程
 				char mode = recvBuf[5];
 				if(mode == 'I' || mode == 'i') clientInfo->transnatType = FTP_TRANSNAION_TYPE_BIN;else
 				if(mode == 'A' || mode == 'a') clientInfo->transnatType = FTP_TRANSNAION_TYPE_ASCII;
-				sprintf(retStr,returnStr200,"MODE");
+				sprintf_s(retStr,RECV_BUFF_SIZE,returnStr200,"MODE");
 				pPar.sendData(clientInfo->clientSock,retStr,strlen(retStr));
 			}else
 			if(strncmp("retr",recvBuf,4) == 0 || strncmp("RETR",recvBuf,4) == 0)

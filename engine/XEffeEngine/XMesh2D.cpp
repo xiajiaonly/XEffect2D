@@ -2,21 +2,24 @@
 #include "XMesh2D.h"
 #include "XMath\XMatrix2x2.h"
 namespace XE{
-void XMesh2D::drawWireframe()	//Ãè»æÏß¿ò
+void XMesh2D::drawWireframe()const	//Ãè»æÏß¿ò
 {
 	if(!m_isInited) return;
 	if(m_v.size() <= 0) return;	//Èç¹ûÃ»ÓÐÊý¾ÝÔòÖ±½Ó·µ»Ø
+	XGL::DisableTexture2D();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_position.x + m_center.x,m_position.y + m_center.y, 0);
+	glTranslatef(m_position.x + m_center.x,m_position.y + m_center.y, 0.0f);
 
-	if(m_angle != 0.0f) glRotatef(m_angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(m_scale.x != 1.0f || m_scale.y != 1.0f) glScalef(m_scale.x, m_scale.y, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀý
+	if(m_angle != 0.0f) glRotatef(m_angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(m_scale.x != 1.0f || m_scale.y != 1.0f) glScalef(m_scale.x, m_scale.y, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀý
 
 	int index;
+	glLineWidth(1.0f);
 	glColor4fv(m_color);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+	glLineWidth(1.0f); 
 	glBegin(GL_LINES);
 	for(int i = 0;i < m_sumY;++ i)
 	{
@@ -40,7 +43,91 @@ void XMesh2D::drawWireframe()	//Ãè»æÏß¿ò
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 }
-void XMesh2D::drawTexture(unsigned int tex)
+void XMesh2D::drawWireframeEx(bool special,bool withPoint)const	//Ãè»æÏß¿ò
+{
+	if(!m_isInited) return;
+	if(m_v.size() <= 0) return;	//Èç¹ûÃ»ÓÐÊý¾ÝÔòÖ±½Ó·µ»Ø
+	XGL::DisableTexture2D();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glTranslatef(m_position.x + m_center.x,m_position.y + m_center.y, 0.0f);
+
+	if(m_angle != 0.0f) glRotatef(m_angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(m_scale.x != 1.0f || m_scale.y != 1.0f) glScalef(m_scale.x, m_scale.y, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀý
+
+	int index;
+	if(special) glColor4fv(XFColor::yellow);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+	else glColor4fv(XFColor::blue);
+	glLineWidth(1.0f);
+	glBegin(GL_LINES);
+	for(int i = 0;i < m_sumY;++ i)
+	{
+		index = i * m_sumX;
+		for(int j = 0;j < m_sumX;++ j,++ index)
+		{
+			if(j + 1 < m_sumX)
+			{
+				glVertex2fv(m_v[index] - m_center);
+				glVertex2fv(m_v[index + 1] - m_center);
+			}
+			if(i + 1 < m_sumY)
+			{
+				glVertex2fv(m_v[index] - m_center);
+				glVertex2fv(m_v[index + m_sumX] - m_center);
+			}
+		}
+	}
+	glEnd();
+	if(special && withPoint)
+	{
+		//Ãè»æ½Úµã
+		glColor4fv(XFColor::green);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+		glPointSize(7.0f);
+		glBegin(GL_POINTS);
+		for(auto it = m_v.begin();it != m_v.end();++ it)
+		{
+			glVertex2fv((*it) - m_center);
+		}
+		glEnd();
+		//Ãè»æÌØÊâµÄ½ÚµãÒÔ¼°ÐÐ»òÕßÁÐ
+		if(m_specialLine >= 0 && m_specialLine < m_sumY)
+		{
+			glColor4fv(XFColor::blue);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+			glPointSize(20.0f);
+			glBegin(GL_POINTS);
+			for(int i = 0;i < m_sumX;++ i)
+			{
+				glVertex2fv(m_v[m_specialLine * m_sumX + i] - m_center);
+			}
+			glEnd();
+		}
+		if(m_specialRow >= 0 && m_specialRow < m_sumX)
+		{
+			glColor4fv(XFColor::blue);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+			glPointSize(20.0f);
+			glBegin(GL_POINTS);
+			for(int i = 0;i < m_sumY;++ i)
+			{
+				glVertex2fv(m_v[m_specialRow + i * m_sumX] - m_center);
+			}
+			glEnd();
+		}
+		if(m_specialIndex >= 0 && m_specialIndex < m_v.size())
+		{
+			glColor4fv(XFColor::green);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
+			glPointSize(30.0f);
+			glBegin(GL_POINTS);
+				glVertex2fv(m_v[m_specialIndex] - m_center);
+			glEnd();
+		}
+	}
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+void XMesh2D::drawTexture(unsigned int tex,XShaderGLSL *pShader)const
 {
 	if(!m_isInited || tex == 0) return;
 	if(m_v.size() <= 0) return;	//Èç¹ûÃ»ÓÐÊý¾ÝÔòÖ±½Ó·µ»Ø
@@ -49,20 +136,25 @@ void XMesh2D::drawTexture(unsigned int tex)
 		drawWireframe();
 		return;
 	}
-	XGL::EnableTexture2D();
-	XGL::BindTexture2D(tex);
-	XGL::EnableBlend();
-	XGL::SetBlendFunc(XGL::srcBlendMode[4],XGL::dstBlendMode[5]);
+	if(pShader == NULL)
+	{
+		XGL::EnableTexture2D();
+		XGL::BindTexture2D(tex);
+	}else
+	{
+		pShader->useShaderEx(tex);
+	}
+	XGL::setBlendAlpha();
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_position.x + m_center.x,m_position.y + m_center.y, 0);
-//	glTranslatef(m_position.x,m_position.y, 0);
+	glTranslatef(m_position.x + m_center.x,m_position.y + m_center.y, 0.0f);
+//	glTranslatef(m_position.x,m_position.y, 0.0f);
 
-	if(m_angle != 0.0f) glRotatef(m_angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(m_scale.x != 1.0f || m_scale.y != 1.0f) glScalef(m_scale.x, m_scale.y, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀý
+	if(m_angle != 0.0f) glRotatef(m_angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(m_scale.x != 1.0f || m_scale.y != 1.0f) glScalef(m_scale.x, m_scale.y, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀý
 
 	glColor4fv(m_color);	//ÉèÖÃÎªÖ¸¶¨µÄÑÕÉ«
 	//ÏÂÃæ¿ªÊ¼Ãè»æ
@@ -88,8 +180,10 @@ void XMesh2D::drawTexture(unsigned int tex)
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	XGL::DisableBlend();
+	if(pShader != NULL)
+		pShader->disShader();
 }
-bool XMesh2D::saveToFile(const char *filename)		//½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬½¨ÒéÊ¹ÓÃOBJµÄÊý¾Ý¸ñÊ½
+bool XMesh2D::saveToFile(const char *filename)const		//½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬½¨ÒéÊ¹ÓÃOBJµÄÊý¾Ý¸ñÊ½
 {
 	if(!m_isInited || filename == NULL) return false;
 	FILE *fp;
@@ -99,23 +193,72 @@ bool XMesh2D::saveToFile(const char *filename)		//½«Êý¾Ý±£´æµ½ÎÄ¼þ£¬½¨ÒéÊ¹ÓÃOBJµ
 	else fprintf(fp,"0,");
 	if(m_withColor) fprintf(fp,"1,\n");
 	else fprintf(fp,"0,\n");
+	//Ò»Ð©ÌØÐÔ
+	fprintf(fp,"%f,%f,\n",m_position.x,m_position.y);
+	fprintf(fp,"%f,\n",m_angle);
+	fprintf(fp,"%f,%f,\n",m_scale.x,m_scale.y);
+	fprintf(fp,"%f,%f,\n",m_center.x,m_center.y);
 	//Ð´Èë¶¥µãÊý¾Ý
-	for(int i = 0;i < m_v.size();++ i)
+	for(auto it = m_v.begin();it != m_v.end();++ it)
 	{
-		fprintf(fp,"%f,%f,\n",m_v[i].x,m_v[i].y);
+		fprintf(fp,"%f,%f,\n",it->x,it->y);
 	}
 	if(m_withTexture)
 	{
-		for(int i = 0;i < m_t.size();++ i)
+		for (auto it = m_t.begin(); it != m_t.end(); ++it)
 		{
-			fprintf(fp,"%f,%f,\n",m_t[i].x,m_t[i].y);
+			fprintf(fp,"%f,%f,\n",it->x,it->y);
 		}
 	}
 	if(m_withColor)
 	{
-		for(int i = 0;i < m_c.size();++ i)
+		for (auto it = m_c.begin(); it != m_c.end(); ++it)
 		{
-			fprintf(fp,"%f,%f,%f,%f,\n",m_c[i].fR,m_c[i].fG,m_c[i].fB,m_c[i].fA);
+			fprintf(fp,"%f,%f,%f,%f,\n",it->r, it->g, it->b, it->a);
+		}
+	}
+	fclose(fp);
+	return true;
+}
+bool XMesh2D::saveToFileB(const char *filename)const
+{
+	if (!m_isInited || filename == NULL) return false;
+	FILE *fp;
+	if ((fp = fopen(filename, "wb")) == NULL) return false;
+	fwrite(&m_sumX, sizeof(m_sumX), 1, fp);
+	fwrite(&m_sumY, sizeof(m_sumY), 1, fp);
+	fwrite(&m_withTexture, sizeof(m_withTexture), 1, fp);
+	fwrite(&m_withColor, sizeof(m_withColor), 1, fp);
+	//Ò»Ð©ÌØÐÔ
+	fwrite(&m_position.x, sizeof(m_position.x), 1, fp);
+	fwrite(&m_position.y, sizeof(m_position.y), 1, fp);
+	fwrite(&m_angle, sizeof(m_angle), 1, fp);
+	fwrite(&m_scale.x, sizeof(m_scale.x), 1, fp);
+	fwrite(&m_scale.y, sizeof(m_scale.y), 1, fp);
+	fwrite(&m_center.x, sizeof(m_center.x), 1, fp);
+	fwrite(&m_center.y, sizeof(m_center.y), 1, fp);
+	//Ð´Èë¶¥µãÊý¾Ý
+	for (auto it = m_v.begin(); it != m_v.end(); ++it)
+	{
+		fwrite(&it->x, sizeof(it->x), 1, fp);
+		fwrite(&it->y, sizeof(it->y), 1, fp);
+	}
+	if (m_withTexture)
+	{
+		for (auto it = m_t.begin(); it != m_t.end(); ++it)
+		{
+			fwrite(&it->x, sizeof(it->x), 1, fp);
+			fwrite(&it->y, sizeof(it->y), 1, fp);
+		}
+	}
+	if (m_withColor)
+	{
+		for (auto it = m_c.begin(); it != m_c.end(); ++it)
+		{
+			fwrite(&it->r, sizeof(it->r), 1, fp);
+			fwrite(&it->g, sizeof(it->g), 1, fp);
+			fwrite(&it->b, sizeof(it->b), 1, fp);
+			fwrite(&it->a, sizeof(it->a), 1, fp);
 		}
 	}
 	fclose(fp);
@@ -132,8 +275,12 @@ bool XMesh2D::loadFromFile(const char *filename)	//´ÓÎÄ¼þÖÐ¶ÁÈ¡Êý¾Ý
 	if(fscanf(fp,"%d,%d,\n",&tmpFlag[0],&tmpFlag[1]) != 2) return false;
 	m_withTexture = (tmpFlag[0] != 0);
 	m_withColor = (tmpFlag[1] != 0);
+	if(fscanf(fp,"%f,%f,\n",&m_position.x,&m_position.y) != 2) return false;
+	if(fscanf(fp,"%f,\n",&m_angle) != 1) return false;
+	if(fscanf(fp,"%f,%f,\n",&m_scale.x,&m_scale.y) != 2) return false;
+	if(fscanf(fp,"%f,%f,\n",&m_center.x,&m_center.y) != 2) return false;
 	//Ð´Èë¶¥µãÊý¾Ý
-	XVector2 tmp;
+	XVec2 tmp;
 	for(int i = 0;i < m_sumX * m_sumY;++ i)
 	{
 		if(fscanf(fp,"%f,%f,\n",&tmp.x,&tmp.y) != 2) return false;
@@ -152,51 +299,113 @@ bool XMesh2D::loadFromFile(const char *filename)	//´ÓÎÄ¼þÖÐ¶ÁÈ¡Êý¾Ý
 		XFColor tmpC;
 		for(int i = 0;i < m_sumX * m_sumY;++ i)
 		{
-			if(fscanf(fp,"%f,%f,%f,%f,\n",&tmpC.fR,&tmpC.fG,&tmpC.fB,&tmpC.fA) != 4) return false;
+			if(fscanf(fp,"%f,%f,%f,%f,\n",&tmpC.r,&tmpC.g,&tmpC.b,&tmpC.a) != 4) return false;
 			m_c.push_back(tmpC);
 		}
 	}
 	fclose(fp);
 	return true;
 }
-bool XMesh2D::init(int w,int h,int sumX,int sumY,bool withT,bool withC)
+bool XMesh2D::loadFromFileB(const char *filename)	//´ÓÎÄ¼þÖÐ¶ÁÈ¡Êý¾Ý
+{
+	if (filename == NULL) return false;
+	FILE *fp;
+//	int tmpFlag[2] = { 0,0 };
+	if ((fp = fopen(filename, "rb")) == NULL) return false;
+	clearAllData();
+	fread(&m_sumX, sizeof(m_sumX), 1, fp);
+	fread(&m_sumY, sizeof(m_sumY), 1, fp);
+	fread(&m_withTexture, sizeof(m_withTexture), 1, fp);
+	fread(&m_withColor, sizeof(m_withColor), 1, fp);
+	fread(&m_position.x, sizeof(m_position.x), 1, fp);
+	fread(&m_position.y, sizeof(m_position.y), 1, fp);
+	fread(&m_angle, sizeof(m_angle), 1, fp);
+	fread(&m_scale.x, sizeof(m_scale.x), 1, fp);
+	fread(&m_scale.y, sizeof(m_scale.y), 1, fp);
+	fread(&m_center.x, sizeof(m_center.x), 1, fp);
+	fread(&m_center.y, sizeof(m_center.y), 1, fp);
+	//Ð´Èë¶¥µãÊý¾Ý
+	XVec2 tmp;
+	m_v.resize(m_sumX * m_sumY);
+	for (int i = 0; i < m_v.size(); ++i)
+	{
+		fread(&m_v[i].x, sizeof(m_v[i].x), 1, fp);
+		fread(&m_v[i].y, sizeof(m_v[i].y), 1, fp);
+	}
+	if (m_withTexture)
+	{
+		m_t.resize(m_sumX * m_sumY);
+		for (int i = 0; i < m_t.size(); ++i)
+		{
+			fread(&m_t[i].x, sizeof(m_t[i].x), 1, fp);
+			fread(&m_t[i].y, sizeof(m_t[i].y), 1, fp);
+		}
+	}
+	if (m_withColor)
+	{
+		m_c.resize(m_sumX * m_sumY);
+		for (int i = 0; i < m_c.size(); ++i)
+		{
+			fread(&m_c[i].r, sizeof(m_c[i].r), 1, fp);
+			fread(&m_c[i].g, sizeof(m_c[i].g), 1, fp);
+			fread(&m_c[i].b, sizeof(m_c[i].b), 1, fp);
+			fread(&m_c[i].a, sizeof(m_c[i].a), 1, fp);
+		}
+	}
+	fclose(fp);
+	return true;
+}
+bool XMesh2D::init(const XMesh2DInfo &info)
 {
 	if(m_isInited) return false;
-	if(w <= 0 || h <= 0 || sumX <= 1 || sumY <= 1) return false;	//ÊäÈëÊý¾Ý²»ºÏ·¨
-	m_sumX = sumX;
-	m_sumY = sumY;
-	m_withTexture = withT;
-	m_withColor = withC;
+	if(info.w <= 0 || info.h <= 0 || info.sumX <= 1 || info.sumY <= 1) return false;	//ÊäÈëÊý¾Ý²»ºÏ·¨
+	m_sumX = info.sumX;
+	m_sumY = info.sumY;
+	m_withTexture = info.withT;
+	m_withColor = info.withC;
 	clearAllData();
-	XVector2 size = XVector2(w,h) / XVector2(sumX - 1,sumY - 1);
-	XVector2 sizeT = XVector2(1.0f,1.0f) / XVector2(sumX - 1,sumY - 1);
+	XVec2 size = XVec2(info.w,info.h) / XVec2(m_sumX - 1,m_sumY - 1);
+	XVec2 sizeT = XVec2(info.tw,info.th) / XVec2(m_sumX - 1,m_sumY - 1);
 	for(int i = 0;i < m_sumY;++ i)
 	{
 		for(int j = 0;j < m_sumX;++ j)
 		{
-			m_v.push_back(XVector2(size.x * j,size.y * i));
-			if(withT)
-				m_t.push_back(XVector2(sizeT.x * j,sizeT.y * i));
-			if(withC)
+			m_v.push_back(size * XVec2(j,i));
+			if(m_withTexture)
+				m_t.push_back(XVec2(info.tSx + sizeT.x * j,info.tSy + sizeT.y * i));
+			if(m_withColor)
 				m_c.push_back(XFColor::white);
 		}
 	}
 	m_isInited = true;
 	return true;
 }
-int XMesh2D::getNearestVertex(const XVector2 &pos,float maxD)	//»ñÈ¡Àëpos×î½üµÄ¶¥µãµÄ±àºÅ£¬¾àÀëÐ¡ÓÚmaxD
+void XMesh2D::setTextureInfo(float sx,float sy,float w,float h)
+{
+	if(!m_isInited || !m_withTexture) return;
+	XVec2 sizeT = XVec2(w,h) / XVec2(m_sumX - 1,m_sumY - 1);
+	m_t.clear();
+	for(int i = 0;i < m_sumY;++ i)
+	{
+		for(int j = 0;j < m_sumX;++ j)
+		{
+			m_t.push_back(XVec2(sx + sizeT.x * j,sy + sizeT.y * i));
+		}
+	}
+}
+int XMesh2D::getNearestVertex(const XVec2& pos,float maxD)const	//»ñÈ¡Àëpos×î½üµÄ¶¥µãµÄ±àºÅ£¬¾àÀëÐ¡ÓÚmaxD
 {
 	//´Ólocal¿Õ¼äµ½world¿Õ¼ä
-//	XMatrix2x2 tmp = XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale);
-//	XVector2 ret = (pos - m_center) * tmp + m_position + m_center;
+//	XMat2 tmp = XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale);
+//	XVec2 ret = (pos - m_center) * tmp + m_position + m_center;
 //	XRender::drawPoint(ret,4,1,1,1,1);
 	//´Óworld¿Õ¼äµ½local¿Õ¼ä
-//	XMatrix2x2 tmp = XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale);
-//	XVector2 ret = tmp.inverse() * (pos - m_center - m_position) + m_center;
+//	XMat2 tmp = XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale);
+//	XVec2 ret = tmp.inverse() * (pos - m_center - m_position) + m_center;
 //	printf("%f,%f\n",ret.x,ret.y);
 	if(m_v.size() <= 0) return -1;	//ÎÞÐ§µÄÊý¾Ý
 	//½«pos´ÓÊÀ½ç¿Õ¼äÓ³Éäµ½meshµÄlocal¿Õ¼ä
-	XVector2 local = (XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale)).inverse() * (pos - m_center - m_position) + m_center;
+	XVec2 local = world2Local(pos);
 	//±éÀúËùÓÐµÄ¶¥µãÑ°ÕÒ¾àÀë×î½üµÄ¶¥µã
 	float minD = m_v[0].getLengthSqure(local);
 	int index = 0;
@@ -213,9 +422,128 @@ int XMesh2D::getNearestVertex(const XVector2 &pos,float maxD)	//»ñÈ¡Àëpos×î½üµÄ¶
 	if(minD <= maxD * maxD) return index;
 	else return -1;
 }
-void XMesh2D::setVertexPos(const XVector2 &pos,int index)	//ÉèÖÃ¶¥µãµÄÎ»ÖÃ
+void XMesh2D::setVertexPos(const XVec2& pos,int index)	//ÉèÖÃ¶¥µãµÄÎ»ÖÃ
 {
 	if(index < 0 || index >= m_v.size()) return;	//·Ç·¨µÄÊý¾Ý
-	m_v[index] = (XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale)).inverse() * (pos - m_center - m_position) + m_center;
+	m_v[index] = world2Local(pos);
+}
+XVec2 XMesh2D::getVertexPos(int index)const
+{
+	if(index < 0 || index >= m_v.size()) return XVec2::zero;	//·Ç·¨µÄÊý¾Ý
+	return local2World(m_v[index]);
+}
+void XMesh2D::setVertexColor(const XFColor& color,int index)
+{
+	if(index < 0 || index >= m_c.size()) return;	//·Ç·¨µÄÊý¾Ý
+	m_c[index] = color;
+}
+void XMesh2D::setVertexTex(const XVec2& t,int index)
+{
+	if(index < 0 || index >= m_t.size()) return;	//·Ç·¨µÄÊý¾Ý
+	m_t[index] = t;
+}
+bool XMesh2D::mapVertex2Tex(const XVec2& pos,XVec2& out)const
+{
+	if(!m_withTexture) return false;
+	XVec2 inPos = world2Local(pos);
+	XVec2 inRect[4];
+	XVec2 outRect[4];
+	for(int h = 0;h < m_sumY - 1;++ h)
+	{
+		int index = h * m_sumX;
+		for(int w = 0;w < m_sumX - 1;++ w,++index)
+		{
+			//·½°¸1£ºËÄ±ßÐÎ±È½Ï
+			//inRect[0] = m_v[index];
+			//inRect[1] = m_v[index + 1];
+			//inRect[2] = m_v[index + m_sumX + 1];
+			//inRect[3] = m_v[index + m_sumX];
+			//if(!XMath::getIsInPolygon(inPos,inRect,4)) continue;
+			//outRect[0] = m_t[index];
+			//outRect[1] = m_t[index + 1];
+			//outRect[2] = m_t[index + m_sumX + 1];
+			//outRect[3] = m_t[index + m_sumX];
+			//out = XMath::mapping2DEx(inRect,outRect,inPos);
+			//return true;
+			//·½°¸2£ºÈý½ÇÐÎ¼ÆËã
+			inRect[0] = m_v[index];
+			inRect[1] = m_v[index + 1];
+			inRect[2] = m_v[index + m_sumX + 1];
+			if (XMath::getIsInTriangle(inPos, inRect))
+			{
+				outRect[0] = m_t[index];
+				outRect[1] = m_t[index + 1];
+				outRect[2] = m_t[index + m_sumX + 1];
+				out = XMath::mapping2DTriangle(inRect, outRect, inPos);
+				return true;
+			}
+			inRect[1] = m_v[index + m_sumX];
+			if (XMath::getIsInTriangle(inPos, inRect))
+			{
+				outRect[0] = m_t[index];
+				outRect[1] = m_t[index + m_sumX];
+				outRect[2] = m_t[index + m_sumX + 1];
+				out = XMath::mapping2DTriangle(inRect, outRect, inPos);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+bool XMesh2D::mapTex2Vertex(const XVec2& pos, XVec2& out)const
+{
+	if (!m_withTexture) return false;
+	XVec2 inPos = pos;// world2Local(pos);
+	XVec2 inRect[4];
+	XVec2 outRect[4];
+	for (int h = 0; h < m_sumY - 1; ++h)
+	{
+		int index = h * m_sumX;
+		for (int w = 0; w < m_sumX - 1; ++w,++index)
+		{
+			//·½°¸1£ºËÄ±ßÐÎ±È½Ï
+			//inRect[0] = m_t[index];
+			//inRect[1] = m_t[index + 1];
+			//inRect[2] = m_t[index + m_sumX + 1];
+			//inRect[3] = m_t[index + m_sumX];
+			//if (!XMath::getIsInPolygon(inPos, inRect, 4)) continue;
+			//outRect[0] = m_v[index];
+			//outRect[1] = m_v[index + 1];
+			//outRect[2] = m_v[index + m_sumX + 1];
+			//outRect[3] = m_v[index + m_sumX];
+			//out = XMath::mapping2DEx(inRect, outRect, inPos);
+			//return true;
+			//·½°¸2£ºÈý½ÇÐÎ¼ÆËã
+			inRect[0] = m_t[index];
+			inRect[1] = m_t[index + 1];
+			inRect[2] = m_t[index + m_sumX + 1];
+			if (XMath::getIsInTriangle(inPos, inRect))
+			{
+				outRect[0] = m_v[index];
+				outRect[1] = m_v[index + 1];
+				outRect[2] = m_v[index + m_sumX + 1];
+				out = XMath::mapping2DTriangle(inRect, outRect, inPos);
+				return true;
+			}
+			inRect[1] = m_t[index + m_sumX];
+			if (XMath::getIsInTriangle(inPos, inRect))
+			{
+				outRect[0] = m_v[index];
+				outRect[1] = m_v[index + m_sumX];
+				outRect[2] = m_v[index + m_sumX + 1];
+				out = XMath::mapping2DTriangle(inRect, outRect, inPos);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+XVec2 XMesh2D::world2Local(const XVec2& pos)const
+{
+	return (XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale)).inverse() * (pos - m_center - m_position) + m_center;
+}
+XVec2 XMesh2D::local2World(const XVec2& pos)const
+{
+	return (XMath::getMatrix2D(m_angle * DEGREE2RADIAN) * XMath::getMatrix2D(m_scale)) * (pos - m_center) + m_center + m_position;
 }
 }

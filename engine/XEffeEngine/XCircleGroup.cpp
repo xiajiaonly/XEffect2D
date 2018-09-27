@@ -5,11 +5,11 @@
 //Date:		See the header file
 //--------------------------------
 #include "XCircleGroup.h"
-namespace XE{
+namespace XE {
 template<class type>
-XBool XCircleGroup<type>::init(int buffsize,int mode)    //³õÊ¼»¯£¬²¢·ÖÅäÄÚ´æ¿Õ¼ä
+XBool XCircleGroup<type>::init(int buffsize, int mode)    //³õÊ¼»¯£¬²¢·ÖÅäÄÚ´æ¿Õ¼ä
 {
-	if(m_isInited ||    //Èç¹ûÒÑ¾­³õÊ¼»¯£¬Ôò²»ÄÜÖØ¸´³õÊ¼»¯
+	if (m_isInited ||    //Èç¹ûÒÑ¾­³õÊ¼»¯£¬Ôò²»ÄÜÖØ¸´³õÊ¼»¯
 		buffsize <= 0) return XFalse;        //0³ß´çÊÇ²»ĞĞµÎ
 	m_insertPoint = 0;                //µ±Ç°µÄ²åÈëµã
 	m_popPoint = 0;                    //µ±Ç°È¡³öµã
@@ -17,9 +17,9 @@ XBool XCircleGroup<type>::init(int buffsize,int mode)    //³õÊ¼»¯£¬²¢·ÖÅäÄÚ´æ¿Õ¼
 	m_pElement = NULL;                //ÔªËØ¶ÓÁĞµÄÖ¸Õë
 	m_mode = mode;
 	m_pElement = XMem::createArrayMem<XElement>(m_buffSize);
-	if(m_pElement == NULL) return XFalse;    //ÄÚ´æ·ÖÅäÊ§°Ü
+	if (m_pElement == NULL) return XFalse;    //ÄÚ´æ·ÖÅäÊ§°Ü
 	//³õÊ¼»¯ËùÓĞÊı¾İ
-	for(int i = 0;i < m_buffSize;++ i)
+	for (int i = 0; i < m_buffSize; ++i)
 	{
 		m_pElement[i].isEnable = XFalse;
 	}
@@ -30,31 +30,32 @@ XBool XCircleGroup<type>::init(int buffsize,int mode)    //³õÊ¼»¯£¬²¢·ÖÅäÄÚ´æ¿Õ¼
 template<class type>
 int XCircleGroup<type>::insertOneElement(type &element)    //²åÈëÒ»¸öÔªËØ
 {
-	if(!m_isInited) return 0;
+	if (!m_isInited) return 0;
 	pthread_mutex_lock(m_mutex);
-	if(!m_pElement[m_insertPoint].isEnable)
+	if (!m_pElement[m_insertPoint].isEnable)
 	{//ÓĞÊı¾İ¿ÉÒÔÈ¡³ö£¬ÔòÈ¡³öÊı¾İ£¬²¢×÷ÏàÓ¦µÄ´¦Àí
 		m_pElement[m_insertPoint].elementData = element;    //×¢ÒâÕâÀïÊÇÊ¹ÓÃµÄÊÇ¸³Öµ²Ù×÷·û£¬Õâ¸öÔÚÄÚ²¿³ÉÔ±ÖĞÓĞÖ¸Õë²Ù×÷ÊÇ»á³öÏÖ´íÎó
 		m_pElement[m_insertPoint].isEnable = XTrue;
-		++ m_insertPoint;
-		if(m_insertPoint >= m_buffSize) m_insertPoint = 0;
+		++m_insertPoint;
+		if (m_insertPoint >= m_buffSize) m_insertPoint = 0;
 		pthread_mutex_unlock(m_mutex);
 		return 1;
-	}else
+	}
+	else
 	{
-//        printf("buff is full!");
-		if(m_mode == 0)
+		//        printf("buff is full!");
+		if (m_mode == 0)
 		{
-//            printf(" some data will be demp!\n");
-			//Âúbuff½øĞĞÊı¾İ¶ªÆú
+			//            printf(" some data will be demp!\n");
+						//Âúbuff½øĞĞÊı¾İ¶ªÆú
 			m_pElement[m_insertPoint].elementData = element;    //×¢ÒâÕâÀïÊÇÊ¹ÓÃµÄÊÇ¸³Öµ²Ù×÷·û£¬Õâ¸öÔÚÄÚ²¿³ÉÔ±ÖĞÓĞÖ¸Õë²Ù×÷ÊÇ»á³öÏÖ´íÎó
 			m_pElement[m_insertPoint].isEnable = XTrue;
-			++ m_insertPoint;
-			if(m_insertPoint >= m_buffSize) m_insertPoint = 0;
-			++ m_popPoint;
-			if(m_popPoint >= m_buffSize) m_popPoint = 0;
+			++m_insertPoint;
+			if (m_insertPoint >= m_buffSize) m_insertPoint = 0;
+			++m_popPoint;
+			if (m_popPoint >= m_buffSize) m_popPoint = 0;
 		}
-//        printf("\n");
+		//        printf("\n");
 		pthread_mutex_unlock(m_mutex);
 		return 2;
 	}
@@ -62,14 +63,14 @@ int XCircleGroup<type>::insertOneElement(type &element)    //²åÈëÒ»¸öÔªËØ
 template<class type>
 XBool XCircleGroup<type>::popOneElement(type &element)    //È¡³öÒ»¸öÔªËØ
 {
-	if(!m_isInited) return XFalse;
+	if (!m_isInited) return XFalse;
 	pthread_mutex_lock(m_mutex);
-	if(m_pElement[m_popPoint].isEnable != 0)
+	if (m_pElement[m_popPoint].isEnable != 0)
 	{//ÓĞÊı¾İ¿ÉÒÔÈ¡³ö£¬ÔòÈ¡³öÊı¾İ£¬²¢×÷ÏàÓ¦µÄ´¦Àí
 		element = m_pElement[m_popPoint].elementData;    //×¢ÒâÕâÀïÊÇÊ¹ÓÃµÄÊÇ¸³Öµ²Ù×÷·û£¬Õâ¸öÔÚÄÚ²¿³ÉÔ±ÖĞÓĞÖ¸Õë²Ù×÷ÊÇ»á³öÏÖ´íÎó
 		m_pElement[m_popPoint].isEnable = XFalse;
-		++ m_popPoint;
-		if(m_popPoint >= m_buffSize) m_popPoint = 0;
+		++m_popPoint;
+		if (m_popPoint >= m_buffSize) m_popPoint = 0;
 		pthread_mutex_unlock(m_mutex);
 		return XTrue;
 	}

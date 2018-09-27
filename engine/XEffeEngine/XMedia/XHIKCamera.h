@@ -8,20 +8,31 @@
 #include "XCameraBasic.h"
 #include "../XCritical.h"
 #if SUPPORT_FOR_HIK
+#ifdef _WIN64
+#include "HIK64/HCNetSDK.h"
+#include "HIK64/plaympeg4.h"
+#else
 #include "HIK/HCNetSDK.h"
 #include "HIK/plaympeg4.h"
+#endif
 //设置使用的版本号
 //#define VERSION_30
 #define VERSION_40
-
-#pragma comment(lib, "../../engine/lib/HIK/PlayCtrl.lib")
-#pragma comment(lib, "../../engine/lib/HIK/HCNetSDK.lib")
-#pragma comment(lib, "../../engine/lib/HIK/DsSdk.lib")
-#pragma comment(lib, "../../engine/lib/HIK/GdiPlus.lib")
+#ifdef _WIN64
+#pragma comment(lib, "HIK64/PlayCtrl.lib")
+#pragma comment(lib, "HIK64/HCNetSDK.lib")
+#pragma comment(lib, "HIK64/HCCore.lib")
+#pragma comment(lib, "HIK64/GdiPlus.lib")
+#else
+#pragma comment(lib, "HIK/PlayCtrl.lib")
+#pragma comment(lib, "HIK/HCNetSDK.lib")
+#pragma comment(lib, "HIK/HCCore.lib")
+#pragma comment(lib, "HIK/GdiPlus.lib")
+#endif
 namespace XE{
 #define HIK_WITH_LOECORE (1)	//当系统性能不高时，将该项设置为1以便于使得模块能正常工作
 //接下来将其封装成单子系统
-class XHIKCamera:public XCameraBasic
+class XHIKCamera:public XPixelsInputBasic
 {
 private:
 	bool m_isGetInitData;
@@ -51,10 +62,10 @@ private:
 	static void CALLBACK exceptionCB(DWORD, LONG, LONG, void *);
 #if HIK_WITH_LOECORE
 	unsigned char *m_yuvData;	//用于临时存储YUV数据
-	XCritical m_mutex;			//线程锁
 #endif
+	XCritical m_mutex;			//线程锁
 public:
-	XBool init(XCameraInfo &data);
+	XBool init(XPixelsInputInfo &data);
 	void getData(unsigned char * p) const
 	{
 		if(!m_isInited) return;
@@ -71,14 +82,22 @@ public:
 
 	XHIKCamera()
 		:m_haveNewFrame(XFalse)
-		,m_dataRGB(NULL)
-		,m_isGetInitData(false)
+		, m_dataRGB(NULL)
+		, m_isGetInitData(false)
 #if HIK_WITH_LOECORE
-		,m_yuvData(NULL)
+		, m_yuvData(NULL)
 #endif
 	{}
 	~XHIKCamera() {release();}
 	void release();
+
+	bool reset(){return true;}	//目前尚未实现细节
+	bool needReset(){return false;}
+#ifdef _WIN64
+	//为了解决海康相机内部对64位指针支持不好的问题而定义的临时指针数组
+	static std::vector<XHIKCamera *> m_allPs;
+	int m_myIndex;
+#endif
 };
 
 //class XHIKCameraFactory:public XCameraBaiscFactory

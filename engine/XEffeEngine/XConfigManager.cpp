@@ -12,41 +12,47 @@
 #include "XNetWork/XNetServer.h"
 #include "XNetWork/XNetClient.h"
 #include "XFile.h"
+#include "XControl\XControlManager.h"
 namespace XE{
 bool XConfigManager::m_withConfigManager = false;
-void XConfigManager::ctrlProc(void*pClass,int id,int eventID)
+void XConfigManager::ctrlProc(void*pClass, int id, int eventID)
 {
 	XConfigManager &pPar = *(XConfigManager *)pClass;
 	//¹¦ÄÜ°´¼ü
-	if(id == pPar.m_saveBtn->getControlID())
+	if (id == pPar.m_saveBtn->getControlID())
 	{//±£´æ
-		if(eventID != XButton::BTN_MOUSE_DOWN) return;
-		pPar.save();
+		if (eventID != XButton::BTN_MOUSE_DOWN) return;
+		if (pPar.save()) XEG.setTopMsgStr("ÅäÖÃ±£´æ³É¹¦");
+		else XEG.setTopMsgStr("ÅäÖÃ±£´æÊ§!°Ü!");
 		pPar.setOperateToServer(CFG_NET_OP_SAVE);
+		XCtrlManager.eventProc(id, XButton::BTN_MOUSE_DOWN);
 		return;
 	}
-	if(id == pPar.m_loadBtn->getControlID())
+	if (id == pPar.m_loadBtn->getControlID())
 	{//¶ÁÈ¡
-		if(eventID != XButton::BTN_MOUSE_DOWN) return;
-		switch(pPar.m_configMode)
+		if (eventID != XButton::BTN_MOUSE_DOWN) return;
+		switch (pPar.m_configMode)
 		{
 		case CFG_MODE_CLIENT:
 			pPar.setOperateToServer(CFG_NET_OP_LOAD);
 			break;
 		case CFG_MODE_SERVER:
-			pPar.load();
+			if(pPar.load()) XEG.setTopMsgStr("ÅäÖÃ¶ÁÈ¡³É¹¦");
+			else XEG.setTopMsgStr("ÅäÖÃ¶ÁÈ¡Ê§!°Ü!");
 			pPar.sendCFGInfo();
 			break;
 		default:
-			pPar.load();
+			if (pPar.load()) XEG.setTopMsgStr("ÅäÖÃ¶ÁÈ¡³É¹¦");
+			else XEG.setTopMsgStr("ÅäÖÃ¶ÁÈ¡Ê§!°Ü!");
 			break;
 		}
+		XCtrlManager.eventProc(id, XButton::BTN_MOUSE_DOWN);
 		return;
 	}
-	if(id == pPar.m_defaultBtn->getControlID())
+	if (id == pPar.m_defaultBtn->getControlID())
 	{//Ä¬ÈÏ
-		if(eventID != XButton::BTN_MOUSE_DOWN) return;
-		switch(pPar.m_configMode)
+		if (eventID != XButton::BTN_MOUSE_DOWN) return;
+		switch (pPar.m_configMode)
 		{
 		case CFG_MODE_CLIENT:
 			pPar.setOperateToServer(CFG_NET_OP_DEFAULT);
@@ -59,106 +65,107 @@ void XConfigManager::ctrlProc(void*pClass,int id,int eventID)
 			pPar.setDefault();
 			break;
 		}
+		XCtrlManager.eventProc(id, XButton::BTN_MOUSE_DOWN);
 		return;
 	}
-	if(id == pPar.m_netUpdateBtn->getControlID())
+	if (id == pPar.m_netUpdateBtn->getControlID())
 	{//Í¬²½
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 			pPar.sendSynchToServer();
 		return;
-	}	
-	if(id == pPar.m_netInjectBtn->getControlID())
+	}
+	if (id == pPar.m_netInjectBtn->getControlID())
 	{//×¢Èë
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 			pPar.sendInject();
 		return;
-	}	
-	if(id == pPar.m_undoBtn->getControlID())
+	}
+	if (id == pPar.m_undoBtn->getControlID())
 	{//³·Ïú
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 			XOpManager.undo();
 		return;
-	}	
-	if(id == pPar.m_redoBtn->getControlID())
+	}
+	if (id == pPar.m_redoBtn->getControlID())
 	{//ÖØ×ö
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 			XOpManager.redo();
 		return;
 	}
-	for(unsigned int i = 0;i < pPar.m_pItems.size();++ i)
+	for (unsigned int i = 0; i < pPar.m_pItems.size(); ++i)
 	{
-		if(pPar.m_pItems[i] == NULL || pPar.m_pItems[i]->m_pCtrl == NULL ||
+		if (pPar.m_pItems[i] == NULL || pPar.m_pItems[i]->m_pCtrl == NULL ||
 			id != pPar.m_pItems[i]->m_pCtrl->getControlID()) continue;
 		//ÏÂÃæ´¦ÀíÊÂ¼þ
 		XConfigItem &pItem = *pPar.m_pItems[i];
 		int tmp = 0;
-		switch(pItem.m_type)
+		switch (pItem.m_type)
 		{
-		case CFG_DATA_TYPE_INT:
-			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+		case CFG_DATA_INT:
+			if (eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
 			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
-			if(pItem.m_curValue.valueI != tmp)
+			if (pItem.m_curValue.valueI != tmp)
 			{
 				pItem.m_curValue.valueI = tmp;
-				* (int *)pItem.m_pVariable = tmp;
-				if(pItem.m_changeProc != NULL) 
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(int *)pItem.m_pVariable = tmp;
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
 			break;
-		case CFG_DATA_TYPE_CHAR:
-			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+		case CFG_DATA_CHAR:
+			if (eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
 			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
-			if(pItem.m_curValue.valueI != tmp)
+			if (pItem.m_curValue.valueI != tmp)
 			{
 				pItem.m_curValue.valueI = tmp;
-				* (char *)pItem.m_pVariable = tmp;
-				if(pItem.m_changeProc != NULL)
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(char *)pItem.m_pVariable = tmp;
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
-		case CFG_DATA_TYPE_UCHAR:
-			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+		case CFG_DATA_UCHAR:
+			if (eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
 			tmp = XMath::toInt(((XSliderEx *)(pItem.m_pCtrl))->getCurValue());
-			if(pItem.m_curValue.valueI != tmp)
+			if (pItem.m_curValue.valueI != tmp)
 			{
 				pItem.m_curValue.valueI = tmp;
-				* (unsigned char *)pItem.m_pVariable = tmp;
-				if(pItem.m_changeProc != NULL) 
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(unsigned char *)pItem.m_pVariable = tmp;
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
 			break;
-		case CFG_DATA_TYPE_FLOAT:
-			if(eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
-			if(pItem.m_curValue.valueF != ((XSliderEx *)(pItem.m_pCtrl))->getCurValue())
+		case CFG_DATA_FLOAT:
+			if (eventID != XSliderEx::SLDEX_MOUSE_MOVE && eventID != XSliderEx::SLDEX_VALUE_CHANGE) break;
+			if (pItem.m_curValue.valueF != ((XSliderEx *)(pItem.m_pCtrl))->getCurValue())
 			{
 				pItem.m_curValue.valueF = ((XSliderEx *)(pItem.m_pCtrl))->getCurValue();
-				* (float *)pItem.m_pVariable = ((XSliderEx *)(pItem.m_pCtrl))->getCurValue();
-				if(pItem.m_changeProc != NULL) 
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(float *)pItem.m_pVariable = ((XSliderEx *)(pItem.m_pCtrl))->getCurValue();
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
 			break;
-		case CFG_DATA_TYPE_XBOOL:
-			if(eventID != XCheck::CHK_STATE_CHANGE) break;
-			if(pItem.m_curValue.valueB != ((XCheck *)(pItem.m_pCtrl))->getState())
+		case CFG_DATA_XBOOL:
+			if (eventID != XCheck::CHK_STATE_CHANGE) break;
+			if (pItem.m_curValue.valueB != ((XCheck *)(pItem.m_pCtrl))->getState())
 			{
 				pItem.m_curValue.valueB = ((XCheck *)(pItem.m_pCtrl))->getState();
-				* (XBool *)pItem.m_pVariable = ((XCheck *)(pItem.m_pCtrl))->getState();
-				if(pItem.m_changeProc != NULL) 
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(XBool *)pItem.m_pVariable = ((XCheck *)(pItem.m_pCtrl))->getState();
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
 			break;
-		case CFG_DATA_TYPE_RADIOS:
-			if(eventID != XRadios::RDS_STATE_CHANGE) break;
-			if(pItem.m_curValue.valueI != ((XRadios *)(pItem.m_pCtrl))->getCurChoose())
+		case CFG_DATA_RADIOS:
+			if (eventID != XRadios::RDS_STATE_CHANGE) break;
+			if (pItem.m_curValue.valueI != ((XRadios *)(pItem.m_pCtrl))->getCurChoose())
 			{
 				pItem.m_curValue.valueI = ((XRadios *)(pItem.m_pCtrl))->getCurChoose();
-				* (int *)pItem.m_pVariable = ((XRadios *)(pItem.m_pCtrl))->getCurChoose();
-				if(pItem.m_changeProc != NULL) 
-					pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
+				*(int *)pItem.m_pVariable = ((XRadios *)(pItem.m_pCtrl))->getCurChoose();
+				if (pItem.m_changeProc != NULL)
+					pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//ÔÚÊýÖµ±ä»¯Ö®ºó²Åµ÷ÓÃ»Øµ÷º¯Êý
 				pPar.sendItemValue(pPar.m_pItems[i]);	//Èç¹ûÊÇÍøÂçÄ£Ê½£¬ÔòÍ¨ÖªÍøÂçÉè±¸¸üÐÂÏàÓ¦µÄÖµ
 			}
 			break;
@@ -166,181 +173,178 @@ void XConfigManager::ctrlProc(void*pClass,int id,int eventID)
 		return;
 	}
 	//ÅÐ¶ÏÊÇ·ñÊÇÈº×é¿Ø¼þµÄ×´Ì¬·¢ÉúÁË±ä»¯
-	for(unsigned int i = 0;i < pPar.m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < pPar.m_pGroups.size(); ++i)
 	{
-		if(id == pPar.m_pGroups[i]->m_group.getControlID())
+		if (id == pPar.m_pGroups[i]->m_group.getControlID())
 		{//Èº×é¿Ø¼þµÄ×´Ì¬·¢Éú±ä»¯µÄÊ±ºò¸Ä±äÕûÌå²¼¾Ö
-			if(eventID == XGroup::GRP_STATE_CHANGE) pPar.relayout();
+			if (eventID == XGroup::GRP_STATE_CHANGE) pPar.relayout();
 			return;
 		}
 	}
 }
-bool XConfigManager::save(const char *filename)
+bool XConfigManager::save()
 {
 	FILE *fp = NULL;
-	if(filename == NULL)
+	if ((fp = fopen(m_saveAndLoadFilename.c_str(), "w")) == NULL) return false;
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if((fp = fopen(CFG_DEFAULT_FILENAME,"w")) == NULL) return false;
-	}else
-	{
-		if((fp = fopen(filename,"w")) == NULL) return false;
-	}
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
-	{
-		if(m_pItems[i]->m_isActive)
-		{//±»¶¯µÄÖµ²»ÐèÒª±£´æ
-			switch(m_pItems[i]->m_type)
-			{
-			case CFG_DATA_TYPE_INT:
-			case CFG_DATA_TYPE_CHAR:
-			case CFG_DATA_TYPE_UCHAR:
-				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueI);
-				break;
-			case CFG_DATA_TYPE_FLOAT:
-				fprintf(fp,"%s:%f,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueF);
-				break;
-			case CFG_DATA_TYPE_XBOOL:
-				if(m_pItems[i]->m_curValue.valueB) fprintf(fp,"%s:1,\n",m_pItems[i]->m_name.c_str());
-				else fprintf(fp,"%s:0,\n",m_pItems[i]->m_name.c_str());
-				break;
-			case CFG_DATA_TYPE_RADIOS:
-				fprintf(fp,"%s:%d,\n",m_pItems[i]->m_name.c_str(),m_pItems[i]->m_curValue.valueI);
-				break;
-			case CFG_DATA_TYPE_CUSTOM:
-				m_pItems[i]->m_customIt->save(fp);
-				break;
-			}
+		if (!m_pItems[i]->m_isActive) continue;//±»¶¯µÄÖµ²»ÐèÒª±£´æ
+		switch (m_pItems[i]->m_type)
+		{
+		case CFG_DATA_INT:
+		case CFG_DATA_CHAR:
+		case CFG_DATA_UCHAR:
+			fprintf(fp, "%s:%d,\n", m_pItems[i]->m_name.c_str(), m_pItems[i]->m_curValue.valueI);
+			break;
+		case CFG_DATA_FLOAT:
+			fprintf(fp, "%s:%f,\n", m_pItems[i]->m_name.c_str(), m_pItems[i]->m_curValue.valueF);
+			break;
+		case CFG_DATA_XBOOL:
+			if (m_pItems[i]->m_curValue.valueB) fprintf(fp, "%s:1,\n", m_pItems[i]->m_name.c_str());
+			else fprintf(fp, "%s:0,\n", m_pItems[i]->m_name.c_str());
+			break;
+		case CFG_DATA_RADIOS:
+			fprintf(fp, "%s:%d,\n", m_pItems[i]->m_name.c_str(), m_pItems[i]->m_curValue.valueI);
+			break;
+		case CFG_DATA_CUSTOM:
+			m_pItems[i]->m_customIt->save(fp);
+			break;
 		}
 	}
 	fclose(fp);
 	return true;
 }
-bool XConfigManager::getItemValueFromStr(XConfigItem *it,const char *str)
+bool XConfigManager::getItemValueFromStr(XConfigItem *it, const char *str)
 {//ÕâÀï²»½øÐÐÊäÈë²ÎÊýºÏÀíÐÔ¼ì²é
 	int temp;
-	switch(it->m_type)
+	switch (it->m_type)
 	{
-	case CFG_DATA_TYPE_INT:
-		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;
-		* (int *)it->m_pVariable = it->m_curValue.valueI;
+	case CFG_DATA_INT:
+		if (sscanf(str, "%d,\n", &it->m_curValue.valueI) == 0) return false;
+		*(int *)it->m_pVariable = it->m_curValue.valueI;
 		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_CHAR:
-		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0)  return false;
-		* (char *)it->m_pVariable = it->m_curValue.valueI;
+	case CFG_DATA_CHAR:
+		if (sscanf(str, "%d,\n", &it->m_curValue.valueI) == 0)  return false;
+		*(char *)it->m_pVariable = it->m_curValue.valueI;
 		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_UCHAR:
-		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;
-		* (unsigned char *)it->m_pVariable = it->m_curValue.valueI;
+	case CFG_DATA_UCHAR:
+		if (sscanf(str, "%d,\n", &it->m_curValue.valueI) == 0) return false;
+		*(unsigned char *)it->m_pVariable = it->m_curValue.valueI;
 		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_FLOAT:
-		if(sscanf(str,"%f,\n",&it->m_curValue.valueF) == 0) return false;
-		* (float *)it->m_pVariable = it->m_curValue.valueF;
+	case CFG_DATA_FLOAT:
+		if (sscanf(str, "%f,\n", &it->m_curValue.valueF) == 0) return false;
+		*(float *)it->m_pVariable = it->m_curValue.valueF;
 		((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
 		((XSliderEx *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_XBOOL:
-		if(sscanf(str,"%d,\n",&temp) == 0) return false;			
-		if(temp == 0) it->m_curValue.valueB = XFalse;
+	case CFG_DATA_XBOOL:
+		if (sscanf(str, "%d,\n", &temp) == 0) return false;
+		if (temp == 0) it->m_curValue.valueB = XFalse;
 		else it->m_curValue.valueB = XTrue;
-		* (XBool *)it->m_pVariable = it->m_curValue.valueB;
+		*(XBool *)it->m_pVariable = it->m_curValue.valueB;
 		((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
 		((XCheck *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_RADIOS:
-		if(sscanf(str,"%d,\n",&it->m_curValue.valueI) == 0) return false;			
-		* (int *)it->m_pVariable = it->m_curValue.valueI;
+	case CFG_DATA_RADIOS:
+		if (sscanf(str, "%d,\n", &it->m_curValue.valueI) == 0) return false;
+		*(int *)it->m_pVariable = it->m_curValue.valueI;
 		((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
 		((XRadios *)it->m_pCtrl)->stateChange();
 		break;
-	case CFG_DATA_TYPE_CUSTOM:
+	case CFG_DATA_CUSTOM:
 		break;
 	}
 	return true;
 }
-bool XConfigManager::loadEx(const char *filename)
+bool XConfigManager::load(const char *filename)
 {
 	FILE *fp = NULL;
-	if(filename == NULL)
+	if (filename == NULL)
 	{
-		if((fp = fopen(CFG_DEFAULT_FILENAME,"r")) == NULL) return false;
-	}else
+		if ((fp = fopen(m_saveAndLoadFilename.c_str(), "r")) == NULL) return false;
+	}
+	else
 	{
-		if((fp = fopen(filename,"r")) == NULL) return false;
+		if ((fp = fopen(filename, "r")) == NULL) return false;
 	}
 	char lineData[1024];
 	int len = 0;
 	bool ret = true;
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
 		XConfigItem &pItem = *m_pItems[i];
-		if(!pItem.m_isActive) continue;	//±»¶¯µÄÖµ²»»á¶ÁÈ¡
-		if(feof(fp)) break;
+		if (!pItem.m_isActive) continue;	//±»¶¯µÄÖµ²»»á¶ÁÈ¡
+		if (feof(fp)) break;
 		//¶ÁÈ¡Ò»ÐÐÊý¾Ý
-		if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
+		if (pItem.m_type == CFG_DATA_CUSTOM)
 		{//ÕâÀï»á´æÔÚÎÊÌâ
 			int fpos = ftell(fp);
-			if(pItem.m_customIt->load(fp))
+			if (pItem.m_customIt->load(fp))
 			{//Èç¹û¶ÁÈ¡³É¹¦£¬Ö±½Ó¼ÌÐø
 				continue;
-			}else
+			}
+			else
 			{
 				ret = false;
-				fseek(fp,fpos,SEEK_SET);	//»Ö¸´Ô­ÓÐµÄÎ»ÖÃ
+				fseek(fp, fpos, SEEK_SET);	//»Ö¸´Ô­ÓÐµÄÎ»ÖÃ
 			}
 		}
-		while(true)
+		while (true)
 		{
-			if(feof(fp) || fgets(lineData,1024,fp) == NULL)
+			if (feof(fp) || fgets(lineData, 1024, fp) == NULL)
 			{//Êý¾Ý¶ÁÈ¡Ê§°Ü»òÕßÎÄ¼þ½áÊø
 				fclose(fp);
 				return ret;
 			}
 			//Ñ°ÕÒÅäÖÃÏîµÄÃû×Ö
-			len = XString::getCharPosition(lineData,':') + 1;
-			if(len < 0) 
+			len = XString::getCharPosition(lineData, ':') + 1;
+			if (len < 0)
 			{//Êý¾Ý´íÎó£¬¼ÌÐø¶ÁÈ¡ÏÂÃæµÄÊý¾Ý
 				ret = false;
 				continue;
-			}else break;
+			}
+			else break;
 		}
 		lineData[len - 1] = '\0';
-		if(pItem.m_type == CFG_DATA_TYPE_CUSTOM || strcmp(lineData,pItem.m_name.c_str()) != 0)
+		if (pItem.m_type == CFG_DATA_CUSTOM || strcmp(lineData, pItem.m_name.c_str()) != 0)
 		{//Ãû³Æ±È½ÏÊ§°Ü
-			XConfigItem *it = getItemByName(lineData,i + 1);
-			if(it == NULL) 
+			XConfigItem *it = getItemByName(lineData, i + 1);
+			if (it == NULL)
 			{
-				-- i;
+				--i;
 				continue;	//ÕÒ²»µ½Õâ¸öÅäÖÃÏî
 			}
-			if(getItemValueFromStr(it,lineData + len) &&			//ÏÂÃæ¿ªÊ¼¶ÁÈ¡ÅäÖÃÏîµÄÖµ
+			if (getItemValueFromStr(it, lineData + len) &&			//ÏÂÃæ¿ªÊ¼¶ÁÈ¡ÅäÖÃÏîµÄÖµ
 				it->m_changeProc != NULL)
 			{
-				if(it->m_type == CFG_DATA_TYPE_CUSTOM)
-					it->m_changeProc(it->m_customIt,it->m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+				if (it->m_type == CFG_DATA_CUSTOM)
+					it->m_changeProc(it->m_customIt, it->m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 				else
-					it->m_changeProc(it->m_pVariable,it->m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+					it->m_changeProc(it->m_pVariable, it->m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 			}
 			ret = false;	//±ê¼ÇÊý¾Ý²»ÕýÈ·
 			--i;
 			continue;
-		}else
+		}
+		else
 		{
-			if(getItemValueFromStr(m_pItems[i],lineData + len))
+			if (getItemValueFromStr(m_pItems[i], lineData + len))
 			{//Êý¾Ý¶ÁÈ¡³É¹¦
-				if(pItem.m_changeProc != NULL)
+				if (pItem.m_changeProc != NULL)
 				{
-					if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
-						pItem.m_changeProc(pItem.m_customIt,pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+					if (pItem.m_type == CFG_DATA_CUSTOM)
+						pItem.m_changeProc(pItem.m_customIt, pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 					else
-						pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+						pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 				}
-			}else
+			}
+			else
 			{
 				--i;
 				continue;
@@ -352,146 +356,155 @@ bool XConfigManager::loadEx(const char *filename)
 }
 void XConfigManager::setDefault()	//»Ö¸´Ä¬ÈÏÖµ
 {
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
 		XConfigItem &pItem = *m_pItems[i];
-		if(!pItem.m_isActive) continue;	//±»¶¯µÄÖµ²»ÄÜ»Ø¸´Ä¬ÈÏÉèÖÃ
-		switch(pItem.m_type)
+		if (!pItem.m_isActive) continue;	//±»¶¯µÄÖµ²»ÄÜ»Ø¸´Ä¬ÈÏÉèÖÃ
+		switch (pItem.m_type)
 		{
-			case CFG_DATA_TYPE_INT:
-				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
-				* (int *)pItem.m_pVariable = pItem.m_curValue.valueI;
-				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
-				((XSliderEx *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_CHAR:
-				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
-				* (char *)pItem.m_pVariable = pItem.m_curValue.valueI;
-				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
-				((XSliderEx *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_UCHAR:
-				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
-				* (unsigned char *)pItem.m_pVariable = pItem.m_curValue.valueI;
-				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
-				((XSliderEx *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_FLOAT:
-				pItem.m_curValue.valueF = pItem.m_defaultValue.valueF;
-				* (float *)pItem.m_pVariable = pItem.m_curValue.valueF;
-				((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueF);
-				((XSliderEx *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_XBOOL:
-				pItem.m_curValue.valueB = pItem.m_defaultValue.valueB;
-				* (XBool *)pItem.m_pVariable = pItem.m_curValue.valueB;
-				((XCheck *)pItem.m_pCtrl)->setState(pItem.m_curValue.valueB);
-				((XCheck *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_RADIOS:
-				pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
-				* (int *)pItem.m_pVariable = pItem.m_curValue.valueI;
-				((XRadios *)pItem.m_pCtrl)->setChoosed(pItem.m_curValue.valueI);
-				((XRadios *)pItem.m_pCtrl)->stateChange();
-				break;
-			case CFG_DATA_TYPE_CUSTOM:
-				pItem.m_customIt->defValue();
-				break;
+		case CFG_DATA_INT:
+			pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+			*(int *)pItem.m_pVariable = pItem.m_curValue.valueI;
+			((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+			((XSliderEx *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_CHAR:
+			pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+			*(char *)pItem.m_pVariable = pItem.m_curValue.valueI;
+			((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+			((XSliderEx *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_UCHAR:
+			pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+			*(unsigned char *)pItem.m_pVariable = pItem.m_curValue.valueI;
+			((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueI);
+			((XSliderEx *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_FLOAT:
+			pItem.m_curValue.valueF = pItem.m_defaultValue.valueF;
+			*(float *)pItem.m_pVariable = pItem.m_curValue.valueF;
+			((XSliderEx *)pItem.m_pCtrl)->setCurValue(pItem.m_curValue.valueF);
+			((XSliderEx *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_XBOOL:
+			pItem.m_curValue.valueB = pItem.m_defaultValue.valueB;
+			*(XBool *)pItem.m_pVariable = pItem.m_curValue.valueB;
+			((XCheck *)pItem.m_pCtrl)->setState(pItem.m_curValue.valueB);
+			((XCheck *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_RADIOS:
+			pItem.m_curValue.valueI = pItem.m_defaultValue.valueI;
+			*(int *)pItem.m_pVariable = pItem.m_curValue.valueI;
+			((XRadios *)pItem.m_pCtrl)->setChoosed(pItem.m_curValue.valueI);
+			((XRadios *)pItem.m_pCtrl)->stateChange();
+			break;
+		case CFG_DATA_CUSTOM:
+			pItem.m_customIt->defValue();
+			break;
 		}
-		if(pItem.m_changeProc != NULL)
+		if (pItem.m_changeProc != NULL)
 		{
-			if(pItem.m_type == CFG_DATA_TYPE_CUSTOM)
-				pItem.m_changeProc(pItem.m_customIt,pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+			if (pItem.m_type == CFG_DATA_CUSTOM)
+				pItem.m_changeProc(pItem.m_customIt, pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 			else
-				pItem.m_changeProc(pItem.m_pVariable,pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
+				pItem.m_changeProc(pItem.m_pVariable, pItem.m_pClass);	//fix bug:¶ÁÈ¡ÅäÖÃ²ÎÊýÊ±£¬Ã»ÓÐµ÷ÓÃÆä¸½´øµÄº¯Êý
 		}
 	}
 }
 bool XConfigManager::init(XConfigMode mode)
 {
-	if(m_isInited) return false;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
+	if (m_isInited) return false;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
 	m_configMode = mode;
 
-//	m_saveBtn->initWithoutSkin("±£´æ",XVector2(64.0f,32.0f));
-	m_saveBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_saveBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/save.png").c_str());
-	m_saveBtn->setEventProc(ctrlProc,this);
-	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x,m_position.y);
+	//	m_saveBtn->initWithoutSkin("±£´æ",XVec2(64.0f,32.0f));
+	m_saveBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_saveBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/save.png").c_str());
+	m_saveBtn->setSymbol(BTN_SYMBOL_SAVE);
+	m_saveBtn->setEventProc(ctrlProc, this);
+	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x, m_position.y);
 	m_saveBtn->setComment("½«ÅäÖÃÊý¾Ý±£´æµ½ÎÄ¼þ");
-//	m_loadBtn->initWithoutSkin("¶ÁÈ¡",XVector2(64.0f,32.0f));
-	m_loadBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_loadBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/load.png").c_str());
-	m_loadBtn->setEventProc(ctrlProc,this);
-	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x,m_position.y);
+	//	m_loadBtn->initWithoutSkin("¶ÁÈ¡",XVec2(64.0f,32.0f));
+	m_loadBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_loadBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/load.png").c_str());
+	m_loadBtn->setSymbol(BTN_SYMBOL_LOAD);
+	m_loadBtn->setEventProc(ctrlProc, this);
+	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x, m_position.y);
 	m_loadBtn->setComment("´ÓÎÄ¼þÖÐ¶ÁÈ¡ÅäÖÃÊý¾Ý");
-//	m_loadBtn->setPosition(m_position + XVector2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
-//	m_defaultBtn->initWithoutSkin("Ä¬ÈÏ",XVector2(64.0f,32.0f));
-	m_defaultBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_defaultBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/default.png").c_str());
-	m_defaultBtn->setEventProc(ctrlProc,this);
-	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x,m_position.y);
+	//	m_loadBtn->setPosition(m_position + XVec2(64.0f + CFG_MANAGER_W_SPACE,0.0f));
+	//	m_defaultBtn->initWithoutSkin("Ä¬ÈÏ",XVec2(64.0f,32.0f));
+	m_defaultBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_defaultBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/default.png").c_str());
+	m_defaultBtn->setSymbol(BTN_SYMBOL_DEF);
+	m_defaultBtn->setEventProc(ctrlProc, this);
+	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x, m_position.y);
 	m_defaultBtn->setComment("ËùÓÐÅäÖÃ»Ö¸´Ä¬ÈÏÖµ");
-//	m_defaultBtn->setPosition(m_position + XVector2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_undoBtn->initWithoutSkin("³·Ïú",XVector2(64.0f,32.0f));
-	m_undoBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_undoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/undo.png").c_str());
-	m_undoBtn->setEventProc(ctrlProc,this);
-	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	//	m_defaultBtn->setPosition(m_position + XVec2(128.0f + 2.0f * CFG_MANAGER_W_SPACE,0.0f));
+	//	m_undoBtn->initWithoutSkin("³·Ïú",XVec2(64.0f,32.0f));
+	m_undoBtn->initWithoutSkin("", XVec2(32.0f, 32.0f));
+	//m_undoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/undo.png").c_str());
+	m_undoBtn->setSymbol(BTN_SYMBOL_LEFT);
+	m_undoBtn->setEventProc(ctrlProc, this);
+	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x, m_position.y);
 	m_undoBtn->setComment("·µ»ØÉÏÒ»´Î²Ù×÷");
-//	m_undoBtn->setPosition(m_position + XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_redoBtn->initWithoutSkin("ÖØ×ö",XVector2(64.0f,32.0f));
-	m_redoBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_redoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/redo.png").c_str());
-	m_redoBtn->setEventProc(ctrlProc,this);
-	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	//	m_undoBtn->setPosition(m_position + XVec2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+	//	m_redoBtn->initWithoutSkin("ÖØ×ö",XVec2(64.0f,32.0f));
+	m_redoBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_redoBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/redo.png").c_str());
+	m_redoBtn->setSymbol(BTN_SYMBOL_RIGHT);
+	m_redoBtn->setEventProc(ctrlProc, this);
+	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x, m_position.y);
 	m_redoBtn->setComment("ÖØ×öÉÏÒ»´Î²Ù×÷");
-//	m_redoBtn->setPosition(m_position + XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_netUpdateBtn->initWithoutSkin("Í¬²½",XVector2(64.0f,32.0f));
-	m_netUpdateBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_netUpdateBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/download.png").c_str());
-	m_netUpdateBtn->setEventProc(ctrlProc,this);
-	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	//	m_redoBtn->setPosition(m_position + XVec2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
+	//	m_netUpdateBtn->initWithoutSkin("Í¬²½",XVec2(64.0f,32.0f));
+	m_netUpdateBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_netUpdateBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/download.png").c_str());
+	m_netUpdateBtn->setSymbol(BTN_SYMBOL_DOWNLOAD);
+	m_netUpdateBtn->setEventProc(ctrlProc, this);
+	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x, m_position.y);
 	m_netUpdateBtn->setComment("½«ÍøÂçÊý¾ÝÍ¬²½ÏÂÀ´");
-//	m_netUpdateBtn->setPosition(m_position + XVector2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
-//	m_netInjectBtn->initWithoutSkin("×¢Èë",XVector2(64.0f,32.0f));
-	m_netInjectBtn->initWithoutSkin("",XVector2(32.0f,32.0f));
-	m_netInjectBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/upload.png").c_str());
-	m_netInjectBtn->setEventProc(ctrlProc,this);
-	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	//	m_netUpdateBtn->setPosition(m_position + XVec2(192.0f + 3.0f * CFG_MANAGER_W_SPACE,0.0f));
+	//	m_netInjectBtn->initWithoutSkin("×¢Èë",XVec2(64.0f,32.0f));
+	m_netInjectBtn->initWithoutSkin("", XVec2(32.0f));
+	//m_netInjectBtn->setNormalIcon((getCommonResPos() + "ResourcePack/pic/CFGIcon/upload.png").c_str());
+	m_netUpdateBtn->setSymbol(BTN_SYMBOL_UPDATE);
+	m_netInjectBtn->setEventProc(ctrlProc, this);
+	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x, m_position.y);
 	m_netInjectBtn->setComment("½«±¾µØÊý¾ÝÍ¬²½ÉÏÈ¥");
-//	m_netInjectBtn->setPosition(m_position + XVector2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
-	if(m_configMode == CFG_MODE_CLIENT)
+	//	m_netInjectBtn->setPosition(m_position + XVec2(256.0f + 4.0f * CFG_MANAGER_W_SPACE,0.0f));
+	if (m_configMode == CFG_MODE_CLIENT)
 	{//³·ÏúºÍÖØ×ö²Ù×÷ÖÇÄÜÔÚ·þÎñÆ÷¶Ë»òÕßÊÇ·ÇÍøÂçµÄÇé¿öÏÂÊ¹ÓÃ£¬ÒòÎª¿Í»§¶Ë»áÖØÐÂ½¨Á¢¿Ø¼þ
 		m_undoBtn->disVisible();
 		m_redoBtn->disVisible();
-	}else
+	}
+	else
 	{
 		m_netUpdateBtn->disVisible();
 		m_netInjectBtn->disVisible();
 	}
-	m_curInsertPos = m_position + XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
+	m_curInsertPos = m_position + XVec2(0.0f, 32.0f + CFG_MANAGER_H_SPACE);
 	m_maxHeight = getSceneHeight();	//Ä¬ÈÏÊ¹ÓÃÈ«ÆÁ¸ß¶È
 
 	addGroup(CFG_DEFAULT_GROUPNAME);
 	//XConfigGroup *defGroup = XMem::createMem<XConfigGroup>();
 	//if(defGroup == NULL) return false;
 	//defGroup->m_isEnable = true;
-	//defGroup->m_position = m_position + XVector2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
+	//defGroup->m_position = m_position + XVec2(0.0f,32.0f + CFG_MANAGER_H_SPACE);
 	//defGroup->m_group.init(defGroup->m_position,XRect(0.0f,0.0f,m_width,32.0f),defGroup->m_name.c_str(),getDefaultFont(),1.0f);
 	//m_pGroups.push_back(defGroup);
-	if(m_configMode == CFG_MODE_SERVER)
+	if (m_configMode == CFG_MODE_SERVER)
 	{//½¨Á¢·þÎñÆ÷
 		std::string tempStr = XEG.m_windowData.windowTitle;
 		tempStr = tempStr + "_Config";
 		m_netServer->setProjectStr(tempStr.c_str());
-		if(!m_netServer->createServer(6868,XTrue)) return false;
-	}else
-	if(m_configMode == CFG_MODE_CLIENT)
+		if (!m_netServer->createServer(6868, XTrue)) return false;
+	}
+	else
+	if (m_configMode == CFG_MODE_CLIENT)
 	{//½¨Á¢¿Í»§¶Ë
 		std::string tempStr = XEG.m_windowData.windowTitle;
 		tempStr = tempStr + "_Config";
 		m_netClient->setProjectStr(tempStr.c_str());
-		if(!m_netClient->createClient()) return false;
+		if (!m_netClient->createClient()) return false;
 	}
 
 	m_isInited = true;
@@ -499,131 +512,155 @@ bool XConfigManager::init(XConfigMode mode)
 }
 void XConfigManager::draw()
 {
-	if(!m_isVisble || !m_isInited) return;
+	if (!m_isVisble || !m_isInited) return;
 	//ÕâÀïÎªÆäÌí¼ÓÒ»¸ö±³¾°
-	if(m_withBackground)
+	if (m_withBackground)
 	{
-		for(unsigned int i = 0;i < m_pGroups.size();++ i)
+		for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 		{
 			m_pGroups[i]->m_group.drawBG();
 		}
 	}
 
-	XRender::drawFillBoxEx(m_position,XVector2(32.0f,32.0f) * m_scale,0.75f,0.75f,0.75f,true,false,true);
+	XRender::drawFillRectEx(m_position, XVec2(32.0f) * m_scale, 0.75f, 0.75f, 0.75f, true, false, true);
 
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	for (auto it = m_pItems.begin(); it != m_pItems.end(); ++it)
 	{
-		switch(m_pItems[i]->m_type)
+		switch ((*it)->m_type)
 		{
-		case CFG_DATA_TYPE_CUSTOM:m_pItems[i]->m_customIt->draw();break;
-		case CFG_DATA_TYPE_XSPRITE:((XObjectBasic *)m_pItems[i]->m_pVariable)->draw();break;
+		case CFG_DATA_CUSTOM:(*it)->m_customIt->draw(); break;
+		case CFG_DATA_XSPRITE:
+			if ((*it)->m_pTitleFont != nullptr) (*it)->m_pTitleFont->draw();
+			((XObjectBasic *)(*it)->m_pVariable)->draw();
+			break;
 		}
 	}
 }
-void XConfigManager::relayoutGroup(int index,bool flag)
+void XConfigManager::relayoutGroup(int index, bool flag)
 {
 	m_pGroups[index]->m_scale = m_scale;
-	m_pGroups[index]->m_position = m_curInsertPos; 
+	m_pGroups[index]->m_position = m_curInsertPos;
 	m_pGroups[index]->m_maxHeight = m_maxHeight;
 	m_pGroups[index]->m_group.setPosition(m_pGroups[index]->m_position);
 	m_pGroups[index]->m_group.setScale(m_scale);
-	if(flag) m_pGroups[index]->relayout();
+	if (flag) m_pGroups[index]->relayout();
 }
 void XConfigManager::relayout()	//ÖØÐÂ×Ô¶¯²¼¾Ö
 {
-	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x,m_position.y);
+	m_saveBtn->setPosition(m_position.x + 32.0f * m_scale.x, m_position.y);
 	m_saveBtn->setScale(m_scale);
-	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x,m_position.y);
+	m_loadBtn->setPosition(m_position.x + 64.0f * m_scale.x, m_position.y);
 	m_loadBtn->setScale(m_scale);
-	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x,m_position.y);
+	m_defaultBtn->setPosition(m_position.x + 96.0f * m_scale.x, m_position.y);
 	m_defaultBtn->setScale(m_scale);
-	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_undoBtn->setPosition(m_position.x + 128.0f * m_scale.x, m_position.y);
 	m_undoBtn->setScale(m_scale);
-	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_redoBtn->setPosition(m_position.x + 160.0f * m_scale.x, m_position.y);
 	m_redoBtn->setScale(m_scale);
-	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x,m_position.y);
+	m_netUpdateBtn->setPosition(m_position.x + 128.0f * m_scale.x, m_position.y);
 	m_netUpdateBtn->setScale(m_scale);
-	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x,m_position.y);
+	m_netInjectBtn->setPosition(m_position.x + 160.0f * m_scale.x, m_position.y);
 	m_netInjectBtn->setScale(m_scale);
 	//¸üÐÂ×é¼þµÄÎ»ÖÃ
-	m_curInsertPos = m_position + XVector2(0.0f,(32.0f + CFG_MANAGER_H_SPACE) * m_scale.x);
+	m_curInsertPos = m_position + XVec2(0.0f, (32.0f + CFG_MANAGER_H_SPACE) * m_scale.x);
 	m_isNewRow = true;
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
-		if(m_pGroups[i]->m_group.getState() == XGroup::STATE_NORMAL)
+		if (m_pGroups[i]->m_group.getState() == XGroup::STATE_NORMAL)
 		{//¼ì²éµ±Ç°ÁÐÊÇ·ñ¿ÉÒÔÈÝÏÂ£¬Èç¹ûÈÝ²»ÏÂÔò´¦Àí
-			if(m_maxHeight + m_position.y - m_curInsertPos.y < m_pGroups[i]->calculateMaxSize().y)
+			if (m_maxHeight + m_position.y - m_curInsertPos.y < m_pGroups[i]->calculateMaxSize().y)
 			{//Èç¹ûÈÝ²»ÏÂ
-				if(m_isNewRow)
+				if (m_isNewRow)
 				{//Èç¹ûÒÑ¾­ÊÇÐÂµÄÒ»ÁÐÁËÔò²»´¦Àí
 					relayoutGroup(i);
-					moveDown(m_pGroups[i]->m_maxSize.x,m_pGroups[i]->m_maxSize.y);
-				}else
+					moveDown(m_pGroups[i]->m_maxSize.x, m_pGroups[i]->m_maxSize.y);
+				}
+				else
 				{//·ñÔòµÄ»°Ê¹ÓÃÐÂµÄÒ»ÁÐ
 					useANewRow();
 					relayoutGroup(i);
-					moveDown(m_pGroups[i]->m_maxSize.x,m_pGroups[i]->m_maxSize.y);
+					moveDown(m_pGroups[i]->m_maxSize.x, m_pGroups[i]->m_maxSize.y);
 				}
-			}else
+			}
+			else
 			{
 				relayoutGroup(i);
-				moveDown(m_pGroups[i]->m_maxSize.x,m_pGroups[i]->m_maxSize.y);
+				moveDown(m_pGroups[i]->m_maxSize.x, m_pGroups[i]->m_maxSize.y);
 			}
-		}else
+		}
+		else
 		{
-			relayoutGroup(i,false);
-			XVector2 tempSize = m_pGroups[i]->m_group.getBox(0) - m_pGroups[i]->m_group.getBox(2);
-			if(tempSize.x < 0.0f) tempSize.x = -tempSize.x;
-			if(tempSize.y < 0.0f) tempSize.y = -tempSize.y;
-			moveDown(tempSize.x * 1.0f / m_scale.x,tempSize.y * 1.0f / m_scale.x);
+			relayoutGroup(i, false);
+			XVec2 tempSize = m_pGroups[i]->m_group.getBox(0) - m_pGroups[i]->m_group.getBox(2);
+			if (tempSize.x < 0.0f) tempSize.x = -tempSize.x;
+			if (tempSize.y < 0.0f) tempSize.y = -tempSize.y;
+			moveDown(tempSize.x * 1.0f / m_scale.x, tempSize.y * 1.0f / m_scale.x);
 		}
 	}
-	return ;
+	return;
 }
 void XConfigManager::setVisible()
 {//ÉèÖÃÏÔÊ¾
+	if (!m_isInited || m_isVisble) return;
 	m_isVisble = true;
 	m_saveBtn->setVisible();
 	m_loadBtn->setVisible();
 	m_defaultBtn->setVisible();
-	if(m_configMode == CFG_MODE_CLIENT)
+	if (m_configMode == CFG_MODE_CLIENT)
 	{
 		m_netUpdateBtn->setVisible();
 		m_netInjectBtn->setVisible();
-	}else
+	}
+	else
 	{
 		m_undoBtn->setVisible();
 		m_redoBtn->setVisible();
 	}
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
 		m_pGroups[i]->m_group.setVisible();
+	}
+	//¸üÐÂÊý¾Ýµ½½çÃæ
+	if (m_configMode != CFG_MODE_CLIENT)
+	{
+		if (XOpManager.canUndo()) m_undoBtn->enable();
+		else m_undoBtn->disable();
+		if (XOpManager.canRedo()) m_redoBtn->enable();
+		else m_redoBtn->disable();
+	}
+	for (auto it = m_pItems.begin(); it != m_pItems.end(); ++it)
+	{
+		//	if(!(*it)->m_isActive)
+		{//ÕâÀï¸üÐÂ±»¶¯¿Ø¼þµÄ×´Ì¬
+			updateItemToCFG(*it);
+		}
 	}
 }
 void XConfigManager::disVisible()
 {//ÉèÖÃ²»ÏÔÊ¾
+	if (!m_isInited || !m_isVisble) return;
 	m_isVisble = false;
 	m_saveBtn->disVisible();
 	m_loadBtn->disVisible();
 	m_defaultBtn->disVisible();
-	if(m_configMode != CFG_MODE_CLIENT)
+	if (m_configMode != CFG_MODE_CLIENT)
 	{
 		m_undoBtn->disVisible();
 		m_redoBtn->disVisible();
 	}
-	if(m_configMode == CFG_MODE_CLIENT)
+	if (m_configMode == CFG_MODE_CLIENT)
 	{
 		m_netUpdateBtn->disVisible();
 		m_netInjectBtn->disVisible();
 	}
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
 		m_pGroups[i]->m_group.disVisible();
 	}
 }
 void XConfigManager::sendSynchToServer()
 {
-	if(m_configMode == CFG_MODE_CLIENT)
+	if (m_configMode == CFG_MODE_CLIENT)
 	{
 		XNetData *tempSendData = XMem::createMem<XNetData>();
 		tempSendData->dataLen = 2;
@@ -634,171 +671,168 @@ void XConfigManager::sendSynchToServer()
 	}
 }
 //´Ó×Ö·û´®ÖÐ¶ÁÈ¡ItemÏà¹ØµÄÊý¾Ý£¬·µ»ØÊÇ·ñÐèÒª½¨Á¢
-bool XConfigManager::createAItemFromStr(const unsigned char * data,int &offset,unsigned char *groupName,
-										 std::vector<XConfigItem *> *itemsList,std::vector<int> *itemsIDListD)
+bool XConfigManager::createAItemFromStr(const unsigned char * data, int &offset, unsigned char *groupName,
+	std::vector<XConfigItem *> *itemsList, std::vector<int> *itemsIDListD)
 {
-	if(data == NULL) return false;
-	int itemID,tempItemID = 0,len;
+	if (data == NULL) return false;
+	int itemID, tempItemID = 0, len;
 	XConfigDataType itemType;
-	offset = 0; 
+	offset = 0;
 	unsigned char tempNameI[4096];	//Ä¬ÈÏ×î´ó³¤¶ÈÎª4096£¬ÕâÀï»á´æÔÚÎÊÌâ
 
-	memcpy(&itemID,data + offset,sizeof(int));
+	memcpy(&itemID, data + offset, sizeof(int));
 	offset += sizeof(int);
-	memcpy(&itemType,data + offset,sizeof(itemType));
+	memcpy(&itemType, data + offset, sizeof(itemType));
 	offset += sizeof(itemType);
-	XConfigValue rangeMin,rangeMax,defValue,curValue;
-	switch(itemType)
+	XConfigValue rangeMin, rangeMax, defValue, curValue;
+	switch (itemType)
 	{
-	case CFG_DATA_TYPE_INT:
-	case CFG_DATA_TYPE_CHAR:
-	case CFG_DATA_TYPE_UCHAR:
-	case CFG_DATA_TYPE_RADIOS:
-	case CFG_DATA_TYPE_FLOAT:
-	case CFG_DATA_TYPE_XBOOL:
-		memcpy(&rangeMin,data + offset,sizeof(rangeMin));
+	case CFG_DATA_INT:
+	case CFG_DATA_CHAR:
+	case CFG_DATA_UCHAR:
+	case CFG_DATA_RADIOS:
+	case CFG_DATA_FLOAT:
+	case CFG_DATA_XBOOL:
+		memcpy(&rangeMin, data + offset, sizeof(rangeMin));
 		offset += sizeof(rangeMin);
-		memcpy(&rangeMax,data + offset,sizeof(rangeMax));
+		memcpy(&rangeMax, data + offset, sizeof(rangeMax));
 		offset += sizeof(rangeMax);
-		memcpy(&defValue,data + offset,sizeof(defValue));
+		memcpy(&defValue, data + offset, sizeof(defValue));
 		offset += sizeof(defValue);
-		memcpy(&curValue.valueI,data + offset,sizeof(curValue));
+		memcpy(&curValue.valueI, data + offset, sizeof(curValue));
 		offset += sizeof(curValue);
 		break;
-	case CFG_DATA_TYPE_CUSTOM:	//¹¤×÷½øÐÐÖÐ
+	case CFG_DATA_CUSTOM:	//¹¤×÷½øÐÐÖÐ
 		{
 			int tempItemsSum;
-			memcpy(&tempItemsSum,data + offset,sizeof(tempItemsSum));
+			memcpy(&tempItemsSum, data + offset, sizeof(tempItemsSum));
 			offset += sizeof(tempItemsSum);
-			for(int i = 0;i < tempItemsSum;++ i)
+			for (int i = 0; i < tempItemsSum; ++i)
 			{//ÕâÀï½øÐÐÇ¶Ì×
-				createAItemFromStr(data + offset,len,groupName,itemsList,itemsIDListD);
+				createAItemFromStr(data + offset, len, groupName, itemsList, itemsIDListD);
 				offset += len;
 			}
 		}
 		return false;
-		break;
-	case CFG_DATA_TYPE_XSPRITE:	//ÍøÂç²»Ö§³Ö
-	case CFG_DATA_TYPE_NULL:
+	case CFG_DATA_XSPRITE:	//ÍøÂç²»Ö§³Ö
+	case CFG_DATA_NULL:
 		return false;	//Ìø¹ýÏÂÃæµÄ²Ù×÷
-		break;
 	default:
 		return false;
-		break;
 	}
-	memcpy(&len,data + offset,sizeof(int));
+	memcpy(&len, data + offset, sizeof(int));
 	offset += sizeof(int);
-	memcpy(tempNameI,data + offset,len);
+	memcpy(tempNameI, data + offset, len);
 	tempNameI[len] = '\0';
 	offset += len;
-	switch(itemType)
+	switch (itemType)
 	{
-	case CFG_DATA_TYPE_INT:
+	case CFG_DATA_INT:
 		{
 			int *temp = XMem::createMem<int>();
 			*temp = curValue.valueI;
-			tempItemID = addAItem<int>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
+			tempItemID = addAItem<int>(temp, itemType, (char *)tempNameI, rangeMax.valueI, rangeMin.valueI, defValue.valueI, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_CHAR:
+	case CFG_DATA_CHAR:
 		{
 			char *temp = XMem::createMem<char>();
 			*temp = curValue.valueI;
-			tempItemID = addAItem<char>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
+			tempItemID = addAItem<char>(temp, itemType, (char *)tempNameI, rangeMax.valueI, rangeMin.valueI, defValue.valueI, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_UCHAR:
+	case CFG_DATA_UCHAR:
 		{
 			unsigned char *temp = XMem::createMem<unsigned char>();
 			*temp = curValue.valueI;
-			tempItemID = addAItem<unsigned char>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
+			tempItemID = addAItem<unsigned char>(temp, itemType, (char *)tempNameI, rangeMax.valueI, rangeMin.valueI, defValue.valueI, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_RADIOS:
+	case CFG_DATA_RADIOS:
 		{
 			int *temp = XMem::createMem<int>();
 			*temp = curValue.valueI;
-			tempItemID = addAItem<int>(temp,itemType,(char *)tempNameI,rangeMax.valueI,rangeMin.valueI,defValue.valueI,NULL,(char *)groupName);
+			tempItemID = addAItem<int>(temp, itemType, (char *)tempNameI, rangeMax.valueI, rangeMin.valueI, defValue.valueI, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_FLOAT:
+	case CFG_DATA_FLOAT:
 		{
 			float *temp = XMem::createMem<float>();
 			*temp = curValue.valueF;
-			tempItemID = addAItem<float>(temp,itemType,(char *)tempNameI,rangeMax.valueF,rangeMin.valueF,defValue.valueF,NULL,(char *)groupName);
+			tempItemID = addAItem<float>(temp, itemType, (char *)tempNameI, rangeMax.valueF, rangeMin.valueF, defValue.valueF, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_XBOOL:
+	case CFG_DATA_XBOOL:
 		{
 			XBool *temp = XMem::createMem<XBool>();
 			*temp = curValue.valueB;
-			tempItemID = addAItem<XBool>(temp,itemType,(char *)tempNameI,rangeMax.valueB,rangeMin.valueB,defValue.valueB,NULL,(char *)groupName);
+			tempItemID = addAItem<XBool>(temp, itemType, (char *)tempNameI, rangeMax.valueB, rangeMin.valueB, defValue.valueB, NULL, (char *)groupName);
 		}
 		break;
-	case CFG_DATA_TYPE_CUSTOM:	//¹¤×÷½øÐÐÖÐ
-	case CFG_DATA_TYPE_XSPRITE:	//ÍøÂç²»Ö§³Ö
-	case CFG_DATA_TYPE_NULL:	//ÍøÂç²»Ö§³Ö
+	case CFG_DATA_CUSTOM:	//¹¤×÷½øÐÐÖÐ
+	case CFG_DATA_XSPRITE:	//ÍøÂç²»Ö§³Ö
+	case CFG_DATA_NULL:	//ÍøÂç²»Ö§³Ö
 		break;
 	default:
 		break;
 	}
 	XConfigItem * it = getItemByID(tempItemID);
-	if(it != NULL)
+	if (it != NULL)
 	{
-		if(itemsList != NULL) itemsList->push_back(it);
-		if(itemsIDListD != NULL) itemsIDListD->push_back(itemID);
+		if (itemsList != NULL) itemsList->push_back(it);
+		if (itemsIDListD != NULL) itemsIDListD->push_back(itemID);
 	}
 	return true;
 }
 void XConfigManager::updateInfo(unsigned char *data)
 {
-	if(data == NULL) return;
+	if (data == NULL) return;
 	int groupSum = 0;
 	int itemsSum = 0;
 	int offset = 0;
 	int len = 0;
-	memcpy(&groupSum,data + offset,sizeof(int));
+	memcpy(&groupSum, data + offset, sizeof(int));
 	offset += sizeof(int);
 	unsigned char tempName[4096];	//Ä¬ÈÏ×î´ó³¤¶ÈÎª4096£¬ÕâÀï»á´æÔÚÎÊÌâ
 	std::vector<XConfigItem *> itemsList;
 	std::vector<int> itemsIDListD;
-	for(int i = 0;i < groupSum;++ i)
+	for (int i = 0; i < groupSum; ++i)
 	{
-		memcpy(&len,data + offset,sizeof(int));
+		memcpy(&len, data + offset, sizeof(int));
 		offset += sizeof(int);
-		memcpy(tempName,data + offset,len);
+		memcpy(tempName, data + offset, len);
 		tempName[len] = '\0';
 		offset += len;
-		if(i == 0) renameGroup(CFG_DEFAULT_GROUPNAME,(char *)tempName);
+		if (i == 0) renameGroup(CFG_DEFAULT_GROUPNAME, (char *)tempName);
 		else addGroup((char *)tempName);
-		memcpy(&itemsSum,data + offset,sizeof(int));
+		memcpy(&itemsSum, data + offset, sizeof(int));
 		offset += sizeof(int);
-		for(int j = 0;j < itemsSum;++ j)
+		for (int j = 0; j < itemsSum; ++j)
 		{
-			createAItemFromStr(data + offset,len,tempName,&itemsList,&itemsIDListD);
+			createAItemFromStr(data + offset, len, tempName, &itemsList, &itemsIDListD);
 			offset += len;
 		}
 	}
 	//Í³Ò»¸Ä±ä¿Ø¼þµÄID
-	for(unsigned int i = 0;i < itemsList.size();++ i)
+	for (unsigned int i = 0; i < itemsList.size(); ++i)
 	{
 		itemsList[i]->setID(itemsIDListD[i]);
 	}
 }
 void XConfigManager::sendItemValue(const XConfigItem * it)
 {
-	switch(m_configMode)
+	switch (m_configMode)
 	{
 	case CFG_MODE_SERVER:
-		if(it->m_type != CFG_DATA_TYPE_CUSTOM && it->m_type != CFG_DATA_TYPE_XSPRITE)
+		if (it->m_type != CFG_DATA_CUSTOM && it->m_type != CFG_DATA_XSPRITE)
 		{
 			XNetData *tempSendData = XMem::createMem<XNetData>();
 			unsigned char *temp = NULL;
 			int size = 0;
 			int offset = 0;
 			int tempID = it->getID();
-			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
-			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));
+			temp = XMem::spliceData(temp, size, offset, (unsigned char *)&tempID, sizeof(int));
+			temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_curValue, sizeof(it->m_curValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
 			tempSendData->isEnable = XTrue;
@@ -808,15 +842,15 @@ void XConfigManager::sendItemValue(const XConfigItem * it)
 		}
 		break;
 	case CFG_MODE_CLIENT:
-		if(it->m_type != CFG_DATA_TYPE_CUSTOM && it->m_type != CFG_DATA_TYPE_XSPRITE)
+		if (it->m_type != CFG_DATA_CUSTOM && it->m_type != CFG_DATA_XSPRITE)
 		{
 			XNetData *tempSendData = XMem::createMem<XNetData>();
 			unsigned char *temp = NULL;
 			int size = 0;
 			int offset = 0;
 			int tempID = it->getID();
-			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&tempID,sizeof(int));
-			temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));
+			temp = XMem::spliceData(temp, size, offset, (unsigned char *)&tempID, sizeof(int));
+			temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_curValue, sizeof(it->m_curValue));
 			tempSendData->data = temp;
 			tempSendData->dataLen = offset;
 			tempSendData->isEnable = XTrue;
@@ -829,82 +863,82 @@ void XConfigManager::sendItemValue(const XConfigItem * it)
 }
 void XConfigManager::updateItemFromCFG(XConfigItem * it)
 {
-	if(it == NULL) return;
-	switch(it->m_type)
+	if (it == NULL) return;
+	switch (it->m_type)
 	{
-	case CFG_DATA_TYPE_INT:
-		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_INT:
+		if (*(int *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (int *)it->m_pVariable = it->m_curValue.valueI;
+			*(int *)it->m_pVariable = it->m_curValue.valueI;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_CHAR:
-		if(* (char *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_CHAR:
+		if (*(char *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (char *)it->m_pVariable = it->m_curValue.valueI;
+			*(char *)it->m_pVariable = it->m_curValue.valueI;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_UCHAR:
-		if(* (unsigned char *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_UCHAR:
+		if (*(unsigned char *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (unsigned char *)it->m_pVariable = it->m_curValue.valueI;
+			*(unsigned char *)it->m_pVariable = it->m_curValue.valueI;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_FLOAT:
-		if(* (float *)it->m_pVariable != it->m_curValue.valueF)
+	case CFG_DATA_FLOAT:
+		if (*(float *)it->m_pVariable != it->m_curValue.valueF)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (float *)it->m_pVariable = it->m_curValue.valueF;
+			*(float *)it->m_pVariable = it->m_curValue.valueF;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
 		}
 		break;
-	case CFG_DATA_TYPE_XBOOL:
-		if(((* (XBool *)it->m_pVariable) && !it->m_curValue.valueB)
-			|| (!(* (XBool *)it->m_pVariable) && it->m_curValue.valueB))
+	case CFG_DATA_XBOOL:
+		if (((*(XBool *)it->m_pVariable) && !it->m_curValue.valueB)
+			|| (!(*(XBool *)it->m_pVariable) && it->m_curValue.valueB))
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (XBool *)it->m_pVariable = it->m_curValue.valueB;
+			*(XBool *)it->m_pVariable = it->m_curValue.valueB;
 			((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
 		}
 		break;
-	case CFG_DATA_TYPE_RADIOS:
-		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_RADIOS:
+		if (*(int *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			* (int *)it->m_pVariable = it->m_curValue.valueI;
+			*(int *)it->m_pVariable = it->m_curValue.valueI;
 			((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_CUSTOM:	//Õ¼Î»
+	case CFG_DATA_CUSTOM:	//Õ¼Î»
 		it->m_customIt->update();
 		break;
 	}
-	if(it->m_changeProc != NULL)
+	if (it->m_changeProc != NULL)
 	{
-		if(it->m_type == CFG_DATA_TYPE_CUSTOM)
-			it->m_changeProc(it->m_customIt,it->m_pClass);	
+		if (it->m_type == CFG_DATA_CUSTOM)
+			it->m_changeProc(it->m_customIt, it->m_pClass);
 		else
-			it->m_changeProc(it->m_pVariable,it->m_pClass);	
+			it->m_changeProc(it->m_pVariable, it->m_pClass);
 	}
 }
 void XConfigManager::setTextColor(const XFColor& color)
 {
 	m_textColor = color;
 	//±éÀúËùÓÐµÄÔªËØ£¬²¢ÉèÖÃÆäÑÕÉ«
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		switch(m_pItems[i]->m_type)
+		switch (m_pItems[i]->m_type)
 		{
-		case CFG_DATA_TYPE_INT:
-		case CFG_DATA_TYPE_CHAR:
-		case CFG_DATA_TYPE_UCHAR:
-		case CFG_DATA_TYPE_FLOAT:
+		case CFG_DATA_INT:
+		case CFG_DATA_CHAR:
+		case CFG_DATA_UCHAR:
+		case CFG_DATA_FLOAT:
 			((XSliderEx *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
-		case CFG_DATA_TYPE_XBOOL:
+		case CFG_DATA_XBOOL:
 			((XCheck *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
-		case CFG_DATA_TYPE_RADIOS:
+		case CFG_DATA_RADIOS:
 			((XRadios *)m_pItems[i]->m_pCtrl)->setTextColor(m_textColor);
 			break;
 		}
@@ -912,53 +946,53 @@ void XConfigManager::setTextColor(const XFColor& color)
 }
 void XConfigManager::updateItemToCFG(XConfigItem * it)
 {
-	if(it == NULL) return;
-	switch(it->m_type)
+	if (it == NULL) return;
+	switch (it->m_type)
 	{
-	case CFG_DATA_TYPE_INT:
-		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_INT:
+		if (*(int *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueI = * (int *)it->m_pVariable;
+			it->m_curValue.valueI = *(int *)it->m_pVariable;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_CHAR:
-		if(* (char *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_CHAR:
+		if (*(char *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueI = * (char *)it->m_pVariable;
+			it->m_curValue.valueI = *(char *)it->m_pVariable;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_UCHAR:
-		if(* (unsigned char *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_UCHAR:
+		if (*(unsigned char *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueI = * (unsigned char *)it->m_pVariable;
+			it->m_curValue.valueI = *(unsigned char *)it->m_pVariable;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_FLOAT:
-		if(* (float *)it->m_pVariable != it->m_curValue.valueF)
+	case CFG_DATA_FLOAT:
+		if (*(float *)it->m_pVariable != it->m_curValue.valueF)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueF = * (float *)it->m_pVariable;
+			it->m_curValue.valueF = *(float *)it->m_pVariable;
 			((XSliderEx *)it->m_pCtrl)->setCurValue(it->m_curValue.valueF);
 		}
 		break;
-	case CFG_DATA_TYPE_XBOOL:
-		if(((* (XBool *)it->m_pVariable) && !it->m_curValue.valueB)
-			|| (!(* (XBool *)it->m_pVariable) && it->m_curValue.valueB))
+	case CFG_DATA_XBOOL:
+		if (((*(XBool *)it->m_pVariable) && !it->m_curValue.valueB)
+			|| (!(*(XBool *)it->m_pVariable) && it->m_curValue.valueB))
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueB = * (XBool *)it->m_pVariable;
+			it->m_curValue.valueB = *(XBool *)it->m_pVariable;
 			((XCheck *)it->m_pCtrl)->setState(it->m_curValue.valueB);
 		}
 		break;
-	case CFG_DATA_TYPE_RADIOS:
-		if(* (int *)it->m_pVariable != it->m_curValue.valueI)
+	case CFG_DATA_RADIOS:
+		if (*(int *)it->m_pVariable != it->m_curValue.valueI)
 		{//ÏÂÃæ¸üÐÂÊý¾Ý
-			it->m_curValue.valueI = * (int *)it->m_pVariable;
+			it->m_curValue.valueI = *(int *)it->m_pVariable;
 			((XRadios *)it->m_pCtrl)->setChoosed(it->m_curValue.valueI);
 		}
 		break;
-	case CFG_DATA_TYPE_CUSTOM:	//Õ¼Î»
+	case CFG_DATA_CUSTOM:	//Õ¼Î»
 		it->m_customIt->update();
 		break;
 	}
@@ -978,14 +1012,14 @@ void XConfigManager::sendCFGInfo()
 }
 void XConfigManager::sendInject()	//Ïò·þÎñÆ÷·¢ËÍ×¢ÈëÐÅÏ¢
 {
-	if(m_configMode != CFG_MODE_CLIENT) return;
+	if (m_configMode != CFG_MODE_CLIENT) return;
 	//¶ÁÈ¡ÅäÖÃÎÄ¼þ£¬½«ÅäÖÃÎÄ¼þ·¢ËÍµ½·þÎñ¶Ë£¬·þÎñ¶Ë¶ÁÈ¡ÅäÖÃÎÄ¼þ²¢ÔØÈë£¬È»ºóÍ¬²½µ½¿Í»§¶Ë
 	FILE *fp = NULL;
-	if((fp = fopen(CFG_DEFAULT_FILENAME,"r")) == NULL) return;
+	if ((fp = fopen(CFG_DEFAULT_FILENAME, "r")) == NULL) return;
 	XNetData *tempSendData = XMem::createMem<XNetData>();
 	tempSendData->dataLen = XFile::getFileLen(fp);
 	tempSendData->data = XMem::createArrayMem<unsigned char>(tempSendData->dataLen);
-	fread(tempSendData->data,1,tempSendData->dataLen,fp);
+	fread(tempSendData->data, 1, tempSendData->dataLen, fp);
 	fclose(fp);
 	tempSendData->isEnable = XTrue;
 	tempSendData->type = DATA_TYPE_CONFIG_INJECT;
@@ -994,198 +1028,209 @@ void XConfigManager::sendInject()	//Ïò·þÎñÆ÷·¢ËÍ×¢ÈëÐÅÏ¢
 }
 void XConfigManager::updateNet()
 {
-	if(m_configMode == CFG_MODE_SERVER)
-	{//·þÎñÆ÷
+	switch (m_configMode)
+	{
+	case CFG_MODE_NORMAL:
+		break;
+	case CFG_MODE_SERVER://·þÎñÆ÷
+	{
 		XNetData *tempData = m_netServer->getData();
-		if(tempData != NULL)
+		if (tempData != NULL)
 		{//ÏÂÃæ´¦ÀíÊý¾Ý
-			switch(tempData->type)
+			switch (tempData->type)
 			{
 			case DATA_TYPE_CONFIG_INFO:		//¿Í»§¶ËÇëÇó·¢ËÍÅäÖÃµÄ½á¹¹ÐÅÏ¢
 				sendCFGInfo();
 				break;
 			case DATA_TYPE_CONFIG_ITEM:		//¿Í»§¶Ë·¢ËÍÄ³¸öÅäÖÃÏîµÄÖµ
-				{//È¡³öÏàÓ¦µÄÖµ
-					int itemID;
-					XConfigValue curValue;
-					memcpy(&itemID,tempData->data,sizeof(itemID));
-					memcpy(&curValue,tempData->data + sizeof(int),sizeof(curValue));
-					if(itemID > m_cfgMaxItemsSum)
-					{//ÓÃ»§×Ô¶¨ÒåµÄÅäÖÃÀàµÄID
-						itemID = itemID / m_cfgMaxItemsSum;
-						XConfigItem *it = getItemByID(itemID);
-						if(it != NULL && it->m_customIt != NULL)
-						{
-							it->m_customIt->setValueFromStr(tempData->data);	//ÉúÐ§ÏàÓ¦µÄÖµ
-						}
-					}else
+			{//È¡³öÏàÓ¦µÄÖµ
+				int itemID;
+				XConfigValue curValue;
+				memcpy(&itemID, tempData->data, sizeof(itemID));
+				memcpy(&curValue, tempData->data + sizeof(int), sizeof(curValue));
+				if (itemID > m_cfgMaxItemsSum)
+				{//ÓÃ»§×Ô¶¨ÒåµÄÅäÖÃÀàµÄID
+					itemID = itemID / m_cfgMaxItemsSum;
+					XConfigItem *it = getItemByID(itemID);
+					if (it != NULL && it->m_customIt != NULL)
 					{
-						setItemValue(itemID,curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
+						it->m_customIt->setValueFromStr(tempData->data);	//ÉúÐ§ÏàÓ¦µÄÖµ
 					}
-					//printf("ÊÕµ½¿Í»§¶ËÅäÖÃÏîÊý¾Ý±ä¸ü!\n");
 				}
-				break;
+				else
+				{
+					setItemValue(itemID, curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
+				}
+				//printf("ÊÕµ½¿Í»§¶ËÅäÖÃÏîÊý¾Ý±ä¸ü!\n");
+			}
+			break;
 			case DATA_TYPE_CONFIG_ITEMS:	//¿Í»§¶Ë·¢ËÍËùÓÐÅäÖÃÏîµÄÖµ£¬²»»á·¢ËÍ
 				break;
 			case DATA_TYPE_CONFIG_INJECT:	//´Ó¿Í»§¶ËÊÕµ½Êý¾Ý×¢Èë²Ù×÷ÇëÇó
-				{
-					FILE *fp = NULL;
-					if((fp = fopen(CFG_INJECT_FILENAME,"w")) == NULL) return;
-					fwrite(tempData->data,1,tempData->dataLen,fp);
-					fclose(fp);
-					load(CFG_INJECT_FILENAME);
-					sendCFGInfo();
-				}
-				break;
+			{
+				FILE *fp = NULL;
+				if ((fp = fopen(CFG_INJECT_FILENAME, "w")) == NULL) return;
+				fwrite(tempData->data, 1, tempData->dataLen, fp);
+				fclose(fp);
+				load(CFG_INJECT_FILENAME);
+				sendCFGInfo();
+			}
+			break;
 			case DATA_TYPE_CONFIG_OPERATE:	//¹¦ÄÜ²Ù×÷(Íê³É)
+				switch (*(XConfigNetOperate*)tempData->data)
 				{
-					XConfigNetOperate op;
-					memcpy(&op,tempData->data,sizeof(op));
-					switch(op)
-					{
-					case CFG_NET_OP_SAVE:
-						save();
-						break;
-					case CFG_NET_OP_LOAD:
-						load();
-						sendCFGInfo();
-						break;
-					case CFG_NET_OP_DEFAULT:
-						setDefault();
-						sendCFGInfo();
-						break;
-					}
+				case CFG_NET_OP_SAVE:
+					save();
+					break;
+				case CFG_NET_OP_LOAD:
+					load();
+					sendCFGInfo();
+					break;
+				case CFG_NET_OP_DEFAULT:
+					setDefault();
+					sendCFGInfo();
+					break;
 				}
 				break;
 			}
 			XMem::XDELETE(tempData);	//´¦ÀíÍê³ÉÖ®ºóÔÙÉ¾³ýÊý¾Ý
 		}
-		for(unsigned int i = 0;i < m_pItems.size();++ i)
+		for (unsigned int i = 0; i < m_pItems.size(); ++i)
 		{
-			if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM && m_pItems[i]->m_customIt->needSendStr())
+			if (m_pItems[i]->m_type == CFG_DATA_CUSTOM && m_pItems[i]->m_customIt->needSendStr())
 			{//Èç¹û×Ô¶¨ÒåÅäÖÃÀàÐèÒª·¢ËÍÊý¾Ý£¬ÕâÀï·¢ËÍÊý¾Ý
 				XNetData *tempSendData = XMem::createMem<XNetData>();
-				tempSendData->data = m_pItems[i]->m_customIt->sendStr(tempSendData->dataLen,m_pItems[i]->getID());
+				tempSendData->data = m_pItems[i]->m_customIt->sendStr(tempSendData->dataLen, m_pItems[i]->getID());
 				tempSendData->isEnable = XTrue;
 				tempSendData->type = DATA_TYPE_CONFIG_ITEMS;
 				m_netServer->sendData(tempSendData);
 				//printf("Ïò¿Í»§¶Ë·¢ËÍÊý¾Ý±ä¸ü!\n");
 			}
 		}
-	}else
-	if(m_configMode == CFG_MODE_CLIENT)
-	{//¿Í»§¶Ë
+	}
+	break;
+	case CFG_MODE_CLIENT://¿Í»§¶Ë
+	{
 		XNetData *tempData = m_netClient->getData();
-		if(tempData != NULL)
-		{//ÏÂÃæ´¦ÀíÊý¾Ý
-			switch(tempData->type)
-			{
-			case DATA_TYPE_CONFIG_INFO:		//·þÎñÆ÷·¢ËÍµÄÅäÖÃ½á¹¹
-				clear();					//Çå³ýµ±Ç°ËùÓÐµÄÈº×é
-				updateInfo(tempData->data);				//¸ù¾ÝÍ¬²½µÄÐÅÏ¢½¨Á¢ÐÂµÄÈº×é¹ØÏµ
-				//printf("¿Í»§¶ËÊÕµ½Í¬²½ÐÅÏ¢!\n");
-				break;
-			case DATA_TYPE_CONFIG_ITEM:		//·þÎñÆ÷·¢ËÍµÄÄ³¸öÅäÖÃÏîµÄÖµ
-				{//È¡³öÏàÓ¦µÄÖµ
-					int itemID;
-					XConfigValue curValue;
-					memcpy(&itemID,tempData->data,sizeof(itemID));
-					memcpy(&curValue,tempData->data + sizeof(int),sizeof(curValue));
-					setItemValue(itemID,curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
-					//printf("ÊÕµ½·þÎñÆ÷¶ËÅäÖÃÏîÊý¾Ý±ä¸ü!\n");
-				}
-				break;
-			case DATA_TYPE_CONFIG_ITEMS:	//·þÎñÆ÷·¢ËÍµÄ¶à¸öÅäÖÃÏîµÄÖµ
-				//·þÎñÆ÷µÄ×Ô¶¨Òå×é¼þ²Å»á·¢ËÍÕâ¸öÖµ(ÉÐÎ´Íê³É)
-				{
-					int sum = 0;
-					int offset = 0;
-					memcpy(&sum,tempData->data + offset,sizeof(sum));
-					offset += sizeof(sum);
-					int itemID;
-					XConfigValue curValue;
-					for(int i = 0;i < sum;++ i)
-					{
-						memcpy(&itemID,tempData->data + offset,sizeof(itemID));
-						offset += sizeof(itemID);
-						memcpy(&curValue,tempData->data + offset,sizeof(curValue));
-						offset += sizeof(curValue);
-						setItemValue(itemID,curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
-					}
-					//printf("½ÓÊÕµ½·þÎñÆ÷µÄÊý¾Ý±ä¸ü!\n");
-				}
-				break;
-			case DATA_TYPE_CONFIG_OPERATE:	//·þÎñÆ÷²»»á·¢ËÍÕâ¸öÊý¾Ý
-				break;
-			}
-			XMem::XDELETE(tempData);	//´¦ÀíÍê³ÉÖ®ºóÔÙÉ¾³ýÊý¾Ý
+		if (tempData == NULL) break;
+		switch (tempData->type)
+		{
+		case DATA_TYPE_CONFIG_INFO:		//·þÎñÆ÷·¢ËÍµÄÅäÖÃ½á¹¹
+			clear();					//Çå³ýµ±Ç°ËùÓÐµÄÈº×é
+			updateInfo(tempData->data);				//¸ù¾ÝÍ¬²½µÄÐÅÏ¢½¨Á¢ÐÂµÄÈº×é¹ØÏµ
+			//printf("¿Í»§¶ËÊÕµ½Í¬²½ÐÅÏ¢!\n");
+			break;
+		case DATA_TYPE_CONFIG_ITEM:		//·þÎñÆ÷·¢ËÍµÄÄ³¸öÅäÖÃÏîµÄÖµ
+		{//È¡³öÏàÓ¦µÄÖµ
+			int itemID;
+			XConfigValue curValue;
+			memcpy(&itemID, tempData->data, sizeof(itemID));
+			memcpy(&curValue, tempData->data + sizeof(int), sizeof(curValue));
+			setItemValue(itemID, curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
+			//printf("ÊÕµ½·þÎñÆ÷¶ËÅäÖÃÏîÊý¾Ý±ä¸ü!\n");
 		}
+		break;
+		case DATA_TYPE_CONFIG_ITEMS:	//·þÎñÆ÷·¢ËÍµÄ¶à¸öÅäÖÃÏîµÄÖµ
+			//·þÎñÆ÷µÄ×Ô¶¨Òå×é¼þ²Å»á·¢ËÍÕâ¸öÖµ(ÉÐÎ´Íê³É)
+		{
+			int sum = 0;
+			int offset = 0;
+			memcpy(&sum, tempData->data + offset, sizeof(sum));
+			offset += sizeof(sum);
+			int itemID;
+			XConfigValue curValue;
+			for (int i = 0; i < sum; ++i)
+			{
+				memcpy(&itemID, tempData->data + offset, sizeof(itemID));
+				offset += sizeof(itemID);
+				memcpy(&curValue, tempData->data + offset, sizeof(curValue));
+				offset += sizeof(curValue);
+				setItemValue(itemID, curValue);	//ÉúÐ§ÏàÓ¦µÄÖµ
+			}
+			//printf("½ÓÊÕµ½·þÎñÆ÷µÄÊý¾Ý±ä¸ü!\n");
+		}
+		break;
+		case DATA_TYPE_CONFIG_OPERATE:	//·þÎñÆ÷²»»á·¢ËÍÕâ¸öÊý¾Ý
+			break;
+		}
+		XMem::XDELETE(tempData);	//´¦ÀíÍê³ÉÖ®ºóÔÙÉ¾³ýÊý¾Ý
+	}
+	break;
 	}
 }
-void XConfigManager::update()	//¸üÐÂ×´Ì¬
+void XConfigManager::update()	//¸üÐÂ×´Ì¬,Õâ¸öÂß¼­Ì¨Âé·³ÐèÒªÓÅ»¯ÎªÃ»ÓÐ±ä»¯¾Í²»ÐèÒª¸üÐÂ
 {
-	if(!m_isInited) return;
+	if (!m_isInited) return;
 	updateNet();
-	if(m_configMode != CFG_MODE_CLIENT)
-	{//³·ÏúºÍÖØ×ö²Ù×÷ÖÇÄÜÔÚ·þÎñÆ÷¶Ë»òÕßÊÇ·ÇÍøÂçµÄÇé¿öÏÂÊ¹ÓÃ£¬ÒòÎª¿Í»§¶Ë»áÖØÐÂ½¨Á¢¿Ø¼þ
-		if(XOpManager.canUndo()) m_undoBtn->enable();
-		else m_undoBtn->disable();
-		if(XOpManager.canRedo()) m_redoBtn->enable();
-		else m_redoBtn->disable();
-		XOpManager.setOperateOver();
-	}
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	if (m_isVisble)
 	{
-	//	if(!m_pItems[i]->m_isActive)
-		{//ÕâÀï¸üÐÂ±»¶¯¿Ø¼þµÄ×´Ì¬
-			updateItemToCFG(m_pItems[i]);
+		if (m_configMode != CFG_MODE_CLIENT)
+		{//³·ÏúºÍÖØ×ö²Ù×÷ÖÇÄÜÔÚ·þÎñÆ÷¶Ë»òÕßÊÇ·ÇÍøÂçµÄÇé¿öÏÂÊ¹ÓÃ£¬ÒòÎª¿Í»§¶Ë»áÖØÐÂ½¨Á¢¿Ø¼þ
+			if (XOpManager.canUndo()) m_undoBtn->enable();
+			else m_undoBtn->disable();
+			if (XOpManager.canRedo()) m_redoBtn->enable();
+			else m_redoBtn->disable();
+			XOpManager.setOperateOver();
 		}
+		for (auto it = m_pItems.begin(); it != m_pItems.end(); ++it)
+		{
+			//	if(!(*it)->m_isActive)
+			{//ÕâÀï¸üÐÂ±»¶¯¿Ø¼þµÄ×´Ì¬
+				updateItemToCFG(*it);
+			}
+		}
+	}
+	else
+	{
+		if (m_configMode != CFG_MODE_CLIENT)
+			XOpManager.setOperateOver();
 	}
 	//·½°¸1£¬Ã»tÊ±¼ä±é²éÒ»´ÎÊý¾Ý£¬Èç¹ûÊý¾Ý·¢Éú±ä»¯Ôò¼ÇÂ¼Ò»´Î£¨±»¶¯Ê½£¬½¨ÒéÊ¹ÓÃÖ÷¶¯Ê½£©
 }
-void XConfigManager::setItemActive(bool isActive,void * p)	//ÉèÖÃÄ³¸öÅäÖÃÏîÊÇ·ñÎªÖ÷¶¯ÐÎÊ½(Ä¬ÈÏÈ«²¿ÎªÖ÷¶¯ÐÎÊ½)
+void XConfigManager::setItemActive(bool isActive, void * p)	//ÉèÖÃÄ³¸öÅäÖÃÏîÊÇ·ñÎªÖ÷¶¯ÐÎÊ½(Ä¬ÈÏÈ«²¿ÎªÖ÷¶¯ÐÎÊ½)
 {
-	if(p == NULL) return;
+	if (p == NULL) return;
 	XConfigItem *it = getItemByVariable(p);
-	if(it == NULL) return;
+	if (it == NULL) return;
 	it->m_isActive = isActive;
-	if(isActive)
+	if (isActive)
 	{
-		switch(it->m_type)
+		switch (it->m_type)
 		{
-		case CFG_DATA_TYPE_INT:
-		case CFG_DATA_TYPE_CHAR:
-		case CFG_DATA_TYPE_UCHAR:
-		case CFG_DATA_TYPE_FLOAT:
+		case CFG_DATA_INT:
+		case CFG_DATA_CHAR:
+		case CFG_DATA_UCHAR:
+		case CFG_DATA_FLOAT:
 			((XSliderEx *)it->m_pCtrl)->enable();
 			break;
-		case CFG_DATA_TYPE_XBOOL:
+		case CFG_DATA_XBOOL:
 			((XCheck *)it->m_pCtrl)->enable();
 			break;
-		case CFG_DATA_TYPE_RADIOS:
+		case CFG_DATA_RADIOS:
 			((XRadios *)it->m_pCtrl)->enable();
 			break;
-		case CFG_DATA_TYPE_CUSTOM:	//Õ¼Î»
+		case CFG_DATA_CUSTOM:	//Õ¼Î»
 			it->m_customIt->enable();
 			break;
 		}
-	}else
+	}
+	else
 	{
-		switch(it->m_type)
+		switch (it->m_type)
 		{
-		case CFG_DATA_TYPE_INT:
-		case CFG_DATA_TYPE_CHAR:
-		case CFG_DATA_TYPE_UCHAR:
-		case CFG_DATA_TYPE_FLOAT:
+		case CFG_DATA_INT:
+		case CFG_DATA_CHAR:
+		case CFG_DATA_UCHAR:
+		case CFG_DATA_FLOAT:
 			((XSliderEx *)it->m_pCtrl)->disable();
 			break;
-		case CFG_DATA_TYPE_XBOOL:
+		case CFG_DATA_XBOOL:
 			((XCheck *)it->m_pCtrl)->disable();
 			break;
-		case CFG_DATA_TYPE_RADIOS:
+		case CFG_DATA_RADIOS:
 			((XRadios *)it->m_pCtrl)->disable();
 			break;
-		case CFG_DATA_TYPE_CUSTOM:	//Õ¼Î»
+		case CFG_DATA_CUSTOM:	//Õ¼Î»
 			it->m_customIt->disable();
 			break;
 		}
@@ -1193,23 +1238,24 @@ void XConfigManager::setItemActive(bool isActive,void * p)	//ÉèÖÃÄ³¸öÅäÖÃÏîÊÇ·ñÎ
 }
 bool XConfigManager::clear()
 {
-	if(m_configMode == CFG_MODE_CLIENT)
+	if (m_configMode == CFG_MODE_CLIENT)
 	{//ÕâÀïÐèÒªÉ¾³ý±äÁ¿
-		for(unsigned int i = 0;i < m_pItems.size();++ i)
+		for (unsigned int i = 0; i < m_pItems.size(); ++i)
 		{
 			m_pItems[i]->release();
 			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
-	}else
+	}
+	else
 	{
-		for(unsigned int i = 0;i < m_pItems.size();++ i)
+		for (unsigned int i = 0; i < m_pItems.size(); ++i)
 		{
 			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
 		XMem::XDELETE(m_pGroups[i]);
 	}
@@ -1219,37 +1265,37 @@ bool XConfigManager::clear()
 }
 bool XConfigManager::decreaseAItem(void *p)	//¼õÉÙÒ»¸öÅäÖÃÏî
 {
-	if(p == NULL) return false;
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	if (p == NULL) return false;
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if(m_pItems[i]->m_pVariable == p) 
+		if (m_pItems[i]->m_pVariable == p)
 		{
 			XConfigItem *it = m_pItems[i];
-		//	for(int j = i;j < (int)(m_pItems.size()) - 1;++ i)
-		//	{
-		//		m_pItems[j] = m_pItems[j + 1]; 
-		//	}
-		//	m_pItems.pop_back();
+			//	for(int j = i;j < (int)(m_pItems.size()) - 1;++ i)
+			//	{
+			//		m_pItems[j] = m_pItems[j + 1]; 
+			//	}
+			//	m_pItems.pop_back();
 			m_pItems.erase(m_pItems.begin() + i);
 			//¸üÐÂÈº×éµÄÐÅÏ¢
 			bool flag = false;
-			for(unsigned int j = 0;j < m_pGroups.size();++ j)
+			for (unsigned int j = 0; j < m_pGroups.size(); ++j)
 			{
-				for(unsigned int k = 0;k < m_pGroups[j]->m_items.size();++ k)
+				for (unsigned int k = 0; k < m_pGroups[j]->m_items.size(); ++k)
 				{
-					if(m_pGroups[j]->m_items[k] == it)
+					if (m_pGroups[j]->m_items[k] == it)
 					{
-					//	for(int l = k;l < (int)(m_pGroups[j]->m_items.size()) - 1;++ l)
-					//	{
-					//		m_pGroups[j]->m_items[l] = m_pGroups[j]->m_items[l + 1]; 
-					//	}
-					//	m_pGroups[j]->m_items.pop_back();
+						//	for(int l = k;l < (int)(m_pGroups[j]->m_items.size()) - 1;++ l)
+						//	{
+						//		m_pGroups[j]->m_items[l] = m_pGroups[j]->m_items[l + 1]; 
+						//	}
+						//	m_pGroups[j]->m_items.pop_back();
 						m_pGroups[j]->m_items.erase(m_pGroups[j]->m_items.begin() + k);
 						flag = true;
 						break;
 					}
 				}
-				if(flag) break;
+				if (flag) break;
 			}
 			XMem::XDELETE(it);
 			return true;
@@ -1257,37 +1303,38 @@ bool XConfigManager::decreaseAItem(void *p)	//¼õÉÙÒ»¸öÅäÖÃÏî
 	}
 	return false;
 }
-void XConfigGroup::moveDownPretreatment(int/*pixelW*/,int pixelH)
+void XConfigGroup::moveDownPretreatment(int/*pixelW*/, int pixelH)
 {
-	if(m_curInsertPos.y + (pixelH + CFG_MANAGER_H_SPACE) * m_scale.y > 
+	if (m_curInsertPos.y + (pixelH + CFG_MANAGER_H_SPACE) * m_scale.y >
 		m_position.y + m_maxHeight && !m_isNewRow)
 	{
 		useANewRow();
 		m_isMaxH = true;
 	}
 }
-void XConfigGroup::moveDown(int pixelW,int pixelH)	//ÏòÏÂÒÆ¶¯²åÈëµã
+void XConfigGroup::moveDown(int pixelW, int pixelH)	//ÏòÏÂÒÆ¶¯²åÈëµã
 {
 	m_curInsertPos.y += (pixelH + CFG_MANAGER_H_SPACE) * m_scale.y;
-	if(m_isNewRow)
+	if (m_isNewRow)
 	{
 		m_maxRowWidth = pixelW;
 		m_maxSize.x += pixelW + CFG_MANAGER_W_SPACE;	//Õâ¸öÊý¾ÝÓÐÎÊÌâ
-	}else
-	if(pixelW > m_maxRowWidth)
+	}
+	else
+	if (pixelW > m_maxRowWidth)
 	{
 		m_maxSize.x += pixelW - m_maxRowWidth;	//Õâ¸öÊý¾ÝÓÐÎÊÌâ
 		m_maxRowWidth = pixelW;
 	}
-	if(!m_isMaxH) m_maxSize.y += pixelH + CFG_MANAGER_H_SPACE;
+	if (!m_isMaxH) m_maxSize.y += pixelH + CFG_MANAGER_H_SPACE;
 	else
-	if((m_curInsertPos.y - m_position.y) / m_scale.y > m_maxSize.y)
+	if ((m_curInsertPos.y - m_position.y) / m_scale.y > m_maxSize.y)
 	{//Èç¹ûºóÃæÁÐµÄ¸ß¶È´óÓÚÖ®Ç°ÁÐµÄ¸ß¶È£¬ÔòÈ¥×î´óÖµ
 		m_maxSize.y = (m_curInsertPos.y - m_position.y) / m_scale.y;
 	}
 	m_isNewRow = false;
 	//ÕâÀï»áÀ©Õ¹Ò»ÐÐ£¬µ«ÊÇÈç¹ûÕâÊÇ×îºóÒ»ÐÐµÄ»°£¬Ôò²»ÐèÒªÀ©Õ¹Ò»ÁÐ
-	if(m_curInsertPos.y >= m_position.y + m_maxHeight)
+	if (m_curInsertPos.y >= m_position.y + m_maxHeight)
 	{//ÕâÀïÐèÒª»»ÐÐ
 		useANewRow();
 		m_isMaxH = true;
@@ -1295,165 +1342,178 @@ void XConfigGroup::moveDown(int pixelW,int pixelH)	//ÏòÏÂÒÆ¶¯²åÈëµã
 }
 void XConfigGroup::relayout()
 {//±éÀú×é¼þ£¬²¢ÉèÖÃ×é¼þµÄÎ»ÖÃ
-	m_curInsertPos = m_position + XVector2(10.0f,32.0f) * m_scale;
-	m_maxSize.set(10.0f + m_width + CFG_MANAGER_W_SPACE,32.0f);
+	m_curInsertPos = m_position + XVec2(5.0f, 32.0f + CFG_MANAGER_H_SPACE) * m_scale;
+	m_maxSize.set(5.0f + m_width + CFG_MANAGER_W_SPACE, 32.0f + CFG_MANAGER_H_SPACE);
 	m_maxRowWidth = m_width;
 	m_isNewRow = false;
 	m_isMaxH = false;
-	for(unsigned int i = 0;i < m_items.size();++ i)
+	XVec2 size;
+	for (unsigned int i = 0; i < m_items.size(); ++i)
 	{
 		XConfigItem *it = m_items[i];
-		if(it == NULL) continue;
-		switch(it->m_type)
+		if (it == NULL) continue;
+		switch (it->m_type)
 		{
-		case CFG_DATA_TYPE_INT:
-			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
+		case CFG_DATA_INT:
+		case CFG_DATA_CHAR:
+		case CFG_DATA_UCHAR:
+		case CFG_DATA_FLOAT:
+			moveDownPretreatment(m_width, CFG_MNG_H_FONT);
 			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
-			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
+			moveDown(m_width, CFG_MNG_H_FONT);
 			break;
-		case CFG_DATA_TYPE_CHAR:
-			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
-			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			break;
-		case CFG_DATA_TYPE_UCHAR:
-			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
-			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			break;
-		case CFG_DATA_TYPE_FLOAT:
-			moveDownPretreatment(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			((XSliderEx *)it->m_pCtrl)->setPosition(m_curInsertPos);
-			moveDown(m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD);
-			break;
-		case CFG_DATA_TYPE_XBOOL:
-			moveDownPretreatment(m_width,CFG_MNG_H_FONT);
+		case CFG_DATA_XBOOL:
+			moveDownPretreatment(m_width, CFG_MNG_H_FONT);
 			it->m_pCtrl->setPosition(m_curInsertPos);
-			moveDown(m_width,CFG_MNG_H_FONT);
+			moveDown(m_width, CFG_MNG_H_FONT);
 			break;
-		case CFG_DATA_TYPE_RADIOS:
-			moveDownPretreatment((((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)) / m_scale);
+		case CFG_DATA_RADIOS:
+			size = ((XRadios *)it->m_pCtrl)->getRectSize() / m_scale;
+			moveDownPretreatment(size);
 			((XRadios *)it->m_pCtrl)->setPosition(m_curInsertPos);
-			moveDown((((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)) / m_scale);// / m_scale.y
+			moveDown(size);// / m_scale.y
 			break;
-		case CFG_DATA_TYPE_CUSTOM:
-			moveDownPretreatment((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_scale);
+		case CFG_DATA_CUSTOM:
+			size = it->m_customIt->getRectSize() / m_scale;
+			moveDownPretreatment(size);
 			it->m_customIt->setPosition(m_curInsertPos);
-			moveDown((it->m_customIt->getBox(2) - it->m_customIt->getBox(0)) / m_scale);// / m_scale.y
+			moveDown(size);// / m_scale.y
 			break;
-		case CFG_DATA_TYPE_XSPRITE:	
-			moveDownPretreatment((((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)) / m_scale);
-			((XObjectBasic *)it->m_pVariable)->setPosition(m_curInsertPos);
-			moveDown((((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)) / m_scale);
+		case CFG_DATA_XSPRITE:
+			size = ((XObjectBasic *)it->m_pVariable)->getRectSize() / m_scale;
+			if (it->m_pTitleFont == nullptr)
+			{
+				moveDownPretreatment(size);
+				((XObjectBasic *)it->m_pVariable)->setPosition(m_curInsertPos);
+				moveDown(size);
+			}
+			else
+			{
+				size.y += it->m_pTitleFont->getTextSize().y;
+				moveDownPretreatment(size);
+				it->m_pTitleFont->setPosition(m_curInsertPos);
+				((XObjectBasic *)it->m_pVariable)->setPosition(m_curInsertPos + 
+					XVec2(0.0f, it->m_pTitleFont->getTextSize().y * it->m_pTitleFont->getScale().y));
+				moveDown(size);
+			}
 			break;
 		}
 	}
 	//ÖØÐÂ¸Ä±à×é¼þµÄ·¶Î§
 	m_group.resetSize(m_maxSize);
 }
-XVector2 XConfigGroup::calculateMaxSize()
+XVec2 XConfigGroup::calculateMaxSize()
 {
-	XVector2 ret;
-	if(m_group.getState() == XGroup::STATE_MINISIZE)
+	XVec2 ret;
+	if (m_group.getState() == XGroup::STATE_MINISIZE)
 	{
 		ret = m_group.getBox(2) - m_group.getBox(0);
-	//	ret.x /= m_scale.x;	//»¹Ô­³ÉÏñËØ
-	//	ret.y /= m_scale.y;
-	}else
+		//	ret.x /= m_scale.x;	//»¹Ô­³ÉÏñËØ
+		//	ret.y /= m_scale.y;
+	}
+	else
 	{
 		float maxY = 0.0f;
 		bool isMaxH = false;
-		ret.set(10.0f + m_width + CFG_MANAGER_W_SPACE,32.0f);
-		for(unsigned int i = 0;i < m_items.size();++ i)
+		ret.set(10.0f + m_width + CFG_MANAGER_W_SPACE, 32.0f);
+		for (unsigned int i = 0; i < m_items.size(); ++i)
 		{
 			XConfigItem *it = m_items[i];
-			if(it == NULL) continue;
-			switch(it->m_type)
+			if (it == NULL) continue;
+			switch (it->m_type)
 			{
-			case CFG_DATA_TYPE_INT:
-			case CFG_DATA_TYPE_CHAR:
-			case CFG_DATA_TYPE_UCHAR:
-			case CFG_DATA_TYPE_FLOAT:
-				ret.y += (CFG_MNG_H_FONT + CFG_MNG_H_SLD + CFG_MANAGER_H_SPACE) * m_scale.y;
-				if(ret.y > m_maxHeight)
-				{
-					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
-					isMaxH = true;
-					if(maxY < ret.y) maxY = ret.y;
-					ret.y = 32.0f * m_scale.x;
-				}
-				break;
-			case CFG_DATA_TYPE_XBOOL:
+			case CFG_DATA_INT:
+			case CFG_DATA_CHAR:
+			case CFG_DATA_UCHAR:
+			case CFG_DATA_FLOAT:
+			case CFG_DATA_XBOOL:
 				ret.y += (CFG_MNG_H_FONT + CFG_MANAGER_H_SPACE) * m_scale.y;
-				if(ret.y > m_maxHeight)
+				if (ret.y > m_maxHeight)
 				{
 					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
-					if(maxY < ret.y) maxY = ret.y;
+					if (maxY < ret.y) maxY = ret.y;
 					ret.y = 32.0f * m_scale.x;
 				}
 				break;
-			case CFG_DATA_TYPE_RADIOS:
-				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (((XRadios *)it->m_pCtrl)->getBox(2) - ((XRadios *)it->m_pCtrl)->getBox(0)).y;
-				if(ret.y > m_maxHeight)
+			case CFG_DATA_RADIOS:
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + ((XRadios *)it->m_pCtrl)->getRectHeight();
+				if (ret.y > m_maxHeight)
 				{
 					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
-					if(maxY < ret.y) maxY = ret.y;
+					if (maxY < ret.y) maxY = ret.y;
 					ret.y = 32.0f * m_scale.x;
 				}
 				break;
-			case CFG_DATA_TYPE_CUSTOM:	//Õ¼Î»
-				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (it->m_customIt->getBox(2) - it->m_customIt->getBox(0)).y;
-				if(ret.y > m_maxHeight)
+			case CFG_DATA_CUSTOM:	//Õ¼Î»
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + it->m_customIt->getRectHeight();
+				if (ret.y > m_maxHeight)
 				{
 					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
-					if(maxY < ret.y) maxY = ret.y;
+					if (maxY < ret.y) maxY = ret.y;
 					ret.y = 32.0f * m_scale.x;
 				}
 				break;
-			case CFG_DATA_TYPE_XSPRITE:
-				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + (((XObjectBasic *)it->m_pVariable)->getBox(2) - ((XObjectBasic *)it->m_pVariable)->getBox(0)).y;
-				if(ret.y > m_maxHeight)
+			case CFG_DATA_XSPRITE:
+				ret.y += CFG_MANAGER_H_SPACE * m_scale.y + ((XObjectBasic *)it->m_pVariable)->getRectHeight();
+				if (it->m_pTitleFont != nullptr)
+					ret.y += it->m_pTitleFont->getTextSize().y * it->m_pTitleFont->getScale().y;
+				if (ret.y > m_maxHeight)
 				{
 					ret.x += (m_width + CFG_MANAGER_W_SPACE) * m_scale.x;
 					isMaxH = true;
-					if(maxY < ret.y) maxY = ret.y;
+					if (maxY < ret.y) maxY = ret.y;
 					ret.y = 32.0f * m_scale.x;
 				}
 				break;
 			}
 		}
-		if(isMaxH) ret.y = maxY;
+		if (isMaxH) ret.y = maxY;
 	}
 	return ret;
 }
 bool XConfigManager::addGroup(const char * name)
 {
-	if(name == NULL ||
+	if (name == NULL ||
 		isGroupExist(name)) return false;	//×é²»ÄÜÖØÃû
 	XConfigGroup *defGroup = XMem::createMem<XConfigGroup>();
-	if(defGroup == NULL) return false;
+	if (defGroup == NULL) return false;
 	defGroup->m_isEnable = true;
-	defGroup->m_position = m_position + XVector2(0.0f,64.0f + CFG_MANAGER_H_SPACE);
+	defGroup->m_position = m_position + XVec2(0.0f, 64.0f + CFG_MANAGER_H_SPACE);
 	defGroup->m_name = name;
-	defGroup->m_group.init(defGroup->m_position,XRect(0.0f,0.0f,m_width + CFG_MANAGER_W_SPACE * 0.5f,32.0f),
-		defGroup->m_name.c_str(),getDefaultFont(),1.0f);
-	defGroup->m_group.setEventProc(ctrlProc,this);
+	defGroup->m_group.init(defGroup->m_position, XRect(0.0f, 0.0f, m_width + CFG_MANAGER_W_SPACE * 0.5f, 32.0f),
+		defGroup->m_name.c_str(), getDefaultFont(), 1.0f);
+	defGroup->m_group.setEventProc(ctrlProc, this);
 	defGroup->m_group.setState(XGroup::STATE_MINISIZE);	//³õÊ¼×´Ì¬Îª×îÐ¡»¯
 	defGroup->m_width = m_width;
 	defGroup->m_maxHeight = m_maxHeight;
+	if (m_withBackground) defGroup->m_group.setWithRect(false);
 	m_pGroups.push_back(defGroup);
 	relayout();
 	return true;
 }
-int XConfigManager::addSpecialItem(void * it,XConfigDataType type,const char * groupName)
+int XConfigManager::addSpecialItem(void* it, XConfigDataType type, const char* groupName,
+	const char* title)
 {
-	if(it == NULL || type <= CFG_DATA_TYPE_CUSTOM ||
+	if (it == NULL || type <= CFG_DATA_CUSTOM ||
 		isSpecialItemExist(it)) return -1;	//Èç¹ûÒÑ¾­´æÔÚÔò²»ÄÜÖØ¸´¼ÓÈë
 	XConfigItem *pItem = XMem::createMem<XConfigItem>();
-	if(pItem == NULL) return -1;
+	if (pItem == NULL) return -1;
+	if (title != nullptr)
+	{
+		pItem->m_pTitleFont = XMem::createMem<XFontUnicode>();
+		if (pItem->m_pTitleFont != nullptr)
+		{
+			pItem->m_title = title;
+			pItem->m_pTitleFont->setACopy(getDefaultFont());
+			pItem->m_pTitleFont->setString(title);
+			pItem->m_pTitleFont->setScale(m_scale);
+			pItem->m_pTitleFont->setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
+			pItem->m_pTitleFont->setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
+		}
+	}
 	pItem->m_isEnable = true;
 	pItem->m_pVariable = it;
 	pItem->m_customIt = NULL;
@@ -1470,143 +1530,135 @@ int XConfigManager::addSpecialItem(void * it,XConfigDataType type,const char * g
 	pItem->m_type = type;
 	pItem->m_isActive = false;
 	m_pItems.push_back(pItem);
-	if(groupName == NULL)
-	{//Ê¹ÓÃÄ¬ÈÏ×é
-		XConfigGroup *gp = m_pGroups[0];
+	XConfigGroup* gp = nullptr;
+	if (groupName == NULL) gp = m_pGroups[0];//Ê¹ÓÃÄ¬ÈÏ×é
+	else gp = getGroup(groupName);
+	if (gp != nullptr)
+	{
 		gp->m_items.push_back(pItem);
 		gp->m_group.pushChild((XObjectBasic *)pItem->m_pVariable);
-		if(gp->m_group.getState() == XGroup::STATE_MINISIZE) ((XObjectBasic *)pItem->m_pVariable)->disVisible();
-
-		relayout();
-	}else
-	{
-		XConfigGroup *gp = getGroup(groupName);
-		if(gp != NULL)
+		if (pItem->m_pTitleFont != nullptr)
+			gp->m_group.pushChild(pItem->m_pTitleFont);
+		if (gp->m_group.getState() == XGroup::STATE_MINISIZE)
 		{
-			gp->m_items.push_back(pItem);
-			gp->m_group.pushChild((XObjectBasic *)pItem->m_pVariable);
-			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) ((XObjectBasic *)pItem->m_pVariable)->disVisible();
-			relayout();
+			((XObjectBasic *)pItem->m_pVariable)->disVisible();
+			if (pItem->m_pTitleFont != nullptr)
+				pItem->m_pTitleFont->disVisible();
 		}
+		relayout();
 	}
 	return pItem->getID();
 }
-int XConfigManager::addCustomItem(XCFGItemBasic *it,const char * groupName)
+int XConfigManager::addCustomItem(XCFGItemBasic *it, const char * groupName)
 {
-	if(it == NULL || isCustomItemExist(it)) return -1;
+	if (it == NULL || isCustomItemExist(it)) return -1;
 	XConfigItem *pItem = XMem::createMem<XConfigItem>();
-	if(pItem == NULL) return -1;
+	if (pItem == NULL) return -1;
 	pItem->m_isEnable = true;
 	pItem->m_pVariable = NULL;
 	pItem->m_customIt = it;
 	pItem->m_customIt->setScale(m_scale);
 //	pItem->m_scale = m_scale;
-	pItem->m_type = CFG_DATA_TYPE_CUSTOM;
+	pItem->m_type = CFG_DATA_CUSTOM;
 	m_pItems.push_back(pItem);
-	if(groupName == NULL)
-	{//Ê¹ÓÃÄ¬ÈÏ×é
-		XConfigGroup *gp = m_pGroups[0];
+	XConfigGroup* gp = nullptr;
+	if (groupName == NULL) gp = m_pGroups[0];	//Ê¹ÓÃÄ¬ÈÏ×é
+	else gp = getGroup(groupName);
+
+	if (gp != nullptr)
+	{
 		gp->m_items.push_back(pItem);
 		gp->m_group.pushChild(pItem->m_customIt);
-		if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_customIt->disVisible();
-
+		if (gp->m_group.getState() == XGroup::STATE_MINISIZE) 
+			pItem->m_customIt->disVisible();
 		relayout();
-	}else
-	{
-		XConfigGroup *gp = getGroup(groupName);
-		if(gp != NULL)
-		{
-			gp->m_items.push_back(pItem);
-			gp->m_group.pushChild(pItem->m_customIt);
-			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_customIt->disVisible();
-			relayout();
-		}
 	}
 	return pItem->getID();
 }
 bool XConfigManager::isItemExist(void * p)	//¼ì²éÅäÖÃÏîÊÇ·ñÒÑ¾­´æÔÚ
 {
-	if(p == NULL) return false;
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	if (p == NULL) return false;
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if(m_pItems[i]->m_pVariable == p) return true;
+		if (m_pItems[i]->m_pVariable == p) return true;
 	}
 	return false;
 }
 bool XConfigManager::isCustomItemExist(XCFGItemBasic *it)
 {
-	if(it == NULL) return false;
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	if (it == NULL) return false;
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if(m_pItems[i]->m_type == CFG_DATA_TYPE_CUSTOM && 
+		if (m_pItems[i]->m_type == CFG_DATA_CUSTOM &&
 			m_pItems[i]->m_customIt == it) return true;
 	}
 	return false;
 }
 XConfigItem *XConfigManager::getItemByID(int ID)			//Í¨¹ýID»ñÈ¡ÅäÖÃÏîµÄÖ¸Õë
 {
-	if(ID < 0) return NULL;
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	if (ID < 0) return NULL;
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if(m_pItems[i]->getID() == ID) return m_pItems[i];
+		if (m_pItems[i]->getID() == ID) return m_pItems[i];
 	}
 	return NULL;
 }
 XConfigItem *XConfigManager::getItemByVariable(void *p)	//Í¨¹ý±äÁ¿Ö¸Õë»ñµÃÅäÖÃÏîµÄÖ¸Õë
 {
-	for(unsigned int i = 0;i < m_pItems.size();++ i)
+	for (unsigned int i = 0; i < m_pItems.size(); ++i)
 	{
-		if(m_pItems[i]->m_pVariable == p) return m_pItems[i];
+		if (m_pItems[i]->m_pVariable == p) return m_pItems[i];
 	}
 	return NULL;
 }
-XConfigItem *XConfigManager::getItemByName(const char *name,int start)
+XConfigItem *XConfigManager::getItemByName(const char *name, int start)
 {
-	if(name == NULL) return NULL;
-	for(int i = start;i < m_pItems.size();++ i)
+	if (name == NULL) return NULL;
+	for (int i = start; i < m_pItems.size(); ++i)
 	{
-		if(strcmp(m_pItems[i]->m_name.c_str(),name) == 0) return m_pItems[i];
+		if (strcmp(m_pItems[i]->m_name.c_str(), name) == 0) return m_pItems[i];
 	}
 	return NULL;
 }
 bool XConfigManager::isGroupExist(const char * name)	//ÅÐ¶Ï×é¼þÊÇ·ñ´æÔÚ
 {
-	if(name == NULL) return false;
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	if (name == NULL) return false;
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
-		if(strcmp(m_pGroups[i]->m_name.c_str(),name) == 0) return true;
+		if (strcmp(m_pGroups[i]->m_name.c_str(), name) == 0) return true;
 	}
 	return false;
 }
 XConfigGroup *XConfigManager::getGroup(const char * name)
 {
-	if(name == NULL) return NULL;
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	if (name == NULL) return NULL;
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
-		if(strcmp(m_pGroups[i]->m_name.c_str(),name) == 0) return m_pGroups[i];
+		if (strcmp(m_pGroups[i]->m_name.c_str(), name) == 0) return m_pGroups[i];
 	}
 	return NULL;
 }
 void XConfigManager::release()
 {//×ÊÔ´ÊÍ·Å
-	if(!m_isInited) return;
-	if(m_configMode == CFG_MODE_CLIENT)
+	if (!m_isInited) return;
+	if (m_configMode == CFG_MODE_CLIENT)
 	{//ÕâÀïÐèÒªÉ¾³ý±äÁ¿
-		for(unsigned int i = 0;i < m_pItems.size();++ i)
+		for (unsigned int i = 0; i < m_pItems.size(); ++i)
 		{
 			m_pItems[i]->release();
 			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
-	}else
+	}
+	else
 	{
-		for(unsigned int i = 0;i < m_pItems.size();++ i)
+		for (unsigned int i = 0; i < m_pItems.size(); ++i)
 		{
 			XMem::XDELETE(m_pItems[i]);
 		}
 		m_pItems.clear();
 	}
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
 		XMem::XDELETE(m_pGroups[i]);
 	}
@@ -1615,15 +1667,15 @@ void XConfigManager::release()
 }
 void XConfigManager::setOperateToServer(XConfigNetOperate op)
 {
-	if(!m_isInited ||
+	if (!m_isInited ||
 		m_configMode != CFG_MODE_CLIENT) return;
 	XNetData *tempData = XMem::createMem<XNetData>();
-	if(tempData == NULL) return;
+	if (tempData == NULL) return;
 	tempData->isEnable = XTrue;
 	tempData->type = DATA_TYPE_CONFIG_OPERATE;
 	tempData->dataLen = sizeof(op);
 	tempData->data = XMem::createArrayMem<unsigned char>(tempData->dataLen);
-	memcpy(tempData->data,&op,tempData->dataLen);
+	memcpy(tempData->data, &op, tempData->dataLen);
 	m_netClient->sendData(tempData);
 }
 unsigned char *XConfigManager::getConfigInfo(int &slen)
@@ -1631,59 +1683,59 @@ unsigned char *XConfigManager::getConfigInfo(int &slen)
 	unsigned char *temp = NULL;
 	int size = 0;
 	int offset = 0;
-	XConfigDataType nullType = CFG_DATA_TYPE_NULL;
+	XConfigDataType nullType = CFG_DATA_NULL;
 	int len = m_pGroups.size();
-	temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-	for(unsigned int i = 0;i < m_pGroups.size();++ i)
+	temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));
+	for (unsigned int i = 0; i < m_pGroups.size(); ++i)
 	{
 		len = m_pGroups[i]->m_name.size();
-		temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-		temp = XMem::spliceData(temp,size,offset,(unsigned char *)m_pGroups[i]->m_name.c_str(),len);
+		temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));
+		temp = XMem::spliceData(temp, size, offset, (unsigned char *)m_pGroups[i]->m_name.c_str(), len);
 		len = m_pGroups[i]->m_items.size();
-		temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));
-		for(unsigned int j = 0;j < m_pGroups[i]->m_items.size();++ j)
+		temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));
+		for (unsigned int j = 0; j < m_pGroups[i]->m_items.size(); ++j)
 		{
 			XConfigItem *it = m_pGroups[i]->m_items[j];
-			switch(it->m_type)
+			switch (it->m_type)
 			{
-			case CFG_DATA_TYPE_INT:
-			case CFG_DATA_TYPE_CHAR:
-			case CFG_DATA_TYPE_UCHAR:
-			case CFG_DATA_TYPE_RADIOS:
-			case CFG_DATA_TYPE_FLOAT:
-			case CFG_DATA_TYPE_XBOOL:
+			case CFG_DATA_INT:
+			case CFG_DATA_CHAR:
+			case CFG_DATA_UCHAR:
+			case CFG_DATA_RADIOS:
+			case CFG_DATA_FLOAT:
+			case CFG_DATA_XBOOL:
 				len = it->getID();
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
-				if(!it->m_isActive)
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));	//ID
+				if (!it->m_isActive)
 				{
-					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
+					temp = XMem::spliceData(temp, size, offset, (unsigned char *)&nullType, sizeof(it->m_type));	//TYPE
 					break;
 				}
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMin,sizeof(it->m_rangeMin));	//min
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_rangeMax,sizeof(it->m_rangeMax));	//max
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_defaultValue,sizeof(it->m_defaultValue));	//defualt
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_curValue,sizeof(it->m_curValue));	//curValue
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_type, sizeof(it->m_type));	//TYPE
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_rangeMin, sizeof(it->m_rangeMin));	//min
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_rangeMax, sizeof(it->m_rangeMax));	//max
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_defaultValue, sizeof(it->m_defaultValue));	//defualt
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_curValue, sizeof(it->m_curValue));	//curValue
 				len = it->m_name.size();
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//name len
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)it->m_name.c_str(),len);	//name len
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));	//name len
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)it->m_name.c_str(), len);	//name len
 				break;
-			case CFG_DATA_TYPE_CUSTOM:	//¹¤×÷½øÐÐÖÐ
+			case CFG_DATA_CUSTOM:	//¹¤×÷½øÐÐÖÐ
 				//À©Õ¹
-				{
-					len = it->getID();
-					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));					//ID
-					temp = XMem::spliceData(temp,size,offset,(unsigned char *)&it->m_type,sizeof(it->m_type));	//TYPE
-					unsigned char *tempStr = it->m_customIt->getInfo(len,it->getID());
-					temp = XMem::spliceData(temp,size,offset,tempStr,len);
-					XMem::XDELETE_ARRAY(tempStr);
-				}
-				break;
-			case CFG_DATA_TYPE_XSPRITE:	//ÍøÂç²»Ö§³Ö
-			case CFG_DATA_TYPE_NULL:	//ÍøÂç²»Ö§³Ö
+			{
 				len = it->getID();
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&len,sizeof(int));	//ID
-				temp = XMem::spliceData(temp,size,offset,(unsigned char *)&nullType,sizeof(it->m_type));	//TYPE
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));					//ID
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&it->m_type, sizeof(it->m_type));	//TYPE
+				unsigned char *tempStr = it->m_customIt->getInfo(len, it->getID());
+				temp = XMem::spliceData(temp, size, offset, tempStr, len);
+				XMem::XDELETE_ARRAY(tempStr);
+			}
+			break;
+			case CFG_DATA_XSPRITE:	//ÍøÂç²»Ö§³Ö
+			case CFG_DATA_NULL:	//ÍøÂç²»Ö§³Ö
+				len = it->getID();
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&len, sizeof(int));	//ID
+				temp = XMem::spliceData(temp, size, offset, (unsigned char *)&nullType, sizeof(it->m_type));	//TYPE
 				break;
 			}
 		}
@@ -1693,79 +1745,76 @@ unsigned char *XConfigManager::getConfigInfo(int &slen)
 }
 void XConfigItem::release()	//×¢Òâ£ºÕâ¸öº¯Êý²»ÄÜ·ÅÔÚÎö¹¹º¯ÊýÖÐÒòÎª²¢²»ÊÇËùÓÐµÄÇé¿ö¶¼ÐèÒªÊÍ·ÅÕâ¸ö×ÊÔ´
 {
-	switch(m_type)
+	switch (m_type)
 	{
-	case CFG_DATA_TYPE_INT:
+	case CFG_DATA_INT:
 		{
 			int *p = (int *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_CHAR:
+	case CFG_DATA_CHAR:
 		{
 			char *p = (char *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_UCHAR:
+	case CFG_DATA_UCHAR:
 		{
 			unsigned char *p = (unsigned char *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_FLOAT:
+	case CFG_DATA_FLOAT:
 		{
 			float *p = (float *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_XBOOL:	//×¢ÒâÕâ¸ö¶ÔÓ¦XBoolÀàÐÍ£¬¶ø²»ÊÇboolÀàÐÍ£¬·ñÔò½«»áÓÐ¿ÉÄÜÔì³É´íÎó
+	case CFG_DATA_XBOOL:	//×¢ÒâÕâ¸ö¶ÔÓ¦XBoolÀàÐÍ£¬¶ø²»ÊÇboolÀàÐÍ£¬·ñÔò½«»áÓÐ¿ÉÄÜÔì³É´íÎó
 		{
 			XBool *p = (XBool *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_RADIOS:	//µ¥Ñ¡¿ò
+	case CFG_DATA_RADIOS:	//µ¥Ñ¡¿ò
 		{
 			int *p = (int *)m_pVariable;
 			XMem::XDELETE(p);
 			m_pVariable = NULL;
 		}
 		break;
-	case CFG_DATA_TYPE_CUSTOM:	//×Ô¶¨Òå		ÍøÂç²»Ö§³Ö
-	case CFG_DATA_TYPE_XSPRITE:	//¾«ÁéµÄÎï¼þ	ÍøÂç²»Ö§³Ö
-	case CFG_DATA_TYPE_NULL:		//ÎÞÐ§µÄÅäÖÃÏî
+	case CFG_DATA_CUSTOM:	//×Ô¶¨Òå		ÍøÂç²»Ö§³Ö
+	case CFG_DATA_XSPRITE:	//¾«ÁéµÄÎï¼þ	ÍøÂç²»Ö§³Ö
+	case CFG_DATA_NULL:		//ÎÞÐ§µÄÅäÖÃÏî
 		XMem::XDELETE(m_pVariable);
 		break;
 	}
 }
-XBool XConfigManager::mouseProc(float x,float y,XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
+XBool XConfigManager::mouseProc(const XVec2& p, XMouseState mouseState)		//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
 {//ÉÐÎ´Íê³É
-	if(!m_isInited) return XFalse;
-	XRect tmpRect(m_position.x,m_position.y,
-		m_position.x + 32.0f * m_scale.x,m_position.y + 32.0f * m_scale.y);
-	switch(mouseState)
+	if (!m_isInited) return XFalse;
+	switch (mouseState)
 	{
 	case MOUSE_MOVE:
-		if(m_isMouseDown)
+		if (m_isMouseDown)
 		{//·¢ÉúÊó±êÍÏ×§ÊÂ¼þ
-			XVector2 tmp = XVector2(x,y) - m_mousePos;
-			setPosition(m_position.x + tmp.x,m_position.y + tmp.y);
-			m_mousePos.set(x,y);
+			setPosition(m_position + p - m_mousePos);
+			m_mousePos = p;
 			//if(!tmpRect.isInRect(x,y)) m_isMouseDown = false;
 		}
 		break;
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
-		if(tmpRect.isInRect(x,y))
+		if (XRect(m_position, m_position + 32.0f * m_scale).isInRect(p))
 		{
 			m_isMouseDown = true;
-			m_mousePos.set(x,y);
+			m_mousePos = p;
 		}
 		break;
 	case MOUSE_LEFT_BUTTON_UP:
@@ -1778,38 +1827,39 @@ XBool XConfigManager::mouseProc(float x,float y,XMouseState mouseState)		//¶ÔÓÚÊ
 }
 XConfigManager::XConfigManager()
 	:m_isInited(false)
-	,m_isVisble(true)
-	,m_position(0.0f,0.0f)
-	,m_scale(1.0,1.0f)
-	,m_maxHeight(300.0f)
-	,m_width(256.0f)
-	,m_curInsertPos(0.0f,0.0f)
-	,m_configMode(CFG_MODE_NORMAL)
-//	,m_minuteIndex(-1)
-//	,m_operateIndex(-1)	//Ã»ÓÐ¶¯×÷
-	,m_textColor(0.0f,0.0f,0.0f,1.0f)
-	,m_isMouseDown(false)
-	,m_withBackground(false)
+	, m_isVisble(true)
+	, m_position(0.0f)
+	, m_scale(1.0)
+	, m_maxHeight(300.0f)
+	, m_width(256.0f)
+	, m_curInsertPos(0.0f)
+	, m_configMode(CFG_MODE_NORMAL)
+	//	,m_minuteIndex(-1)
+	//	,m_operateIndex(-1)	//Ã»ÓÐ¶¯×÷
+	, m_textColor(0.0f, 1.0f)
+	, m_isMouseDown(false)
+	, m_withBackground(false)
+	, m_saveAndLoadFilename(CFG_DEFAULT_FILENAME)
 {
 	m_withConfigManager = true;	//±ê¼ÇÅäÖÃ¹ÜÀíÆ÷ÒÑ¾­±»Ê¹ÓÃ
 	m_saveBtn = XMem::createMem<XButton>();
-	if(m_saveBtn == NULL) LogStr("Mem Error!");
+	if (m_saveBtn == NULL) LogStr("Mem Error!");
 	m_loadBtn = XMem::createMem<XButton>();
-	if(m_loadBtn == NULL) LogStr("Mem Error!");
+	if (m_loadBtn == NULL) LogStr("Mem Error!");
 	m_defaultBtn = XMem::createMem<XButton>();
-	if(m_defaultBtn == NULL) LogStr("Mem Error!");
+	if (m_defaultBtn == NULL) LogStr("Mem Error!");
 	m_undoBtn = XMem::createMem<XButton>();
-	if(m_undoBtn == NULL) LogStr("Mem Error!");
+	if (m_undoBtn == NULL) LogStr("Mem Error!");
 	m_redoBtn = XMem::createMem<XButton>();
-	if(m_redoBtn == NULL) LogStr("Mem Error!");
+	if (m_redoBtn == NULL) LogStr("Mem Error!");
 	m_netUpdateBtn = XMem::createMem<XButton>();
-	if(m_netUpdateBtn == NULL) LogStr("Mem Error!");
+	if (m_netUpdateBtn == NULL) LogStr("Mem Error!");
 	m_netInjectBtn = XMem::createMem<XButton>();
-	if(m_netInjectBtn == NULL) LogStr("Mem Error!");
+	if (m_netInjectBtn == NULL) LogStr("Mem Error!");
 	m_netClient = XMem::createMem<XNetClient>();
-	if(m_netClient == NULL) LogStr("Mem Error!");
+	if (m_netClient == NULL) LogStr("Mem Error!");
 	m_netServer = XMem::createMem<XNetServer>();
-	if(m_netServer == NULL) LogStr("Mem Error!");
+	if (m_netServer == NULL) LogStr("Mem Error!");
 }
 XConfigManager::~XConfigManager()
 {
@@ -1825,166 +1875,166 @@ XConfigManager::~XConfigManager()
 	XMem::XDELETE(m_netServer);
 }
 template<typename T>
-int XConfigManager::addAItem(T *p,XConfigDataType type,const char * name,
-	T max,T min,T def,
-	void (* changeProc)(void *,void*),const char * groupName,void *pClass)	//·µ»ØID£¬-1ÎªÊ§°Ü
+int XConfigManager::addAItem(T *p, XConfigDataType type, const char* name,
+	T max, T min, T def,
+	void(*changeProc)(void*, void*), const char* groupName, void* pClass)	//·µ»ØID£¬-1ÎªÊ§°Ü
 {
-	if(type >= CFG_DATA_TYPE_CUSTOM || p == NULL) return -1;	//Êý¾Ý²»ºÏ·¨
-	if(p != NULL && isItemExist(p)) return -1; 
+	if (type >= CFG_DATA_CUSTOM || p == NULL) return -1;	//Êý¾Ý²»ºÏ·¨
+	if (p != NULL && isItemExist(p)) return -1;
 	XConfigItem *pItem = XMem::createMem<XConfigItem>();
-	if(pItem == NULL ||
-		type == CFG_DATA_TYPE_CUSTOM) return -1;	//×Ô¶¨Òå¿Ø¼þ²»ÄÜÊ¹ÓÃÕâÖÖ·½Ê½Ìí¼Ó
-	if(name == NULL) pItem->m_name = " ";
+	if (pItem == NULL ||
+		type == CFG_DATA_CUSTOM) return -1;	//×Ô¶¨Òå¿Ø¼þ²»ÄÜÊ¹ÓÃÕâÖÖ·½Ê½Ìí¼Ó
+	if (name == NULL) pItem->m_name = "";
 	else pItem->m_name = name;
 	pItem->m_changeProc = changeProc;
 	pItem->m_pClass = pClass;
 	char tempStr[1024];
-	switch(type)
+	switch (type)
 	{
-	case CFG_DATA_TYPE_INT:
+	case CFG_DATA_INT:
 		pItem->m_defaultValue.valueI = (int)def;
-		pItem->m_curValue.valueI = * (int *)p;
+		pItem->m_curValue.valueI = *(int *)p;
 		pItem->m_rangeMin.valueI = (int)min;
 		pItem->m_rangeMax.valueI = (int)max;
 		{
 			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
-				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XVec2(m_width, CFG_MNG_H_FONT),
+				pItem->m_rangeMax.valueI, pItem->m_rangeMin.valueI);
 			pCtrl->setScale(m_scale);
 			pCtrl->setTextColor(m_textColor);
-			if(name == NULL) pCtrl->setFont("%%.0f");
+			if (name == NULL) pCtrl->setFont("%%.0f");
 			else
 			{
-				sprintf(tempStr,"%s:%%.0f",name);
+				sprintf_s(tempStr, 1024, "%s:%%.0f", name);
 				pCtrl->setFont(tempStr);
 			}
 
-			pCtrl->setEventProc(ctrlProc,this);
-			pCtrl->setCurValue(* (int *)p);
+			pCtrl->setEventProc(ctrlProc, this);
+			pCtrl->setCurValue(*(int *)p);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
-	case CFG_DATA_TYPE_CHAR:
+	case CFG_DATA_CHAR:
 		pItem->m_defaultValue.valueI = (char)def;
-		pItem->m_curValue.valueI = * (char *)p;
+		pItem->m_curValue.valueI = *(char *)p;
 		pItem->m_rangeMin.valueI = (char)min;
 		pItem->m_rangeMax.valueI = (char)max;
 		{
 			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
-				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XVec2(m_width, CFG_MNG_H_FONT),
+				pItem->m_rangeMax.valueI, pItem->m_rangeMin.valueI);
 			pCtrl->setScale(m_scale);
 			pCtrl->setTextColor(m_textColor);
-			if(name == NULL) pCtrl->setFont("%%.0f");
+			if (name == NULL) pCtrl->setFont("%%.0f");
 			else
 			{
-				sprintf(tempStr,"%s:%%.0f",name);
+				sprintf_s(tempStr, 1024, "%s:%%.0f", name);
 				pCtrl->setFont(tempStr);
 			}
 
-			pCtrl->setEventProc(ctrlProc,this);
-			pCtrl->setCurValue(* (char *)p);
+			pCtrl->setEventProc(ctrlProc, this);
+			pCtrl->setCurValue(*(char *)p);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
-	case CFG_DATA_TYPE_UCHAR:
+	case CFG_DATA_UCHAR:
 		pItem->m_defaultValue.valueI = (unsigned char)def;
-		pItem->m_curValue.valueI = * (unsigned char *)p;
+		pItem->m_curValue.valueI = *(unsigned char *)p;
 		pItem->m_rangeMin.valueI = (unsigned char)min;
 		pItem->m_rangeMax.valueI = (unsigned char)max;
 		{
 			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
-				pItem->m_rangeMax.valueI,pItem->m_rangeMin.valueI,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XVec2(m_width, CFG_MNG_H_FONT),
+				pItem->m_rangeMax.valueI, pItem->m_rangeMin.valueI);
 			pCtrl->setScale(m_scale);
 			pCtrl->setTextColor(m_textColor);
-			if(name == NULL) pCtrl->setFont("%%.0f");
+			if (name == NULL) pCtrl->setFont("%%.0f");
 			else
 			{
-				sprintf(tempStr,"%s:%%.0f",name);
+				sprintf_s(tempStr, 1024, "%s:%%.0f", name);
 				pCtrl->setFont(tempStr);
 			}
 
-			pCtrl->setEventProc(ctrlProc,this);
-			pCtrl->setCurValue(* (unsigned char *)p);
+			pCtrl->setEventProc(ctrlProc, this);
+			pCtrl->setCurValue(*(unsigned char *)p);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
-	case CFG_DATA_TYPE_FLOAT:
+	case CFG_DATA_FLOAT:
 		pItem->m_defaultValue.valueF = (float)def;
-		pItem->m_curValue.valueF = * (float *)p;
+		pItem->m_curValue.valueF = *(float *)p;
 		pItem->m_rangeMin.valueF = (float)min;
 		pItem->m_rangeMax.valueF = (float)max;
 		{
 			XSliderEx *pCtrl = XMem::createMem<XSliderEx>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			pCtrl->initWithoutSkin(XRect(0.0f,CFG_MNG_H_FONT,m_width,CFG_MNG_H_FONT + CFG_MNG_H_SLD),
-				pItem->m_rangeMax.valueF,pItem->m_rangeMin.valueF,SLIDER_TYPE_HORIZONTAL,XVector2(0.0,16.0f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(XVec2(m_width, CFG_MNG_H_FONT),
+				pItem->m_rangeMax.valueF, pItem->m_rangeMin.valueF);
 			pCtrl->setScale(m_scale);
 			pCtrl->setTextColor(m_textColor);
-			if(name == NULL) pCtrl->setFont("%%.4f");
+			if (name == NULL) pCtrl->setFont("%%.4f");
 			else
 			{
-				sprintf(tempStr,"%s:%%.4f",name);
+				sprintf_s(tempStr, 1024, "%s:%%.4f", name);
 				pCtrl->setFont(tempStr);
 			}
 
-			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setEventProc(ctrlProc, this);
 			//ÕâÀï²»ÄÜÁ¬½ÓÊý¾Ý£¬Èç¹ûÁ¬½ÓÊý¾ÝµÄ»°½«»áÔì³ÉÊý¾Ý±ä»¯µÄÊ±ºòµ÷ÓÃ»Øµ÷º¯ÊýµÄÊ±ºòÊý¾ÝÒÑ¾­¸Ä±ä¶ø²»»áÖ´ÐÐ»Øµ÷º¯ÊýÖÐµÄÏà¹Ø´úÂë
 			//pCtrl->setConnectVar((float *)p);
-			pCtrl->setCurValue(* (float *)p);
+			pCtrl->setCurValue(*(float *)p);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
-	case CFG_DATA_TYPE_XBOOL:
+	case CFG_DATA_XBOOL:
 		pItem->m_defaultValue.valueB = (XBool)def;
 		pItem->m_curValue.valueB = *(XBool *)p;
 		pItem->m_rangeMin.valueB = (XBool)min;
 		pItem->m_rangeMax.valueB = (XBool)max;
 		{
 			XCheck *pCtrl = XMem::createMem<XCheck>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			if(name == NULL) pCtrl->initWithoutSkin(" ",getDefaultFont(),1.0f,XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
-				XVector2(CFG_MNG_H_FONT,CFG_MNG_H_FONT * 0.5f));
-			else pCtrl->initWithoutSkin(name,getDefaultFont(),1.0f,XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),
-				XVector2(CFG_MNG_H_FONT,CFG_MNG_H_FONT * 0.5f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			if (name == NULL) pCtrl->initWithoutSkin(" ", getDefaultFont(), 1.0f, XRect(0.0f, CFG_MNG_H_FONT),
+				XVec2(CFG_MNG_H_FONT, CFG_MNG_H_FONT * 0.5f));
+			else pCtrl->initWithoutSkin(name, getDefaultFont(), 1.0f, XRect(0.0f, CFG_MNG_H_FONT),
+				XVec2(CFG_MNG_H_FONT, CFG_MNG_H_FONT * 0.5f));
 			pCtrl->setScale(m_scale);
-			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setEventProc(ctrlProc, this);
 			pCtrl->setConnectVar((XBool *)p);
 			pCtrl->setTextColor(m_textColor);
-			if(*(XBool *)p) pCtrl->setState(XTrue);
+			if (*(XBool *)p) pCtrl->setState(XTrue);
 			else pCtrl->setState(XFalse);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
 		}
 		break;
-	case CFG_DATA_TYPE_RADIOS:
+	case CFG_DATA_RADIOS:
 		pItem->m_defaultValue.valueI = (int)def;
 		pItem->m_curValue.valueI = *(int *)p;
 		pItem->m_rangeMin.valueI = (int)min;
 		pItem->m_rangeMax.valueI = (int)max;
 		{
 			XRadios *pCtrl = XMem::createMem<XRadios>();
-			if(pCtrl == NULL) return -1;
-			if(m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
-			pCtrl->initWithoutSkin(1,XVector2(0.0f,CFG_MNG_H_FONT + 2.0f),XRect(0.0f,0.0f,CFG_MNG_H_FONT,CFG_MNG_H_FONT),getDefaultFont(),1.0f,
-				XVector2(CFG_MNG_H_FONT + 2.0f,CFG_MNG_H_FONT * 0.5f));
+			if (pCtrl == NULL) return -1;
+			if (m_configMode != CFG_MODE_CLIENT) pCtrl->setWithUndo(true);
+			pCtrl->initWithoutSkin(1, XVec2(0.0f, CFG_MNG_H_FONT + 2.0f), XRect(0.0f, CFG_MNG_H_FONT), getDefaultFont(), 1.0f,
+				XVec2(CFG_MNG_H_FONT + 2.0f, CFG_MNG_H_FONT * 0.5f));
 			pCtrl->setRadiosText(name);
 			pCtrl->setScale(m_scale);
 			pCtrl->setTextColor(m_textColor);
-			pCtrl->setEventProc(ctrlProc,this);
+			pCtrl->setEventProc(ctrlProc, this);
 			pCtrl->setChoosed(*(int *)p);
 			pCtrl->stateChange();
 			pItem->m_pCtrl = pCtrl;
@@ -1995,29 +2045,19 @@ int XConfigManager::addAItem(T *p,XConfigDataType type,const char * name,
 	pItem->m_pVariable = p;
 	pItem->m_type = type;
 	m_pItems.push_back(pItem);
-	if(groupName == NULL)
-	{//Ê¹ÓÃÄ¬ÈÏ×é
-		XConfigGroup *gp = m_pGroups[0];
+	XConfigGroup* gp = nullptr;
+	if (groupName == NULL) gp = m_pGroups[0];//Ê¹ÓÃÄ¬ÈÏ×é
+	else gp = getGroup(groupName);
+	if (gp != nullptr)
+	{
 		gp->m_items.push_back(pItem);
-		if(pItem->m_pCtrl != NULL) 
+		if (pItem->m_pCtrl != NULL)
 		{
 			gp->m_group.pushChild(pItem->m_pCtrl);
-			if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_pCtrl->disVisible();
+			if (gp->m_group.getState() == XGroup::STATE_MINISIZE) 
+				pItem->m_pCtrl->disVisible();
 		}
 		relayout();
-	}else
-	{
-		XConfigGroup *gp = getGroup(groupName);
-		if(gp != NULL)
-		{
-			gp->m_items.push_back(pItem);
-			if(pItem->m_pCtrl != NULL) 
-			{
-				gp->m_group.pushChild(pItem->m_pCtrl);
-				if(gp->m_group.getState() == XGroup::STATE_MINISIZE) pItem->m_pCtrl->disVisible();
-			}
-			relayout();
-		}
 	}
 	return pItem->getID();
 }

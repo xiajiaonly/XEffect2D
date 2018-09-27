@@ -40,13 +40,13 @@ public:
 	XMultiListSkin();
 	~XMultiListSkin(){release();}
 	XBool init(const char *normal,const char *disable,const char *select,const char *move,
-		const char *title,const char *titleEnd,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const char *title,const char *titleEnd,XResPos resPos = RES_SYS_DEF);
+	XBool initEx(const char *filename,XResPos resPos = RES_SYS_DEF);
 	void release();
 private:
-	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
-	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
-	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
+	bool loadFromFolder(const char *filename,XResPos resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResPos resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResPos resPos);		//从网页中读取资源
 };
 //表中的一份元素
 struct XMultiListOneBox
@@ -55,7 +55,7 @@ struct XMultiListOneBox
 	XBool isShow;				//这个元素是否需要显示
 	XFontUnicode text;			//用于显示的字体
 
-	XVector2 order;				//这个元素所在的位置(也就是哪一列，哪一行)
+	XVec2 order;				//这个元素所在的位置(也就是哪一列，哪一行)
 //	char *string;				//这个元素中的字符串
 	std::string textStr;
 	int stringLength;			//字符串的长度
@@ -66,8 +66,9 @@ struct XMultiListOneBox
 	{}
 };
 //表中的一列
-struct XMultiListOneRow
+class XMultiListOneRow
 {
+public:
 	XBool isEnable;					//这一列是否有效
 	char isShow;					//这一列素是否需要显示	0:不显示 1:完整显示 2:不显示分割符
 	char needChip;					//是否需要切割，0，不需要切割，1，前面切割，2，后面切割
@@ -77,8 +78,8 @@ struct XMultiListOneRow
 
 	int order;						//这一列的编号
 	int stringShowWidth;			//这一列可以显示的字符的宽度
-	XVector2 position;				//这一列的相对控件左上角的像素位置
-	XVector2 pixSize;				//列中一个单位的像素尺寸,这个像素大小是没有经过缩放的
+	XVec2 position;				//这一列的相对控件左上角的像素位置
+	XVec2 pixSize;				//列中一个单位的像素尺寸,这个像素大小是没有经过缩放的
 	int posX;
 	int pixLen;						//列的宽度，经过裁剪的
 //	char *title;					//这一列的标题
@@ -92,7 +93,7 @@ struct XMultiListOneRow
 	{}
 };
 
-#define MUTILIST_MIN_WIDTH (80)		//多列列表的最小宽度
+#define MUTILIST_MIN_WIDTH (64)		//多列列表的最小宽度
 #define MUTILIST_MAX_ROW_SUM (256)	//最多有多少列
 #define MUTILIST_TITLE_EXPAND_LENGTH (100)	//最后一列用于扩展的宽度
 #ifndef DEFAULT_SLIDER_WIDTH
@@ -125,9 +126,9 @@ private:
 	const XTextureData *m_mutiListTitleEnd;	//多列列表的标题分隔符
 
 	XBool m_needShowVSlider;			//是否需要显示垂直滑动条
-	XSlider m_verticalSlider;		//垂直滑动条
+	XSlider m_verticalSlider;			//垂直滑动条
 	XBool m_needShowHSlider;			//是否需要显示水平滑动条
-	XSlider m_horizontalSlider;	//水平滑动条
+	XSlider m_horizontalSlider;			//水平滑动条
 	
 	int m_tableRowSum;				//表格中的列数
 	XMultiListOneRow *m_tableRow;	//列的链表
@@ -164,24 +165,43 @@ public:
 	int getRowSum() const {return m_tableRowSum;}
 	void setTitleStr(const char *str);	//每项使用;分开
 	std::string getTitleStr();	//获取标题的整个字符串
-	std::string getTitleStr(int order);	//获取指定标题的字符串
+	const std::string& getTitleStr(int order)const;	//获取指定标题的字符串
 	void setTitleStr(const char *str,int order);		//设置某个标题的文字
 	void setBoxStr(const char *str,int line,int row);	//设置某一个单元格的文字
 	const char *getBoxStr(int line,int row);		//获取某个单元格中的文字
-	XBool setRowWidth(int temp,int order);		//设置其中一行的宽度
+	XBool setRowWidth(int width,int order);		//设置其中一行的宽度
 	int getSelectIndex();
-
+	void disSelectIndex()	//取消行选
+	{
+		if (!m_haveSelect) return;
+		setAction(MLTLST_ACTION_TYPE_OUT, m_selectLineOrder);
+		m_haveSelect = XFalse;
+		updateSelectLine();
+	}
+	//以总行数为基准
+	void setSelectIndex(int index)
+	{
+		if (index < 0 || index >= m_tableLineSum) return;
+		m_haveSelect = XTrue;
+		m_selectLineOrder = index;
+		updateSelectLine();
+	}
 	enum XMultiListEvent
 	{
 		MLTLST_SELECT,
 		MLTLST_DCLICK,
+		MLTLST_LINE_CHANGE,	//发生了换行事件
 	};
 private:
 //	void (*m_funSelectFun)(void *,int ID);
 //	void (*m_funDClick)(void *,int ID);	//鼠标双击时间响应的函数
 ///	void * m_pClass;
 	XBool m_withMouseDrag;	//是否支持鼠标拖动
+	int m_mDragA;	//参与换行的两个行号
+	int m_mDragB;
 public:
+	int getMDragA()const { return m_mDragA; }
+	int getMDragB()const { return m_mDragB; }
 //	void setSelectFun(void (* funSelectFun)(void *,int),void * pClass);
 //	void setDClickFun(void (* funDClick)(void *,int),void * pClass);
 	void setWithMouseDrag(XBool flag) {m_withMouseDrag = flag;}
@@ -195,7 +215,7 @@ private:
 	void initANewBoxData(XMultiListOneBox * curBox,XMultiListOneRow * curRow,int i,int j);	//初始化一个列表元素的数据
 
 	XFontUnicode m_caption;
-	XVector2 m_fontSize;
+	XVec2 m_fontSize;
 	XFColor m_textColor;			//文字的颜色
 	float m_curTextWidth;			//当前的字体宽度
 	float m_curTextHeight;			//当前的字体高度
@@ -203,19 +223,19 @@ private:
 	XResourceInfo *m_resInfo;
 	XBool m_withoutTex;	//没有贴图的形式
 public:
-	XBool init(const XVector2& position,		//空间所在的位置
+	XBool init(const XVec2& position,		//空间所在的位置
 		const XRect& Area,					//控件的实际显示区域
 		const XMultiListSkin &tex,		//控件的贴图
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum,				//控件中的行数
 		//const XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
 		const XSlider &vSlider,	//垂直滑动条
 		const XSlider &hSlider);	//水平滑动条
-	XBool initEx(const XVector2& position,		//对上面接口的简化
+	XBool initEx(const XVec2& position,		//对上面接口的简化
 		const XMultiListSkin &tex,		
-		const XFontUnicode &font,			
+		const XFontUnicode& font,			
 		float strSize,						
 		int rowSum,					
 		int lineSum,				
@@ -223,14 +243,14 @@ public:
 		const XSlider &vSlider,	
 		const XSlider &hSlider);
 	XBool initPlus(const char * path,		//控件的贴图
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum,				//控件中的行数
 		//const XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		XResPos resPos = RES_SYS_DEF);
 	XBool initWithoutSkin(const XRect& area,
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum);
@@ -240,22 +260,22 @@ public:
 	{
 		return initWithoutSkin(area,getDefaultFont(),1.0f,rowSum,lineSum);
 	}
-	XBool initWithoutSkin(const XVector2& pixelSize,
+	XBool initWithoutSkin(const XVec2& pixelSize,
 		int rowSum,					//控件中的列数
 		int lineSum)
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),
 			getDefaultFont(),1.0f,rowSum,lineSum);
 	}
 protected:
 	void draw();					//描绘函数
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);					//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float x,float y);
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2& p);
 	void setLostFocus();
 public:
 	XBool exportData(const char *fileName = NULL);			//数据导出
@@ -270,16 +290,16 @@ public:
 	XBool moveRightRow(int order);	//将order列右移
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);			//设置尺寸
+	void setScale(const XVec2& s);			//设置尺寸
 
 	void setTextColor(const XFColor& color);	//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setColor(const XFColor& c);	//设置按钮的颜色
 	void setAlpha(float a);	//设置按钮的颜色
 
 	XMultiList();
@@ -295,8 +315,8 @@ public:
 	XBool moveUpLine(int order);		//将order行上移
 	XBool moveLeftRow(int order);		//将order列左移
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	//virtual void justForTest() {}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数

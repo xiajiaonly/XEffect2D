@@ -19,8 +19,8 @@ private:
 	bool m_haveChoose;
 	bool m_needShowToday;	//是否需要显示今天
 	bool m_needShowChoose;	//是否需要显示选择的日期
-	XVector2 m_todayPos;	//今天的位置
-	XVector2 m_choosePos;	//选择日期的位置
+	XVec2 m_todayPos;	//今天的位置
+	XVec2 m_choosePos;	//选择日期的位置
 	XRect m_rect;			//范围
 
 	XSystemTime m_todayDate;		//现在的日期
@@ -38,24 +38,24 @@ private:
 	XFontUnicode m_dateFont[42];
 	static void ctrlProc(void*,int,int);
 public:
-	XBool initWithoutSkin(const XFontUnicode &font);
+	XBool initWithoutSkin(const XFontUnicode& font);
 	XBool initWithoutSkin(){return initWithoutSkin(getDefaultFont());}
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	//下面是一些调用接口
-	XSystemTime getTodayDate() const {return m_todayDate;}
+	const XSystemTime& getTodayDate() const {return m_todayDate;}
 	void setTodayDate(const XSystemTime &t) {m_todayDate = t;}
 	bool getHaveChoose() const{return m_haveChoose;}
-	XSystemTime getCurChooseDate() const {return m_curSetDate;}
+	const XSystemTime& getCurChooseDate() const {return m_curSetDate;}
 	void setCurChooseDate(const XSystemTime &t) {m_curSetDate = t;}
-	XSystemTime getCurShowDate() const {return m_curShowData;}
+	const XSystemTime& getCurShowDate() const {return m_curShowData;}
 	void setCurShowDate(const XSystemTime &t) {m_curShowData = t;}
 
 protected:
@@ -63,18 +63,18 @@ protected:
 	void draw();								//描绘按钮
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
 	XBool keyboardProc(int,XKeyState){return XFalse;}			//返回是否触发按键动作
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(const XVec2& p);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}	//应该是可以随时失去焦点的
 	void setLostFocus();	//设置失去焦点
 public:
 	XCalendar()
 		:m_isInited(XFalse)
-		,m_haveChoose(false)
-		,m_needShowToday(false)
-		,m_needShowChoose(false)
+		, m_haveChoose(false)
+		, m_needShowToday(false)
+		, m_needShowChoose(false)
 	{
 		m_ctrlType = CTRL_OBJ_CALENDAR;
 	}
@@ -82,8 +82,8 @@ public:
 	void release();
 
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	////virtual void justForTest() {;}
 private://下面为了防止错误，重载赋值操作符，复制构造函数
 	XCalendar(const XButton &temp);

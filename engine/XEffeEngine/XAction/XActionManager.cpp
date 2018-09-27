@@ -29,7 +29,7 @@ void XActionMananger::loadActionDesFromFold(const XDir * dir)
 					printf("ERROR:Memory ERROR!\n");
 					return;
 				}
-				if(!tempAD->loadAction(tempFile->allPath.c_str(),RESOURCE_LOCAL_FOLDER))	//×ÊÔ´Î»ÖÃµÄ²ÎÊıÉĞĞèÒªÉÌÈ¶
+				if(!tempAD->loadAction(tempFile->allPath.c_str(),RES_LOCAL_FOLDER))	//×ÊÔ´Î»ÖÃµÄ²ÎÊıÉĞĞèÒªÉÌÈ¶
 				{
 					printf("ERROR:Action description load ERROR:%s\n",tempFile->allPath.c_str());
 					return;
@@ -48,8 +48,8 @@ XBool XActionMananger::loadAllActionDes(const char * path)	//½«Ö¸¶¨Ä¿Â¼ÏÂµÄ¶¯×÷È
 {//ÄÚ²¿×ÊÔ´¶ÁÈ¡»á´æÔÚÎÊÌâ
 	if(m_isInited) return XFalse;
 	char tempStr[MAX_FILE_NAME_LENGTH];
-	if(path == NULL) strcpy(tempStr,ACTION_DES_PATH);	//Ê¹ÓÃÄ¬ÈÏÂ·¾¶
-	else strcpy(tempStr,path);
+	if(path == NULL) strcpy_s(tempStr,MAX_FILE_NAME_LENGTH,ACTION_DES_PATH);	//Ê¹ÓÃÄ¬ÈÏÂ·¾¶
+	else strcpy_s(tempStr,MAX_FILE_NAME_LENGTH,path);
 
 	XDirectory tempDir;
 	if(!tempDir.initEx(tempStr))

@@ -13,7 +13,9 @@ bool XShareMem::init(const char *name, int size)
 		size <= 0) return false;
 	m_size = size;
 
-	m_hMapFile = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, name);
+	m_hMapFile = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, name);	
+	//这里并没有API能获取打开共享内存的大小，需要自己定义数据结构(例如：前四个字节是文件大小的字段，不被内容使用到)，
+	//才能实现这个功能，不过目前这并不影响使用的逻辑结构
 	if (m_hMapFile == NULL)
 	{
 		if (!XEE::getSysPrivilege(SE_CREATE_GLOBAL_NAME)) return false;
@@ -49,9 +51,13 @@ bool XShareMem::init(const char *name, int size)
 
 	m_pAddress = (unsigned char *)MapViewOfFile(m_hMapFile, //映射内存地址到指针
 		FILE_MAP_ALL_ACCESS,0,0,size);
-	if(m_pAddress == NULL)
+	m_hMutexRW = CreateMutex(NULL,false,(std::string(name) + "RW").c_str());
+	if(m_pAddress == NULL || m_hMutexRW == NULL)
 	{//映射失败
-		CloseHandle(m_hMapFile);
+		if(m_hMapFile != NULL)
+			CloseHandle(m_hMapFile);
+		if(m_hMutexRW != NULL)
+			CloseHandle(m_hMutexRW);
 		return false;
 	}
 
@@ -63,6 +69,7 @@ void XShareMem::release()
 	if(!m_isInited) return;
 	UnmapViewOfFile(m_pAddress);
 	CloseHandle(m_hMapFile);
+	CloseHandle(m_hMutexRW);
 	m_isInited = false;
 }
 #endif

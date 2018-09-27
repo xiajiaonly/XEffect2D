@@ -1,15 +1,16 @@
 #include "XStdHead.h"
+#if CREATE_WINDOW_METHOD == 1
 #include "XWindowGlut.h"
 #include "XMouseAndKeyBoardDefine.h"
 namespace XE{
-bool XWindowGlut::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int/*withFrame*/)
+bool XWindowGlut::createWindow(int width,int height,const char *windowTitle, bool isFullScreen, bool/*withFrame*/)
 {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);	//GLUT_MULTISAMPLE启用多重采样
     glutInitWindowPosition(100,100);
     glutInitWindowSize(width, height);
     glutCreateWindow(windowTitle);
-	if(isFullScreen != 0) glutFullScreen();
-	//if(withFrame != 0) ;
+	if(isFullScreen) glutFullScreen();
+	//if(withFrame) ;
 	//SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);	//使得STENCIL生效，能产生镜面效果。
 
 	return true;
@@ -156,3 +157,4 @@ int XWindowGlut::mapKey(int key)
 	}
 }
 }
+#endif

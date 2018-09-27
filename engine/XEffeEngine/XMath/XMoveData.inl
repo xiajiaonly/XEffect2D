@@ -1,16 +1,3 @@
-INLINE void XMoveData::set(float start,float end,float speed,XMoveDataMode mode,int isLoop)
-{
-	m_isEnd = XFalse;
-	m_startData = start;
-	m_endData = end;
-	m_speed = speed;
-	m_curData = start;
-	m_timer = 0.0f;
-	m_mode = mode;
-	m_isLoop = isLoop;
-	if(isLoop >= 1) m_loopTimer = isLoop;
-	else m_loopTimer = -1;	//无限循环
-}
 INLINE void XMoveData::reset()	//设置重新开始
 {
 	m_curData = m_startData;

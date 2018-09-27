@@ -10,6 +10,11 @@
 #include "XEdit.h"
 #include "XSlider.h"
 #include <deque>
+#include "XString.h"
+#if WITH_LOG
+#else
+#include "XCritical.h"
+#endif
 namespace XE{
 //slider目录名为:/SliderH和/SliderV
 typedef XEditSkin XMultiTextSkin;
@@ -69,8 +74,8 @@ private:
 	const XTextureData *m_multiEditUpon;	//输入框片选颜色
 
 	XSprite m_spriteBackGround;	//用于显示输入框的背景贴图
-	//XVector2 m_textPosition;			//文字显示的位置，是相对于控件的位置来定的
-	XVector2 m_textSize;				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
+	//XVec2 m_textPosition;			//文字显示的位置，是相对于控件的位置来定的
+	XVec2 m_textSize;				//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 	XFColor m_textColor;			//文字的颜色
 	float m_textWidth;	//字体的宽度
 	float m_curTextHeight;	//字体的高度
@@ -110,29 +115,29 @@ public:
 //	void (*m_funSelect)(void *,int ID);	//发生点选时调用
 //	void *m_pClass;
 public:
-	XBool init(const XVector2& position,	//控件所在的位置
+	XBool init(const XVec2& position,	//控件所在的位置
 		const XRect& Area,	//控件的范围
 		const XMultiTextSkin& tex,	//控件的贴图
 		const char *str,const XFontUnicode& font, float strSize,		//控件的字体及相关信息
-		//const XVector2& strPosition,
+		//const XVec2& strPosition,
 		//const XMouseRightButtonMenu &mouseMenu,
 		const XSlider &vSlider,const XSlider &hSlider);	//控件的其他附属依赖控件
-	XBool initEx(const XVector2& position,	//对上面接口的简化
+	XBool initEx(const XVec2& position,	//对上面接口的简化
 		const XMultiTextSkin& tex,	
 		const char *str,const XFontUnicode& font, float strSize,
 		const XSlider &vSlider,const XSlider &hSlider);
 	XBool initPlus(const char *path,
 		const char *str,const XFontUnicode& font, float strSize = 1.0f,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		XResPos resPos = RES_SYS_DEF);
 	XBool initWithoutSkin(const XRect& area,
 		const char *str,const XFontUnicode& font, float strSize = 1.0f);
 	XBool initWithoutSkin(const XRect& area,const char *str)
 	{
 		return initWithoutSkin(area,str,getDefaultFont(),1.0f);
 	}
-	XBool initWithoutSkin(const XVector2& pixelSize,const char *str)
+	XBool initWithoutSkin(const XVec2& pixelSize,const char *str)
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),
 			str,getDefaultFont(),1.0f);
 	}
 
@@ -141,24 +146,24 @@ protected:
 	void draw();
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);					//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);					//返回是否出发按键动作
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float x,float y);
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2& p);
 	void setLostFocus();
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);	//改变空间的位置
+	void setPosition(const XVec2& p);	//改变空间的位置
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);		//改变控件的尺寸
+	void setScale(const XVec2& s);		//改变控件的尺寸
 
 	void setTextColor(const XFColor& color);	//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setColor(const XFColor& c);	//设置按钮的颜色
 	void setAlpha(float a);	//设置按钮的颜色
 
 	//下面几个方法需要保证字符串内容的合法性
@@ -171,16 +176,16 @@ public:
 	const std::string getString()const	//这个函数会造成较大的性能消耗
 	{
 		std::string tmpStr = "";
-		for(int i = 0;i < m_curStr.size();++ i)
+		for(auto it = m_curStr.begin();it != m_curStr.end();++ it)
 		{
-			tmpStr += (*m_curStr[i]) + "\n";
+			tmpStr += (*(*it)) + "\n";
 		}
 		return tmpStr;
 	}
 	//获取指定行的字符串
 	const char *getALineString(int index)const
 	{
-		if(index < 0 || m_curStr.size() <= index) return "";
+		if(index < 0 || m_curStr.size() <= index) return XString::gNullStr.c_str();
 		else return m_curStr[index]->c_str();
 	}
 	bool setALineString(const char *str,int index)
@@ -216,8 +221,8 @@ public:
 	int getSelectLine() const;			//返回当前鼠标选择的是哪一行，-1位没有选择
 	int getLineSum() const;
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	//virtual void justForTest() {}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
@@ -237,7 +242,6 @@ public:
 	virtual XBool saveState(TiXmlNode &e);
 	virtual XBool loadState(TiXmlNode *e);
 	//---------------------------------------------------------
-
 };
 #if WITH_INLINE_FILE
 #include "XMultiText.inl"

@@ -7,20 +7,20 @@ INLINE void XText::setLostFocus()
 
 	m_isBeChoose = XFalse;	//控件处于焦点状态
 }
-INLINE void XText::setPosition(float x,float y)
+INLINE void XText::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
-	m_font.setPosition(x,y);
+	m_position = p;
+	m_font.setPosition(m_position);
 }
-INLINE void XText::setScale(float x,float y)
+INLINE void XText::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
-	m_font.setScale(x,y);
+	m_scale = s;
+	m_font.setScale(m_scale);
 }
-INLINE void XText::setColor(float r,float g,float b,float a)
+INLINE void XText::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
-	m_font.setColor(r,g,b,a);
+	m_color = c;
+	m_font.setColor(m_color);
 }
 INLINE void XText::setAlpha(float a)
 {
@@ -33,3 +33,9 @@ INLINE void XText::draw()
 		!m_isVisible) return;	//如果不可见直接退出
 	m_font.draw();
 }								//描绘按钮
+INLINE void XText::setAlignmentMode(XFontAlignmentModeX x, XFontAlignmentModeY y)
+{
+	if (!m_isInited) return;
+	m_font.setAlignmentModeX(x);
+	m_font.setAlignmentModeY(y);
+}

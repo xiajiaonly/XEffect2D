@@ -209,8 +209,8 @@ namespace XImm
 		m_isInputChange = false;
 		return ret;
 	}
-	std::string getImmDescription()	{return m_immDescription;}
-	std::string getImmFilename() {return m_immFilename;}
+	const std::string& getImmDescription(){return m_immDescription;}
+	const std::string& getImmFilename(){return m_immFilename;}
 	void setCompositionPos(float x,float y)
 	{
 		m_curPosX = x;
@@ -244,7 +244,7 @@ namespace XImm
 		m_isCompositionStrChange = false;
 		return ret;
 	}
-	std::string getCompositionStr()	{return m_curCompositionStr;}
+	const std::string& getCompositionStr() {return m_curCompositionStr;}
 	bool getCompositionState(){return m_isInComposition;}
 
 	bool getIsCandidateListChange()		//候选列表是否发生更新
@@ -255,9 +255,9 @@ namespace XImm
 	}
 	bool getHaveCandidateList(){return m_haveCandidateList;}			//是否有候选列表
 	int getCandidateListCount(){return m_candidateListStr.size();};			//候选列表的数量
-	std::string getCandidateListStr(int index)	//获取候选列表的数量
+	const std::string& getCandidateListStr(int index)	//获取候选列表的数量
 	{
-		if(index < 0 || index >= m_candidateListStr.size()) return "";
+		if(index < 0 || index >= m_candidateListStr.size()) return XString::gNullStr;
 		return m_candidateListStr[index];
 	}
 	//void showImmUI(bool hideOrShow)
@@ -297,25 +297,25 @@ namespace XImm
 #if _WIN32_WINNT >= 0x0501
 		HRESULT hr = S_OK;  
 		hr = CoInitializeEx(NULL,COINIT_APARTMENTTHREADED);
-		if(!SUCCEEDED(hr)) return ""; 
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
 		ITfInputProcessorProfiles *pProfiles;
 		LANGID langid;  
 		BSTR bstrImeName = NULL;  
 		hr = CoCreateInstance(CLSID_TF_InputProcessorProfiles, NULL, CLSCTX_INPROC_SERVER, __uuidof(ITfInputProcessorProfiles), (LPVOID*)&pProfiles);
-		if(!SUCCEEDED(hr)) return "";  
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
   
 		hr = pProfiles->GetCurrentLanguage(&langid);  
-		if(!SUCCEEDED(hr)) return "";  
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
   
 		CLSID textSrvId, profileId;  
 		hr = pProfiles->GetDefaultLanguageProfile(langid, GUID_TFCAT_TIP_KEYBOARD, &textSrvId, &profileId);  
-		if(!SUCCEEDED(hr)) return "";  
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
   
 		hr = pProfiles->GetActiveLanguageProfile(textSrvId, &langid, &profileId);  
-		if(!SUCCEEDED(hr)) return "";  
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
   
 		hr = pProfiles->GetLanguageProfileDescription(textSrvId, langid, profileId, &bstrImeName);  
-		if(!SUCCEEDED(hr)) return "";  
+		if(!SUCCEEDED(hr)) return XString::gNullStr;
 
 		std::string ret = XString::Wchar2ANSI((wchar_t *)bstrImeName);
 
@@ -324,7 +324,7 @@ namespace XImm
 		CoUninitialize();
 		return ret;
 #else
-		return "";
+		return XString::gNullStr;
 #endif
 	}
 	std::string getImeName()

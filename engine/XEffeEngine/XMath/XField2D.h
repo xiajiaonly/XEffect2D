@@ -22,42 +22,40 @@ public:
 private:
 	int m_w;
 	int m_h;
-	XVector2 *m_pVectors;
+	int m_sum;
+	XVec2 *m_pVectors;
 	bool m_isInited;
 	XField2DType m_type;
 public:
 	XField2D()
 		:m_isInited(false)
-		,m_pVectors(NULL)
-		,m_type(FIELD2D_NULL)
+		, m_pVectors(NULL)
+		, m_type(FIELD2D_NULL)
 	{}
-	~XField2D(){Release();}
-	XBool Init(int w,int h)
-	{
-		if(m_isInited) return XFalse;
-		if(w <= 0 || h <= 0) return XFalse;
-		m_w = w;
-		m_h = h;
-		m_pVectors = XMem::createArrayMem<XVector2>(w * h);
-		if(m_pVectors == NULL) return XFalse;
-		m_type = FIELD2D_NULL;
-		m_isInited = XTrue;
-		return XTrue;
-	}
-	XField2DType GetType() const {return m_type;}
+	~XField2D() { Release(); }
+	XBool Init(int w, int h);
+	XField2DType GetType() const { return m_type; }
 	void SetField2DType(XField2DType type);
-	void Draw(const XVector2 &size);	//√ËªÊ≥°
-	void Release()
+	void Draw(const XVec2& size, float scale);	//√ËªÊ≥°
+	void Release();
+	const XVec2& GetVector(int x, int y) const;
+	const XVec2& GetVectorFast(int index) const;
+	void SetVector(int x, int y, const XVec2& v);
+	void SetVectorFast(int x, int y, const XVec2& v);
+	void BlendVector(int index, const XVec2& v, float rate);
+	void ScaleVector(float scale)
 	{
-		if(!m_isInited) return;
-		XMem::XDELETE_ARRAY(m_pVectors);
-		m_isInited = XFalse;
+		for (int i = 0; i < m_sum; ++i)
+		{
+			m_pVectors[i] *= scale;
+		}
 	}
-	XVector2 GetVector(int x,int y) const
-	{
-		if(!m_isInited || x < 0 || y < 0 || x >= m_w || y >= m_h) return XVector2::zero;
-		return m_pVectors[x + m_w * y];
-	}
+	void Reset();
+	bool Save2File(const char* filename);
+	bool LoadFromFile(const char* filename);
 };
+#if WITH_INLINE_FILE
+#include "XField2D.inl"
+#endif
 }
 #endif

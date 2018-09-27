@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2013.1.1
 //--------------------------------
-#include "XOSDefine.h"
+#include "XCommonDefine.h"
 #include <string>
 #include <vector>
 #include "XMath\XVector2.h"
@@ -21,6 +21,7 @@ enum XObjectType
 	OBJ_FONTUNICODE,	//显示字符的物件
 	OBJ_FONTX,			//显示字符的物件
 	OBJ_NODELINE,		//节点曲线的物件
+	OBJ_TURNBOARD,		//翻板子的控件
 	OBJ_CONTROL,		//控件的物件
 };
 extern std::string objectTypeStr[];
@@ -28,23 +29,26 @@ extern std::string objectTypeStr[];
 class XObjectManager;
 class XObjectBasic
 {
-//private:
+	//private:
 	friend XObjectManager;
 protected:
 	XObjectType m_objType;
 public:
-	virtual XObjectType getObjectType() const {return m_objType;}
-	virtual XBool isInRect(float x,float y) = 0;		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	virtual XVector2 getBox(int order) = 0;			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	virtual XObjectType getObjectType() const { return m_objType; }
+	virtual XBool isInRect(const XVec2&) = 0;		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	virtual XVec2 getBox(int order) = 0;			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	virtual XVec2 getRectSize() { return getBox(2) - getBox(0); }
+	virtual float getRectWidth() { return getBox(2).y - getBox(0).y; }
+	virtual float getRectHeight() { return getBox(2).x - getBox(0).x; }
 
-	virtual void setPosition(float x,float y) = 0;		//设置物件的位置	+Child处理
-	virtual void setPosition(const XVector2& pos) {setPosition(pos.x,pos.y);}
-	virtual XVector2 getPosition() const  = 0;				//获取物件的尺寸
+	virtual void setPosition(float x, float y) { setPosition(XVec2(x, y)); }		//设置物件的位置	+Child处理
+	virtual void setPosition(const XVec2& pos) = 0;
+	virtual const XVec2& getPosition() const = 0;				//获取物件的尺寸
 
-	virtual void setScale(float x,float y) = 0;			//设置物件的尺寸	+Child处理
-	virtual void setScale(const XVector2& scale) {setScale(scale.x,scale.y);}
-	virtual void setScale(float scale) {setScale(scale,scale);}
-	virtual XVector2 getScale() const  = 0;					//获取物件的尺寸
+	virtual void setScale(float x, float y) { setScale(XVec2(x, y)); }		//设置物件的尺寸	+Child处理
+	virtual void setScale(const XVec2& scale) = 0;
+	virtual void setScale(float scale) { setScale(XVec2(scale)); }
+	virtual const XVec2& getScale() const = 0;					//获取物件的尺寸
 
 	virtual void setAngle(float angle) = 0;					//设置物件的角度	+Child处理
 	virtual float getAngle() const = 0;						//获取物件的角度
@@ -55,30 +59,29 @@ public:
 	//新加入的接口
 	virtual void draw() = 0;
 
-	virtual void setColor(float r,float g,float b,float a) = 0;		//+Child处理
-	virtual void setColor(const XFColor& color) {setColor(color.fR,color.fG,color.fB,color.fA);}
-	virtual XFColor getColor() const = 0;				
+	virtual void setColor(float r, float g, float b, float a) { setColor(XFColor(r, g, b, a)); }		//+Child处理
+	virtual void setColor(const XFColor& color) = 0;
+	virtual const XFColor& getColor() const = 0;
 	virtual void setAlpha(float a) = 0;								//+Child处理
 
 	XObjectBasic()
 		:m_parent(NULL)
-		,m_objType(OBJ_NULL)
+		, m_objType(OBJ_NULL)
 	{}
 	virtual ~XObjectBasic()
 	{
-		if(m_parent == NULL) return;
+		if (m_parent == NULL) return;
 		//从他的父物体中注销自己
 		m_parent->popChild(this);
 		m_parent = NULL;
 		clearAllChild();	//删除它的所有子物体
 	}
-
 	//下面增加对物件从属关系的控制
 protected:
 	XObjectBasic *m_parent;	//父物体
 	std::vector<XObjectBasic *> m_childList;	//孩子列表,任何一个物体只能有一个父，任何一个物体可以有多个子物体
-	std::vector<XVector2> m_childRelativePos;	//相对位置
-	std::vector<XVector2> m_childRelativeSize;	//相对大小
+	std::vector<XVec2> m_childRelativePos;	//相对位置
+	std::vector<XVec2> m_childRelativeSize;	//相对大小
 	std::vector<float> m_childRelativeAngle;	//相对角度
 												//为了设计的简单，这里暂时使用颜色和透明度的不做相对变化而是统一变化
 	virtual void updateChildPos();

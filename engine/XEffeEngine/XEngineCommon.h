@@ -19,34 +19,38 @@ namespace XEE //+
 	extern bool isRegRun();				//获取程序是否为开机启动(尚未实现)
 	extern int sleep(unsigned long sleepUSecond);	//这个参数的时间是us及1000000分之1秒，及1000分之1毫秒
 	inline void setVSync(bool sync)	//开启和关闭垂直同步，关闭的话，可以放开帧率，开启的话会限制帧率
-	{	
+	{
 		// Function pointer for the wgl extention function we need to enable/disable
 		// vsync
-		typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALPROC)( int );
+		typedef BOOL(APIENTRY *PFNWGLSWAPINTERVALPROC)(int);
+#ifdef wglSwapIntervalEXT
+		wglSwapIntervalEXT(sync);
+#else
 		PFNWGLSWAPINTERVALPROC wglSwapIntervalEXT = 0;
 
-		const char *extensions = (char*)glGetString( GL_EXTENSIONS );
+		const char *extensions = (char*)glGetString(GL_EXTENSIONS);
 
-		if(strstr(extensions,"WGL_EXT_swap_control") == 0) return;
+		if (strstr(extensions, "WGL_EXT_swap_control") == 0) return;
 		else
 		{
-			wglSwapIntervalEXT = (PFNWGLSWAPINTERVALPROC)wglGetProcAddress( "wglSwapIntervalEXT" );
-			if(wglSwapIntervalEXT) wglSwapIntervalEXT(sync);
+			wglSwapIntervalEXT = (PFNWGLSWAPINTERVALPROC)wglGetProcAddress("wglSwapIntervalEXT");
+			if (wglSwapIntervalEXT) wglSwapIntervalEXT(sync);
 		}
+#endif
 		//说明
 		//In Linux / GLX
 		//Use the GLX_EXT_swap_control extension to control swap interval. Check the GLX-specific extensions string via glXQueryExtensionsString() to verify that the extension is actually present.
 		//The extension provides glXSwapIntervalEXT(), which also directly specifies the swap interval. glXSwapIntervalEXT(1) is used to enable vsync; glXSwapIntervalEXT(0) to disable vsync.
 	}
-	inline XBool getCapsLockState(){return (GetKeyState(VK_CAPITAL) == 1);}
-	inline XBool getNumLockState(){return (GetKeyState(VK_NUMLOCK) == 1);}
+	inline XBool getCapsLockState() { return (GetKeyState(VK_CAPITAL) == 1); }
+	inline XBool getNumLockState() { return (GetKeyState(VK_NUMLOCK) == 1); }
 	//设置按键状态
 	inline void setCapsLockState(XBool state)
 	{
 		BYTE btKeyState[256];
-		if(!GetKeyboardState((LPBYTE)&btKeyState)) return;
-	 
-		if((!(btKeyState[VK_CAPITAL] & 1) && state) ||
+		if (!GetKeyboardState((LPBYTE)&btKeyState)) return;
+
+		if ((!(btKeyState[VK_CAPITAL] & 1) && state) ||
 			((btKeyState[VK_CAPITAL] & 1) && !state))
 		{//如果按键没有亮，则设置为亮
 			keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
@@ -56,9 +60,9 @@ namespace XEE //+
 	inline void setNumLockState(XBool state)
 	{
 		BYTE btKeyState[256];
-		if(!GetKeyboardState((LPBYTE)&btKeyState)) return;
-	 
-		if((!(btKeyState[VK_NUMLOCK] & 1) && state) ||
+		if (!GetKeyboardState((LPBYTE)&btKeyState)) return;
+
+		if ((!(btKeyState[VK_NUMLOCK] & 1) && state) ||
 			((btKeyState[VK_NUMLOCK] & 1) && !state))
 		{//如果按键没有亮，则设置为亮
 			keybd_event(VK_NUMLOCK, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
@@ -66,14 +70,15 @@ namespace XEE //+
 		}
 	}
 
-	inline void makeABeep(){printf("\a");}	//发出一个规格化的声音
+	inline void makeABeep() { printf("\a"); }	//发出一个规格化的声音
 	inline void makeCrash()	//产生crash操作，用于测试crash的情况
 	{
 		int *a = 0;
 		*a = 0;
 	}
-	extern XBool startProgram(const char * programPath);//启动一个程序
-	extern XBool startProgram(const char * programPath,HANDLE &hProcess);//启动一个程序
+	extern XBool startProgram(const char* programPath);//启动一个程序
+	extern XBool startProgram(const char* programPath, HANDLE &hProcess);//启动一个程序
+	extern XBool startProgramEx(const char* programPath,int mode = SW_SHOWNORMAL);//启动一个程序
 	extern XBool exitProgram(HANDLE hProcess);
 	extern XBool activateGame(HWND h);	//激活当前窗口为最前端
 	struct XMemUsageInfo
@@ -99,28 +104,29 @@ namespace XEE //+
 	};
 	//用于系统关机或者重启或者注销的函数
 	extern void shutDownSystem(XShutDownSystemMode mode = SYS_SD_MODE_G);
+	extern bool turnOnSystem(const void *MAC);	//通过UDP广播的方式向指定机器发送启动魔法包
 	extern bool getSysPrivilege(const char * value);	//提升系统权限
 	//后台停顿等待键盘输入
-	inline void waitingForKey() {system("pause");}
+	inline void waitingForKey() { system("pause"); }
 	//设置控制台输出文字的颜色
 	inline void setConsoleColor(int index)
 	{
-		switch(index)
+		switch (index)
 		{
-		case 1:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE);break;
-		case 2:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_GREEN);break;
-		default:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_RED);break;
+		case 1:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_BLUE); break;
+		case 2:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN); break;
+		default:SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED); break;
 		}
 	}
 	//获取当前进程的ID
-	inline DWORD getCurProcessID(){return GetCurrentProcessId();}
+	inline DWORD getCurProcessID() { return GetCurrentProcessId(); }
 	//判断指定进程是否结束
 	inline bool getIsProcessOver(DWORD id)
 	{
-	//	HANDLE hApp = OpenProcess(PROCESS_VM_OPERATION|SYNCHRONIZE,FALSE,id);
-	//	return !WaitForSingleObject(hApp,0);	//返回指定进程的状态
-		if(id == NULL) return true;
-		return !WaitForSingleObject(OpenProcess(PROCESS_VM_OPERATION|SYNCHRONIZE,FALSE,id),0);	//返回指定进程的状态
+		//	HANDLE hApp = OpenProcess(PROCESS_VM_OPERATION|SYNCHRONIZE,FALSE,id);
+		//	return !WaitForSingleObject(hApp,0);	//返回指定进程的状态
+		if (id == NULL) return true;
+		return !WaitForSingleObject(OpenProcess(PROCESS_VM_OPERATION | SYNCHRONIZE, FALSE, id), 0);	//返回指定进程的状态
 	}
 	//获取指定名称的进程ID
 #ifdef UNICODE
@@ -136,11 +142,11 @@ namespace XEE //+
 		return r;
 	}
 #endif
-	inline DWORD getProcesssID(const std::string &name)
+	inline DWORD getProcesssID(const std::string& name)
 	{
-		PROCESSENTRY32  pe32;	
- 
-		HANDLE hSnaphot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0); //获取进程快照
+		PROCESSENTRY32  pe32;
+
+		HANDLE hSnaphot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); //获取进程快照
 		Process32First(hSnaphot, &pe32); //指向第一个进程
 		do
 		{
@@ -153,12 +159,10 @@ namespace XEE //+
 				return pe32.th32ProcessID;
 				break;
 			}
-		}while(Process32Next(hSnaphot, &pe32)); // 不断循环直到取不到进程
+		} while (Process32Next(hSnaphot, &pe32)); // 不断循环直到取不到进程
 		return NULL;
 	}
 #endif
-
 }
 }
-
 #endif

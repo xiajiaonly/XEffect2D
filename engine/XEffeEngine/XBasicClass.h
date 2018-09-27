@@ -11,9 +11,9 @@
 //#include "XMath/XVector3.h" 
 //#include "XMath/XVector4.h" 
 //#include "XMath/XLine.h"
-//#include "XMath/XMatrix2x2.h"
-//#include "XMath/XMatrix3x3.h"
-//#include "XMath/XMatrix4x4.h"
+//#include "XMath/XMat2.h"
+//#include "XMath/XMat3.h"
+//#include "XMath/XMat4.h"
 //#include "XMath/XRect.h"
 //#include "XMath/XCColor.h"
 //#include "XMath/XFColor.h"
@@ -35,6 +35,21 @@ public:
 	XVectorIndex3(int a,int b,int c)
 		:x(a),y(b),z(c)
 	{}
+	static const XVectorIndex3 zero;
+};
+class XVectorIndex2
+{
+public:
+    int x;
+    int y;
+
+	XVectorIndex2()
+		:x(0),y(0)
+	{}
+	XVectorIndex2(int a,int b)
+		:x(a),y(b)
+	{}
+	static const XVectorIndex2 zero;
 };
 
 class XTexture;
@@ -71,8 +86,8 @@ private:
 //    float getLength(const XVector2I& P0) const;
 //    float getAngle(const XVector2I& P0) const;
 //
-//	XVector2I& operator = (const XVector2 & temp);
-//	XVector2I(const XVector2 & temp);
+//	XVector2I& operator = (const XVec2& temp);
+//	XVector2I(const XVec2& temp);
 //
 //    XVector2I(int a,int b);
 //    XVector2I();
@@ -102,10 +117,10 @@ private:
 //   // {
 //   // }
 //    void set(const XVector2I& p0,const XVector2I& p1);
-//    void set(const XVector2& p0,const XVector2& p1);
+//    void set(const XVec2& p0,const XVec2& p1);
 //    XBool isInRect(const XVector2I& p0) const;
 //    int getArea() const;
-//    XVector2 getCenter() const;
+//    XVec2 getCenter() const;
 //    int getWidth() const;
 //    int getHeight() const;
 //    void setCenter(int x,int y);

@@ -39,20 +39,32 @@ public:
 
 		return m_xLast;                
 	}
-	virtual void init(double Q,double R)	//，double p
+	double reset(double data)
+	{
+		m_xLast = data;
+		double x_mid = m_xLast;								//x_last=x(k-1|k-1),x_mid=x(k|k-1)
+		double p_mid = m_pLast + m_processNioseQ;			//p_mid=p(k|k-1),p_last=p(k-1|k-1),Q=噪声
+		double kg = p_mid / (p_mid + m_measureNoiseR);		//kg为kalman filter，R为噪声
+		m_xLast = x_mid + kg * (data - x_mid);			//估计出的最优值
+		m_pLast = (1.0 - kg) * p_mid;						//最优值对应的covariance
+
+		return m_xLast;                
+	}
+	virtual void init(double Q = 0.03f,double R = 1.0f)	//，double p
 	{
 		m_processNioseQ = Q;
 		m_measureNoiseR = R;
 //		m_initialPrediction = P;
 	}
 	XKalmanFilter()
-		:m_processNioseQ(0.0000001)
-		,m_measureNoiseR(10.0)
+		:m_processNioseQ(0.03)
+		, m_measureNoiseR(1.0)
 //		,m_initialPrediction(2210.0)
-		,m_xLast(0.0)
-		,m_pLast(0.0)
-		,m_isFirst(true)
+		, m_xLast(0.0)
+		, m_pLast(0.0)
+		, m_isFirst(true)
 	{}
+	virtual ~XKalmanFilter(){}
 };
 ////下面是卡尔曼滤波的网络资料
 ////http://www.amobbs.com/thread-5559754-1-1.html

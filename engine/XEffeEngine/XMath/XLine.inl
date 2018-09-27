@@ -7,11 +7,11 @@ INLINE float XLine::getLineAngle() const
 {
 	return m_angle;
 }
-INLINE XVector2 XLine::getStartPosition() const
+INLINE XVec2 XLine::getStartPosition() const
 {
 	return m_startPosition;
 }
-INLINE XVector2 XLine::getEndPosition() const
+INLINE XVec2 XLine::getEndPosition() const
 {
 	return m_endPosition;
 }

@@ -20,10 +20,10 @@ INLINE void XEdit::upDateInsertShowPosition()	//根据实际情况更新光标显示的位置
 		+ (m_curInsertPoint - m_curShowStart) * m_curTextWidth,
 		m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f);
 }
-INLINE XBool XEdit::initEx(const XVector2& position,	//上面接口的简化版本
+INLINE XBool XEdit::initEx(const XVec2& position,	//上面接口的简化版本
 	const XEditSkin &tex,			
 	const char *str,					
-	const XFontUnicode &font,			
+	const XFontUnicode& font,			
 	float strSize,	
 	XMouseRightButtonMenu * mouseMenu)
 {
@@ -31,15 +31,15 @@ INLINE XBool XEdit::initEx(const XVector2& position,	//上面接口的简化版本
 }
 INLINE XBool XEdit::initPlus(const char * path,			//控件的贴图
 	const char *str,					//控件的初始化字符串
-	const XFontUnicode &font,			//控件的字体
+	const XFontUnicode& font,			//控件的字体
 	float strSize,	//控件的字体信息
 	XMouseRightButtonMenu * mouseMenu,//控件的右键菜单
-	XResourcePosition resoursePosition)
+	XResPos resPos)
 {
 	if(m_isInited || path == NULL) return XFalse;
-	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXEDIT_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXEDIT_TEX,resPos);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(XVector2::zero,*(XEditSkin *)m_resInfo->m_pointer,str,font,strSize,mouseMenu);
+	return initEx(XVec2::zero,*(XEditSkin *)m_resInfo->m_pointer,str,font,strSize,mouseMenu);
 }
 INLINE void XEdit::drawUp()				//描绘小菜单
 {
@@ -56,27 +56,27 @@ INLINE void XEdit::drawUp()				//描绘小菜单
 		float curData = m_insertActionMD.getCurData();
 		float x = m_position.x + m_textPosition.x * m_scale.x + (m_curInsertPoint - m_curShowStart) * m_curTextWidth;
 		float y = m_position.y + m_textPosition.y * m_scale.y - m_curTextHeight * 0.5f * curData;
-		float r = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fR,m_insertActionMD.getCurTimer());
-		float g = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fG,m_insertActionMD.getCurTimer());
-		float b = XMath::lineSlerp<float>(1.0f,0.25f * m_color.fB,m_insertActionMD.getCurTimer());
-		XRender::drawLine(x,y,x,y + m_curTextHeight * curData,1.0f * curData,
-			r,g,b,m_color.fA * m_insertActionMD.getCurTimer());
+		float r = XMath::lineSlerp<float>(1.0f,0.25f * m_color.r,m_insertActionMD.getCurTimer());
+		float g = XMath::lineSlerp<float>(1.0f,0.25f * m_color.g,m_insertActionMD.getCurTimer());
+		float b = XMath::lineSlerp<float>(1.0f,0.25f * m_color.b,m_insertActionMD.getCurTimer());
+		XRender::drawLine(XVec2(x,y),XVec2(x,y + m_curTextHeight * curData),1.0f * curData,
+			XFColor(r,g,b,m_color.a * m_insertActionMD.getCurTimer()));
 	}
 	if(m_withoutTex && !m_lightMD.getIsEnd())
 	{
-		XRender::drawRect(m_lightRect,1.0f * m_lightMD.getCurData() * 2.0f,1.0f,1.0f,1.0f,(1.0f - m_lightMD.getCurTimer()) * 0.5f);
+		XRender::drawRect(m_lightRect,1.0f * m_lightMD.getCurData() * 2.0f,XFColor(1.0f,(1.0f - m_lightMD.getCurTimer()) * 0.5f));
 	}
 	m_comment.draw();
 }
-INLINE XBool XEdit::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XEdit::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
-INLINE XBool XEdit::canLostFocus(float,float)
+INLINE XBool XEdit::canLostFocus(const XVec2&)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
@@ -87,13 +87,23 @@ INLINE XBool XEdit::canLostFocus(float,float)
 	//if(m_isBeChoose) return XFalse;
 	return XTrue;
 }
-INLINE void XEdit::setColor(float r,float g,float b,float a) 
+INLINE void XEdit::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_spriteBackGround.setColor(m_color);
 	m_spriteSelect.setColor(m_color);
 	m_spriteInsert.setColor(m_color);
-	m_caption.setColor(m_textColor * m_color);
+	//m_caption.setColor(m_textColor * m_color);
+	if(m_withPromptStr && strlen(m_curString) <= 0)
+	{//如果有提示文字
+		m_caption.setColor(XFColor(0.65f,1.0f) * m_color);
+	}else
+	{//如果没有提示文字
+		m_caption.setColor(m_textColor * m_color);
+	}
+	if(!isStringPassable())
+		m_caption.setColor(XFColor::red * m_color);
+
 	if(m_mouseRightButtonMenu != NULL)
 		m_mouseRightButtonMenu->setColor(m_color);
 	updateChildColor();
@@ -104,27 +114,36 @@ INLINE void XEdit::setAlpha(float a)
 	m_spriteBackGround.setColor(m_color);
 	m_spriteSelect.setColor(m_color);
 	m_spriteInsert.setColor(m_color);
-	m_caption.setColor(m_textColor * m_color);
+//	m_caption.setColor(m_textColor * m_color);
+	if(m_withPromptStr && strlen(m_curString) <= 0)
+	{//如果有提示文字
+		m_caption.setColor(XFColor(0.65f,1.0f) * m_color);
+	}else
+	{//如果没有提示文字
+		m_caption.setColor(m_textColor * m_color);
+	}
+	if(!isStringPassable())
+		m_caption.setColor(XFColor::red * m_color);
 	if(m_mouseRightButtonMenu != NULL)
 		m_mouseRightButtonMenu->setAlpha(a);
 	updateChildAlpha();
 }
-INLINE XBool XEdit::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XEdit::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
-INLINE XVector2 XEdit::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XEdit::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0:return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1:return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2:return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3:return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
+	case 0:return m_curMouseRect.getLT();
+	case 1:return m_curMouseRect.getRT();
+	case 2:return m_curMouseRect.getRB();
+	case 3:return m_curMouseRect.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 INLINE void XEdit::deleteSelectStr()
 {
@@ -135,18 +154,18 @@ INLINE void XEdit::deleteSelectStr()
 		changeInsertPoint(getSelectHead() - m_curInsertPoint);
 	}else
 	{
-		strcpy(m_curString + getSelectHead(),m_curString + getSelectEnd());
+		strcpy_s(m_curString + getSelectHead(),m_maxInputStringLength - getSelectHead(),m_curString + getSelectEnd());
 		m_curStringLength -= getSelectLength();
 		changeInsertPoint(getSelectHead() - m_curInsertPoint);
 	}
 }
-INLINE void XEdit::setPosition(float x,float y)
+INLINE void XEdit::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;	//如果没有初始化直接退出
-	m_position.set(x,y);
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
-	m_caption.setPosition(m_position.x + m_textPosition.x * m_scale.x,m_position.y + m_textPosition.y * m_scale.y);
+	m_position = p;
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
+	m_caption.setPosition(m_position + m_textPosition * m_scale);
 	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position);
 	upDateInsertShowPosition();
 	upDataSelectShow();
@@ -157,7 +176,7 @@ INLINE void XEdit::disable()					//使无效
 	m_isEnable = XFalse;
 	if(m_withAction && m_isBeChoose)
 	{
-		m_insertActionMD.set(10.0f,1.0f,0.002f,MOVE_DATA_MODE_SQRT2_MULT);
+		m_insertActionMD.set(10.0f,1.0f,0.002f,MD_MODE_SQRT2_MULT);
 	}
 	m_isBeChoose = XFalse;
 	if(m_mouseRightButtonMenu != NULL) m_mouseRightButtonMenu->disVisible(); //取消右键菜单的显示
@@ -202,6 +221,11 @@ INLINE int XEdit::getAsInt()
 	if(XString::getIsNumber(getString())) return atoi(getString());
 	return XString::getIsHexNumber(getString());
 }
+INLINE long long XEdit::getAsInt64()
+{
+	if(XString::getIsNumber(getString())) return _atoi64(getString());
+	return XString::getIsHexNumber64(getString());
+}
 //XBool getAsBool();
 INLINE float XEdit::getAsFloat()
 {
@@ -218,6 +242,9 @@ INLINE void XEdit::setIsPassword(bool flag)
 	if((m_isPassword && flag) ||
 		(!m_isPassword && !flag)) return;	//重复的设置
 	m_isPassword = flag;
-	m_caption.setIsPassWord(m_isPassword);
+	if (m_withPromptStr && strlen(m_curString) <= 0)
+		m_caption.setIsPassWord(false);
+	else
+		m_caption.setIsPassWord(m_isPassword);
 	//upDataShowStr();
 }

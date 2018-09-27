@@ -7,7 +7,7 @@
 //连接https://code.google.com/p/gperftools/
 //使用方法：
 //1、包含lib文件
-#pragma comment(lib, "../../engine/lib/MemoryPool/libtcmalloc_minimal.lib")
+#pragma comment(lib, "MemoryPool/libtcmalloc_minimal.lib")
 //加入强制符号引用__tcmalloc
 #ifdef XEE_OS_WINDOWS
 //#pragma comment( linker, "/INCLUDE:__tcmalloc" )	//使用内存池的编译说明

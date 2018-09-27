@@ -29,8 +29,7 @@ public:
         XMem::XDELETE(m_p);  
 	//	printf( "XBackP distructor called !\n");  
     }  
-};  
-  
+};    
 template<class T> class XSmartP  
 {  
 public:  

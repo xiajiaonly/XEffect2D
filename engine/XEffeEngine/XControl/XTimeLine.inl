@@ -1,4 +1,4 @@
-INLINE XBool XTimeLines::addKeyFrame(const std::string &name,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode)
+INLINE XBool XTimeLines::addKeyFrame(const std::string& name,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode)
 {
 	int index = getTimeLineIndexByName(name);
 	if(index < 0) return XFalse;
@@ -12,7 +12,7 @@ INLINE XBool XTimeLines::addKeyFrame(unsigned int index,int time,int timeLen,XFr
 	m_timeLines[index]->addAKeyFrame(time,timeLen,data,mode);
 	return XTrue;
 }
-INLINE XBool XTimeLines::delCurKeyFrame(const std::string &name)
+INLINE XBool XTimeLines::delCurKeyFrame(const std::string& name)
 {
 	int index = getTimeLineIndexByName(name);
 	if(index < 0) return XFalse;
@@ -25,7 +25,7 @@ INLINE XBool XTimeLines::delCurKeyFrame(unsigned int index)
 	m_timeLines[index]->delAKeyFrame(m_curTimer);
 	return XTrue;
 }
-INLINE XBool XTimeLines::clearAllFroms(const std::string &name)
+INLINE XBool XTimeLines::clearAllFroms(const std::string& name)
 {
 	int index = getTimeLineIndexByName(name);
 	if(index < 0) return XFalse;
@@ -45,13 +45,13 @@ INLINE void XTimeLines::clearAllFroms()
 		m_timeLines[i]->clearAllFrame();
 	}
 }
-INLINE const XOneFrame *XTimeLines::getCurKeyFrame(const std::string &name)	//获取当前所在的关键帧
+INLINE const XOneFrame *XTimeLines::getCurKeyFrame(const std::string& name)	//获取当前所在的关键帧
 {
 	int index = getTimeLineIndexByName(name);
 	if(index < 0) return NULL;
 	return m_timeLines[index]->getCurKeyFrame(m_curTimer);
 }
-INLINE const XOneFrame *XTimeLines::getNextKeyFrame(const std::string &name)	//获取下一个关键帧的指针
+INLINE const XOneFrame *XTimeLines::getNextKeyFrame(const std::string& name)	//获取下一个关键帧的指针
 {
 	int index = getTimeLineIndexByName(name);
 	if(index < 0) return NULL;
@@ -81,13 +81,13 @@ INLINE void XTimeLines::setAllTimeLineFrameFlag()
 		m_timeLines[i]->setAllFrameFlag();
 	}
 }
-INLINE void XOneTimeLine::setPosition(float x,float y)
+INLINE void XOneTimeLine::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	m_title.setPosition(m_position);
 }
-INLINE void XOneTimeLine::setScale(float x,float y)
+INLINE void XOneTimeLine::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
-	m_title.setScale(x,y);
+	m_scale = s;
+	m_title.setScale(m_scale);
 }

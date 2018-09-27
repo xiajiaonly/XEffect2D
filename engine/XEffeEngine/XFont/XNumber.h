@@ -31,7 +31,7 @@ enum XNumberAlignmentMode
 class XNumber:public XObjectBasic
 {
 private:
-	XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
+	XResPos m_resoursePosition;	//资源位置 0:外部 1:内部
 
 	XSprite m_sprite;					//贴图
 	XBool m_isInited;
@@ -59,47 +59,47 @@ public:
 	int getMaxPixelHeight();
 private:
 	void updateData();		//根据需要更新内部数据
-	XVector2 *m_textPosition;	//用于保存每个字符的位置
-	XRect *m_textRect;		//用于保存每个字符的剪切盒子
+	std::vector<XVec2> m_textPosition;	//用于保存每个字符的位置
+	std::vector<XRect> m_textRect;		//用于保存每个字符的剪切盒子
 	int m_needShowTextSum;	//需要显示的字符的数量
 
-	XVector2 m_position;	//字体的位置，这个是字体放置的位置
-	XVector2 m_setPosition;	//字体被设置的位置，这个位置可能由于旋转等动作在最终被改变
+	XVec2 m_position;	//字体的位置，这个是字体放置的位置
+	XVec2 m_setPosition;	//字体被设置的位置，这个位置可能由于旋转等动作在最终被改变
 	float m_alpha;			//透明通道
 	float m_distance;		//文字之间的距离	
-	XVector2 m_size;		//文字的尺寸（像素大小）
-	XVector2 m_layout;		//字体图片的布局
-	XVector2 m_scale;
-	XVector2 m_rotateBasicPoint;	//字体旋转的中心点
+	XVec2 m_size;		//文字的尺寸（像素大小）
+	XVec2 m_layout;		//字体图片的布局
+	XVec2 m_scale;
+	XVec2 m_rotateBasicPoint;	//字体旋转的中心点
 
 	bool loadFromFolder(const char *filename);	//从文件夹中载入资源
 	bool loadFromPacker(const char *filename);	//从压缩包中载入资源
 	bool loadFromWeb(const char *filename);		//从网页中读取资源
 public:
 	XBool init(const char *fileName,	//字体图片的名字
-		const XVector2 &size,			//字体的像素大小
-		const XVector2 &layout,			//字体图片的布局
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);		
+		const XVec2& size,			//字体的像素大小
+		const XVec2& layout,			//字体图片的布局
+		XResPos resPos = RES_SYS_DEF);		
 	XBool initEx(const char *fileName,	//字体图片的名字
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	
+		XResPos resPos = RES_SYS_DEF);	
 	XBool initFromTTF(const char *filename,	//ttf字体库的名称
 		int fontSize,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//从TTF文件中读取资源(尚未实现)
+		XResPos resPos = RES_SYS_DEF);	//从TTF文件中读取资源(尚未实现)
 
 	void draw();
 
 	using XObjectBasic::setScale;
-	void setScale(float x,float y);	//设置字体的显示大小
-	XVector2 getScale() const {return m_scale;}
+	void setScale(const XVec2& s);	//设置字体的显示大小
+	const XVec2& getScale() const {return m_scale;}
 	void setAngle(float angle);	//设置字体显示的角度
 	float getAngle() const {return m_angle;}
 	
 	using XObjectBasic::setPosition;
-	void setPosition(float x,float y);	//设置字体显示的位置
+	void setPosition(const XVec2& p);	//设置字体显示的位置
 	void setPositionX(float x);
 	void setPositionY(float y);
-	XVector2 getPosition() const {return m_setPosition;}
-	void setRotateBasePoint(float x,float y);
+	const XVec2& getPosition() const {return m_setPosition;}
+	void setRotateBasePoint(const XVec2& r);
 
 	XBool setNumber(int temp);								//设置整形数
 	XBool setNumber(float temp,int decimalPartLength);		//设置带小数点的数
@@ -109,8 +109,8 @@ public:
 	XBool setACopy(const XNumber &temp);
 
 	using XObjectBasic::setColor;
-	void setColor(float r,float g,float b,float a);	//设置颜色
-	XFColor getColor() const {return m_sprite.getColor();}
+	void setColor(const XFColor& c);	//设置颜色
+	const XFColor& getColor() const {return m_sprite.getColor();}
 	void setAlpha(float a);
 	float getAlpha() const {return m_alpha;}
 	XBool release();
@@ -118,8 +118,8 @@ public:
 	void setDistance(float distance) {m_distance = distance;}
 	float getDistance() const {return m_distance;}
 	//为了实现物件管理，下面增加几个接口
-	XBool isInRect(float x,float y);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);	//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);	//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	XNumber();
 	~XNumber();

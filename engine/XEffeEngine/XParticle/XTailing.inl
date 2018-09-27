@@ -12,7 +12,7 @@ INLINE void XTailingDLine::Draw()	//描绘函数
 	DrawBody();
 	DrawEnd();
 }
-INLINE void XTailingObject::Update(const float &stepTime,const XRect &rect)
+INLINE void XTailingObject::Update(const float &stepTime,const XRect& rect)
 {//物体在运动
 	if(!m_isStop) 
 	{
@@ -27,7 +27,7 @@ INLINE void XTailingObject::Update(const float &stepTime,const XRect &rect)
 			m_tailing->Update(stepTime);
 	}
 }
-INLINE void XTailingObject::Reset(const XVector2 &pos,const XVector2 &speed,XTailingD *t)
+INLINE void XTailingObject::Reset(const XVec2& pos,const XVec2& speed,XTailingD *t)
 {
 	m_isStop = false;
 	m_position = pos;
@@ -38,12 +38,23 @@ INLINE void XTailingDLine::DrawEnd()
 {
 	XGL::DisableBlend();
 }
+INLINE void XTailingDLine::DrawFE()
+{
+	glEnd();
+	XGL::DisableBlend();
+}
 INLINE void XTailingDLine::DrawBegin()
 {
 	XGL::DisableTexture2D();
-	XGL::EnableBlend();
-	XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	XGL::setBlendAlpha();
 	glLineWidth(2.0);
+}
+INLINE void XTailingDLine::DrawFB()
+{
+	XGL::DisableTexture2D();
+	XGL::setBlendAlpha();
+	glLineWidth(2.0);
+	glBegin(GL_LINES);
 }
 INLINE void XTailingD::DrawEnd()
 {
@@ -53,8 +64,7 @@ INLINE void XTailingD::DrawEnd()
 INLINE void XTailingDPoint::DrawBegin()
 {
 	XGL::DisableTexture2D();
-	XGL::EnableBlend();
-	XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	XGL::setBlendAlpha();
 	glPointSize(10);
 	glBegin(GL_POINTS);
 }

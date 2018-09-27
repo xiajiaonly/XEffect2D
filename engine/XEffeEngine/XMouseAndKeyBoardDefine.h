@@ -199,7 +199,7 @@ namespace XEE
 	XKeyValue charToKeyValue(char p);	//将ASCII映射为按键值
 	char keyValueToChar(XKeyValue v);	//将按键值映射为ASCII
 	std::string keyValueToString(XKeyValue v);	//将按键值映射为按键名称
-	XKeyValue vkToKeyValue(unsigned char vk,bool withShift);	//将虚拟按键映射为按键值
+	XKeyValue vkToKeyValue(unsigned char vk, bool withShift);	//将虚拟按键映射为按键值
 }
 }
 #endif

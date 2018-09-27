@@ -10,7 +10,7 @@ void XAutoShrinkBase::updateShrinkState(float stepTime)	//更新收缩的状态
 		m_oldIsInRect = true;
 	}else
 	{
-		if(m_oldIsInRect && !m_isInShrink) m_shrinkTimer = 0;
+		if(m_oldIsInRect && !m_isInShrink) m_shrinkTimer = 0.0f;
 		m_oldIsInRect = false;
 	}
 	if(m_isInShrink)

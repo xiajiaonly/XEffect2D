@@ -39,7 +39,7 @@ private:
 	int m_curFrameIndex;
 	std::string m_curVideoName;
 
-	bool readFromCFG(const std::string &filename);
+	bool readFromCFG(const std::string& filename);
 	bool sendInfo();	//向网络发送同步数据
 	void addSpecialChar();	//增加转义字符
 	unsigned char getCheck();	//计算校验字符
@@ -75,10 +75,10 @@ public:
 	{}
 	~XBroadcastUdp(){release();}
 	void release();
-	bool init(const std::string &cfgFileName);
+	bool init(const std::string& cfgFileName);
 	void setCurFrame(int frameIndex);
-	void setCurVideo(const std::string &filename);
-	std::string getCurVideoName() const {return m_curVideoName;}
+	void setCurVideo(const std::string& filename);
+	const std::string& getCurVideoName() const {return m_curVideoName;}
 	int getCurFrameIndex() const {return m_curFrameIndex;}
 	XVideoSynchRole getRole() const {return m_role;}
 };
@@ -98,8 +98,8 @@ private:
 	bool m_isInited;
 	XBroadcastUdp m_udp;
 	XMovieFfmpeg m_movie;
-	XVector2 m_offset;
-	XVector2 m_size;
+	XVec2 m_offset;
+	XVec2 m_size;
 	std::string m_curVideoName;
 	static void commandFun(void *,int);
 	XVideoSynchState m_commandIndex;
@@ -107,9 +107,9 @@ private:
 	float m_playTimer;
 public:
 	virtual XBool getIsLoad()const{return m_movie.getIsLoad();}
-	XBool init(const std::string &filename);
-	void setOffset(const XVector2 &offset) {m_offset = offset;}
-	void setSize(const XVector2 &size) {m_size = size;}
+	XBool init(const std::string& filename);
+	void setOffset(const XVec2& offset) {m_offset = offset;}
+	void setSize(const XVec2& size) {m_size = size;}
 
 	virtual XBool load(const char *filename,XColorMode mode = COLOR_RGB,bool withVoice = true);
 	virtual XBool updateFrame();			//返回视频画面是否更新
@@ -205,8 +205,8 @@ struct XVideoList
 {//播放列表的结构
 	bool isEnable;
 	std::string name;		//列表名称
-	XVector2 offset;		//视频偏移像素坐标
-	XVector2 pixelSize;	//使用的视频的像素大小，裁剪的有效尺寸
+	XVec2 offset;		//视频偏移像素坐标
+	XVec2 pixelSize;	//使用的视频的像素大小，裁剪的有效尺寸
 	bool isLoop;			//是否循环
 	XVideoListMode mode;	//循环模式
 	XOscCommand cmdStop;	//停止播放接收的osc指令

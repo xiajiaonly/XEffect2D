@@ -17,6 +17,7 @@
 #include "XResourceManager.h"
 #include "XFile.h"
 //#include "XMath\XVector4.h"
+//#include "XMath\XVector3.h"
 
 namespace XE{
 #if TEX_DEBUG
@@ -27,67 +28,69 @@ int CPSum = 0;
 #endif
 namespace XGL
 {
-	const int srcBlendMode[9] = {GL_ZERO,GL_ONE,GL_DST_COLOR,GL_ONE_MINUS_DST_COLOR,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,
-			GL_DST_ALPHA,GL_ONE_MINUS_DST_ALPHA,GL_SRC_ALPHA_SATURATE};
-	const int dstBlendMode[8] = {GL_ZERO,GL_ONE,GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,	
-			GL_DST_ALPHA,GL_ONE_MINUS_DST_ALPHA};
-//	bool blendFlag = false;
-//	int blendSrc = GL_ZERO;
-//	int blendDst = GL_ONE;
-//	bool texture2DFlag = false;
-//	unsigned int curTextureID[32];
+//	const int srcBlendMode[9] = { GL_ZERO,GL_ONE,GL_DST_COLOR,GL_ONE_MINUS_DST_COLOR,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,
+//			GL_DST_ALPHA,GL_ONE_MINUS_DST_ALPHA,GL_SRC_ALPHA_SATURATE };
+//	const int dstBlendMode[8] = { GL_ZERO,GL_ONE,GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,
+//			GL_DST_ALPHA,GL_ONE_MINUS_DST_ALPHA };
+	//	bool blendFlag = false;
+	//	int blendSrc = GL_ZERO;
+	//	int blendDst = GL_ONE;
+	//	bool texture2DFlag = false;
+	//	unsigned int curTextureID[32];
 
-	void printShaderInfoLog(GLuint obj)
+	XShaderResult printShaderInfoLog(GLuint obj)
 	{
 		int infologLength = 0;
-		glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
-		if(infologLength <= 0) return;
-		int charsWritten  = 0;
-		char *infoLog = XMem::createArrayMem<char>(infologLength);
-		if(infoLog == NULL) return;
-		glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-		if(infoLog[0] != '\0') LogNull("%s",infoLog);
-		XMem::XDELETE_ARRAY(infoLog);
+		glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+		if (infologLength <= 0) return CMP_SUCCESS;
+		int charsWritten = 0;
+		std::string infoLog;
+		infoLog.resize(infologLength);
+		glGetShaderInfoLog(obj, infologLength, &charsWritten, &(infoLog[0]));
+		LogNull(infoLog.c_str());
+		if (infoLog.find("error") != std::string::npos) return CMP_ERROR;
+		return CMP_WARNING;
 	}
-	void printProgramInfoLog(GLuint obj)
+	XShaderResult printProgramInfoLog(GLuint obj)
 	{
 		int infologLength = 0;
-		glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
-		if(infologLength <= 0) return;
+		glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+		if (infologLength <= 0) return CMP_SUCCESS;
 
-		int charsWritten  = 0;
-		char *infoLog = XMem::createArrayMem<char>(infologLength);
-		if(infoLog == NULL) return;
-		glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-		if(infoLog[0] != '\0') LogNull("%s",infoLog);
-		XMem::XDELETE_ARRAY(infoLog);
+		int charsWritten = 0;
+		std::string infoLog;
+		infoLog.resize(infologLength);
+		glGetProgramInfoLog(obj, infologLength, &charsWritten, &(infoLog[0]));
+		LogNull(infoLog.c_str());
+		if (infoLog.find("error") != std::string::npos) return CMP_ERROR;
+		return CMP_WARNING;
 	}
-	int printOglError(const char *file,int line)
+	int printOglError(const char *file, int line)
 	{
 		int retCode = 0;
-		while(glGetError() != GL_NO_ERROR)
+		while (glGetError() != GL_NO_ERROR)
 		{
-		//	LogNull("glError in file %s @ line %d: %s\n", file, line, gluErrorString(glErr));
- 			LogNull("glError in file %s @ line %d",file,line);
+			//	LogNull("glError in file %s @ line %d: %s\n", file, line, gluErrorString(glErr));
+			LogNull("glError in file %s @ line %d", file, line);
 			//printf("glError: 0x%x in file %s @ line %d\n",glErr,file,line);
 			retCode = 1;
 		}
 		return retCode;
 	}
-	XBool setShader(const char* vertFile,const char* fragFile,int &pHandle,XResourcePosition resoursePosition)
+	XBool setShader(const char* vertFile, const char* fragFile, int &pHandle, XResPos resPos)
 	{
-		if(vertFile == NULL || fragFile == NULL) return XFalse;
-		char *vs = XFile::readFileToStr(vertFile,resoursePosition);
-		char *fs = XFile::readFileToStr(fragFile,resoursePosition);
-		if(vs == NULL || fs == NULL) return XFalse;
-	
+		if (vertFile == NULL || fragFile == NULL) return XFalse;
+		char *vs = XFile::readFileToStr(vertFile, resPos);
+		char *fs = XFile::readFileToStr(fragFile, resPos);
+		if (vs == NULL || fs == NULL) return XFalse;
+
 		GLuint v = glCreateShader(GL_VERTEX_SHADER);
 		GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
 		//v = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
 		//f = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
 
-		glShaderSource(v, 1, &vs,NULL);
-		glShaderSource(f, 1, &fs,NULL);
+		glShaderSource(v, 1, &vs, NULL);
+		glShaderSource(f, 1, &fs, NULL);
 		//glShaderSourceARB(v, 1, &vv,NULL);
 		//glShaderSourceARB(f, 1, &ff,NULL);
 
@@ -99,126 +102,153 @@ namespace XGL
 		//glCompileShaderARB(v);
 		//glCompileShaderARB(f);
 
-		printShaderInfoLog(v);
-		printShaderInfoLog(f);
+		if (printShaderInfoLog(v) == CMP_ERROR) return false;
+		if (printShaderInfoLog(f) == CMP_ERROR) return false;
 
-		if(pHandle == 0) pHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
+		if (pHandle == 0) pHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
 
-		glAttachShader(pHandle,v);
-		glAttachShader(pHandle,f);
+		glAttachShader(pHandle, v);
+		glAttachShader(pHandle, f);
 		//pHandle = glCreateProgramObjectARB();
 		//glAttachObjectARB(pHandle,v);
 		//glAttachObjectARB(pHandle,f);
 
 		glLinkProgram(pHandle);
 		//glLinkProgramARB(pHandle);
-		printProgramInfoLog(pHandle);
+		if (printProgramInfoLog(pHandle) == CMP_ERROR) return false;
 		return XTrue;
 	}
-	XBool setShaderFromStr(const char* vStr,const char *fStr,const char *gStr,XShaderHandle &pHandle)
+	XBool setShaderFromStr(const char* vStr, const char *fStr, const char *gStr, XShaderHandle &pHandle)
 	{
-		if(vStr == NULL || fStr == NULL) return XFalse;
-		if(pHandle.shaderV == 0) pHandle.shaderV = glCreateShader(GL_VERTEX_SHADER);
-		if(pHandle.shaderF == 0) pHandle.shaderF = glCreateShader(GL_FRAGMENT_SHADER);
-		if(gStr != NULL && pHandle.shaderG == 0)
+		if (vStr == NULL) return XFalse;
+		if (pHandle.shaderV == 0) pHandle.shaderV = glCreateShader(GL_VERTEX_SHADER);
+		if (fStr != NULL && pHandle.shaderF == 0)
+			pHandle.shaderF = glCreateShader(GL_FRAGMENT_SHADER);
+		if (gStr != NULL && pHandle.shaderG == 0)
 			pHandle.shaderG = glCreateShader(GL_GEOMETRY_SHADER_EXT);
 
-		glShaderSource(pHandle.shaderV, 1, &vStr,NULL);
-		glShaderSource(pHandle.shaderF, 1, &fStr,NULL);
-		if(gStr != NULL)
-			 glShaderSource(pHandle.shaderG, 1, &gStr,NULL);
+		glShaderSource(pHandle.shaderV, 1, &vStr, NULL);
+		if (fStr != NULL)
+			glShaderSource(pHandle.shaderF, 1, &fStr, NULL);
+		if (gStr != NULL)
+			glShaderSource(pHandle.shaderG, 1, &gStr, NULL);
 
 		glCompileShader(pHandle.shaderV);
-		glCompileShader(pHandle.shaderF);
-		if(gStr != NULL) glCompileShader(pHandle.shaderG);
+		if (fStr != NULL) glCompileShader(pHandle.shaderF);
+		if (gStr != NULL) glCompileShader(pHandle.shaderG);
+
+		//ºÏ≤È±‡“Î «∑Ò≥…π¶
+		GLint status = GL_FALSE;
+		glGetShaderiv(pHandle.shaderV, GL_COMPILE_STATUS, &status);
+		if(!status) return false;
+	//	GLuint err = glGetError();
+	//	if(err != GL_NO_ERROR)	return false;
+	//	//if(status == GL_TRUE)
 
 		LogStr("vStr");
 		printShaderInfoLog(pHandle.shaderV);
-		LogStr("fStr");
-		printShaderInfoLog(pHandle.shaderF);
-		if(gStr != NULL)
+		if (fStr != NULL)
+		{
+			LogStr("fStr");
+			printShaderInfoLog(pHandle.shaderF);
+			glGetShaderiv(pHandle.shaderF, GL_COMPILE_STATUS, &status);
+			if (!status) return false;
+		}
+		if (gStr != NULL)
 		{
 			LogStr("gStr");
 			printShaderInfoLog(pHandle.shaderG);
+			glGetShaderiv(pHandle.shaderG, GL_COMPILE_STATUS, &status);
+			if (!status) return false;
 		}
 
-		if(pHandle.shaderHandle == 0) pHandle.shaderHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
-
-		glAttachShader(pHandle.shaderHandle,pHandle.shaderV);
-		glAttachShader(pHandle.shaderHandle,pHandle.shaderF);
-		if(gStr != NULL) glAttachShader(pHandle.shaderHandle,pHandle.shaderG);
+		if (pHandle.shaderHandle == 0) pHandle.shaderHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
+		glAttachShader(pHandle.shaderHandle, pHandle.shaderV);
+		if (fStr != NULL) glAttachShader(pHandle.shaderHandle, pHandle.shaderF);
+		if (gStr != NULL) glAttachShader(pHandle.shaderHandle, pHandle.shaderG);
 
 		glLinkProgram(pHandle.shaderHandle);
 		printProgramInfoLog(pHandle.shaderHandle);
-		return XTrue;	
+		glGetShaderiv(pHandle.shaderHandle, GL_LINK_STATUS, &status);
+		return status;
 	}
-	XBool setShader(const char* vertFile,const char* fragFile,const char* geomFile,XShaderHandle &pHandle,
-							XResourcePosition resoursePosition)
+	XBool setShader(const char* vertFile, const char* fragFile, const char* geomFile, XShaderHandle &pHandle,
+		XResPos resPos)
 	{
-		if(vertFile == NULL || fragFile == NULL) return XFalse;
-		char *vs = XFile::readFileToStr(vertFile,resoursePosition);
-		char *fs = XFile::readFileToStr(fragFile,resoursePosition);
-		if(vs == NULL || fs == NULL) return XFalse;
-		char *gs = NULL;
-		if(geomFile != NULL)
+		if (vertFile == NULL) return XFalse;
+		char *vs = XFile::readFileToStr(vertFile, resPos);
+		if (vs == NULL) return false;
+		char *fs = NULL;
+		if (fragFile != NULL)
 		{
-			gs = XFile::readFileToStr(geomFile,resoursePosition);
-			if(gs == NULL) return XFalse;
+			fs = XFile::readFileToStr(fragFile, resPos);
+			if (fs == NULL) return false;
+		}
+		char *gs = NULL;
+		if (geomFile != NULL)
+		{
+			gs = XFile::readFileToStr(geomFile, resPos);
+			if (gs == NULL) return XFalse;
 		}
 		//1°¢ºÚªØ∞Ê±æ
-//		XBool ret = setShaderFromStr(vs,fs,gs,pHandle);
-//		XMem::XDELETE_ARRAY(vs);
-//		XMem::XDELETE_ARRAY(fs);
-//		XMem::XDELETE_ARRAY(gs);
-//		return ret;
-		//2°¢‘≠ º∞Ê±æ
-		if(pHandle.shaderV == 0) pHandle.shaderV = glCreateShader(GL_VERTEX_SHADER);
-		if(pHandle.shaderF == 0) pHandle.shaderF = glCreateShader(GL_FRAGMENT_SHADER);
-		if(geomFile != NULL && pHandle.shaderG == 0)
-			pHandle.shaderG = glCreateShader(GL_GEOMETRY_SHADER_EXT);
-		//v = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-		//f = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-
-		glShaderSource(pHandle.shaderV, 1, &vs,NULL);
-		glShaderSource(pHandle.shaderF, 1, &fs,NULL);
-		if(geomFile != NULL)
-			 glShaderSource(pHandle.shaderG, 1, &gs,NULL);
-		//glShaderSourceARB(v, 1, &vv,NULL);
-		//glShaderSourceARB(f, 1, &ff,NULL);
-
+		XBool ret = setShaderFromStr(vs, fs, gs, pHandle);
 		XMem::XDELETE_ARRAY(vs);
 		XMem::XDELETE_ARRAY(fs);
 		XMem::XDELETE_ARRAY(gs);
+		return ret;
+		//2°¢‘≠ º∞Ê±æ
+		//if(pHandle.shaderV == 0) pHandle.shaderV = glCreateShader(GL_VERTEX_SHADER);
+		//if(fragFile != NULL && pHandle.shaderF == 0) 
+		//	pHandle.shaderF = glCreateShader(GL_FRAGMENT_SHADER);
+		//if(geomFile != NULL && pHandle.shaderG == 0)
+		//	pHandle.shaderG = glCreateShader(GL_GEOMETRY_SHADER_EXT);
+		////v = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+		////f = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
 
-		glCompileShader(pHandle.shaderV);
-		glCompileShader(pHandle.shaderF);
-		if(geomFile != NULL) glCompileShader(pHandle.shaderG);
-		//glCompileShaderARB(v);
-		//glCompileShaderARB(f);
+		//glShaderSource(pHandle.shaderV, 1, &vs,NULL);
+		//if(fragFile != NULL)
+		//	glShaderSource(pHandle.shaderF, 1, &fs,NULL);
+		//if(geomFile != NULL)
+		//	 glShaderSource(pHandle.shaderG, 1, &gs,NULL);
+		////glShaderSourceARB(v, 1, &vv,NULL);
+		////glShaderSourceARB(f, 1, &ff,NULL);
 
-		LogStr(vertFile);
-		printShaderInfoLog(pHandle.shaderV);
-		LogStr(fragFile);
-		printShaderInfoLog(pHandle.shaderF);
-		if(geomFile != NULL)
-		{
-			LogStr(geomFile);
-			printShaderInfoLog(pHandle.shaderG);
-		}
+		//XMem::XDELETE_ARRAY(vs);
+		//XMem::XDELETE_ARRAY(fs);
+		//XMem::XDELETE_ARRAY(gs);
 
-		if(pHandle.shaderHandle == 0) pHandle.shaderHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
+		//glCompileShader(pHandle.shaderV);
+		//if(fragFile != NULL) glCompileShader(pHandle.shaderF);
+		//if(geomFile != NULL) glCompileShader(pHandle.shaderG);
+		////glCompileShaderARB(v);
+		////glCompileShaderARB(f);
 
-		glAttachShader(pHandle.shaderHandle,pHandle.shaderV);
-		glAttachShader(pHandle.shaderHandle,pHandle.shaderF);
-		if(geomFile != NULL) glAttachShader(pHandle.shaderHandle,pHandle.shaderG);
-		//pHandle = glCreateProgramObjectARB();
-		//glAttachObjectARB(pHandle,v);
-		//glAttachObjectARB(pHandle,f);
+		//LogStr(vertFile);
+		//if(printShaderInfoLog(pHandle.shaderV) == CMP_ERROR) return false;
+		//if(fragFile != NULL)
+		//{
+		//	LogStr(fragFile);
+		//	if(printShaderInfoLog(pHandle.shaderF) == CMP_ERROR) return false;
+		//}
+		//if(geomFile != NULL)
+		//{
+		//	LogStr(geomFile);
+		//	if(printShaderInfoLog(pHandle.shaderG) == CMP_ERROR) return false;
+		//}
 
-		glLinkProgram(pHandle.shaderHandle);
-		//glLinkProgramARB(pHandle);
-		printProgramInfoLog(pHandle.shaderHandle);
-		return XTrue;
+		//if(pHandle.shaderHandle == 0) pHandle.shaderHandle = glCreateProgram();	//»Áπ˚√ª”–Ω®¡¢‘Ú’‚¿ÔΩ®¡¢
+
+		//glAttachShader(pHandle.shaderHandle,pHandle.shaderV);
+		//if(fragFile != NULL) glAttachShader(pHandle.shaderHandle,pHandle.shaderF);
+		//if(geomFile != NULL) glAttachShader(pHandle.shaderHandle,pHandle.shaderG);
+		////pHandle = glCreateProgramObjectARB();
+		////glAttachObjectARB(pHandle,v);
+		////glAttachObjectARB(pHandle,f);
+
+		//glLinkProgram(pHandle.shaderHandle);
+		////glLinkProgramARB(pHandle);
+		//if(printProgramInfoLog(pHandle.shaderHandle) == CMP_ERROR) return false;
+		//return XTrue;
 	}
 	/*void changeSize(int h, int w)
 	{
@@ -238,9 +268,9 @@ namespace XGL
 		// Set the correct perspective.
 		//gluPerspective(90,ratio,1,1000);
 		glMatrixMode(GL_MODELVIEW);
-	
+
 	}*/
-	//XBool TextureLoad(GLuint &texture,const char *filename,int withAlpha,int *w,int *h,XResourcePosition resoursePosition)
+	//XBool TextureLoad(GLuint &texture,const char *filename,int withAlpha,int *w,int *h,XResPos resPos)
 	//{
 	//	if(filename == NULL || strlen(filename) <= 0) return XFalse;
 	//	if(withAlpha != 0) withAlpha = 1;
@@ -256,7 +286,7 @@ namespace XGL
 	//	rmask = 0x000000ff;	gmask = 0x0000ff00;	bmask = 0x00ff0000;	amask = 0xff000000;
 	//#endif
 	//	
-	//	if((temp = (SDL_Surface *) loadImage(filename,withAlpha,resoursePosition)) != NULL) 
+	//	if((temp = (SDL_Surface *) loadImage(filename,withAlpha,resPos)) != NULL) 
 	//	{
 	//		if((temp->w > XEE::maxTetureSize) || (temp->h > XEE::maxTetureSize)) 
 	//		{
@@ -418,59 +448,131 @@ namespace XGL
 	////	return XTrue;
 	//}
 	//≤‚ ‘∑¢œ÷’‚∏ˆ∫Ø ˝÷–µƒSDL_FreeSurfaceª·¥Ê‘⁄ƒ⁄¥ÊIPR∫ÕFIM¥ÌŒÛ£¨æﬂÃÂ–Ë“™SDLµƒ¥˙¬Î µœ÷¿¥ºÏ≤‚
-	XBool TextureLoadEx(GLuint &texture,const char *filename,int *w,int *h,XResourcePosition resoursePosition)
+	XBool TextureLoadEx(GLuint &texture, const char *filename, int *w, int *h, 
+		XResPos resPos, bool isInThread)
 	{
-		if(filename == NULL || strlen(filename) <= 0) return XFalse;
+		if (filename == NULL || strlen(filename) <= 0) return XFalse;
 
 		XPixels<XCurPixel> tmp;
-		if(!tmp.load(filename,resoursePosition)) return XFalse;
-		if((tmp.getWidth() > XEG.getMaxTextureSize() || tmp.getHeight() > XEG.getMaxTextureSize()) && XEG.getMaxTextureSize() > 0) 	//Ã˘Õº◊Ó¥Û≥ﬂ¥ÁµƒºÏ≤‚
+		if (!tmp.load(filename, resPos))
+			return XFalse;
+		if ((tmp.getWidth() > XEG.getMaxTextureSize() || tmp.getHeight() > XEG.getMaxTextureSize()) && XEG.getMaxTextureSize() > 0) 	//Ã˘Õº◊Ó¥Û≥ﬂ¥ÁµƒºÏ≤‚
 		{
 			fprintf(stderr, "Image size exceeds max texture size, which is %d pixels for each side\n", XEG.getMaxTextureSize());
 			LogNull("Image size exceeds max texture size, which is %d pixels for each side\n", XEG.getMaxTextureSize());
 			tmp.release();
 			return XFalse;
-		}
-		if(w != NULL) (* w) = tmp.getWidth();
-		if(h != NULL) (* h) = tmp.getHeight();
-		tmp.fitNPot();	//  ”¶2µƒn¥Œ∑Ω
-		// OpenGL Texture creation	
-		glGenTextures(1, &texture);
-		XGL::BindTexture2D(texture);
-	//	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-		//–ßπ˚∫√
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	#if WITHXSPRITE_EX
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	#endif
-		//ÀŸ∂»øÏ
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-	//	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-	//	float largest_supported_anisotropy;
-	//	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&largest_supported_anisotropy);	//∏˜“ÏœÚ–‘Œ∆¿Ìπ˝¬À
-	//	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,largest_supported_anisotropy);
-
-		switch(tmp.getColorMode())
+		}		
+		//º«¬º‘≠ ºµƒ¥Û–°
+		int sw = tmp.getWidth();
+		int sh = tmp.getHeight();
+		//◊ˆœÒÀÿ  ”¶±‰ªª
+		if (XEG.getTexNeedFit2N()) tmp.fitNPot();	//  ”¶2µƒn¥Œ∑Ω
+		if (isInThread)
 		{
-		case COLOR_RGBA:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,tmp.getWidth(),tmp.getHeight(),0,GL_RGBA,GL_UNSIGNED_BYTE,tmp.getPixel());
-			break;
-		case COLOR_BGRA:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,tmp.getWidth(),tmp.getHeight(),0,GL_BGRA,GL_UNSIGNED_BYTE,tmp.getPixel());
-			break;
-		case COLOR_RGB:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,tmp.getWidth(),tmp.getHeight(),0,GL_RGB,GL_UNSIGNED_BYTE,tmp.getPixel());
-			break;
-		case COLOR_BGR:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,tmp.getWidth(),tmp.getHeight(),0,GL_BGR,GL_UNSIGNED_BYTE,tmp.getPixel());
-			break;
-		case COLOR_GRAY:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,tmp.getWidth(),tmp.getHeight(),0,GL_LUMINANCE,GL_UNSIGNED_BYTE,tmp.getPixel());
-			break;
+			XEG.hdcLock();
+			wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+		}
+		if (glIsTexture(texture))
+		{
+			if (w != nullptr && h != nullptr && *w == sw && *h == sh)
+			{//÷ª”–œ‡Õ¨≥ﬂ¥Á≤≈Ω¯––∏¸–¬£¨◊¢“‚’‚¿Ô «”…”⁄øº¬«µΩ÷Æ…œ√Êµƒ¬ﬂº≠≤≈º”µƒ’‚∏ˆœﬁ÷∆£¨∑Ò‘Úª·‘Ï≥…Œ Ã‚
+				//XGL::EnableTexture2D();
+				XGL::BindTexture2D(texture);
+				//glTexSubImage2D glTexImage2D
+				switch (tmp.getColorMode())
+				{
+				case COLOR_RGBA:
+					//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tmp.getWidth(), tmp.getHeight(), GL_RGBA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_BGRA:
+					//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tmp.getWidth(), tmp.getHeight(), GL_BGRA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_RGB:
+					//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, tmp.getPixel());
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tmp.getWidth(), tmp.getHeight(), GL_RGB, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_BGR:
+					//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_BGR, GL_UNSIGNED_BYTE, tmp.getPixel());
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tmp.getWidth(), tmp.getHeight(), GL_BGR, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_GRAY:
+					//glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, tmp.getWidth(), tmp.getHeight(), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tmp.getPixel());
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tmp.getWidth(), tmp.getHeight(), GL_LUMINANCE, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				}
+			}
+			else
+			{
+				switch (tmp.getColorMode())
+				{
+				case COLOR_RGBA:
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_BGRA:
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_RGB:
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_BGR:
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_BGR, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				case COLOR_GRAY:
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, tmp.getWidth(), tmp.getHeight(), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tmp.getPixel());
+					break;
+				}
+			}
+		}
+		else
+		{
+			if (w != nullptr) *w = sw;
+			if (h != nullptr) *h = sh;
+			// OpenGL Texture creation	
+			glGenTextures(1, &texture);
+			XGL::BindTexture2D(texture);
+			//	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+				//–ßπ˚∫√
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#if WITHXSPRITE_EX
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
+			//ÀŸ∂»øÏ
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+		//	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+		//	float largest_supported_anisotropy;
+		//	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&largest_supported_anisotropy);	//∏˜“ÏœÚ–‘Œ∆¿Ìπ˝¬À
+		//	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,largest_supported_anisotropy);
+
+			switch (tmp.getColorMode())
+			{
+			case COLOR_RGBA:
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp.getPixel());
+				break;
+			case COLOR_BGRA:
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tmp.getWidth(), tmp.getHeight(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp.getPixel());
+				break;
+			case COLOR_RGB:
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, tmp.getPixel());
+				break;
+			case COLOR_BGR:
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tmp.getWidth(), tmp.getHeight(), 0, GL_BGR, GL_UNSIGNED_BYTE, tmp.getPixel());
+				break;
+			case COLOR_GRAY:
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, tmp.getWidth(), tmp.getHeight(), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tmp.getPixel());
+				break;
+			}
+		}
+		if (isInThread)
+		{
+			wglMakeCurrent(NULL, NULL);//nullptr
+			XEG.hdcUnlock();
 		}
 #if WITH_ENGINE_STATISTICS
 		XEG.addStaticsticsTexInfo(texture);
@@ -479,45 +581,57 @@ namespace XGL
 		tmp.release();
 		return XTrue;
 	}
-	XBool TextureLoadQuarter(GLuint &texture,const char *filename)
+	XBool TextureLoadQuarter(GLuint &texture, const char *filename, XResPos resPos)
 	{
 		XPixels<XCurPixel> tmp;
-		if(!tmp.load(filename)) return XFalse;
+		if (!tmp.load(filename, resPos)) return XFalse;
 		int w = tmp.getWidth() >> 2;
 		int h = tmp.getHeight() >> 2;
 		unsigned char * tempPixel = XMem::createArrayMem<unsigned char>(w * h * 4);
-		if(tempPixel == NULL)
+		if (tempPixel == NULL)
 		{
 			tmp.release();
 			return XFalse;
 		}
-		switch(tmp.getColorMode())
+		switch (tmp.getColorMode())
 		{
 		case COLOR_RGBA:
 		case COLOR_BGRA:
+		{
+			int *p = (int *)tmp.getPixel();
+			int *p1 = (int *)tempPixel;
+			int indexS, indexD;
+			for (int i = 0; i < tmp.getHeight(); i += 4)
 			{
-				int *p = (int *)tmp.getPixel();
-				int *p1 = (int *)tempPixel;
-				for(int i = 0; i < tmp.getHeight();i += 4)
-					for(int j = 0;j < tmp.getWidth();j += 4)
-						*(p1 + (i >> 2) * w + (j >> 2)) = *(p + i * tmp.getWidth() + j);
+				indexS = i * tmp.getWidth();
+				indexD = (i >> 2) * w;
+				for (int j = 0; j < tmp.getWidth(); j += 4)
+				{
+					*(p1 + indexD + (j >> 2)) = *(p + indexS + j);
+				}
 			}
-			break;
+		}
+		break;
 		case COLOR_RGB:
 		case COLOR_BGR:
+		{
+			unsigned char *p = tmp.getPixel();
+			unsigned char *p1 = tempPixel;		//’‚¿Ôø…“‘Ω¯––”≈ªØ
+			int indexD = 0, indexS;
+			for (int j = 0; j < tmp.getHeight(); j += 4)
 			{
-				unsigned char *p = tmp.getPixel();
-				unsigned char *p1 = tempPixel;		//’‚¿Ôø…“‘Ω¯––”≈ªØ
-				for(int j = 0;j < tmp.getHeight();j += 4)
-					for(int i = 0; i < tmp.getWidth();i += 4)
-					{
-						*(p1 + i + j * w + 0) = *(p + (i << 2) + (j << 2) * tmp.getWidth() + 0);
-						*(p1 + i + j * w + 1) = *(p + (i << 2) + (j << 2) * tmp.getWidth() + 1);
-						*(p1 + i + j * w + 2) = *(p + (i << 2) + (j << 2) * tmp.getWidth() + 2);
-						*(p1 + i + j * w + 3) = 255;
-					}
+				indexS = j * tmp.getWidth() * 3;
+				indexD = (j >> 2) * w * 4;
+				for (int i = 0; i < tmp.getWidth(); i += 4, indexD += 4, indexS += 12)
+				{
+					*(p1 + indexD + 0) = *(p + indexS + 0);
+					*(p1 + indexD + 1) = *(p + indexS + 1);
+					*(p1 + indexD + 2) = *(p + indexS + 2);
+					*(p1 + indexD + 3) = 255;
+				}
 			}
-			break;
+		}
+		break;
 		default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 			tmp.release();
 			XMem::XDELETE_ARRAY(tempPixel);
@@ -528,57 +642,52 @@ namespace XGL
 		//–ßπ˚∫√
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	#if WITHXSPRITE_EX
+#if WITHXSPRITE_EX
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	#endif
+#endif
 		//ÀŸ∂»øÏ
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		switch(tmp.getColorMode())
+		switch (tmp.getColorMode())
 		{
 		case COLOR_RGBA:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,tempPixel);
+		case COLOR_RGB:
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tempPixel);
 			break;
 		case COLOR_BGRA:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_BGRA,GL_UNSIGNED_BYTE,tempPixel);
-			break;
-		case COLOR_RGB:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,tempPixel);
-			break;
 		case COLOR_BGR:
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,w,h,0,GL_BGR,GL_UNSIGNED_BYTE,tempPixel);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, tempPixel);
 			break;
 		default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 			tmp.release();
 			XMem::XDELETE_ARRAY(tempPixel);
 			return XFalse;
 		}
-	#if WITH_ENGINE_STATISTICS
+#if WITH_ENGINE_STATISTICS
 		XEG.addStaticsticsTexInfo(texture);
-	#endif
+#endif
 		tmp.release();
 		XMem::XDELETE_ARRAY(tempPixel);
 		return XTrue;
 	}
 	void showGLInfoToLog()
 	{
-		GLint major, minor;  
-		glGetIntegerv(GL_MAJOR_VERSION, &major);  
-		glGetIntegerv(GL_MINOR_VERSION, &minor);  
-		LogNull("GL Vendor    :%s",glGetString( GL_VENDOR ));
-		LogNull("GL Renderer  :%s",glGetString( GL_RENDERER ));
-		LogNull("GL Version (string)  :%s",glGetString( GL_VERSION ));
-		LogNull("GL Version (integer) :%d.%d",major,minor);
-		LogNull("GLSL Version :%s",glGetString( GL_SHADING_LANGUAGE_VERSION ));
+		GLint major, minor;
+		glGetIntegerv(GL_MAJOR_VERSION, &major);
+		glGetIntegerv(GL_MINOR_VERSION, &minor);
+		LogNull("GL Vendor    :%s", glGetString(GL_VENDOR));
+		LogNull("GL Renderer  :%s", glGetString(GL_RENDERER));
+		LogNull("GL Version (string)  :%s", glGetString(GL_VERSION));
+		LogNull("GL Version (integer) :%d.%d", major, minor);
+		LogNull("GLSL Version :%s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	}
 }
 namespace XRender
 {
-	void drawLineAntiColor(float ax,float ay,float bx,float by,float width,XLineStyle type)
+	void drawLineAntiColor(const XVec2& a, const XVec2& b, float width, XLineStyle type)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_ONE_MINUS_DST_COLOR,GL_ZERO);	//∑¥…´–ßπ˚
+		XGL::setBlendInverse();	//∑¥…´–ßπ˚
 		glColor4fv(XFColor::white);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
@@ -586,56 +695,75 @@ namespace XRender
 		if (type == LS_SOLID)
 		{// µœﬂ
 			glBegin(GL_LINES);
-			glVertex2f(ax,ay);
-			glVertex2f(bx,by);
+			glVertex2fv(a);
+			glVertex2fv(b);
 			glEnd();
-		}else
+		}
+		else
 		{//–Èœﬂ
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, type);
 			glBegin(GL_LINES);
-			glVertex2f(ax,ay);
-			glVertex2f(bx,by);
+			glVertex2fv(a);
+			glVertex2fv(b);
 			glEnd();
 			glDisable(GL_LINE_STIPPLE);
 		}
 		XGL::DisableBlend();
 	}
-	void drawLine(float ax,float ay,float bx,float by,float width,float r,float g,float b)
+	void drawLine(const XVec2&a, const XVec2&b, float width,
+		const XFColor& c)
 	{
-		glColor3f(r,g,b);
+		XGL::setBlendAlpha();
+		glColor4fv(c);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINES);
-		glVertex2f(ax,ay);
-		glVertex2f(bx,by);
+		glVertex2fv(a);
+		glVertex2fv(b);
 		glEnd();
+		XGL::DisableBlend();
 	}
-	void drawLine(float ax, float ay, float bx, float by, float width, const XFColor &c, XLineStyle type)
+	void drawLine(const XVec2& p0, const XVec2& p1, float width,
+		const XFColor& c, XLineStyle type)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(c);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		if (type == LS_SOLID)
 		{// µœﬂ
 			glBegin(GL_LINES);
-			glVertex2f(ax,ay);
-			glVertex2f(bx,by);
+			glVertex2fv(p0);
+			glVertex2fv(p1);
 			glEnd();
-		}else
+		}
+		else
 		{//–Èœﬂ
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, type);
 			glBegin(GL_LINES);
-			glVertex2f(ax,ay);
-			glVertex2f(bx,by);
+			glVertex2fv(p0);
+			glVertex2fv(p1);
 			glEnd();
 			glDisable(GL_LINE_STIPPLE);
 		}
 		XGL::DisableBlend();
-	} 
+	}
+	void drawLines(const std::vector<XVec2>& points, float width, const XFColor& c)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(c);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINE_STRIP);
+		for (auto it = points.begin(); it != points.end(); ++it)
+		{
+			glVertex2fv(*it);
+		}
+		glEnd();
+		XGL::DisableBlend();
+	}
 	void drawLinesVbo(unsigned int v,int pointSum,float w,float r,float g,float b)
 	{
 		glLineWidth(w);
@@ -649,12 +777,11 @@ namespace XRender
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
 	}
-	void drawLinesVbo(unsigned int v,int pointSum,float w,float r,float g,float b,float a)
+	void drawLinesVbo(unsigned int v,int pointSum,float w,const XFColor& c)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glLineWidth(w);
-		glColor4f(r,g,b,a);
+		glColor4fv(c);
 		XGL::DisableTexture2D();
 		glEnableClientState(GL_VERTEX_ARRAY);	
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
@@ -665,107 +792,80 @@ namespace XRender
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
 		//if(isMultiSampleSupport && isLineSmooth) XGL::DisableBlend();
 	}
-	//void drawLine(const XVector2& p,float angle,float length)
+	//void drawLine(const XVec2& p,float angle,float length)
 	//{
-	//	drawLine(p,XVector2(p.x + length * cos(angle * DEGREE2RADIAN),p.y + length * sin(angle * DEGREE2RADIAN)));
+	//	drawLine(p,p + XMath::getRotateRate(angle * DEGREE2RADIAN) * length);
 	//}
-	void drawRect(const XRect& rect, float width, const XFColor &c, XLineStyle type)
+	void drawRect(const XRect& rect, float width, const XFColor& c, XLineStyle type)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);	//∆’Õ®–ßπ˚
+		XGL::setBlendAlpha();
 		glColor4fv(c);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 
 		if (type == LS_SOLID)
 		{// µœﬂ
-			drawRectS(rect);
+			drawRectBase(rect);
 		}else
 		{//–Èœﬂ
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, type);
-			drawRectS(rect);
+			drawRectBase(rect);
 			glDisable(GL_LINE_STIPPLE);
 		}
 		XGL::DisableBlend();
 	}
-	void drawRect(const XVector2& pos,const XVector2& size,float width, const XFColor &c)
+	void drawRect(const XVec2& pos,const XVec2& size,float width, const XFColor& c)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);	//∆’Õ®–ßπ˚
+		XGL::setBlendAlpha();
 		glColor4fv(c);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
-
-		glBegin(GL_LINE_LOOP);
-		glVertex2fv(pos - size);
-		glVertex2f(pos.x + size.x,pos.y - size.y);
-		glVertex2fv(pos + size);
-		glVertex2f(pos.x - size.x,pos.y + size.y);
-		glEnd();
-
+		drawQuadBase(pos - size, XVec2(pos.x + size.x, pos.y - size.y),
+			pos + size, XVec2(pos.x - size.x, pos.y + size.y));
 		XGL::DisableBlend();
 	}
 	void drawRectAntiColor(const XRect& rect, float width, XLineStyle type)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_ONE_MINUS_DST_COLOR,GL_ZERO);	//∑¥…´–ßπ˚
+		XGL::setBlendInverse();//∑¥…´–ßπ˚
 		glColor4fv(XFColor::white);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		if (type == LS_SOLID)
 		{// µœﬂ
-			drawRectS(rect);
+			drawRectBase(rect);
 		}else
 		{//–Èœﬂ
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, type);
-			drawRectS(rect);
+			drawRectBase(rect);
 			glDisable(GL_LINE_STIPPLE);
 		}
 		XGL::DisableBlend();
 	}
-	void drawBox(float x,float y,float sizeX,float sizeY,int w,const XFColor &c)
+	void drawRectEx(float x,float y,float sizeX,float sizeY,float angle,const XFColor& cl)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4fv(c);
-		glLineWidth(w);
-		XGL::DisableTexture2D();
-		drawBoxS(x,y,sizeX,sizeY);
-		XGL::DisableBlend();
-	}
-	void drawBox(float x,float y,float sizeX,float sizeY,float angle)
-	{
-		XVector2 P1(x - (sizeX * cos(angle) - sizeY * sin(angle)),y + (sizeX * sin(angle) + sizeY * cos(angle)));
-		XVector2 P2(x - (sizeX * cos(angle) + sizeY * sin(angle)),y + (sizeX * sin(angle) - sizeY * cos(angle)));
-
-		XVector2 P3(x + (sizeX * cos(angle) + sizeY * sin(angle)),y - (sizeX * sin(angle) - sizeY * cos(angle)));
-		XVector2 P4(x + (sizeX * cos(angle) - sizeY * sin(angle)),y - (sizeX * sin(angle) + sizeY * cos(angle)));
-
-		glColor3fv(XFColor::white);
+		float c = cos(angle);
+		float s = sin(angle);
+		glColor3fv(cl);
 		glLineWidth(1);
 		XGL::DisableTexture2D();
-		drawBoxS(P1,P2,P3,P4);
+		drawQuadBase(XVec2(x - (sizeX * c - sizeY * s), y + (sizeX * s + sizeY * c)),
+			XVec2(x - (sizeX * c + sizeY * s), y + (sizeX * s - sizeY * c)),
+			XVec2(x + (sizeX * c - sizeY * s), y - (sizeX * s + sizeY * c)),
+			XVec2(x + (sizeX * c + sizeY * s), y - (sizeX * s - sizeY * c)));
 	}
-	void drawBox(const XVector2& p0,const XVector2& p1,const XVector2& p2,const XVector2& p3,float width,float r,float g,float b)
+	void drawQuad(const XVec2& p0,const XVec2& p1,const XVec2& p2,const XVec2& p3,
+		float width,const XFColor& c)
 	{
-		glColor3f(r,g,b);
-		glLineWidth(width);
-		XGL::DisableTexture2D();
-		drawBoxS(p0,p1,p3,p2);
-	}
-	void drawBox(const XVector2& p0,const XVector2& p1,const XVector2& p2,const XVector2& p3,float width,const XFColor &c)
-	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(c);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
-		drawBoxS(p0,p1,p3,p2);
+		drawQuadBase(p0,p1,p2,p3);
 		XGL::DisableBlend();
 	}
-	void drawTriangle(const XVector2& p0,const XVector2& p1,const XVector2& p2,float width,float r,float g,float b)
+	void drawTriangle(const XVec2& p0,const XVec2& p1,const XVec2& p2,float width,float r,float g,float b)
 	{
 		glColor3f(r,g,b);
 		glLineWidth(width);
@@ -776,10 +876,9 @@ namespace XRender
 		glVertex2fv(p2);
 		glEnd();
 	}
-	void drawTriangle(const XVector2& p,float size,float width,const XFColor &color)
+	void drawTriangle(const XVec2& p,float size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
@@ -790,27 +889,60 @@ namespace XRender
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawPoint(float x,float y,float r,float g,float b,float a)
+	//void drawPoint(float x,float y,float r,float g,float b,float a)
+	//{
+	//	XGL::setBlendAlpha();
+	//	glColor4f(r,g,b,a);
+	//	glPointSize(1.0f);
+	//	XGL::DisableTexture2D();
+	//	glBegin(GL_POINTS);
+	//		glVertex2f(x,y);
+	//	glEnd();
+	//	XGL::DisableBlend();
+	//}
+	void drawPoint(const XVec2& p,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
+		XGL::setBlendAlpha();
+		glColor4fv(color);
 		glPointSize(1.0f);
 		XGL::DisableTexture2D();
 		glBegin(GL_POINTS);
-			glVertex2f(x,y);
+			glVertex2fv(p);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawPoint(float x,float y,float size,float r,float g,float b,float a)
+	//void drawPoint(float x,float y,float size,float r,float g,float b,float a)
+	//{
+	//	XGL::setBlendAlpha();
+	//		glColor4f(r,g,b,a);
+	//		glPointSize(size);
+	//	XGL::DisableTexture2D();
+	//	glBegin(GL_POINTS);
+	//		glVertex2f(x,y);
+	//	glEnd();
+	//	XGL::DisableBlend();
+	//}
+	void drawPoint(const XVec2& p, float size, const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-			glColor4f(r,g,b,a);
-			glPointSize(size);
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glPointSize(size);
 		XGL::DisableTexture2D();
 		glBegin(GL_POINTS);
-			glVertex2f(x,y);
+		glVertex2fv(p);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawPoints(const std::vector<XVec2>& ps, float size, const XFColor& color)
+	{
+		if (ps.size() <= 0) return;
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glPointSize(size);
+		XGL::DisableTexture2D();
+		glBegin(GL_POINTS);
+		for(int i = 0;i < ps.size();++ i)
+			glVertex2fv(ps[i]);
 		glEnd();
 		XGL::DisableBlend();
 	}
@@ -827,12 +959,11 @@ namespace XRender
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
 	}
-	void drawPointsVbo(unsigned int v,int pointSum,float s,float r,float g,float b,float a)
+	void drawPointsVbo(unsigned int v,int pointSum,float s,const XFColor& c)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glPointSize(s);
-		glColor4f(r,g,b,a);
+		glColor4fv(c);
 		XGL::DisableTexture2D();
 		glEnableClientState(GL_VERTEX_ARRAY);	
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,v);
@@ -843,7 +974,7 @@ namespace XRender
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);
 		XGL::DisableBlend();
 	}
-	void drawCross(const XVector2& p,float size,float w,float r,float g,float b)
+	void drawCross(const XVec2& p,float size,float w,float r,float g,float b)
 	{
 		glColor3f(r,g,b);
 		glLineWidth(w);
@@ -855,10 +986,9 @@ namespace XRender
 		glVertex2f(p.x,p.y + size);
 		glEnd();
 	}
-	void drawCross(const XVector2& p,float size,float w,const XFColor& color)
+	void drawCross(const XVec2& p,float size,float w,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);	//∆’Õ®–ßπ˚
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(w);
 		XGL::DisableTexture2D();
@@ -872,10 +1002,9 @@ namespace XRender
 
 		XGL::DisableBlend();
 	}
-	void drawMaskRight(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawMaskRight(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
@@ -886,10 +1015,9 @@ namespace XRender
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawMaskWrong(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawMaskWrong(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
@@ -901,74 +1029,203 @@ namespace XRender
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawLeft(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawLeft(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_STRIP);
 		glVertex2f(p.x + size.x,p.y - size.y);
 		glVertex2f(p.x - size.x,p.y);
-		glVertex2f(p.x + size.x,p.y + size.y);
+		glVertex2fv(p + size);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawRight(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawRight(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_STRIP);
-		glVertex2f(p.x - size.x,p.y - size.y);
+		glVertex2fv(p - size);
 		glVertex2f(p.x + size.x,p.y);
 		glVertex2f(p.x - size.x,p.y + size.y);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawUp(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawUp(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_STRIP);
 		glVertex2f(p.x - size.x,p.y + size.y);
 		glVertex2f(p.x,p.y - size.y);
-		glVertex2f(p.x + size.x,p.y + size.y);
+		glVertex2fv(p + size);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawDown(const XVector2& p,const XVector2& size,float width,const XFColor& color)
+	void drawDown(const XVec2& p,const XVec2& size,float width,const XFColor& color)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(width);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_STRIP);
-		glVertex2f(p.x - size.x,p.y - size.y);
+		glVertex2fv(p - size);
 		glVertex2f(p.x,p.y + size.y);
 		glVertex2f(p.x + size.x,p.y - size.y);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawCircle(float px, float py, float sr, int an,float r,float g,float b,float a)
+	void drawSave(const XVec2& p, const XVec2& size, float width, const XFColor& color)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINES);
+		//œ¬∞ÎøÚ
+		glVertex2f(p.x - size.x, p.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2fv(p + size);
+		glVertex2fv(p + size);
+		glVertex2f(p.x + size.x, p.y);
+		//º˝Õ∑
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+
+		glVertex2f(p.x - size.x * 0.5f, p.y);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+		glVertex2f(p.x + size.x * 0.5f, p.y);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawLoad(const XVec2& p, const XVec2& size, float width, const XFColor& color)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINES);
+		//œ¬∞ÎøÚ
+		glVertex2f(p.x - size.x, p.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2fv(p + size);
+		glVertex2fv(p + size);
+		glVertex2f(p.x + size.x, p.y);
+		//º˝Õ∑
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+
+		glVertex2f(p.x - size.x * 0.5f, p.y - size.y * 0.5f);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x + size.x * 0.5f, p.y - size.y * 0.5f);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawDefault(const XVec2& p, const XVec2& size, float width, const XFColor& color)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINE_LOOP);
+		for (float i = 0; i < PI2; i += PI2 * 0.02f)
+		{
+			glVertex2fv(p + XMath::getRotateRate(i) * size);
+		}
+		glEnd();
+		glBegin(GL_LINES);
+		//œ¬∞ÎøÚ
+		glVertex2fv(p - size);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2fv(p - size * XVec2(0.7071f, 0.2929f));
+
+		glVertex2fv(p + size * XVec2(0.7071f, 0.2929f));
+		glVertex2f(p.x, p.y + size.y);
+		glVertex2f(p.x, p.y + size.y);
+		glVertex2fv(p + size);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawDownload(const XVec2& p, const XVec2& size, float width, const XFColor& color)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINES);
+		//œ¬∞ÎøÚ
+		glVertex2f(p.x - size.x, p.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2fv(p + size);
+		glVertex2fv(p + size);
+		glVertex2f(p.x + size.x, p.y);
+		//º˝Õ∑
+		glVertex2f(p.x - size.x * 0.5f, p.y);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+		glVertex2f(p.x + size.x * 0.5f, p.y);
+		glEnd();
+
+		glPointSize(size.x * 0.25f);
+		glBegin(GL_POINTS);
+		glVertex2fv(p);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y - size.y * 0.5f);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawUpdate(const XVec2& p, const XVec2& size, float width, const XFColor& color)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(width);
+		XGL::DisableTexture2D();
+		glBegin(GL_LINES);
+		//œ¬∞ÎøÚ
+		glVertex2f(p.x - size.x, p.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2f(p.x - size.x, p.y + size.y);
+		glVertex2fv(p + size);
+		glVertex2fv(p + size);
+		glVertex2f(p.x + size.x, p.y);
+		//º˝Õ∑
+		glVertex2fv(p - size * 0.5f);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x, p.y - size.y);
+		glVertex2f(p.x + size.x * 0.5f, p.y - size.y * 0.5f);
+		glEnd();
+
+		glPointSize(size.x * 0.25f);
+		glBegin(GL_POINTS);
+		glVertex2fv(p);
+		glVertex2f(p.x, p.y + size.y * 0.5f);
+		glVertex2f(p.x, p.y - size.y * 0.5f);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawCircle(const XVec2&pos, float sr, int an,const XFColor& color)
 	{
 		if(an <= 0 || sr <= 0.0f) return;
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
-		r = (PI2)/an;	//Œ™¡À”≈ªØº∆À„
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		float r = (PI2)/an;	//Œ™¡À”≈ªØº∆À„
 		XGL::DisableTexture2D();
 		glBegin(GL_POLYGON);
 			for(float i = 0;i < PI2; i += r)
 			{
-				glVertex2f(px + cosf(i) * sr,py + sinf(i) * sr);
+				glVertex2fv(pos + XMath::getRotateRate(i) * sr);
 			}
 		glEnd();
 		XGL::DisableBlend();
@@ -977,160 +1234,220 @@ namespace XRender
 	{
 	#define CIRCLE_AN (60)
 	bool isCircleInit = false;
-	float circleSin[CIRCLE_AN];
-	float circleCos[CIRCLE_AN];
+	std::vector<XVec2> circleRate;
 	inline void circleInit()
 	{
 		if(isCircleInit) return;
 		isCircleInit = true;
 		float r = PI2 / CIRCLE_AN;
-		for(int i = 0;i < CIRCLE_AN;++ i)
+		float tmp = 0.0f;
+		circleRate.resize(CIRCLE_AN);
+		for(int i = 0;i < CIRCLE_AN;++ i, tmp += r)
 		{
-			circleSin[i] = sinf(r * i);
-			circleCos[i] = cosf(r * i);
+			circleRate[i] = XMath::getRotateRate(tmp);
 		}
 	}
 	}
-	void drawCircleEx(float px, float py, float sr,float r,float g,float b,float a)
+	void drawCircleEx(const XVec2&pos, float sr,const XFColor& color)
 	{
 		if(sr <= 0.0f) return;
 		XGLCircleData::circleInit();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
+		XGL::setBlendAlpha();
+		glColor4fv(color);
 		XGL::DisableTexture2D();
 		glBegin(GL_POLYGON);
 		for(int i = 0;i < CIRCLE_AN;++ i)
 		{
-			glVertex2f(px + XGLCircleData::circleCos[i] * sr,py + XGLCircleData::circleSin[i] * sr);
+			glVertex2fv(pos + XGLCircleData::circleRate[i] * sr);
 		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawCircleLine(float px, float py, float sr, int an,float r,float g,float b,float a)
+	void drawEllipseLine(const XVec2&pos, float ar, float br, int an,
+		const XFColor&c)
 	{
-		if(an <= 0 || sr <= 0.0f) return;
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
-		r = (PI2)/an;	//Œ™¡À”≈ªØº∆À„
+		if (an <= 0) return;
+		XGL::setBlendAlpha();
+		glColor4fv(c);
+		float r = (PI2) / an;	//Œ™¡À”≈ªØº∆À„
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_LOOP);
-			for(float i = 0;i < PI2; i += r)
-			{
-				glVertex2f(px + cosf(i) * sr,py + sinf(i) * sr);
-			}
+		for (float i = 0; i < PI2; i += r)
+		{
+			glVertex2fv(pos + XMath::getRotateRate(i) * XVec2(ar,br));
+		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawCircleLine(const XVector2 &pos, float sr, int an,float w,const XFColor &color)
+	void drawEllipseLineEx(const XVec2&pos, float ar, float br, int an,
+		float angle, const XFColor&color)
 	{
-		if(an <= 0 || sr <= 0.0f) return;
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		if (an <= 0) return;
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		float r = (PI2) / an;	//Œ™¡À”≈ªØº∆À„
+		XVec2 offset;
+		XGL::DisableTexture2D();
+		glBegin(GL_LINE_LOOP);
+		for (float i = 0; i < PI2; i += r)
+		{
+			offset.set(cosf(i) * ar, sinf(i) * br);
+			glVertex2fv(pos + offset.rotation(angle));
+		}
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawFillEllipseEx(const XVec2&pos, float ar, float br, int an,
+		float angle, const XFColor&color)
+	{
+		if (an <= 0) return;
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		float r = (PI2) / an;	//Œ™¡À”≈ªØº∆À„
+		XVec2 offset;
+		XGL::DisableTexture2D();
+		glBegin(GL_TRIANGLE_FAN);
+		for (float i = 0; i < PI2; i += r)
+		{
+			offset.set(cosf(i) * ar, sinf(i) * br);
+			glVertex2fv(pos + offset.rotation(angle));
+		}
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawCircleLine(const XVec2& pos, float sr, int an, float w,
+		const XFColor& color)
+	{
+		if (an <= 0 || sr <= 0.0f) return;
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(w);
-		float r = (PI2)/an;	//Œ™¡À”≈ªØº∆À„
+		float r = (PI2) / an;	//Œ™¡À”≈ªØº∆À„
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_LOOP);
-			for(float i = 0;i < PI2; i += r)
-			{
-				glVertex2f(pos.x + cosf(i) * sr,pos.y + sinf(i) * sr);
-			}
+		for (float i = 0; i < PI2; i += r)
+		{
+			glVertex2fv(pos + XMath::getRotateRate(i) * sr);
+		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawCircleLineEx(float px, float py, float sr,float r,float g,float b,float a)
+	void drawCircleLineEx(const XVec2& pos, float sr,float w,const XFColor& color)
 	{
 		if(sr <= 0.0f) return;
 		XGLCircleData::circleInit();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(w);
 		XGL::DisableTexture2D();
 		glBegin(GL_LINE_LOOP);
 		for(int i = 0;i < CIRCLE_AN; ++ i)
 		{
-			glVertex2f(px + XGLCircleData::circleCos[i] * sr,py + XGLCircleData::circleSin[i] * sr);
+			glVertex2fv(pos + XGLCircleData::circleRate[i] * sr);
 		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawCircleLineEx(const XVector2 &pos, float sr,float w,const XFColor &color)
+	void drawHexagonLine(const XVec2& pos, float sr, float w, const XFColor& color)
 	{
-		if(sr <= 0.0f) return;
-		XGLCircleData::circleInit();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		if (sr <= 0.0f) return;
+		XGL::setBlendAlpha();
 		glColor4fv(color);
 		glLineWidth(w);
 		XGL::DisableTexture2D();
-		glBegin(GL_LINE_LOOP);
-		for(int i = 0;i < CIRCLE_AN; ++ i)
-		{
-			glVertex2f(pos.x + XGLCircleData::circleCos[i] * sr,pos.y + XGLCircleData::circleSin[i] * sr);
-		}
+		glBegin(GL_LINE_LOOP);		
+		glVertex2f(pos.x - sr * 0.5f, pos.y - sr * 0.86603f);
+		glVertex2f(pos.x + sr * 0.5f, pos.y - sr * 0.86603f);
+		glVertex2f(pos.x + sr, pos.y);
+		glVertex2f(pos.x + sr * 0.5f, pos.y + sr * 0.86603f);
+		glVertex2f(pos.x - sr * 0.5f, pos.y + sr * 0.86603f);
+		glVertex2f(pos.x - sr, pos.y);
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawFillRing(float x,float y,float r0,float r1,float angleS,float angleE,int an,float r,float g,float b,float a)
+	void drawFillHexagon(const XVec2& pos, float sr, const XFColor& color)
+	{
+		if (sr <= 0.0f) return;
+		XGL::setBlendAlpha();
+		glColor4fv(color);
+		XGL::DisableTexture2D();
+		glBegin(GL_POLYGON);
+		glVertex2f(pos.x - sr * 0.5f, pos.y - sr * 0.86603f);
+		glVertex2f(pos.x + sr * 0.5f, pos.y - sr * 0.86603f);
+		glVertex2f(pos.x + sr, pos.y);
+		glVertex2f(pos.x + sr * 0.5f, pos.y + sr * 0.86603f);
+		glVertex2f(pos.x - sr * 0.5f, pos.y + sr * 0.86603f);
+		glVertex2f(pos.x - sr, pos.y);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawFillRing(const XVec2& pos, float r0, float r1, float angleS,
+		float angleE, int an, const XFColor& c)
 	{//≤‚ ‘Õ®π˝£¨µ´ «º∆À„–Ë“™Ω¯“ª≤Ω”≈ªØ
-		if(angleE == angleS || r0 == r1 || an <= 0) return;
+		if (angleE == angleS || r0 == r1 || an <= 0) return;
 		//ø™ ºº∆À„–Ë“™µƒµ„
-		static std::vector<float> point;
-		point.clear();
 		float perAngle = (angleE - angleS) / an * DEGREE2RADIAN;
 		angleS *= DEGREE2RADIAN;
-		float s,c;
-		for(int i = 0;i <= an;++ i)
-		{
-			s = sin(angleS);
-			c = cos(angleS);
-			point.push_back(x - r0 * s);
-			point.push_back(y - r0 * c);
-			point.push_back(x - r1 * s);
-			point.push_back(y - r1 * c);
-			angleS += perAngle;
-		}
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(r,g,b,a);
+		XVec2 tmpR;
+		XGL::setBlendAlpha();
+		glColor4fv(c);
 		XGL::DisableTexture2D();
 		glBegin(GL_TRIANGLE_STRIP);
-		for(unsigned int i = 0;i < point.size();i += 2)
+		for (int i = 0; i <= an; ++i)
 		{
-			glVertex2f(point[i],point[i + 1]);
+			tmpR = XMath::getRotateRate(angleS);
+			glVertex2fv(pos - tmpR * r0);
+			glVertex2fv(pos - tmpR * r1);
+			angleS += perAngle;
 		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawFillRingEx(float x,float y,float r0,float r1,float angleS,float angleE,int an,float r,float g,float b,float a)
+	void drawFillFan(const XVec2& pos, float r, float angleS, float angleE, int an, const XFColor& c)
 	{
-		if(angleE == angleS || r0 == r1 || an <= 0) return;
-		//œ¬√Êø™ ºº∆À„–Ë“™µƒµ„
-		static std::vector<float> point;
+		if (angleE == angleS || r <= 0.0f || an <= 0) return;
+		//ø™ ºº∆À„–Ë“™µƒµ„
 		float perAngle = (angleE - angleS) / an * DEGREE2RADIAN;
 		angleS *= DEGREE2RADIAN;
-		float s,c;
-		for(int i = 0;i <= an;++ i)
-		{
-			s = sin(angleS);
-			c = cos(angleS);
-			point.push_back(x - r0 * s);
-			point.push_back(y - r0 * c);
-			point.push_back(x - r1 * s);
-			point.push_back(y - r1 * c);
-			angleS += perAngle;
-		}
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		perAngle = a / (float)(point.size()) * 2.0f;
+		XVec2 tmpR;
+		XGL::setBlendAlpha();
+		glColor4fv(c);
 		XGL::DisableTexture2D();
 		glBegin(GL_TRIANGLE_STRIP);
-		for(unsigned int i = 0;i < point.size();i += 2)
+		for (int i = 0; i <= an; ++i)
 		{
-			glColor4f(r,g,b,perAngle * (i >> 1));
-			glVertex2f(point[i],point[i + 1]);
+			tmpR = XMath::getRotateRate(angleS);
+			glVertex2fv(pos);
+			glVertex2fv(pos - tmpR * r);
+			angleS += perAngle;
+		}
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawFillRingEx(const XVec2& pos, float r0, float r1, float angleS, 
+		float angleE, int an, const XFColor& c)
+	{
+		if (angleE == angleS || r0 == r1 || an <= 0) return;
+		//œ¬√Êø™ ºº∆À„–Ë“™µƒµ„
+		float perAngle = (angleE - angleS) / an * DEGREE2RADIAN;
+		angleS *= DEGREE2RADIAN;
+		XGL::setBlendAlpha();
+		float perAlpha = c.a / ((an + 1.0f) * 2.0f);
+		XVec2 tmpV;
+		XFColor tmpC = c;
+		tmpC.a = 0.0f;
+		XGL::DisableTexture2D();
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int i = 0; i <= an; ++i)
+		{
+			tmpV = XMath::getRotateRate(angleS);
+			angleS += perAngle;
+			tmpC.a += perAlpha;
+			glColor4fv(tmpC);
+			glVertex2fv(pos - tmpV * r0);
+			tmpC.a += perAlpha;
+			glColor4fv(tmpC);
+			glVertex2fv(pos - tmpV * r1);
 		}
 		glEnd();
 		XGL::DisableBlend();
@@ -1140,63 +1457,55 @@ namespace XRender
 	{
 		bool isRoundCornerInit = false;
 		#define ROUND_CORNER_DENSITY (3)
-		XVector2 roundCornerData[ROUND_CORNER_DENSITY * 4];	//10∂»“ª∏ˆª°
-		float roundCornerR = 3.0f;	//‘≤Ω«µƒ∞Îæ∂
-		float roundCornerD = 6.0f;	//‘≤Ω«µƒ÷±æ∂
+		std::vector<XVec2> roundedDatas;	//10∂»“ª∏ˆª°
+		float roundCornerR = 10.0f;	//‘≤Ω«µƒ∞Îæ∂
+		float roundCornerD = 20.0f;	//‘≤Ω«µƒ÷±æ∂
 		inline void roundCornerInit()
 		{
-			if(!isRoundCornerInit)
+			if (isRoundCornerInit) return;
+			roundedDatas.resize(ROUND_CORNER_DENSITY * 4);
+			float angle = 0.0f;
+			for(int i = 0;i < ROUND_CORNER_DENSITY * 4;++ i)
 			{
-				float angle;
-				for(int i = 0;i < ROUND_CORNER_DENSITY * 4;++ i)
-				{
-					angle = i * 360.0f / (ROUND_CORNER_DENSITY * 4.0f) * DEGREE2RADIAN;
-					roundCornerData[i].set(roundCornerR * cos(angle),
-						roundCornerR * sin(angle));
-				}
-				isRoundCornerInit = true;
+				roundedDatas[i] = XMath::getRotateRate(angle * DEGREE2RADIAN) * roundCornerR;
+				angle += 360.0f / (ROUND_CORNER_DENSITY * 4.0f);
 			}
+			isRoundCornerInit = true;
 		}
-		inline void drawCornerLine(const XVector2 &pos,const XVector2 &size)
+		inline void drawCornerLine(const XVec2& pos,const XVec2& size)
 		{
+			XVec2 tmp = pos + size - XVec2(XGLCornerData::roundCornerR);
 			glBegin(GL_LINE_STRIP);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//”“œ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i] + size + pos - XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i] + tmp);
 			}
+			tmp = pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY] + tmp);
 			}
+			tmp = pos + XVec2(XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Û…œΩ«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i + (ROUND_CORNER_DENSITY << 1)] + tmp);
 			}
+			tmp = pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR);
 			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
 			{//”“…œΩ«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY * 3] + tmp);
 			}
-		//	glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-		//			XGLCornerData::roundCornerData[0].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + size + pos - XGLCornerData::roundCornerR);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + tmp);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + size - XVec2(XGLCornerData::roundCornerR));
 			glEnd();
 		}
 	}
-	void drawFillBox(const XVector2 &p0,const XFColor &c0,		//µ⁄“ª∏ˆµ„“‘º∞—’…´
-							const XVector2 &p1,const XFColor &c1,		//µ⁄∂˛∏ˆµ„“‘º∞—’…´
-							const XVector2 &p2,const XFColor &c2,		//µ⁄»˝∏ˆµ„“‘º∞—’…´
-							const XVector2 &p3,const XFColor &c3)	//µ⁄Àƒ∏ˆµ„“‘º∞—’…´
+	void drawFillQuad(const XVec2& p0,const XFColor& c0,		//µ⁄“ª∏ˆµ„“‘º∞—’…´
+							const XVec2& p1,const XFColor& c1,		//µ⁄∂˛∏ˆµ„“‘º∞—’…´
+							const XVec2& p2,const XFColor& c2,		//µ⁄»˝∏ˆµ„“‘º∞—’…´
+							const XVec2& p3,const XFColor& c3)	//µ⁄Àƒ∏ˆµ„“‘º∞—’…´
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		XGL::DisableTexture2D();
 		glBegin(GL_QUADS);
 		glColor4fv(c0);
@@ -1210,45 +1519,49 @@ namespace XRender
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawFillBox(float x,float y,float w,float h,const XFColor &c)	//√ËªÊ µ–ƒæÿ–Œ
+	void drawFillQuad(const XVec2& p0, const XVec2& p1, const XVec2& p2, const XVec2& p3,
+		const XFColor& c)
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		XGL::DisableTexture2D();
 		glColor4fv(c);
-		drawFillBoxS(x,y,w,h);
+		glBegin(GL_QUADS);
+		glVertex2fv(p0);
+		glVertex2fv(p1);
+		glVertex2fv(p2);
+		glVertex2fv(p3);
+		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawFillBox(const XVector2& pos,const XVector2& size,
+	void drawFillRect(const XVec2& pos,const XVec2& size,
 					 float r,float g,float b,bool withLine)	//√ËªÊ µ–ƒæÿ–Œ
 	{
 		XGL::DisableTexture2D();
 		if(withLine)
 		{//√ËªÊ±ﬂøÚ
-			glColor3f(0.15f,0.15f,0.15f);
+			glColor3f(0.15f, 0.15f, 0.15f);
 			glLineWidth(1.0f);
-			drawBox(pos,size);
+			drawRect(pos,size);
 		}
 		glColor3f(r,g,b);
-		drawFillBoxS(pos.x,pos.y,size.x,size.y);
+		drawFillRectBase(pos,size);
 	}
-	void drawFillBoxA(const XVector2& pos,const XVector2& size,
-		const XFColor &c,bool withLine)	//√ËªÊ µ–ƒæÿ–Œ
+	void drawFillRectA(const XVec2& pos,const XVec2& size,
+		const XFColor& c,bool withLine)	//√ËªÊ µ–ƒæÿ–Œ
 	{
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		XGL::DisableTexture2D();
 		if(withLine)
 		{//√ËªÊ±ﬂøÚ
-			glColor4f(0.15f,0.15f,0.15f,c.fA);
+			glColor4f(0.15f, 0.15f, 0.15f, c.a);
 			glLineWidth(1.0f);
-			drawBox(pos,size);
+			drawRect(pos,size);
 		}
 		glColor4fv(c);
-		drawFillBoxS(pos.x,pos.y,size.x,size.y);
+		drawFillRectBase(pos,size);
 		XGL::DisableBlend();
 	}
-	void drawFillTriangle(const XVector2& p0,const XVector2& p1,const XVector2& p2,
+	void drawFillTriangle(const XVec2& p0,const XVec2& p1,const XVec2& p2,
 							float r,float g ,float b)
 	{
 		glColor3f(r,g,b);
@@ -1259,131 +1572,129 @@ namespace XRender
 		glVertex2fv(p2);
 		glEnd();
 	}
-	void drawFillTriangleEx(const XVector2& p0,const XVector2& p1,const XVector2& p2,
+	void drawFillTriangle(const XVec2& p0, const XVec2& p1, const XVec2& p2,
+		const XFColor&c)
+	{
+		XGL::setBlendAlpha();
+		XGL::DisableTexture2D();
+		glColor4fv(c);
+		XGL::DisableTexture2D();
+		glBegin(GL_TRIANGLES);
+		glVertex2fv(p0);
+		glVertex2fv(p1);
+		glVertex2fv(p2);
+		glEnd();
+		XGL::DisableBlend();
+	}
+	void drawFillTriangleEx(const XVec2& p0,const XVec2& p1,const XVec2& p2,
 							float r,float g,float b)	//√ËªÊ µ–ƒ»˝Ω«–Œ
 	{
 		float min = p0.y;
 		float max = p0.y;
-		if(p1.y < min) min = p1.y;
+		if(p1.y < min) min = p1.y;else
 		if(p1.y > max) max = p1.y;
-		if(p2.y < min) min = p2.y;
+		if(p2.y < min) min = p2.y;else
 		if(p2.y > max) max = p2.y;
 		float rate = 1.0f;
 		XGL::DisableTexture2D();
 		glBegin(GL_TRIANGLES);
-		rate = XMath::maping1D(p0.y,min,max,0.9f,1.1f);
+		rate = XMath::mapping1D(p0.y,min,max,0.9f,1.1f);
 		glColor3f(r * rate,g * rate,b * rate);
 		glVertex2fv(p0);
-		rate = XMath::maping1D(p1.y,min,max,0.9f,1.1f);
+		rate = XMath::mapping1D(p1.y,min,max,0.9f,1.1f);
 		glColor3f(r * rate,g * rate,b * rate);
 		glVertex2fv(p1);
-		rate = XMath::maping1D(p2.y,min,max,0.9f,1.1f);
+		rate = XMath::mapping1D(p2.y,min,max,0.9f,1.1f);
 		glColor3f(r * rate,g * rate,b * rate);
 		glVertex2fv(p2);
 		glEnd();
 	}
-	void drawFillBoxEx(const XVector2& pos,const XVector2& size,
-					 float r,float g,float b,
-					 bool withLine,bool withRoundCorner,bool down)	//√ËªÊ µ–ƒæÿ–Œ
+	void drawFillRectEx(const XVec2& pos, const XVec2& size,
+		float r, float g, float b, bool withLine, bool withRoundCorner, bool down)	//√ËªÊ µ–ƒæÿ–Œ
 	{
-		XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,1.0f);
-		XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,1.0f);
+		XFColor lColor(r * 1.1f, g * 1.1f, b * 1.1f, 1.0f);
+		XFColor dColor(r * 0.9f, g * 0.9f, b * 0.9f, 1.0f);
+		if (!down)
+			std::swap(lColor, dColor);
+
 		XGL::DisableTexture2D();
-		if(withRoundCorner && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
+		if (withRoundCorner && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
 		{
 			XGLCornerData::roundCornerInit();
-			if(withLine)
+			if (withLine)
 			{//√ËªÊ±ﬂøÚ
-				glColor3f(0.15f,0.15f,0.15f);
+				glColor3f(0.15f, 0.15f, 0.15f);
 				glLineWidth(1.0f);
-				XGLCornerData::drawCornerLine(pos,size);
+				XGLCornerData::drawCornerLine(pos, size);
 			}
 			//œ¬∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(lColor); 
-			else glColor3fv(dColor);
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
+			glColor3fv(lColor);
+			XVec2 tmp = size + pos - XVec2(XGLCornerData::roundCornerR);
+			for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 			{//”“œ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i] + size + pos - XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i] + tmp);
 			}
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+			tmp = pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR);
+			for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY] + tmp);
 			}
 			glEnd();
 			//…œ∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(dColor);
-			else glColor3fv(lColor);
-			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+			glColor3fv(dColor);
+			tmp = pos + XVec2(XGLCornerData::roundCornerR);
+			for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 			{//◊Û…œΩ«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i + (ROUND_CORNER_DENSITY << 1)] + tmp);
 			}
-			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
+			tmp = pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR);
+			for (int i = 0; i < ROUND_CORNER_DENSITY; ++i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY * 3] + tmp);
 			}
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + tmp);
 			glEnd();
 			//÷–º‰
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(lColor); 
-			else glColor3fv(dColor);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + size + pos - XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
-			if(down) glColor3fv(dColor);
-			else glColor3fv(lColor);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glColor3fv(lColor);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + size + pos - XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR));
+			glColor3fv(dColor);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 			glEnd();
-		}else
+		}
+		else
 		{
-			if(withLine)
+			if (withLine)
 			{//√ËªÊ±ﬂøÚ
-				glColor3f(0.15f,0.15f,0.15f);
+				glColor3f(0.15f, 0.15f, 0.15f);
 				glLineWidth(1.0f);
-				drawBox(pos,size);
+				drawRect(pos, size);
 			}
 			glBegin(GL_QUADS);
-			if(down) glColor3fv(dColor); 
-			else glColor3fv(lColor);
+			glColor3fv(dColor);
 			glVertex2fv(pos);
-			glVertex2f(pos.x + size.x,pos.y);
-			if(down) glColor3fv(lColor);
-			else glColor3fv(dColor);
+			glVertex2f(pos.x + size.x, pos.y);
+			glColor3fv(lColor);
 			glVertex2fv(pos + size);
-			glVertex2f(pos.x,pos.y + size.y);
+			glVertex2f(pos.x, pos.y + size.y);
 			glEnd();
 		}
 	}
-	void drawFillBoxExA(const XVector2& pos,const XVector2& size,
+	void drawFillRectExA(const XVec2& pos,const XVec2& size,
 					 float r,float g,float b,float a,
 					 bool withLine,bool withRoundCorner,bool down)	//√ËªÊ µ–ƒæÿ–Œ
 	{
-		XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
-		XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+		XFColor lColor(r * 1.1f, g * 1.1f, b * 1.1f, a);
+		XFColor dColor(r * 0.9f, g * 0.9f, b * 0.9f, a);
+		if (!down)
+			std::swap(lColor, dColor);
 	
 		XGL::DisableTexture2D();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		if(withRoundCorner && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
 		{
 			XGLCornerData::roundCornerInit();
@@ -1395,70 +1706,50 @@ namespace XRender
 			}
 			//œ¬∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(lColor); 
-			else glColor4fv(dColor);
+			glColor4fv(lColor); 
+			XVec2 tmp = size + pos - XVec2(XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
 			{//”“œ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i] + size + pos - XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i] + tmp);
 			}
+			tmp = pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY] + tmp);
 			}
 			glEnd();
 			//…œ∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
+			glColor4fv(dColor);
+			tmp = pos + XVec2(XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Û…œΩ«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i + (ROUND_CORNER_DENSITY << 1)] + tmp);
 			}
+			tmp = pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR);
 			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY * 3] + tmp);
 			}
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 			glEnd();
 			//÷–º‰
 			glBegin(GL_POLYGON);
-			if(down) glColor4fv(lColor); 
-			else glColor4fv(dColor);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + size - XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glColor4fv(lColor); 
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + size - XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+			glColor4fv(dColor);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 			glEnd();
 		}else
 		{
 			//µ˜ªªªÊ÷∆À≥–Ú£¨¡¢ÃÂ∏–ª·∏¸«ø°£
 			glBegin(GL_QUADS);
-			if(down) glColor4fv(dColor); 
-			else glColor4fv(lColor);
+			glColor4fv(dColor); 
 			glVertex2fv(pos);
 			glVertex2f(pos.x + size.x,pos.y);
-			if(down) glColor4fv(lColor);
-			else glColor4fv(dColor);
+			glColor4fv(lColor);
 			glVertex2fv(pos + size);
 			glVertex2f(pos.x,pos.y + size.y);
 			glEnd();
@@ -1466,39 +1757,72 @@ namespace XRender
 			{
 				//’‚¿Ô√ËªÊ∏ﬂπ‚
 				glLineWidth(2.0f);
+				glColor4f(dColor.r + 0.2f,dColor.g + 0.2f,dColor.b + 0.2f,dColor.a); 
+				glBegin(GL_LINES);
 				if(down)
 				{
-					glColor4f(dColor.fR + 0.2f,dColor.fG + 0.2f,dColor.fB + 0.2f,dColor.fA); 
-					glBegin(GL_LINES);
 					glVertex2f(pos.x + size.x,pos.y + size.y - 1);
 					glVertex2f(pos.x,pos.y + size.y - 1);
-					glEnd();
 				}else
 				{
-					glColor4f(lColor.fR + 0.2f,lColor.fG + 0.2f,lColor.fB + 0.2f,lColor.fA); 
-					glBegin(GL_LINES);
 					glVertex2fv(pos);
 					glVertex2f(pos.x + size.x,pos.y);
-					glEnd();
 				}
+				glEnd();
 				//√ËªÊ±ﬂøÚ
 				glColor4f(0.15f,0.15f,0.15f,a);
 				glLineWidth(1.0f);
-				drawBox(pos,size);
+				drawRect(pos,size);
 			}
 		}
 		XGL::DisableBlend();
 	}
-	void drawFillBoxExAS(const XVector2& pos,const XVector2& size,
+	void drawArrow(const XVec2&pos,float r,float start,float end,const XFColor& color)
+	{
+		float step = (end - start) / 60.0f * DEGREE2RADIAN;
+		float angle = start * DEGREE2RADIAN;
+//		XGL::setBlendAlpha();
+		glColor4fv(color);
+		glLineWidth(1.0f);
+
+		glBegin(GL_LINE_STRIP);
+		for(int i = 0;i <= 60;++ i)
+		{
+			glVertex2fv(pos + XMath::getRotateRate(angle) * r);
+			angle += step;
+		}
+		glEnd();
+		if(start < end)
+		{//’˝∑ΩœÚ
+			//œ¬√Ê√ËªÊº˝Õ∑
+			XVec2 endPos = pos + XMath::getRotateRate(end * DEGREE2RADIAN) * r;
+			glBegin(GL_LINE_STRIP);
+			glVertex2fv(endPos + XMath::getRotateRate((end - 90.0f - 30.0f) * DEGREE2RADIAN) * 10.0f);
+			glVertex2fv(endPos);
+			glVertex2fv(endPos + XMath::getRotateRate((end - 90.0f + 30.0f) * DEGREE2RADIAN) * 10.0f);
+			glEnd();
+		}else
+		{//∑¥∑ΩœÚ
+			XVec2 endPos = pos + XMath::getRotateRate(end * DEGREE2RADIAN) * r;
+			glBegin(GL_LINE_STRIP);
+			glVertex2fv(endPos + XMath::getRotateRate((end + 90.0f - 30.0f) * DEGREE2RADIAN) * 10.0f);
+			glVertex2fv(endPos);
+			glVertex2fv(endPos + XMath::getRotateRate((end + 90.0f + 30.0f) * DEGREE2RADIAN) * 10.0f);
+			glEnd();
+		}
+//		XGL::DisableBlend();
+	}
+	void drawFillRectExAS(const XVec2& pos,const XVec2& size,
 					 float r,float g,float b,float a,
 					 bool withLine,bool withRoundCorner,bool down)	//√ËªÊ µ–ƒæÿ–Œ
 	{
-		XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
-		XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+		XFColor lColor(r * 1.1f, g * 1.1f, b * 1.1f, a);
+		XFColor dColor(r * 0.9f, g * 0.9f, b * 0.9f, a);
+		if (!down)
+			std::swap(lColor, dColor);
 
 		XGL::DisableTexture2D();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 		if(withRoundCorner && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
 		{
 			XGLCornerData::roundCornerInit();
@@ -1510,59 +1834,41 @@ namespace XRender
 			}
 			//œ¬∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(lColor); 
-			else glColor4fv(dColor);
+			glColor4fv(lColor); 
+			XVec2 tmp = pos + size - XVec2(XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
 			{//”“œ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i] + pos + size - XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i] + tmp);
 			}
+			tmp = pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY] + tmp);
 			}
 			glEnd();
 			//…œ∞Î≤ø∑÷
 			glBegin(GL_POLYGON);
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
+			glColor4fv(dColor);
+			tmp = pos + XVec2(XGLCornerData::roundCornerR);
 			for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 			{//◊Û…œΩ«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[i + (ROUND_CORNER_DENSITY << 1)] + tmp);
 			}
+			tmp = pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR);
 			for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
 			{//◊Ûœ¬Ω«‘≤Ω«
-			//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY * 3] + tmp);
 			}
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 			glEnd();
 			//÷–º‰
 			glBegin(GL_POLYGON);
-			if(down) glColor4fv(lColor); 
-			else glColor4fv(dColor);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + size - XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + size.y - XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
-			//glVertex2f(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x + XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
-			//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-			//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glColor4fv(lColor); 
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + size - XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+			glColor4fv(dColor);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 			glEnd();
 		}else
 		{
@@ -1570,23 +1876,22 @@ namespace XRender
 			{//√ËªÊ±ﬂøÚ
 				glColor4f(0.15f,0.15f,0.15f,a);
 				glLineWidth(1.0f);
-				drawBox(pos,size);
+				drawRect(pos,size);
 			}
 			glBegin(GL_QUADS);
-			if(down) glColor4fv(dColor); 
-			else glColor4fv(lColor);
+			glColor4fv(dColor); 
 			glVertex2fv(pos);
 			glVertex2f(pos.x + size.x,pos.y);
-			if(down) glColor4fv(lColor);
-			else glColor4fv(dColor);
+			glColor4fv(lColor);
 			glVertex2fv(pos + size);
 			glVertex2f(pos.x,pos.y + size.y);
 			glEnd();
 		}
 		XGL::DisableBlend();
 	}
-	inline void drawCorner(const XVector2& pos,const XVector2& size,int style,int index)
+	inline void drawCorner(const XVec2& pos,const XVec2& size,int style,int index)
 	{
+		XVec2 tmp;
 		switch(style)
 		{
 		case 2:
@@ -1594,38 +1899,41 @@ namespace XRender
 			switch(index)
 			{
 			case 0:
-				glVertex2fv(pos + size);
+				tmp = pos + size;
+				glVertex2fv(tmp);
 				for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
 				{
-					glVertex2fv(pos + size + XVector2(XGLCornerData::roundCornerR - XGLCornerData::roundCornerData[i].x,
-						XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+					glVertex2fv(tmp + XVec2(XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[i].x,
+						XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 				}
 				break;
 			case 1:
-				glVertex2f(pos.x,pos.y + size.y);
+				tmp.set(pos.x, pos.y + size.y);
+				glVertex2fv(tmp);
 				for(int i = ROUND_CORNER_DENSITY;i <= (ROUND_CORNER_DENSITY << 1);++ i)	
 				{
-					glVertex2f(pos.x - (XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR),
-						pos.y + size.y + XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR);
+					glVertex2fv(tmp - XVec2(XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+						XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[i].y));
 				}
 				break;
 			case 2:
-				glVertex2f(pos.x,pos.y);
+				glVertex2fv(pos);
 				for(int i = (ROUND_CORNER_DENSITY << 1);i <= (ROUND_CORNER_DENSITY * 3);++ i)	
 				{
-					glVertex2f(pos.x - (XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR),
-						pos.y + XGLCornerData::roundCornerData[i].y + XGLCornerData::roundCornerR);
+					glVertex2fv(pos - XVec2(XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+						-XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 				}
 				break;
 			case 3:
-				glVertex2f(pos.x + size.x,pos.y);
+				tmp.set(pos.x + size.x, pos.y);
+				glVertex2fv(tmp);
 				for(int i = (ROUND_CORNER_DENSITY * 3);i < (ROUND_CORNER_DENSITY << 2);++ i)	
 				{
-					glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR),
-						pos.y + XGLCornerData::roundCornerData[i].y + XGLCornerData::roundCornerR);
+					glVertex2fv(tmp + XVec2(XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[i].x,
+						XGLCornerData::roundedDatas[i].y + XGLCornerData::roundCornerR));
 				}
-				glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[0].x - XGLCornerData::roundCornerR),
-					pos.y + XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR);
+				glVertex2fv(tmp + XVec2(XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[0].x,
+					XGLCornerData::roundedDatas[0].y + XGLCornerData::roundCornerR));
 				break;
 			}
 			glEnd();
@@ -1635,86 +1943,84 @@ namespace XRender
 			switch(index)
 			{
 			case 0:
-				glVertex2fv(pos + size);
+				tmp = pos + size;
+				glVertex2fv(tmp);
 				for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
 				{
-					glVertex2f(pos.x + size.x + XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR,
-						pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+					glVertex2fv(tmp + XVec2(XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR,
+						XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[i].y));
 				}
 				break;
 			case 1:
-				glVertex2f(pos.x,pos.y + size.y);
+				tmp.set(pos.x, pos.y + size.y);
+				glVertex2fv(tmp);
 				for(int i = ROUND_CORNER_DENSITY;i <= (ROUND_CORNER_DENSITY << 1);++ i)	
 				{
-					glVertex2f(pos.x + XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR,
-						pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+					glVertex2fv(tmp + XVec2(XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+						XGLCornerData::roundCornerR - XGLCornerData::roundedDatas[i].y));
 				}
 				break;
 			case 2:
-				glVertex2f(pos.x,pos.y);
+				glVertex2fv(pos);
 				for(int i = (ROUND_CORNER_DENSITY << 1);i <= (ROUND_CORNER_DENSITY * 3);++ i)	
 				{
-					glVertex2f(pos.x + XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR,
-						pos.y - (XGLCornerData::roundCornerData[i].y + XGLCornerData::roundCornerR));
+					glVertex2fv(pos + XVec2(XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+						 -(XGLCornerData::roundedDatas[i].y + XGLCornerData::roundCornerR)));
 				}
 				glEnd();
 				break;
 			case 3:
-				glVertex2f(pos.x + size.x,pos.y);
+				tmp.set(pos.x + size.x, pos.y);
+				glVertex2fv(tmp);
 				for(int i = (ROUND_CORNER_DENSITY * 3);i < (ROUND_CORNER_DENSITY << 2);++ i)	
 				{
-					glVertex2f(pos.x + size.x + XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR,
-						pos.y - (XGLCornerData::roundCornerData[i].y + XGLCornerData::roundCornerR));
+					glVertex2fv(tmp + XVec2(XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR,
+						-(XGLCornerData::roundedDatas[i].y + XGLCornerData::roundCornerR)));
 				}
-				glVertex2f(pos.x + size.x + XGLCornerData::roundCornerData[0].x - XGLCornerData::roundCornerR,
-					pos.y - (XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR));
+				glVertex2fv(tmp + XVec2(XGLCornerData::roundedDatas[0].x - XGLCornerData::roundCornerR,
+					-(XGLCornerData::roundedDatas[0].y + XGLCornerData::roundCornerR)));
 				break;
 			}
 			glEnd();
 			break;
 		}
 	}
-	inline void cornerData(const XVector2& pos,const XVector2& size,int style,int index)
+	inline void cornerData(const XVec2& pos,const XVec2& size,int style,int index)
 	{
+		XVec2 tmp;
 		switch(style)
 		{
 		case 1:
 			switch(index)
 			{
 			case 0:
+				tmp = size + pos - XVec2(XGLCornerData::roundCornerR);
 				for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)	
 				{
-					//glVertex2f(XGLCornerData::roundCornerData[i].x + size.x - XGLCornerData::roundCornerR + pos.x,
-					//	XGLCornerData::roundCornerData[i].y + size.y - XGLCornerData::roundCornerR + pos.y);
-					glVertex2fv(XGLCornerData::roundCornerData[i] + size + pos - XGLCornerData::roundCornerR);
+					glVertex2fv(XGLCornerData::roundedDatas[i] + tmp);
 				}
 				break;
 			case 1:
+				tmp = pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR);
 				for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 				{
-				//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].x + XGLCornerData::roundCornerR + pos.x,
-				//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY].y + size.y - XGLCornerData::roundCornerR + pos.y);
-					glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+					glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY] + tmp);
 				}
 				break;
 			case 2:
+				tmp = pos + XVec2(XGLCornerData::roundCornerR);
 				for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
 				{//◊Û…œΩ«‘≤Ω«
-				//	glVertex2f(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].x + XGLCornerData::roundCornerR + pos.x,
-				//		XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)].y + XGLCornerData::roundCornerR + pos.y);
-					glVertex2fv(XGLCornerData::roundCornerData[i + (ROUND_CORNER_DENSITY << 1)] + pos + XGLCornerData::roundCornerR);
+					glVertex2fv(XGLCornerData::roundedDatas[i + (ROUND_CORNER_DENSITY << 1)] + tmp);
 				}
 				break;
 			case 3:
+				tmp = pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR);
 				for(int i = 0;i < ROUND_CORNER_DENSITY;++ i)
 				{//◊Ûœ¬Ω«‘≤Ω«
-				//	glVertex2f(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].x + size.x - XGLCornerData::roundCornerR + pos.x,
-				//		XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3].y + XGLCornerData::roundCornerR + pos.y);
-					glVertex2fv(XGLCornerData::roundCornerData[i + ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+					glVertex2fv(XGLCornerData::roundedDatas[i + ROUND_CORNER_DENSITY * 3] + tmp);
 				}
-				//glVertex2f(XGLCornerData::roundCornerData[0].x + size.x - XGLCornerData::roundCornerR + pos.x,
-				//	XGLCornerData::roundCornerData[0].y + XGLCornerData::roundCornerR + pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 				break;
 			}
 			break;
@@ -1722,576 +2028,548 @@ namespace XRender
 			switch(index)
 			{
 			case 0:
-				glVertex2fv(pos + size + XGLCornerData::roundCornerData[0] - XGLCornerData::roundCornerR);
-				glVertex2fv(pos + size);
-				glVertex2fv(pos + size + XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY] - XGLCornerData::roundCornerR);
+				tmp = pos + size;
+				glVertex2fv(tmp + XGLCornerData::roundedDatas[0] - XVec2(XGLCornerData::roundCornerR));
+				glVertex2fv(tmp);
+				glVertex2fv(tmp + XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY] - XVec2(XGLCornerData::roundCornerR));
 				break;
 			case 1:
-				glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY] + pos + XVec2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
 				glVertex2f(pos.x,pos.y + size.y);
-				glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].x,
-					pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1].y);
+				glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1].x,
+					pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1].y);
 				break;
 			case 2:
-				glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR));
 				glVertex2fv(pos);
-				glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3] + pos + XGLCornerData::roundCornerR);
+				glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY * 3] + pos + XVec2(XGLCornerData::roundCornerR));
 				break;
 			case 3:
-				glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY * 3] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY * 3] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 				glVertex2f(pos.x + size.x,pos.y);
-				glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+				glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
 				break;
 			}
 			break;
 		}
 	}
-	void drawFillBoxExEx(const XVector2& pos,const XVector2& size,
-							float r,float g,float b,
-							unsigned char lineStyle,unsigned char cornerStyle,bool down)
+	void drawFillRectExEx(const XVec2& pos, const XVec2& size,
+		float r, float g, float b,
+		unsigned char lineStyle, unsigned char cornerStyle, bool down)
 	{
-		XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,1.0f);
-		XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,1.0f);
+		XFColor lColor(r * 1.1f, g * 1.1f, b * 1.1f, 1.0f);
+		XFColor dColor(r * 0.9f, g * 0.9f, b * 0.9f, 1.0f);
+		if (!down)
+			std::swap(lColor, dColor);
 		XGL::DisableTexture2D();
-		if(cornerStyle != 0 && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
+		if (cornerStyle != 0 && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
 		{//–Ë“™√ËªÊ‘≤Ω«
 			XGLCornerData::roundCornerInit();
-			if(lineStyle != 0)
+			if (lineStyle != 0)
 			{//√ËªÊ±ﬂøÚ
-				glColor3f(0.15f,0.15f,0.15f);
+				glColor3f(0.15f, 0.15f, 0.15f);
 				glLineWidth(1.0f);
-				if(lineStyle & 0x01)
+				if (lineStyle & 0x01)
 				{//…œ±ﬂ–Ë“™√ËªÊ
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0x30) >> 4)
+					switch ((cornerStyle & 0x30) >> 4)
 					{
-					case 0:glVertex2fv(pos);break;
+					case 0:glVertex2fv(pos); break;
 					case 1:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-						//	glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-						//		pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
-							glVertex2fv(pos + XGLCornerData::roundCornerData[i] + XGLCornerData::roundCornerR);
+							glVertex2fv(pos + XGLCornerData::roundedDatas[i] + XGLCornerData::roundCornerR);
 						}
 						break;
-					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR,pos.y);break;
+					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR, pos.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-							glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y));
+							glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x,
+								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y));
 						}
 						break;
 					}
-					switch((cornerStyle & 0xc0) >> 6)
+					switch ((cornerStyle & 0xc0) >> 6)
 					{
-					case 0:glVertex2f(pos.x + size.x,pos.y);break;
-					case 1:glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR,pos.y);break;
-					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR,pos.y);break;
+					case 0:glVertex2f(pos.x + size.x, pos.y); break;
+					case 1:glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR, pos.y); break;
+					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR, pos.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-							glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y));
+							glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x,
+								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y));
 						}
-						glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].x,
-							pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].y));
+						glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].x,
+							pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].y));
 						break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x02)
+				if (lineStyle & 0x02)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0xc0) >> 6)
+					switch ((cornerStyle & 0xc0) >> 6)
 					{
-					case 0:glVertex2f(pos.x + size.x,pos.y);break;
+					case 0:glVertex2f(pos.x + size.x, pos.y); break;
 					case 1:
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{
-							glVertex2fv(pos + XGLCornerData::roundCornerData[i] + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+							glVertex2fv(pos + XGLCornerData::roundedDatas[i] + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 						}
 						//glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].x,
 						//	pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].y);
-						glVertex2fv(pos + XGLCornerData::roundCornerData[0] + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+						glVertex2fv(pos + XGLCornerData::roundedDatas[0] + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 						break;
-					case 2:					
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					case 2:
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{
-							glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR),
-								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR),
+								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
-						glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[0].x - XGLCornerData::roundCornerR),
-							pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].y);
+						glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[0].x - XGLCornerData::roundCornerR),
+							pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].y);
 						break;
-					case 3:glVertex2f(pos.x + size.x,pos.y - XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x + size.x, pos.y - XGLCornerData::roundCornerR); break;
 					}
-					switch(cornerStyle & 0x03)
+					switch (cornerStyle & 0x03)
 					{
-					case 0:glVertex2fv(pos + size);break;
-					case 1:glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);break;
-					case 2:					
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					case 0:glVertex2fv(pos + size); break;
+					case 1:glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR); break;
+					case 2:
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR),
-								pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR),
+								pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
 						break;
-					case 3:glVertex2f(pos.x + size.x,pos.y + size.y + XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x + size.x, pos.y + size.y + XGLCornerData::roundCornerR); break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x04)
+				if (lineStyle & 0x04)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch(cornerStyle & 0x03)
+					switch (cornerStyle & 0x03)
 					{
-					case 0:glVertex2fv(pos + size);break;
+					case 0:glVertex2fv(pos + size); break;
 					case 1:
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2fv(XGLCornerData::roundCornerData[i] + pos + size - XGLCornerData::roundCornerR);
+							glVertex2fv(XGLCornerData::roundedDatas[i] + pos + size - XGLCornerData::roundCornerR);
 						}
 						break;
-					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR,pos.y + size.y);break;					
+					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR, pos.y + size.y); break;
 					case 3:
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2f(pos.x + size.x + XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR,
-								pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+							glVertex2f(pos.x + size.x + XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR,
+								pos.y + size.y - (XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 						}
 						break;
 					}
-					switch((cornerStyle & 0x0c) >> 2)
+					switch ((cornerStyle & 0x0c) >> 2)
 					{
-					case 0:glVertex2f(pos.x,pos.y + size.y);break;
-					case 1:glVertex2f(pos.x + XGLCornerData::roundCornerR,pos.y + size.y);break;
-					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR,pos.y + size.y);break;					
+					case 0:glVertex2f(pos.x, pos.y + size.y); break;
+					case 1:glVertex2f(pos.x + XGLCornerData::roundCornerR, pos.y + size.y); break;
+					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR, pos.y + size.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2f(pos.x + XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR,
-								pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+							glVertex2f(pos.x + XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+								pos.y + size.y - (XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 						}
 						break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x08)
+				if (lineStyle & 0x08)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0x0c) >> 2)
+					switch ((cornerStyle & 0x0c) >> 2)
 					{
-					case 0:glVertex2f(pos.x,pos.y + size.y);break;
-					case 1:					
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					case 0:glVertex2f(pos.x, pos.y + size.y); break;
+					case 1:
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2fv(XGLCornerData::roundCornerData[i] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+							glVertex2fv(XGLCornerData::roundedDatas[i] + pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR));
 						}
 						break;
 					case 2:
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2f(pos.x - (XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR),
-								pos.y + size.y + XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR);
+							glVertex2f(pos.x - (XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR),
+								pos.y + size.y + XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR);
 						}
 						break;
-					case 3:glVertex2f(pos.x,pos.y + size.y + XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x, pos.y + size.y + XGLCornerData::roundCornerR); break;
 					}
-					switch((cornerStyle & 0x30) >> 4)
+					switch ((cornerStyle & 0x30) >> 4)
 					{
-					case 0:glVertex2fv(pos);break;
-					case 1:glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);break;
+					case 0:glVertex2fv(pos); break;
+					case 1:glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR); break;
 					case 2:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{
-							glVertex2f(pos.x - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x),
-								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x),
+								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
 						break;
-					case 3:glVertex2f(pos.x,pos.y - XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x, pos.y - XGLCornerData::roundCornerR); break;
 					}
 					glEnd();
 				}
 			}
-			if(down) glColor3fv(lColor); 
-			else glColor3fv(dColor);
+			glColor3fv(lColor);
 			//œ¬∞Î≤ø∑÷
-			if(down) glColor3fv(lColor); 
-			else glColor3fv(dColor);
+			glColor3fv(lColor);
 			glBegin(GL_POLYGON);
-			cornerData(pos,size,cornerStyle & 0x03,0);	//”“œ¬Ω«
-			cornerData(pos,size,(cornerStyle & 0x0c) >> 2,1);	//◊Ûœ¬Ω«
+			cornerData(pos, size, cornerStyle & 0x03, 0);	//”“œ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0x0c) >> 2, 1);	//◊Ûœ¬Ω«
 			glEnd();
-			drawCorner(pos,size,cornerStyle & 0x03,0);
-			drawCorner(pos,size,(cornerStyle & 0x0c) >> 2,1);
+			drawCorner(pos, size, cornerStyle & 0x03, 0);
+			drawCorner(pos, size, (cornerStyle & 0x0c) >> 2, 1);
 			//…œ∞Î≤ø∑÷
-			if(down) glColor3fv(dColor);
-			else glColor3fv(lColor);
+			glColor3fv(dColor);
 			glBegin(GL_POLYGON);
-			cornerData(pos,size,(cornerStyle & 0x30) >> 4,2);	//”“œ¬Ω«
-			cornerData(pos,size,(cornerStyle & 0xc0) >> 6,3);	//◊Ûœ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0x30) >> 4, 2);	//”“œ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0xc0) >> 6, 3);	//◊Ûœ¬Ω«
 			glEnd();
-			drawCorner(pos,size,(cornerStyle & 0x30) >> 4,2);	//◊Û…œΩ«
-			drawCorner(pos,size,(cornerStyle & 0xc0) >> 6,3);	//”“…œΩ«
+			drawCorner(pos, size, (cornerStyle & 0x30) >> 4, 2);	//◊Û…œΩ«
+			drawCorner(pos, size, (cornerStyle & 0xc0) >> 6, 3);	//”“…œΩ«
 			//÷–º‰
 			glBegin(GL_POLYGON);
-			if(down) glColor3fv(lColor); 
-			else glColor3fv(dColor);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + size + pos - XGLCornerData::roundCornerR);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
-			if(down) glColor3fv(dColor);
-			else glColor3fv(lColor);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glColor3fv(lColor);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + size + pos - XGLCornerData::roundCornerR);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR));
+			glColor3fv(dColor);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 			glEnd();
-		}else
+		}
+		else
 		{//≤ª–Ë“™√ËªÊ‘≤Ω«
-			if(lineStyle != 0)
+			if (lineStyle != 0)
 			{//√ËªÊ±ﬂøÚ
-				glColor3f(0.15f,0.15f,0.15f);
+				glColor3f(0.15f, 0.15f, 0.15f);
 				glLineWidth(1.0f);
 				glBegin(GL_LINES);
-				if(lineStyle & 0x01)
+				if (lineStyle & 0x01)
 				{
 					glVertex2fv(pos);
-					glVertex2f(pos.x + size.x,pos.y);
+					glVertex2f(pos.x + size.x, pos.y);
 				}
-				if(lineStyle & 0x02)
+				if (lineStyle & 0x02)
 				{
-					glVertex2f(pos.x + size.x,pos.y);
+					glVertex2f(pos.x + size.x, pos.y);
 					glVertex2fv(pos + size);
 				}
-				if(lineStyle & 0x04)
+				if (lineStyle & 0x04)
 				{
 					glVertex2fv(pos + size);
-					glVertex2f(pos.x,pos.y + size.y);
+					glVertex2f(pos.x, pos.y + size.y);
 				}
-				if(lineStyle & 0x08)
+				if (lineStyle & 0x08)
 				{
-					glVertex2f(pos.x,pos.y + size.y);
+					glVertex2f(pos.x, pos.y + size.y);
 					glVertex2fv(pos);
 				}
 				glEnd();
 			}
 			glBegin(GL_QUADS);
-			if(down) glColor3fv(dColor); 
-			else glColor3fv(lColor);
-			glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);
+			glColor3fv(dColor);
+			glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR);
 			glVertex2fv(pos);
-			glVertex2f(pos.x + size.x,pos.y);
-			glVertex2f(pos.x + size.x,pos.y + XGLCornerData::roundCornerR);
+			glVertex2f(pos.x + size.x, pos.y);
+			glVertex2f(pos.x + size.x, pos.y + XGLCornerData::roundCornerR);
 			glEnd();
 			glBegin(GL_QUADS);
-			if(down) glColor3fv(lColor);
-			else glColor3fv(dColor);
-			glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);
-			glVertex2f(pos.x + size.x,pos.y + size.y);
-			glVertex2f(pos.x,pos.y + size.y);
-			glVertex2f(pos.x,pos.y + size.y - XGLCornerData::roundCornerR);
+			glColor3fv(lColor);
+			glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR);
+			glVertex2fv(pos + size);
+			glVertex2f(pos.x, pos.y + size.y);
+			glVertex2f(pos.x, pos.y + size.y - XGLCornerData::roundCornerR);
 			glEnd();
 			glBegin(GL_QUADS);
-			if(down) glColor3fv(dColor); 
-			else glColor3fv(lColor);
-			glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);
-			glVertex2f(pos.x + size.x,pos.y + XGLCornerData::roundCornerR);
-			if(down) glColor3fv(lColor);
-			else glColor3fv(dColor);
-			glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);
-			glVertex2f(pos.x,pos.y + size.y - XGLCornerData::roundCornerR);
+			glColor3fv(dColor);
+			glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR);
+			glVertex2f(pos.x + size.x, pos.y + XGLCornerData::roundCornerR);
+			glColor3fv(lColor);
+			glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR);
+			glVertex2f(pos.x, pos.y + size.y - XGLCornerData::roundCornerR);
 			glEnd();
 		}
 	}
-	void drawFillBoxExExA(const XVector2& pos,const XVector2& size,
-							float r,float g,float b,float a,
-							unsigned char lineStyle,unsigned char cornerStyle,bool down)
+	void drawFillRectExExA(const XVec2& pos, const XVec2& size,
+		float r, float g, float b, float a,
+		unsigned char lineStyle, unsigned char cornerStyle, bool down)
 	{
-		XFColor lColor(r * 1.1f,g * 1.1f,b * 1.1f,a);
-		XFColor dColor(r * 0.9f,g * 0.9f,b * 0.9f,a);
+		XFColor lColor(r * 1.1f, g * 1.1f, b * 1.1f, a);
+		XFColor dColor(r * 0.9f, g * 0.9f, b * 0.9f, a);
+		if (!down)
+			std::swap(lColor, dColor);
 		XGL::DisableTexture2D();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 
-		if(cornerStyle != 0 && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
+		if (cornerStyle != 0 && size.x >= XGLCornerData::roundCornerD && size.y >= XGLCornerData::roundCornerD)
 		{//–Ë“™√ËªÊ‘≤Ω«
 			XGLCornerData::roundCornerInit();
-			if(lineStyle != 0)
+			if (lineStyle != 0)
 			{//√ËªÊ±ﬂøÚ
-				glColor4f(0.15f,0.15f,0.15f,a);
+				glColor4f(0.15f, 0.15f, 0.15f, a);
 				glLineWidth(1.0f);
-				if(lineStyle & 0x01)
+				if (lineStyle & 0x01)
 				{//…œ±ﬂ–Ë“™√ËªÊ
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0x30) >> 4)
+					switch ((cornerStyle & 0x30) >> 4)
 					{
-					case 0:glVertex2fv(pos);break;
+					case 0:glVertex2fv(pos); break;
 					case 1:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-							glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2fv(pos + XVec2(XGLCornerData::roundCornerR) + XGLCornerData::roundedDatas[i]);
 						}
 						break;
-					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR,pos.y);break;
+					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR, pos.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-							glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y));
+							glVertex2f(pos.x + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x,
+								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y));
 						}
 						break;
 					}
-					switch((cornerStyle & 0xc0) >> 6)
+					switch ((cornerStyle & 0xc0) >> 6)
 					{
-					case 0:glVertex2f(pos.x + size.x,pos.y);break;
-					case 1:glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR,pos.y);break;
-					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR,pos.y);break;
+					case 0:glVertex2f(pos.x + size.x, pos.y); break;
+					case 1:glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR, pos.y); break;
+					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR, pos.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{//◊Û…œΩ«‘≤Ω«
-							glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x,
-								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y));
+							glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x,
+								pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y));
 						}
-						glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].x,
-							pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].y));
+						glVertex2f(pos.x + size.x - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].x,
+							pos.y - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].y));
 						break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x02)
+				if (lineStyle & 0x02)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0xc0) >> 6)
+					switch ((cornerStyle & 0xc0) >> 6)
 					{
-					case 0:glVertex2f(pos.x + size.x,pos.y);break;
+					case 0:glVertex2f(pos.x + size.x, pos.y); break;
 					case 1:
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{
-							glVertex2fv(XGLCornerData::roundCornerData[i] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+							glVertex2fv(XGLCornerData::roundedDatas[i] + pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 						}
-						glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+						glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 						break;
-					case 2:					
-						for(int i = ROUND_CORNER_DENSITY * 3;i < ROUND_CORNER_DENSITY << 2;++ i)
+					case 2:
+						for (int i = ROUND_CORNER_DENSITY * 3; i < ROUND_CORNER_DENSITY << 2; ++i)
 						{
-							glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR),
-								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR),
+								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
-						glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[0].x - XGLCornerData::roundCornerR),
-							pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[0].y);
+						glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[0].x - XGLCornerData::roundCornerR),
+							pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[0].y);
 						break;
-					case 3:glVertex2f(pos.x + size.x,pos.y - XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x + size.x, pos.y - XGLCornerData::roundCornerR); break;
 					}
-					switch(cornerStyle & 0x03)
+					switch (cornerStyle & 0x03)
 					{
-					case 0:glVertex2fv(pos + size);break;
-					case 1:glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);break;
-					case 2:					
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+					case 0:glVertex2fv(pos + size); break;
+					case 1:glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR); break;
+					case 2:
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2f(pos.x + size.x - (XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR),
-								pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x + size.x - (XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR),
+								pos.y + size.y - XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
 						break;
-					case 3:glVertex2f(pos.x + size.x,pos.y + size.y + XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x + size.x, pos.y + size.y + XGLCornerData::roundCornerR); break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x04)
+				if (lineStyle & 0x04)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch(cornerStyle & 0x03)
+					switch (cornerStyle & 0x03)
 					{
-					case 0:glVertex2fv(pos + size);break;
+					case 0:glVertex2fv(pos + size); break;
 					case 1:
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2fv(XGLCornerData::roundCornerData[i] + pos + size - XGLCornerData::roundCornerR);
+							glVertex2fv(XGLCornerData::roundedDatas[i] + pos + size - XGLCornerData::roundCornerR);
 						}
 						break;
-					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR,pos.y + size.y);break;					
+					case 2:glVertex2f(pos.x + size.x + XGLCornerData::roundCornerR, pos.y + size.y); break;
 					case 3:
-						for(int i = 0;i <= ROUND_CORNER_DENSITY;++ i)
+						for (int i = 0; i <= ROUND_CORNER_DENSITY; ++i)
 						{
-							glVertex2f(pos.x + size.x + XGLCornerData::roundCornerData[i].x - XGLCornerData::roundCornerR,
-								pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+							glVertex2f(pos.x + size.x + XGLCornerData::roundedDatas[i].x - XGLCornerData::roundCornerR,
+								pos.y + size.y - (XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 						}
 						break;
 					}
-					switch((cornerStyle & 0x0c) >> 2)
+					switch ((cornerStyle & 0x0c) >> 2)
 					{
-					case 0:glVertex2f(pos.x,pos.y + size.y);break;
-					case 1:glVertex2f(pos.x + XGLCornerData::roundCornerR,pos.y + size.y);break;
-					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR,pos.y + size.y);break;					
+					case 0:glVertex2f(pos.x, pos.y + size.y); break;
+					case 1:glVertex2f(pos.x + XGLCornerData::roundCornerR, pos.y + size.y); break;
+					case 2:glVertex2f(pos.x - XGLCornerData::roundCornerR, pos.y + size.y); break;
 					case 3:
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2f(pos.x + XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR,
-								pos.y + size.y - (XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR));
+							glVertex2f(pos.x + XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR,
+								pos.y + size.y - (XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR));
 						}
 						break;
 					}
 					glEnd();
 				}
-				if(lineStyle & 0x08)
+				if (lineStyle & 0x08)
 				{
 					glBegin(GL_LINE_STRIP);
-					switch((cornerStyle & 0x0c) >> 2)
+					switch ((cornerStyle & 0x0c) >> 2)
 					{
-					case 0:glVertex2f(pos.x,pos.y + size.y);break;
-					case 1:					
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+					case 0:glVertex2f(pos.x, pos.y + size.y); break;
+					case 1:
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2fv(XGLCornerData::roundCornerData[i] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
+							glVertex2fv(XGLCornerData::roundedDatas[i] + pos +
+								XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR));
 						}
 						break;
 					case 2:
-						for(int i = ROUND_CORNER_DENSITY;i <= ROUND_CORNER_DENSITY << 1;++ i)
+						for (int i = ROUND_CORNER_DENSITY; i <= ROUND_CORNER_DENSITY << 1; ++i)
 						{
-							glVertex2f(pos.x - (XGLCornerData::roundCornerData[i].x + XGLCornerData::roundCornerR),
-								pos.y + size.y + XGLCornerData::roundCornerData[i].y - XGLCornerData::roundCornerR);
+							glVertex2f(pos.x - (XGLCornerData::roundedDatas[i].x + XGLCornerData::roundCornerR),
+								pos.y + size.y + XGLCornerData::roundedDatas[i].y - XGLCornerData::roundCornerR);
 						}
 						break;
-					case 3:glVertex2f(pos.x,pos.y + size.y + XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x, pos.y + size.y + XGLCornerData::roundCornerR); break;
 					}
-					switch((cornerStyle & 0x30) >> 4)
+					switch ((cornerStyle & 0x30) >> 4)
 					{
-					case 0:glVertex2fv(pos);break;
-					case 1:glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);break;
+					case 0:glVertex2fv(pos); break;
+					case 1:glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR); break;
 					case 2:
-						for(int i = ROUND_CORNER_DENSITY << 1;i <= ROUND_CORNER_DENSITY * 3;++ i)
+						for (int i = ROUND_CORNER_DENSITY << 1; i <= ROUND_CORNER_DENSITY * 3; ++i)
 						{
-							glVertex2f(pos.x - (XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].x),
-								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundCornerData[i].y);
+							glVertex2f(pos.x - (XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].x),
+								pos.y + XGLCornerData::roundCornerR + XGLCornerData::roundedDatas[i].y);
 						}
 						break;
-					case 3:glVertex2f(pos.x,pos.y - XGLCornerData::roundCornerR);break;
+					case 3:glVertex2f(pos.x, pos.y - XGLCornerData::roundCornerR); break;
 					}
 					glEnd();
 				}
 			}
-			if(down) glColor4fv(lColor); 
-			else glColor4fv(dColor);
 			//œ¬∞Î≤ø∑÷
-			if(down) glColor4fv(lColor); 
-			else glColor4fv(dColor);
+			glColor4fv(lColor);
 			glBegin(GL_POLYGON);
-			cornerData(pos,size,cornerStyle & 0x03,0);	//”“œ¬Ω«
-			cornerData(pos,size,(cornerStyle & 0x0c) >> 2,1);	//◊Ûœ¬Ω«
+			cornerData(pos, size, cornerStyle & 0x03, 0);	//”“œ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0x0c) >> 2, 1);	//◊Ûœ¬Ω«
 			glEnd();
-			drawCorner(pos,size,cornerStyle & 0x03,0);
-			drawCorner(pos,size,(cornerStyle & 0x0c) >> 2,1);
+			drawCorner(pos, size, cornerStyle & 0x03, 0);
+			drawCorner(pos, size, (cornerStyle & 0x0c) >> 2, 1);
 			//…œ∞Î≤ø∑÷
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
+			glColor4fv(dColor);
 			glBegin(GL_POLYGON);
-			cornerData(pos,size,(cornerStyle & 0x30) >> 4,2);	//”“œ¬Ω«
-			cornerData(pos,size,(cornerStyle & 0xc0) >> 6,3);	//◊Ûœ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0x30) >> 4, 2);	//”“œ¬Ω«
+			cornerData(pos, size, (cornerStyle & 0xc0) >> 6, 3);	//◊Ûœ¬Ω«
 			glEnd();
-			drawCorner(pos,size,(cornerStyle & 0x30) >> 4,2);	//◊Û…œΩ«
-			drawCorner(pos,size,(cornerStyle & 0xc0) >> 6,3);	//”“…œΩ«
+			drawCorner(pos, size, (cornerStyle & 0x30) >> 4, 2);	//◊Û…œΩ«
+			drawCorner(pos, size, (cornerStyle & 0xc0) >> 6, 3);	//”“…œΩ«
 			//÷–º‰
 			glBegin(GL_POLYGON);
-			if(down) glColor4fv(lColor); 
-			else glColor4fv(dColor);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + size + pos - XGLCornerData::roundCornerR);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XVector2(XGLCornerData::roundCornerR,size.y - XGLCornerData::roundCornerR));
-			if(down) glColor4fv(dColor);
-			else glColor4fv(lColor);
-			glVertex2fv(XGLCornerData::roundCornerData[ROUND_CORNER_DENSITY << 1] + pos + XGLCornerData::roundCornerR);
-			glVertex2fv(XGLCornerData::roundCornerData[0] + pos + XVector2(size.x - XGLCornerData::roundCornerR,XGLCornerData::roundCornerR));
+			glColor4fv(lColor);
+			glVertex2fv(XGLCornerData::roundedDatas[0] + size + pos - XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR, size.y - XGLCornerData::roundCornerR));
+			glColor4fv(dColor);
+			glVertex2fv(XGLCornerData::roundedDatas[ROUND_CORNER_DENSITY << 1] + pos + XVec2(XGLCornerData::roundCornerR));
+			glVertex2fv(XGLCornerData::roundedDatas[0] + pos + XVec2(size.x - XGLCornerData::roundCornerR, XGLCornerData::roundCornerR));
 			glEnd();
-		}else
+		}
+		else
 		{//≤ª–Ë“™√ËªÊ‘≤Ω«
-			if(lineStyle != 0)
+			if (lineStyle != 0)
 			{//√ËªÊ±ﬂøÚ
-				glColor4f(0.15f,0.15f,0.15f,a);
+				glColor4f(0.15f, 0.15f, 0.15f, a);
 				glLineWidth(1.0f);
 				glBegin(GL_LINES);
-				if(lineStyle & 0x01)
+				if (lineStyle & 0x01)
 				{
 					glVertex2fv(pos);
-					glVertex2f(pos.x + size.x,pos.y);
+					glVertex2f(pos.x + size.x, pos.y);
 				}
-				if(lineStyle & 0x02)
+				if (lineStyle & 0x02)
 				{
-					glVertex2f(pos.x + size.x,pos.y);
+					glVertex2f(pos.x + size.x, pos.y);
 					glVertex2fv(pos + size);
 				}
-				if(lineStyle & 0x04)
+				if (lineStyle & 0x04)
 				{
 					glVertex2fv(pos + size);
-					glVertex2f(pos.x,pos.y + size.y);
+					glVertex2f(pos.x, pos.y + size.y);
 				}
-				if(lineStyle & 0x08)
+				if (lineStyle & 0x08)
 				{
-					glVertex2f(pos.x,pos.y + size.y);
+					glVertex2f(pos.x, pos.y + size.y);
 					glVertex2fv(pos);
 				}
 				glEnd();
 			}
 			glBegin(GL_QUADS);
-			if(down) glColor4fv(dColor); 
-			else glColor4fv(lColor);
-			glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);
+			glColor4fv(dColor);
+			glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR);
 			glVertex2fv(pos);
-			glVertex2f(pos.x + size.x,pos.y);
-			glVertex2f(pos.x + size.x,pos.y + XGLCornerData::roundCornerR);
+			glVertex2f(pos.x + size.x, pos.y);
+			glVertex2f(pos.x + size.x, pos.y + XGLCornerData::roundCornerR);
 			glEnd();
 			glBegin(GL_QUADS);
-			if(down) glColor4fv(lColor);
-			else glColor4fv(dColor);
-			glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);
-			glVertex2f(pos.x + size.x,pos.y + size.y);
-			glVertex2f(pos.x,pos.y + size.y);
-			glVertex2f(pos.x,pos.y + size.y - XGLCornerData::roundCornerR);
+			glColor4fv(lColor);
+			glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR);
+			glVertex2fv(pos + size);
+			glVertex2f(pos.x, pos.y + size.y);
+			glVertex2f(pos.x, pos.y + size.y - XGLCornerData::roundCornerR);
 			glEnd();
 			glBegin(GL_QUADS);
-			if(down) glColor4fv(dColor); 
-			else glColor4fv(lColor);
-			glVertex2f(pos.x,pos.y + XGLCornerData::roundCornerR);
-			glVertex2f(pos.x + size.x,pos.y + XGLCornerData::roundCornerR);
-			if(down) glColor4fv(lColor);
-			else glColor4fv(dColor);
-			glVertex2f(pos.x + size.x,pos.y + size.y - XGLCornerData::roundCornerR);
-			glVertex2f(pos.x,pos.y + size.y - XGLCornerData::roundCornerR);
+			glColor4fv(dColor);
+			glVertex2f(pos.x, pos.y + XGLCornerData::roundCornerR);
+			glVertex2f(pos.x + size.x, pos.y + XGLCornerData::roundCornerR);
+			glColor4fv(lColor);
+			glVertex2f(pos.x + size.x, pos.y + size.y - XGLCornerData::roundCornerR);
+			glVertex2f(pos.x, pos.y + size.y - XGLCornerData::roundCornerR);
 			glEnd();
 		}
 		XGL::DisableBlend();
 	}
-	void drawFillBox(const XVector2& p0,const XVector2& p1,const XVector2& p2,const XVector2& p3,
-					 float r,float g,float b)
-	{
-		glColor3f(r,g,b);
-		XGL::DisableTexture2D();
-		glBegin(GL_QUADS);
-		glVertex2fv(p0);
-		glVertex2fv(p1);
-		glVertex2fv(p2);
-		glVertex2fv(p3);
-		glEnd();
-	}
-	void drawFillBoxEx(const XVector2& p0,const XVector2& p1,const XVector2& p2,const XVector2& p3,
-					 float r,float g,float b,
-					 bool withLine)
+	void drawFillQuadEx(const XVec2& p0, const XVec2& p1, const XVec2& p2, const XVec2& p3,
+		float r, float g, float b, bool withLine)
 	{
 		XGL::DisableTexture2D();
-		if(withLine)
+		if (withLine)
 		{//√ËªÊ±ﬂøÚ
-			glColor3f(0.15f,0.15f,0.15f);
+			glColor3f(0.15f, 0.15f, 0.15f);
 			glLineWidth(1.0f);
-			drawBoxS(p0,p1,p2,p3);
+			drawQuadBase(p0, p1, p2, p3);
 		}
 		glBegin(GL_QUADS);
-		glColor3f(r * 1.1f,g * 1.1f,b * 1.1f);
+		glColor3f(r * 1.1f, g * 1.1f, b * 1.1f);
 		glVertex2fv(p0);
 		glVertex2fv(p1);
-		glColor3f(r * 0.9f,g * 0.9f,b * 0.9f);
+		glColor3f(r * 0.9f, g * 0.9f, b * 0.9f);
 		glVertex2fv(p2);
 		glVertex2fv(p3);
 		glEnd();
 	}
-	void drawFillPolygon(const XVector2 *p,int sum,float r,float g,float b)
+	void drawFillPolygon(const XVec2 *p,int sum,float r,float g,float b)
 	{
 		glColor3f(r,g,b);
 		XGL::DisableTexture2D();
@@ -2302,13 +2580,13 @@ namespace XRender
 		}
 		glEnd();
 	}
-	void drawFillPolygon(const XVector2 *p,int sum,const XVector2 &pos,float angle,float r,float g,float b)
+	void drawFillPolygon(const XVec2 *p,int sum,const XVec2& pos,float angle,float r,float g,float b)
 	{
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		glTranslatef(pos.x,pos.y, 0);
-		glRotatef(angle,0,0,1);
+		glTranslatef(pos.x,pos.y, 0.0f);
+		glRotatef(angle,0.0f,0.0f,1.0f);
 
 		glColor3f(r,g,b);
 		XGL::DisableTexture2D();
@@ -2320,7 +2598,7 @@ namespace XRender
 		glEnd();
 		glPopMatrix();
 	}
-	void drawFillPolygonEx(const XVector2 *p,const float *c,int sum,float r,float g,float b,bool withLine)
+	void drawFillPolygonEx(const XVec2 *p,const float *c,int sum,float r,float g,float b,bool withLine)
 	{
 		XGL::DisableTexture2D();
 		if(withLine)
@@ -2342,63 +2620,63 @@ namespace XRender
 		}
 		glEnd();
 	}
-	void drawFillPolygonExA(const XVector2 *p,const float *c,int sum,float r,float g,float b,float a,bool withLine)
+	void drawFillPolygonExA(const XVec2 *p, const float *c, int sum,
+		float r, float g, float b, float a, bool withLine)
 	{
 		XGL::DisableTexture2D();
-		XGL::EnableBlend();
-		XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		XGL::setBlendAlpha();
 
-		if(withLine)
+		if (withLine)
 		{//√ËªÊ±ﬂøÚ
-			glColor4f(0.15f,0.15f,0.15f,a);
+			glColor4f(0.15f, 0.15f, 0.15f, a);
 			glLineWidth(1.0f);
 			glBegin(GL_LINE_STRIP);
-			for(int i = 0;i < sum;++ i)
+			for (int i = 0; i < sum; ++i)
 			{
 				glVertex2fv(p[i]);
 			}
 			glEnd();
 		}
 		glBegin(GL_POLYGON);
-		for(int i = 0;i < sum;++ i)
+		for (int i = 0; i < sum; ++i)
 		{
-			glColor4f(r * c[i],g * c[i],b * c[i],a);
+			glColor4f(r * c[i], g * c[i], b * c[i], a);
 			glVertex2fv(p[i]);
 		}
 		glEnd();
 		XGL::DisableBlend();
 	}
-	void drawFillBoxBW(const XVector2& pos,const XVector2& size,const XVector2& cSize)
+	void drawFillRectBW(const XVec2& pos,const XVec2& size,const XVec2& cSize,bool anti)
 	{
 		XGL::DisableTexture2D();
-		glColor3f(1.0f,1.0f,1.0f);
+		if(anti) glColor3fv(XFColor::black);
+		else glColor3fv(XFColor::white);
 		//œ»√ËªÊ“ª∏ˆ∞◊…´µ◊
-		drawFillBoxS(pos.x,pos.y,size.x,size.y);
+		drawFillRectBase(pos,size);
 		int w = size.x / cSize.x;
 		int h = size.y / cSize.y;
-		XVector2 tempPos;
-		glColor3f(0.0f,0.0f,0.0f);
+		XVec2 tempPos;
+		if(anti) glColor3fv(XFColor::white);
+		else glColor3fv(XFColor::black);
 		//∑Ω∑®1
 		glBegin(GL_QUADS);
-		for(int i = 0;i < w;++ i)
+		tempPos.x = pos.x;
+		for(int i = 0;i < w;++ i,tempPos.x += cSize.x)
 		{
-			tempPos.x = pos.x + i * cSize.x;
-			for(int j = 0;j < h;++ j)
+			tempPos.y = pos.y;
+			for(int j = 0;j < h;++ j,tempPos.y += cSize.y)
 			{
-				if((i + j)%2 == 0)
-				{
-					tempPos.y = pos.y + j * cSize.y;
-					glVertex2fv(tempPos);
-					glVertex2f(tempPos.x + cSize.x,tempPos.y);
-					glVertex2f(tempPos.x + cSize.x,tempPos.y + cSize.y);
-					glVertex2f(tempPos.x,tempPos.y + cSize.y);
-				}
+				if((i + j)%2 != 0) continue;
+				glVertex2fv(tempPos);
+				glVertex2f(tempPos.x + cSize.x,tempPos.y);
+				glVertex2fv(tempPos + cSize);
+				glVertex2f(tempPos.x,tempPos.y + cSize.y);
 			}
 		}
 		glEnd();
 		//∑Ω∑®2
 		//int arraySize = w * (h >> 1) * 4;
-		//XVector2 *vPoint = XMem::createArrayMem<XVector2>(arraySize);
+		//XVec2 *vPoint = XMem::createArrayMem<XVec2>(arraySize);
 		//int index = 0;
 		//for(int i = 0;i < w;++ i)
 		//{
@@ -2425,48 +2703,73 @@ namespace XRender
 		//XGL::DisableTexture2D();
 		//XMem::XDELETE_ARRAY(vPoint);
 	}
-	void drawTexture(XTexture &tex,const XVector2 &pos,int cW,int cH,
-		XVector2 *vArray,XVector2 *uArray,int arrayW,int arrayH)
+	void drawFillRectBWEx(const XVec2& pos,const XVec2& cSize,const XVec2& sum,bool anti)
 	{
-		if(vArray == NULL || uArray == NULL) return;
+		XGL::DisableTexture2D();
+		if(anti) glColor3fv(XFColor::black);
+		else glColor3fv(XFColor::white);
+		//œ»√ËªÊ“ª∏ˆ∞◊…´µ◊
+		drawFillRectBase(pos,sum * cSize);
+		XVec2 tempPos;
+		if(anti) glColor3fv(XFColor::white);
+		else glColor3fv(XFColor::black);
+		//∑Ω∑®1
+		glBegin(GL_QUADS);
+		tempPos.x = pos.x;
+		for(int i = 0;i < sum.x;++ i,tempPos.x += cSize.x)
+		{
+			tempPos.y = pos.y;
+			for(int j = 0;j < sum.y;++ j,tempPos.y += cSize.y)
+			{
+				if((i + j)%2 != 0) continue;
+				glVertex2fv(tempPos);
+				glVertex2f(tempPos.x + cSize.x,tempPos.y);
+				glVertex2fv(tempPos + cSize);
+				glVertex2f(tempPos.x,tempPos.y + cSize.y);
+			}
+		}
+		glEnd();
+	}
+	void drawTexture(XTexture &tex, const XVec2& pos, int cW, int cH,
+		const XVec2 *vArray, const XVec2 *uArray, int arrayW, int arrayH)
+	{
+		if (vArray == NULL || uArray == NULL || arrayW <= 0 || arrayH <= 0) return;
 		int tW = tex.m_w;
 		int tH = tex.m_h;
-		int ux = (tW - cW) >> 1,uy = (tH - cH) >> 1;
-		int vx = -(cW >> 1),vy = -(cH >> 1);
+		XVec2 u((tW - cW) >> 1, (tH - cH) >> 1);
+		XVec2 v(-(cW >> 1), -(cH >> 1));
 
 		XGL::EnableTexture2D();
 		XGL::DisableBlend();
-	#if WITHXSPRITE_EX
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
-	#endif
+#if WITHXSPRITE_EX
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
 		glMatrixMode(GL_TEXTURE);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0,tW << 1, 0,tH << 1, -1, 1);
-			
+		glOrtho(0.0, (tW << 1), 0.0, (tH << 1), -1.0, 1.0);
+
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		glTranslatef(pos.x + (cW >> 1),pos.y + (cH >> 1), 0);
+		glTranslatef(pos.x + (cW >> 1), pos.y + (cH >> 1), 0.0f);
 
 		XGL::BindTexture2D(tex.m_texture);
 		//glActiveTexture(GL_TEXTURE0);
-		glColor4f(1.0f,1.0f,1.0f,1.0f);
-
-		for(int j = 0;j < arrayH - 1;++ j)
+		glColor4fv(XFColor::white);
+		int offsetTemp = 0;
+		for (int j = 0; j < arrayH - 1; ++j)
 		{
+			offsetTemp = j * arrayW;
 			glBegin(GL_TRIANGLE_STRIP);
-			for(int i = 0;i < arrayW;++ i)
+			for (int i = 0; i < arrayW; ++i, ++offsetTemp)
 			{	//◊Û…œ
-				int offsetTemp = i + j * arrayW;
-				glTexCoord2f(ux + uArray[offsetTemp].x,uy + uArray[offsetTemp].y);	//u
-				glVertex2f(vx + vArray[offsetTemp].x,vy + vArray[offsetTemp].y);	//v
+				glTexCoord2fv(u + uArray[offsetTemp]);	//u
+				glVertex2fv(v + vArray[offsetTemp]);	//v
 
-				glTexCoord2f(ux + uArray[offsetTemp + arrayW].x,
-					uy + uArray[offsetTemp + arrayW].y);	//u
-				glVertex2f(vx + vArray[offsetTemp + arrayW].x,
-					vy + vArray[offsetTemp + arrayW].y);	//v
+				glTexCoord2fv(u + uArray[offsetTemp + arrayW]);	//u
+				glVertex2fv(v + vArray[offsetTemp + arrayW]);	//v
 			}
 			glEnd();
 		}
@@ -2475,39 +2778,110 @@ namespace XRender
 		glPopMatrix();
 		glMatrixMode(GL_TEXTURE);
 		glPopMatrix();
-	#if WITHXSPRITE_EX
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
-	#endif
+#if WITHXSPRITE_EX
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
 		XGL::DisableBlend();
 	}
-	void drawTextureEx(unsigned int tex,const XVector2 &pos,const XVector2 &size,
-						XVector2 *vArray,XVector2 *uArray,int arrayW,int arrayH,bool blend)
+	void drawTexture(unsigned int tex, const XVec2* v, const XVec2* u, int pSum, bool blend, const XFColor& c)
 	{
+		if (v == nullptr || u == nullptr || pSum <= 0) return;
 		XGL::EnableTexture2D();
-		if(blend)
-		{
-			XGL::EnableBlend();
-			XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}else
-		{
-			XGL::DisableBlend();
+		if (blend) XGL::setBlendAlpha();
+		else XGL::DisableBlend();
+
+		XGL::BindTexture2D(tex);
+		glColor4fv(c);
+
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int i = 0, index = 0; i < pSum >> 1; ++i, index += 2)
+		{	//◊Û…œ
+			glTexCoord2fv(u[index]);	//u
+			glVertex2fv(v[index]);	//v
+
+			glTexCoord2fv(u[index + 1]);	//u
+			glVertex2fv(v[index + 1]);	//v
 		}
+		glEnd();
+
+		XGL::DisableBlend();
+	}
+	void drawTextureEx(unsigned int tex, const XVec2* v, const XVec2* u, int pSum, int subSum, bool blend)
+	{//’‚∏ˆ∫Ø ˝ªπø…“‘…Ó»Îµƒ”≈ªØ£¨µ´ «Œ™¡À¬ﬂº≠µƒ¿ÌΩ‚£¨ƒø«∞÷ªΩ¯––µΩ’‚¿Ô
+		if (v == nullptr || u == nullptr || pSum <= 0) return;
+		if (subSum < 1 || subSum == 1) return drawTexture(tex, v, u, pSum, blend);
+		XGL::EnableTexture2D();
+		if (blend) XGL::setBlendAlpha();
+		else XGL::DisableBlend();
+		XGL::BindTexture2D(tex);
+		glColor4fv(XFColor::white);
+
+		float tmpW, tmpH = 0.0f;
+		float step = 1.0f / static_cast<float>(subSum);
+		XVec2 uul, uur, udl, udr, vul, vur, vdl, vdr;
+		for (int h = 0; h < subSum; ++h, tmpH += step)
+		{
+			glBegin(GL_TRIANGLE_STRIP);
+			for (int i = 0, index = 0; i < (pSum >> 1); ++i, index += 2)
+			{	//◊Û…œ
+				if (i == (pSum >> 1) - 1)
+				{//◊Ó∫Û“ª¡–
+					glTexCoord2fv(u[index] + (u[index + 1] - u[index]) * tmpH);		//u
+					glVertex2fv(v[index] + (v[index + 1] - v[index]) * tmpH);		//v
+
+					glTexCoord2fv(u[index] + (u[index + 1] - u[index]) * (tmpH + step));		//u
+					glVertex2fv(v[index] + (v[index + 1] - v[index]) * (tmpH + step));		//v
+				}
+				else
+				{
+					uul = u[index] + (u[index + 1] - u[index]) * tmpH;
+					udl = u[index] + (u[index + 1] - u[index]) * (tmpH + step);
+					uur = u[index + 2] + (u[index + 3] - u[index + 2]) * tmpH;
+					udr = u[index + 2] + (u[index + 3] - u[index + 2]) * (tmpH + step);
+
+					vul = v[index] + (v[index + 1] - v[index]) * tmpH;
+					vdl = v[index] + (v[index + 1] - v[index]) * (tmpH + step);
+					vur = v[index + 2] + (v[index + 3] - v[index + 2]) * tmpH;
+					vdr = v[index + 2] + (v[index + 3] - v[index + 2]) * (tmpH + step);
+					tmpW = 0.0f;
+					for (int w = 0; w < subSum; ++w, tmpW += step)
+					{
+						glTexCoord2fv(uul + (uur - uul) * tmpW);	//u
+						glVertex2fv(vul + (vur - vul) * tmpW);		//v
+
+						glTexCoord2fv(udl + (udr - udl) * tmpW);		//u
+						glVertex2fv(vdl + (vdr - vdl) * tmpW);		//v
+					}
+				}
+			}
+			glEnd();
+		}
+
+		XGL::DisableBlend();
+	}
+	void drawTextureEx(unsigned int tex, const XVec2& pos, const XVec2& size,
+		XVec2 *vArray, XVec2 *uArray, int arrayW, int arrayH, bool blend)
+	{
+		if (vArray == NULL || uArray == NULL || arrayW <= 0 || arrayH <= 0) return;
+		XGL::EnableTexture2D();
+		if (blend) XGL::setBlendAlpha();
+		else XGL::DisableBlend();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		glTranslatef(pos.x,pos.y,0);
-		glScalef(size.x,size.y,1.0);
+		glTranslatef(pos.x, pos.y, 0.0f);
+		glScalef(size.x, size.y, 1.0f);
 
 		XGL::BindTexture2D(tex);
-		glColor4f(1.0f,1.0f,1.0f,1.0f);
-
-		for(int j = 0;j < arrayH - 1;++ j)
+		glColor4fv(XFColor::white);
+		int offsetTemp = 0;
+		for (int j = 0; j < arrayH - 1; ++j)
 		{
+			offsetTemp = j * arrayW;
 			glBegin(GL_TRIANGLE_STRIP);
-			for(int i = 0;i < arrayW;++ i)
+			for (int i = 0; i < arrayW; ++i, ++offsetTemp)
 			{	//◊Û…œ
-				int offsetTemp = i + j * arrayW;
 				glTexCoord2fv(uArray[offsetTemp]);	//u
 				glVertex2fv(vArray[offsetTemp]);	//v
 
@@ -2521,35 +2895,29 @@ namespace XRender
 		glPopMatrix();
 		XGL::DisableBlend();
 	}
-	void drawTexture(unsigned int tex,const XVector2 &pos,int texW,int texH,bool blend)
+	void drawTexture(unsigned int tex, const XVec2& pos, int texW, int texH, bool blend)
 	{
 		XGL::EnableTexture2D();
-		if(blend)
-		{
-			XGL::EnableBlend();
-			XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}else
-		{
-			XGL::DisableBlend();
-		}
+		if (blend) XGL::setBlendAlpha();
+		else XGL::DisableBlend();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		glTranslatef(pos.x,pos.y,0);
-		//glScalef(0.5f,0.5f,1.0);
+		glTranslatef(pos.x, pos.y, 0.0f);
+		//glScalef(0.5f,0.5f,1.0f);
 
 		XGL::BindTexture2D(tex);
-		glColor4f(1.0f,1.0f,1.0f,1.0f);
+		glColor4fv(XFColor::white);
 
 		glBegin(GL_QUADS);
-			glTexCoord2f(0,0);	//u
-			glVertex2f(0,0);	//v
-			glTexCoord2f(1,0);	//u
-			glVertex2f(texW,0);	//v
-			glTexCoord2f(1,1);	//u
-			glVertex2f(texW,texH);	//v
-			glTexCoord2f(0,1);	//u
-			glVertex2f(0,texH);	//v
+		glTexCoord2fv(XVec2::zero);	//u
+		glVertex2fv(XVec2::zero);	//v
+		glTexCoord2fv(XVec2::oneZero);	//u
+		glVertex2f(texW, 0);	//v
+		glTexCoord2fv(XVec2::one);	//u
+		glVertex2f(texW, texH);	//v
+		glTexCoord2fv(XVec2::zeroOne);	//u
+		glVertex2f(0, texH);	//v
 		glEnd();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -2559,41 +2927,246 @@ namespace XRender
 }
 namespace XGL
 {
-	GLuint emptyTexture(int x,int y,XColorMode mode)
+	int getGLFormat(XColorMode mode)
+	{
+		switch (mode)
+		{
+		case COLOR_RGBA:
+		case COLOR_RGBA8:
+		case COLOR_RGBA16:
+		case COLOR_RGBA16F:
+		case COLOR_RGBA32F_ARB:
+			return GL_RGBA;
+
+		case COLOR_RGB:
+		case COLOR_RGB8:
+		case COLOR_RGB16:
+		case COLOR_RGB16F:
+		case COLOR_RGB32F_ARB:
+			return GL_RGB;
+
+		case COLOR_GRAY:
+		case COLOR_GRAY8:
+		case COLOR_GRAY16:
+		case COLOR_GRAY32F_ARB:
+			return GL_LUMINANCE;
+
+		case COLOR_GRAY_ALPHA:
+		case COLOR_GRAY8_ALPHA8:
+		case COLOR_GRAY16_ALPHA16:
+		case COLOR_GRAY_ALPHA32F_ARB:
+			return GL_LUMINANCE_ALPHA;
+
+		case COLOR_DEPTH:
+		case COLOR_DEPTH16:
+		case COLOR_DEPTH24:
+		case COLOR_DEPTH32:
+			return GL_DEPTH_COMPONENT;
+		case COLOR_DEPTH_STENCIL:
+			return GL_DEPTH_STENCIL;
+
+		case COLOR_R8:
+		case COLOR_R16:
+		case COLOR_R16F:
+		case COLOR_R32F:
+			return GL_RED;
+
+		case COLOR_ALPHA:
+		case COLOR_ALPHA8:
+			return GL_ALPHA;
+
+		case COLOR_RG8:
+		case COLOR_RG16:
+		case COLOR_RG16F:
+		case COLOR_RG32F:
+			return GL_RG;
+
+		case COLOR_STENCIL_INDEX:
+			return GL_STENCIL_INDEX;
+
+		case COLOR_RED:		return GL_RED;
+		case COLOR_RGBA_F:	return GL_RGBA;
+		case COLOR_RGB_F:	return GL_RGB;
+		case COLOR_GRAY_F:	return GL_RED;
+		case COLOR_BGRA:	return GL_BGRA;
+		case COLOR_BGR:		return GL_BGR;
+		}
+		return GL_RGBA;
+	}
+	int getPixelsFormat(XColorMode mode)
+	{
+		switch (mode)
+		{
+		case COLOR_RGBA:
+		case COLOR_RGB:
+		case COLOR_GRAY:
+		case COLOR_GRAY_ALPHA:
+		case COLOR_ALPHA:
+
+		case COLOR_GRAY8:
+		case COLOR_GRAY8_ALPHA8:
+		case COLOR_R8:
+		case COLOR_RG8:
+		case COLOR_RGB8:
+		case COLOR_RGBA8:
+		case COLOR_ALPHA8:
+			return GL_UNSIGNED_BYTE;
+
+		case COLOR_GRAY16:
+		case COLOR_GRAY16_ALPHA16:
+		case COLOR_R16:
+		case COLOR_RG16:
+		case COLOR_RGB16:
+		case COLOR_RGBA16:
+			return GL_UNSIGNED_SHORT;
+
+		case COLOR_GRAY32F_ARB:
+		case COLOR_GRAY_ALPHA32F_ARB:
+		case COLOR_R16F:
+		case COLOR_R32F:
+		case COLOR_RG16F:
+		case COLOR_RG32F:
+		case COLOR_RGB16F:
+		case COLOR_RGB32F_ARB:
+		case COLOR_RGBA16F:
+		case COLOR_RGBA32F_ARB:
+			return GL_FLOAT;
+
+		case COLOR_DEPTH_STENCIL:
+			return GL_UNSIGNED_INT_24_8;
+
+		case COLOR_DEPTH:
+		case COLOR_DEPTH16:
+			return GL_UNSIGNED_SHORT;
+
+		case COLOR_DEPTH24:
+		case COLOR_DEPTH32:
+			return GL_UNSIGNED_INT;
+
+		case COLOR_STENCIL_INDEX:
+			return GL_UNSIGNED_BYTE;
+
+		case COLOR_RGBA_F:
+		case COLOR_RGB_F:
+		case COLOR_GRAY_F:
+			return GL_FLOAT;
+		case COLOR_RED:
+		case COLOR_BGRA:
+		case COLOR_BGR:
+			return GL_UNSIGNED_BYTE;
+		}
+		return GL_UNSIGNED_BYTE;
+	}
+	int getGLInternalFormat(XColorMode mode)
+	{
+		switch (mode)
+		{
+		case COLOR_RGBA:		return GL_RGBA;
+		case COLOR_RGBA8:		return GL_RGBA8;
+		case COLOR_RGBA16:		return GL_RGBA16;
+		case COLOR_RGBA16F:		return GL_RGBA16F;
+		case COLOR_RGBA32F_ARB:	return GL_RGBA32F_ARB;
+
+		case COLOR_RGB:			return GL_RGB;
+		case COLOR_RGB8:		return GL_RGB8;
+		case COLOR_RGB16:		return GL_RGB16;
+		case COLOR_RGB16F:		return GL_RGB16F;
+		case COLOR_RGB32F_ARB:	return GL_RGB32F_ARB;
+
+		case COLOR_GRAY:		return GL_LUMINANCE;
+		case COLOR_GRAY8:		return GL_LUMINANCE8;
+		case COLOR_GRAY16:		return GL_LUMINANCE16;
+		case COLOR_GRAY32F_ARB:	return GL_LUMINANCE32F_ARB;
+
+		case COLOR_GRAY_ALPHA:			return GL_LUMINANCE_ALPHA;
+		case COLOR_GRAY8_ALPHA8:		return GL_LUMINANCE8_ALPHA8;
+		case COLOR_GRAY16_ALPHA16:		return GL_LUMINANCE16_ALPHA16;
+		case COLOR_GRAY_ALPHA32F_ARB:	return GL_LUMINANCE_ALPHA32F_ARB;
+
+		case COLOR_DEPTH:		return GL_DEPTH_COMPONENT;
+		case COLOR_DEPTH16:		return GL_DEPTH_COMPONENT16;
+		case COLOR_DEPTH24:		return GL_DEPTH_COMPONENT24;
+		case COLOR_DEPTH32:		return GL_DEPTH_COMPONENT32;
+
+		case COLOR_DEPTH_STENCIL:	return GL_DEPTH_STENCIL;
+
+		case COLOR_R8:		return GL_R8;
+		case COLOR_R16:		return GL_R16;
+		case COLOR_R16F:	return GL_R16F;
+		case COLOR_R32F:	return GL_R32F;
+
+		case COLOR_ALPHA:	return GL_ALPHA;
+		case COLOR_ALPHA8:	return GL_ALPHA8;
+
+		case COLOR_RG8:		return GL_RG;
+		case COLOR_RG16:	return GL_RG16;
+		case COLOR_RG16F:	return GL_RG16F;
+		case COLOR_RG32F:	return GL_RG32F;
+
+		case COLOR_STENCIL_INDEX:	return GL_STENCIL_INDEX;
+
+		case COLOR_RED:		return GL_RED;
+		case COLOR_RGBA_F:	return GL_RGBA32F;
+		case COLOR_RGB_F:	return GL_RGB32F;
+		case COLOR_GRAY_F:	return GL_R32F;
+		case COLOR_BGRA:	return GL_BGRA;
+		case COLOR_BGR:		return GL_BGR;
+		}
+		return GL_RGBA;
+	}
+	GLuint emptyTexture(int x, int y, XColorMode mode, int &internalFormat, int filter, int MSSum)
 	{
 		GLuint textureID;
 		glGenTextures(1, &textureID);
-		XGL::BindTexture2D(textureID);		
+		if (MSSum == 0)
+			XGL::BindTexture2D(textureID);
+		else
+			XGL::BindTexture2DMS(textureID);
 		//–ßπ˚∫√
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	#if WITHXSPRITE_EX
-		if(mode == COLOR_DEPTH)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+#if WITHXSPRITE_EX
+		if (mode == COLOR_DEPTH)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		}else
+		}
+		else
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
-	#endif
+#endif
 		//ÀŸ∂»øÏ
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		switch(mode)
+		if (MSSum > 0)
+			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSSum, GL_RGBA8, x, y, false);
+		else
 		{
-		case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA,GL_UNSIGNED_BYTE,0);	break;
-		case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,x,y,0,GL_RGB,GL_UNSIGNED_BYTE,0);	break;
-	//	case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,x,y,0,GL_RGB,GL_UNSIGNED_BYTE,0);	break;	//∏–æı¥Ê‘⁄Œ Ã‚
-		case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,x,y,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,0);break;	//–ﬁ∏ƒ
-		case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,x,y,0,GL_RGBA,GL_FLOAT,0);		break;
-	//	case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB32F,x,y,0,GL_RGB,GL_FLOAT,0);		break;	//∏–æı¥Ê‘⁄Œ Ã‚
-		case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_R32F,x,y,0,GL_RED,GL_FLOAT,0);			break;	//–ﬁ∏ƒ
-		case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D,0,GL_BGRA,x,y,0,GL_BGRA,GL_UNSIGNED_BYTE,0);	break;
-		case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D,0,GL_BGR,x,y,0,GL_BGR,GL_UNSIGNED_BYTE,0);	break;
-		case COLOR_DEPTH:	glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,x,y,0,GL_DEPTH_COMPONENT,GL_UNSIGNED_BYTE,0);break;
-		case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D,0,GL_RED,x,y,0,GL_RED,GL_UNSIGNED_BYTE,0);		break;	//–ﬁ∏ƒ
+			if (internalFormat < 0)
+			{
+				internalFormat = getGLInternalFormat(mode);
+				int glFormat = getGLFormat(mode);
+				int pixelsFormat = getPixelsFormat(mode);
+				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, glFormat, pixelsFormat, 0);
+			}
+			else
+			{
+				switch (mode)
+				{
+				case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);		break;
+				case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);		break;
+				case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);	break;	//–ﬁ∏ƒ
+				case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RGBA, GL_FLOAT, 0);				break;
+				case COLOR_RGB_F:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RGBA, GL_FLOAT, 0);				break;
+				case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RED, GL_FLOAT, 0);				break;	//–ﬁ∏ƒ
+				case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_BGRA, GL_UNSIGNED_BYTE, 0);		break;
+				case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_BGR, GL_UNSIGNED_BYTE, 0);		break;
+				case COLOR_DEPTH:	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0); break;
+				case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, x, y, 0, GL_RED, GL_UNSIGNED_BYTE, 0);		break;	//–ﬁ∏ƒ
+				}
+			}
 		}
 #if WITH_ENGINE_STATISTICS
 		if (gFrameworkData.pFrameWork != NULL)
@@ -2602,126 +3175,228 @@ namespace XGL
 		//glClear(GL_COLOR_BUFFER_BIT);
 		//≥ı ºªØœÒÀÿ
 		//glClearTexImage();	//’‚∏ˆ√≤À∆“™GL3.0≤≈÷ß≥÷£¨ƒø«∞µƒ∞Ê±æ∫√œÒ≤ª÷ß≥÷
-		XGL::BindTexture2D(0);
+		if (MSSum == 0)
+			XGL::BindTexture2D(0);
+		else
+			XGL::BindTexture2DMS(0);
 		return textureID;
+	}
+	void readFrame(void* backbuffer, int width, int height)
+	{
+		glReadBuffer(GL_BACK);
+		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, backbuffer);
+	}
+	void glAssert(const char* msg, long line, const char* file)
+	{
+		struct glError
+		{
+			GLenum code;
+			const char* name;
+		};
+
+		static const glError errors[] = { { GL_NO_ERROR, "No Error" },
+		{ GL_INVALID_ENUM, "Invalid Enum" },
+		{ GL_INVALID_VALUE, "Invalid Value" },
+		{ GL_INVALID_OPERATION, "Invalid Operation" }
+#if OGL1
+			,{ GL_STACK_OVERFLOW, "Stack Overflow" },
+			{ GL_STACK_UNDERFLOW, "Stack Underflow" },
+			{ GL_OUT_OF_MEMORY, "Out Of Memory" }
+#endif
+		};
+
+		GLenum e = glGetError();
+
+		if (e == GL_NO_ERROR)
+		{
+			return;
+		}
+		else
+		{
+			const char* errorName = "Unknown error";
+
+			// find error message
+			for (unsigned int i = 0; i < sizeof(errors) / sizeof(glError); i++)
+			{
+				if (errors[i].code == e)
+				{
+					errorName = errors[i].name;
+				}
+			}
+
+			printf("OpenGL: %s - error %s in %s at line %d\n", msg, errorName, file, int(line));
+			assert(0);
+		}
 	}
 }
 void XTexture::updateTexture(const XPBO &pbo)		// π”√÷∏∂® ˝æ›∏¸–¬Ã˘Õº
 {
-	if(!m_isLoaded) return;
+	if (!m_isLoaded) return;
 	pbo.bind();
 	updateTextureX(NULL);
 	//pbo.unbind();
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB,0);
+	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 }
 void XTexture::updateTextureR2B(const XPBO &pbo)		// π”√÷∏∂® ˝æ›∏¸–¬Ã˘Õº
 {
-	if(!m_isLoaded) return;
+	if (!m_isLoaded) return;
 	pbo.bind();
 	updateTextureR2BX(NULL);
 	//pbo.unbind();
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB,0);
+	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 }
 void XTexture::updateTextureEx(const void *data)		//≥ı≤Ω≤‚ ‘’‚∏ˆ–‘ƒ‹ª·±»œ¬√Êµƒ–‘ƒ‹∫√
 {
-	if(!m_isLoaded || data == NULL) return;	//PBOµƒ ±∫Úø…“‘Œ™ NULL
+	if (!m_isLoaded || data == NULL) return;	//PBOµƒ ±∫Úø…“‘Œ™ NULL
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	}
 	assert(glIsTexture(m_texture));
 	//if(!glIsTexture(m_texture)) return;
 	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture);
-	switch(m_mode)
+	switch (m_mode)
 	{
-	case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,m_w,m_h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,m_w,m_h,0,GL_RGB,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,m_w,m_h,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,m_w,m_h,0,GL_RGBA,GL_FLOAT,data);		break;
-	case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_R32F,m_w,m_h,0,GL_RED,GL_FLOAT,data);			break;
-	case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D,0,GL_BGRA,m_w,m_h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D,0,GL_BGR,m_w,m_h,0,GL_BGR,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D,0,GL_RED,m_w,m_h,0,GL_RED,GL_UNSIGNED_BYTE,data);	break;
+	case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGBA, GL_FLOAT, data);					break;
+	case COLOR_RGB_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGBA, GL_FLOAT, data);			break;
+	case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RED, GL_FLOAT, data);			break;
+	case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RED, GL_UNSIGNED_BYTE, data);	break;
 	default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 		break;
+	}
+	if (m_isThreadEvn)
+	{
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
 	}
 }
 void XTexture::updateTextureR2BEx(const void *data)	//≥ı≤Ω≤‚ ‘’‚∏ˆ–‘ƒ‹ª·±»œ¬√Êµƒ–‘ƒ‹∫√
 {
-	if(!m_isLoaded || data == NULL) return;	//PBOµƒ ±∫Úø…“‘Œ™ NULL
+	if (!m_isLoaded || data == NULL) return;	//PBOµƒ ±∫Úø…“‘Œ™ NULL
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	}
 	assert(glIsTexture(m_texture));
 	//if(!glIsTexture(m_texture)) return;
 	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture);
-	switch(m_mode)
+	switch (m_mode)
 	{
-	case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,m_w,m_h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,m_w,m_h,0,GL_BGR,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,m_w,m_h,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,m_w,m_h,0,GL_BGRA,GL_FLOAT,data);		break;
-	case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D,0,GL_R32F,m_w,m_h,0,GL_RED,GL_FLOAT,data);			break;
-	case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D,0,GL_BGRA,m_w,m_h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D,0,GL_BGR,m_w,m_h,0,GL_RGB,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D,0,GL_RED,m_w,m_h,0,GL_RED,GL_UNSIGNED_BYTE,data);	break;
+	case COLOR_RGBA:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RGB:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_GRAY:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RGBA_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGRA, GL_FLOAT, data);		break;
+	case COLOR_RGB_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_BGR, GL_FLOAT, data);		break;
+	case COLOR_GRAY_F:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RED, GL_FLOAT, data);			break;
+	case COLOR_BGRA:	glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_BGR:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RED:		glTexImage2D(GL_TEXTURE_2D, 0, m_internalFormat, m_w, m_h, 0, GL_RED, GL_UNSIGNED_BYTE, data);	break;
 	default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 		break;
 	}
+	if (m_isThreadEvn)
+	{
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
+	}
 }
-void XTexture::updateTextureX(const void *data,int w,int h,int x,int y)
+void XTexture::updateTextureX(const void *data, int w, int h, int x, int y)
 {
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	}
 	assert(glIsTexture(m_texture));
 	//if(!glIsTexture(m_texture)) return;
-	if(w <= 0) w = m_w;
-	if(h <= 0) h = m_h;
+	if (w <= 0) w = m_w;
+	if (h <= 0) h = m_h;
 	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture);
-	switch(m_mode)
+	switch (m_mode)
 	{
-	case COLOR_RGBA:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGBA,GL_UNSIGNED_BYTE,data);			break;
-	case COLOR_RGB:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGB,GL_UNSIGNED_BYTE,data);			break;
-	case COLOR_GRAY:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);	break;
-	case COLOR_RGBA_F:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGBA,GL_FLOAT,data);					break;
-	case COLOR_GRAY_F:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RED,GL_FLOAT,data);					break;
-	case COLOR_BGRA:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_BGRA,GL_UNSIGNED_BYTE,data);			break;
-	case COLOR_BGR:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_BGR,GL_UNSIGNED_BYTE,data);			break;
-	case COLOR_RED:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RED,GL_UNSIGNED_BYTE,data);			break;
+	case COLOR_RGBA:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_RGB:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_GRAY:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);	break;
+	case COLOR_RGBA_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_FLOAT, data);					break;
+	case COLOR_RGB_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGB, GL_FLOAT, data);					break;
+	case COLOR_GRAY_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RED, GL_FLOAT, data);					break;
+	case COLOR_BGRA:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_BGR:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);			break;
+	case COLOR_RED:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RED, GL_UNSIGNED_BYTE, data);			break;
 	default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 		break;
 	}
+	if (m_isThreadEvn)
+	{
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
+	}
 }
-void XTexture::updateTextureR2BX(const void *data,int w,int h,int x,int y)
+void XTexture::updateTextureR2BX(const void *data, int w, int h, int x, int y)
 {
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	}
 	assert(glIsTexture(m_texture));
 	//if(!glIsTexture(m_texture)) return;
-	if(w <= 0) w = m_w;
-	if(h <= 0) h = m_h;
+	if (w <= 0) w = m_w;
+	if (h <= 0) h = m_h;
 	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture);
-	switch(m_mode)
+	switch (m_mode)
 	{
-	case COLOR_RGBA:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_BGRA,GL_UNSIGNED_BYTE,data);		break;
-	case COLOR_RGB:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_BGR,GL_UNSIGNED_BYTE,data);		break;
-	case COLOR_GRAY:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);break;
-	case COLOR_RGBA_F:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGBA,GL_FLOAT,data);				break;
-	case COLOR_GRAY_F:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RED,GL_FLOAT,data);				break;
-	case COLOR_BGRA:	glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGBA,GL_UNSIGNED_BYTE,data);		break;
-	case COLOR_BGR:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RGB,GL_UNSIGNED_BYTE,data);		break;
-	case COLOR_RED:		glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,GL_RED,GL_UNSIGNED_BYTE,data);		break;
+	case COLOR_RGBA:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);		break;
+	case COLOR_RGB:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);		break;
+	case COLOR_GRAY:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_LUMINANCE, GL_UNSIGNED_BYTE, data); break;
+	case COLOR_RGBA_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_FLOAT, data);				break;
+	case COLOR_RGB_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGB, GL_FLOAT, data);				break;
+	case COLOR_GRAY_F:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RED, GL_FLOAT, data);				break;
+	case COLOR_BGRA:	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);		break;
+	case COLOR_BGR:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);		break;
+	case COLOR_RED:		glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RED, GL_UNSIGNED_BYTE, data);		break;
 	default:	//∆‰À˚∏Ò Ω≤ª÷ß≥÷
 		break;
 	}
+	if (m_isThreadEvn)
+	{
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
+	}
 }
-XBool XTexture::createTexture(int w,int h,XColorMode mode)
+XBool XTexture::createTexture(int w, int h, XColorMode mode, int internalFormat, int filter, int MSSum)
 {
-	if(m_isLoaded) return XTrue;	//»Áπ˚◊ ‘¥“—æ≠‘ÿ»Î¡À£¨‘Ú≤ªƒ‹÷ÿ∏¥‘ÿ»Î
-	if(w <= 0 ||
+	if (m_isLoaded) return XTrue;	//»Áπ˚◊ ‘¥“—æ≠‘ÿ»Î¡À£¨‘Ú≤ªƒ‹÷ÿ∏¥‘ÿ»Î
+
+	if ((w * getBytePerPixelByColorMode(mode)) % 4 != 0)
+	{
+		LogStr("ÕºœÒ√ª”–Àƒ◊÷Ω⁄∂‘∆Î,ø…ƒ‹ª·∑¢…˙“Ï≥£!");
+		return XFalse;
+	}
+
+	if (w <= 0 ||
 		h <= 0) return XFalse;
 	try
 	{
 #if TEX_DEBUG1
 		++ CPSum;
-		printf("%d-\n",CPSum);
+		printf("%d-\n", CPSum);
 #endif
 		m_cp = new XSCounter;
-		if(m_cp == NULL) return XFalse;
-	}catch(...)
+		if (m_cp == NULL) return XFalse;
+	}
+	catch (...)
 	{
 		return XFalse;
 	}
@@ -2729,25 +3404,48 @@ XBool XTexture::createTexture(int w,int h,XColorMode mode)
 
 	m_w = w;
 	m_h = h;
-	m_texture = XGL::emptyTexture(m_w,m_h,m_mode);
-
+	m_MSSum = MSSum;
+	m_internalFormat = internalFormat;
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+		m_texture = XGL::emptyTexture(m_w, m_h, m_mode, m_internalFormat, filter, m_MSSum);
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
+	}
+	else
+	{
+		m_texture = XGL::emptyTexture(m_w, m_h, m_mode, m_internalFormat, filter, m_MSSum);
+	}
+	//for test
+	//	glGetTexParameterIiv(m_texture,GL_TEXTURE_INTERNAL_FORMAT,&internalFormat);
+	//	if(internalFormat != m_internalFormat)
+	//		printf("error\n");
 	m_isLoaded = XTrue;
 	return XTrue;
 }
-XBool XTexture::createWithTexture(int w,int h,XColorMode mode,unsigned int tex)
+XBool XTexture::createWithTexture(int w, int h, XColorMode mode, unsigned int tex)
 {
-	if(m_isLoaded) return XTrue;	//»Áπ˚◊ ‘¥“—æ≠‘ÿ»Î¡À£¨‘Ú≤ªƒ‹÷ÿ∏¥‘ÿ»Î
-	if(w <= 0 ||
+	if (m_isLoaded) return XTrue;	//»Áπ˚◊ ‘¥“—æ≠‘ÿ»Î¡À£¨‘Ú≤ªƒ‹÷ÿ∏¥‘ÿ»Î
+
+	if ((w * getBytePerPixelByColorMode(mode)) % 4 != 0)
+	{
+		LogStr("ÕºœÒ√ª”–Àƒ◊÷Ω⁄∂‘∆Î,ø…ƒ‹ª·∑¢…˙“Ï≥£!");
+		return XFalse;
+	}
+	if (w <= 0 ||
 		h <= 0) return XFalse;
 	try
 	{
 #if TEX_DEBUG1
 		++ CPSum;
-		printf("%d-\n",CPSum);
+		printf("%d-\n", CPSum);
 #endif
 		m_cp = new XSCounter;
-		if(m_cp == NULL) return XFalse;
-	}catch(...)
+		if (m_cp == NULL) return XFalse;
+	}
+	catch (...)
 	{
 		return XFalse;
 	}
@@ -2755,36 +3453,96 @@ XBool XTexture::createWithTexture(int w,int h,XColorMode mode,unsigned int tex)
 
 	m_w = w;
 	m_h = h;
+	//m_internalFormat;	//’‚∏ˆµÿ∑Ω√ª”–≥ı ºªØ
 	m_texture = tex;
+	if (m_isThreadEvn)
+	{
+		XEG.hdcLock();
+		wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+		glGetTexParameterIiv(m_texture, GL_TEXTURE_INTERNAL_FORMAT, &m_internalFormat);
+		wglMakeCurrent(NULL, NULL);//nullptr
+		XEG.hdcUnlock();
+	}
+	else
+	{
+		glGetTexParameterIiv(m_texture, GL_TEXTURE_INTERNAL_FORMAT, &m_internalFormat);
+	}
 
 	m_isLoaded = XTrue;
 	return XTrue;
 }
-XBool XTexture::load(const char *filename,XResourcePosition resoursePosition)//¥”÷∏∂®Œƒº˛÷–‘ÿ»ÎÕº∆¨◊ ‘¥
+XBool XTexture::load(const char *filename, XResPos resPos)//¥”÷∏∂®Œƒº˛÷–‘ÿ»ÎÕº∆¨◊ ‘¥
 {
-	if(m_isLoaded) return XTrue;	//»Áπ˚◊ ‘¥“—æ≠‘ÿ»Î¡À£¨‘Ú≤ªƒ‹÷ÿ∏¥‘ÿ»Î
-	try
-	{
-#if TEX_DEBUG1
-		++ CPSum;
-		printf("%d-\n",CPSum);
-#endif
-		m_cp = new XSCounter;
-		if(m_cp == NULL) return XFalse;
-	}catch(...)
-	{
-		return XFalse;
+	if (m_isLoaded)
+	{//»Áπ˚Õº∆¨“—æ≠‘ÿ»Î‘Ú£¨’‚¿Ô–Ë“™ºÏ≤È «∑Ò–Ë“™Ω¯––∏¸–¬
+		if (m_resInfo != nullptr)
+		{
+			//◊ ‘¥“—æ≠‘ÿ»Î£¨≤ª‘⁄÷ÿ–¬‘ÿ»Î
+			if (XFile::fileNameCompare(filename, m_resInfo->m_resName.c_str()))
+			{
+				XResourceTex *tempResTex = (XResourceTex *)m_resInfo->m_pointer;
+				m_w = tempResTex->m_width;
+				m_h = tempResTex->m_height;
+				return true;
+			}
+			if (XResManager.updateRes(m_resInfo, filename, resPos, m_isThreadEvn))
+			{
+				XResourceTex *tempResTex = (XResourceTex *)m_resInfo->m_pointer;
+				m_w = tempResTex->m_width;
+				m_h = tempResTex->m_height;
+				return true;
+			}
+			else
+			{
+				XResManager.releaseResource(m_resInfo);
+				m_isLoaded = false;
+				m_resInfo = nullptr;
+			}
+		}
+		else
+			return true;
 	}
-	m_resInfo = XResManager.loadResource(filename,RESOURCE_TYPE_TEXTURE,resoursePosition);
-	if(m_resInfo != NULL)
+	if (m_cp == nullptr)
+	{
+		try
+		{
+#if TEX_DEBUG1
+			++ CPSum;
+			printf("%d-\n", CPSum);
+#endif
+			m_cp = new XSCounter;
+			if (m_cp == NULL) return XFalse;
+		}
+		catch (...)
+		{
+			return XFalse;
+		}
+	}
+	m_resInfo = XResManager.loadResource(filename, RESOURCE_TYPE_TEXTURE, resPos, m_isThreadEvn);
+	if (m_resInfo != NULL)
 	{
 		XResourceTex *tempResTex = (XResourceTex *)m_resInfo->m_pointer;
 		m_texture = tempResTex->m_texID;
 		m_w = tempResTex->m_width;
 		m_h = tempResTex->m_height;
+		//m_internalFormat;	//’‚∏ˆµÿ∑Ω√ª”–≥ı ºªØ
+		if (m_isThreadEvn)
+		{
+			XEG.hdcLock();
+			wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+
+			glGetTexParameterIiv(m_texture, GL_TEXTURE_INTERNAL_FORMAT, &m_internalFormat);
+
+			wglMakeCurrent(NULL, NULL);//nullptr
+			XEG.hdcUnlock();
+		}
+		else
+		{
+			glGetTexParameterIiv(m_texture, GL_TEXTURE_INTERNAL_FORMAT, &m_internalFormat);
+		}
 #if TEX_DEBUG
 		++ XTSum;
-		printf("%d:%d+%s\n",XTSum,m_texture,filename);
+		printf("%d:%d+%s\n", XTSum, m_texture, filename);
 #endif
 		m_isLoaded = XTrue;
 		return XTrue;
@@ -2796,7 +3554,7 @@ XBool XTexture::load(const char *filename,XResourcePosition resoursePosition)//¥
 XBool XTexture::reset()
 {
 	int sum = m_w * m_h;
-	switch(m_mode)
+	switch (m_mode)
 	{
 	case COLOR_RGBA:
 	case COLOR_BGRA:sum = (sum << 2);	break;
@@ -2804,46 +3562,48 @@ XBool XTexture::reset()
 	case COLOR_BGR:	sum = sum * 3;		break;
 	case COLOR_GRAY:
 	case COLOR_RED:	break;
-	case COLOR_RGBA_F:sum = (sum << 4);break;
-	case COLOR_GRAY_F:sum = (sum << 2);break;
+	case COLOR_RGBA_F:sum = (sum << 4); break;
+	case COLOR_RGB_F:sum = (sum * 12); break;
+	case COLOR_GRAY_F:sum = (sum << 2); break;
 	default: return XFalse;	//∆‰À˚∏Ò Ω≤ª÷ß≥÷∏√≤Ÿ◊˜
 	}
 	unsigned char *pData = XMem::createArrayMem<unsigned char>(sum);
-	if(pData == NULL) return XFalse;
-	memset(pData,0,sum);
+	if (pData == NULL) return XFalse;
+	memset(pData, 0, sum);
 	updateTexture(pData);
 	XMem::XDELETE_ARRAY(pData);
 	return XTrue;
 }
 void XTexture::release()	// Õ∑≈Õº∆¨◊ ‘¥
 {
-	if(!m_isLoaded) return;
+	if (!m_isLoaded) return;
 #if TEX_DEBUG
 	-- XTSum;
-	printf("%d-%d\n",XTSum,m_texture);
+	printf("%d-%d\n", XTSum, m_texture);
 #endif
 	//æ≠π˝◊ ‘¥π‹¿Ì∆˜÷Æ∫Û∆‰◊‘…Ì≤ªƒ‹ Õ∑≈◊ ‘¥
-	if(m_resInfo == NULL)
+	if (m_resInfo == NULL)
 	{
-		if(glIsTexture(m_texture)) 
+		if (glIsTexture(m_texture))
 		{
 #if WITH_ENGINE_STATISTICS
 			XEG.decStaticsticsTexInfo(m_texture);
 #endif
-			LogNull("delete texture:%d",m_texture);
+			LogNull("delete texture:%d", m_texture);
 			glDeleteTextures(1, &m_texture);
 		}
-	}else
+	}
+	else
 	{
-		if(XResManager.releaseResource(m_resInfo))
+		if (XResManager.releaseResource(m_resInfo))
 			m_resInfo = NULL;
 	}
 	m_isLoaded = XFalse;
 }
 XTexture::XTexture(const XTexture& temp)	//øΩ±¥ππ‘Ï∫Ø ˝
 {
-	if(this == &temp) return;		//∑¿÷π◊‘…˙øΩ±¥
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
+	if (this == &temp) return;		//∑¿÷π◊‘…˙øΩ±¥
+	if (temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	m_texture = temp.m_texture;
 	m_w = temp.m_w;
 	m_h = temp.m_h;
@@ -2851,18 +3611,18 @@ XTexture::XTexture(const XTexture& temp)	//øΩ±¥ππ‘Ï∫Ø ˝
 	m_cp = temp.m_cp;
 
 	m_resInfo = XResManager.copyResource(temp.m_resInfo);
-	return;	
+	return;
 }
 XTexture& XTexture::operator = (const XTexture &temp)
 {
-	if(this == &temp) return *this;		//∑¿÷π◊‘…˙øΩ±¥
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
+	if (this == &temp) return *this;		//∑¿÷π◊‘…˙øΩ±¥
+	if (temp.m_cp != NULL) ++temp.m_cp->m_counter;
+	if (m_cp != NULL && --m_cp->m_counter <= 0)
 	{
 		release();	//“˝”√º∆ ˝Ω· ¯£¨ Õ∑≈◊ ‘¥
 #if TEX_DEBUG1
 		-- CPSum;
-		printf("%d-\n",CPSum);
+		printf("%d-\n", CPSum);
 #endif
 		XMem::XDELETE(m_cp);
 	}
@@ -2871,8 +3631,8 @@ XTexture& XTexture::operator = (const XTexture &temp)
 	m_h = temp.m_h;
 	m_isLoaded = temp.m_isLoaded;
 	m_cp = temp.m_cp;
-	if(m_resInfo != NULL) -- m_resInfo->m_counter;
+	if (m_resInfo != NULL) XResManager.releaseResource(m_resInfo);
 	m_resInfo = XResManager.copyResource(temp.m_resInfo);
-	return *this;	
+	return *this;
 }
 }

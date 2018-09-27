@@ -62,7 +62,7 @@ struct XOneFrame
 	bool overFlag;				//是否已经被时间线跨越过的标志
 	XOneFrame()
 		:time(0)
-		,interpolationMode(MOVE_DATA_MODE_LINE)	//默认为线性插值
+		,interpolationMode(MD_MODE_LINE)	//默认为线性插值
 		,pData(NULL)
 		,overFlag(false)
 		,timeLen(0)
@@ -72,16 +72,16 @@ class XOneTimeLine
 {
 public:
 	XFontUnicode m_title;
-	XVector2 m_position;
-	XVector2 m_scale;
+	XVec2 m_position;
+	XVec2 m_scale;
 	int m_startIndex;	//开始的时间
 	int m_width;		//显示的宽度
 	float m_frameTimeWidth;	//每一帧的时间宽度 单位为毫秒
 
 	XBool m_isInited;
 public:
-	void setPosition(float x,float y);
-	void setScale(float x,float y);
+	void setPosition(const XVec2& p);
+	void setScale(const XVec2& s);
 	void setCurStartIndex(int index){m_startIndex = index;}
 	std::string m_name;	//时间线的名字
 	std::vector<XOneFrame> m_keyFrames;	//所有的帧的描述
@@ -90,7 +90,7 @@ public:
 	//这里需要提供一个函数用于获取当前的状态
 	//float m_getCurFrameData(int time);	//考虑到数据类型，这里尚未考虑好如何实现
 
-	XBool init(const std::string &name,int width,const XVector2 &position,const XVector2 &scale);
+	XBool init(const std::string& name,int width,const XVec2& position,const XVec2& scale);
 	void draw();
 	XOneTimeLine()
 		:m_isInited(XFalse)
@@ -98,7 +98,7 @@ public:
 		,m_width(256)
 		,m_startIndex(0)
 	{}
-	void addAKeyFrame(int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MOVE_DATA_MODE_NULL);//插入一个关键帧
+	void addAKeyFrame(int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MD_MODE_NULL);//插入一个关键帧
 	void delAKeyFrame(int time);	//删除一个时间点的关键帧
 	void moveKeyFrame(int fromTime,int toTime);	//讲一个时间点的帧移动到
 	void clearAllFrame();	//清除所有的帧
@@ -120,8 +120,8 @@ class XTimeLines
 private:
 	int m_objectID;
 
-	XVector2 m_position;
-	XVector2 m_scale;
+	XVec2 m_position;
+	XVec2 m_scale;
 	float m_width;
 
 	std::vector<XOneTimeLine *> m_timeLines;	//时间线
@@ -166,7 +166,7 @@ private:
 	struct XRuleInfo
 	{//标尺的信息
 		int ruleData;	//标尺的数据
-		XVector2 rulePosition;
+		XVec2 rulePosition;
 		float offset;
 	};
 	XFontUnicode m_ruleFont;	//标尺的文字
@@ -208,26 +208,26 @@ public:
 		m_funStop = funStop;
 		m_pClass = pClass;
 	}
-	void setPosition(float x,float y);
-	void setSize(float x,float y);
+	void setPosition(const XVec2& p);
+	void setSize(const XVec2& s);
 	void setCurTimeSlider(float p);	//设置当前的百分比位置
 	void setCurTimeLineSlider(float p);	//设置当前的百分比位置
 	void setToPrev();	//向前走一页
 	void setToNext();	//向后走一页
 	//下面是关于时间线的操作
-	XBool addATimeLine(const std::string &name);
+	XBool addATimeLine(const std::string& name);
 	//向指定的时间线上增加关键帧
-	XBool addKeyFrame(const std::string &name,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MOVE_DATA_MODE_NULL);
+	XBool addKeyFrame(const std::string& name,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MD_MODE_NULL);
 	//向指定的时间线上增加关键帧
-	XBool addKeyFrame(unsigned int index,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MOVE_DATA_MODE_NULL);
-	XBool delCurKeyFrame(const std::string &name);	//删除当前时间的关键帧，如果当前时间没有关键帧则不删除
+	XBool addKeyFrame(unsigned int index,int time,int timeLen,XFrameDataBasic * data,XMoveDataMode mode = MD_MODE_NULL);
+	XBool delCurKeyFrame(const std::string& name);	//删除当前时间的关键帧，如果当前时间没有关键帧则不删除
 	XBool delCurKeyFrame(unsigned int index);	//删除当前时间的关键帧，如果当前时间没有关键帧则不删除
-	XBool clearAllFroms(const std::string &name);
+	XBool clearAllFroms(const std::string& name);
 	XBool clearAllFroms(unsigned int index);
 	void clearAllFroms();
 	//下面是鼠标操作的函数
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
-	int getTimeLineIndexByName(const std::string &name);
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
+	int getTimeLineIndexByName(const std::string& name);
 	void setFps(int fps);
 	int getFps() const {return m_fps;}
 	void setAllTime(int time);
@@ -253,6 +253,8 @@ public:
 //		,m_ruleMiddleOffset(0.0f)
 //		,m_ruleEndOffset(0.0f)
 		,m_funTimeChange(NULL)
+		,m_funPlay(NULL)
+		,m_funStop(NULL)
 		,m_pClass(NULL)
 		,m_objectID(100)
 		,m_isMouseDrag(false)
@@ -266,16 +268,16 @@ public:
 	XBool readFromFile(const char * filename = NULL);
 	int getCurTimer() const {return m_curTimer;}	//获取当前的时间
 
-	const XOneFrame *getCurKeyFrame(const std::string &name);	//获取当前所在的关键帧
-	const XOneFrame *getNextKeyFrame(const std::string &name);	//获取下一个关键帧的指针
+	const XOneFrame *getCurKeyFrame(const std::string& name);	//获取当前所在的关键帧
+	const XOneFrame *getNextKeyFrame(const std::string& name);	//获取下一个关键帧的指针
 	const XOneFrame *getCurKeyFrame(unsigned int index);		//获取当前所在的关键帧
 	const XOneFrame *getNextKeyFrame(unsigned int index);		//获取下一个关键帧的指针
 	void resetAllTimeLineFrameFlag();					//重置所有的时间帧
 	void setAllTimeLineFrameFlag();						//设置所有的时间帧
 	void resetAllTimeLineFrameFlag(int index);			//设置指定的时间帧
-	void resetAllTimeLineFrameFlag(const std::string &name);	//设置指定的时间帧
+	void resetAllTimeLineFrameFlag(const std::string& name);	//设置指定的时间帧
 	void setAllTimeLineFrameFlag(int index);			//设置指定的时间帧
-	void setAllTimeLineFrameFlag(const std::string &name);		//设置指定的时间帧
+	void setAllTimeLineFrameFlag(const std::string& name);		//设置指定的时间帧
 
 	void setVisible()
 	{

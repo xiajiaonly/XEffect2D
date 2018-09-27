@@ -24,8 +24,9 @@ struct XAudioInfo
 };
 enum XAudioDeviceType
 {
-	AUDIO_DEVICE_TYPE_MIC,
-	AUDIO_DEVICE_TYPE_FILE,
+	AUDIO_DEVICE_TYPE_NULL,	//没有音频
+	AUDIO_DEVICE_TYPE_MIC,	//使用麦克风
+	AUDIO_DEVICE_TYPE_FILE,	//使用音频文件
 };
 enum XAVStreamQuality
 {
@@ -33,22 +34,30 @@ enum XAVStreamQuality
 	AVS_QUALITY_MIDDLE,	//中等质量
 	AVS_QUALITY_LOW,	//低质量
 };
-
+#define AV_THREAD_MODE (1)	//0:主线程中做颜色格式转化，1:在辅助线程中做颜色格式转换
 class XAVStream 
 {
 private:
 	XBool m_isOpen;				//是否打开流
 	//下面是一些公共数据
 	int m_videoWidth;			//视频的像素宽度
-	int m_videoHight;			//视频的像素高度
+	int m_videoHeight;			//视频的像素高度
 	int m_videoFrameRate;		//视频的帧率
 	AVStream * m_videoST;		//视频流的指针
     AVStream * m_audioST;		//音频流的指针
+
+	AVCodecContext *m_videoC;
+	AVCodecContext *m_audioC;
+
 	AVFormatContext *m_pOutContext;		//视频格式的指针
 	AVOutputFormat *m_pFormat;
 
 	AVFrame * m_pictureYUV;		//YUV像素的图像颜色
 	AVFrame * m_pictureRGB;		//RGB像素的图像颜色 
+#if AV_THREAD_MODE == 1
+	unsigned char *m_pixelsData;	//用于多线程的像素数据
+	bool m_isPixelsUpdate;			//像素数据是否已经更新
+#endif
 	//音频
 	int m_audioOutbufSize;		//音频缓存的大小
 	uint8_t *m_audioOutbuf;		//音频的缓存
@@ -64,8 +73,8 @@ private:
 	SwrContext *m_audioSwr;	//用于音频转码
 	AVPacket m_audioPkt;	//用于音频数据包
 	//视频
-	int m_videoOutbufSize;	//视频缓存的大小
-	uint8_t *m_videoOutbuf;	//视频的缓存
+//	int m_videoOutbufSize;	//视频缓存的大小
+//	uint8_t *m_videoOutbuf;	//视频的缓存
 	AVPacket m_videoPkt;	//用于音频数据包
 
 	AVStream *openAudio();	//打开音频流
@@ -93,7 +102,7 @@ private:
 	int m_inputAudioDataSum;	//总的音频数据推入数量
 private:
 	int m_videoFrameIndex;		//帧的编号
-	//int m_audioFrameIndex;
+	int m_audioFrameIndex;
 public:	//对外接口
 	//方案1，时间帧同步需要外部处理
 	XBool open(const char *filename,int width,int height,int frameRate,
@@ -116,7 +125,6 @@ public:	//对外接口
 	XBool open(const char *filename,int width,int height,int frameRate,void * audioDevice,
 		XAudioDeviceType deviceType = AUDIO_DEVICE_TYPE_MIC,XAudioInfo *info = NULL,
 		XAVStreamQuality quality = AVS_QUALITY_HEIGHT);   
-	void updataFrameRGB(unsigned char*p){addFrameRGB(p);}
 	void setStop();
 	void setStart();
 	AVSampleFormat getSampleFormat()const{return m_audioInfo.sampleFormat;}
@@ -132,7 +140,8 @@ private:
 public:
 	//方案3，音频设备内部处理
 	XBool openEx(const char *filename,int width,int height,int frameRate,const char * deviceName = NULL,
-		XAudioDeviceType deviceType = AUDIO_DEVICE_TYPE_MIC);
+		XAudioDeviceType deviceType = AUDIO_DEVICE_TYPE_MIC,XAudioInfo *info = NULL,
+		XAVStreamQuality quality = AVS_QUALITY_HEIGHT);
 private:
 	XBool m_withDevice;
 	XMicrophone m_micDevice;	//麦克风的类
@@ -145,7 +154,7 @@ public:
 	XAVStream()
 		:m_isOpen(XFalse)
 		,m_videoWidth(0)		
-		,m_videoHight(0)		
+		,m_videoHeight(0)		
 		,m_videoFrameRate(30)	
 		,m_videoST(NULL)			
 		,m_audioST(NULL)			
@@ -153,17 +162,22 @@ public:
 		,m_pFormat(NULL)
 		,m_pictureYUV(NULL)		
 		,m_pictureRGB(NULL)		
-
+#if AV_THREAD_MODE == 1
+		,m_pixelsData(NULL)
+		,m_isPixelsUpdate(false)
+#endif
 		,m_audioOutbufSize(0)
 		,m_audioOutbuf(NULL)
 		,m_audioTempBuff(NULL)
 
-		,m_videoOutbufSize(0)
-		,m_videoOutbuf(NULL)
+		//,m_videoOutbufSize(0)
+		//,m_videoOutbuf(NULL)
 		,m_audioFrame(NULL)
 		,m_audioSwr(NULL)
 		,m_bsfc(NULL)
 		,m_aacbsfc(NULL)
+		,m_videoC(NULL)
+		,m_audioC(NULL)
 	{
 		m_audioBuff[0] = NULL;
 		m_audioBuff[1] = NULL;

@@ -8,9 +8,9 @@
 #define XEE_OS_WINDOWS        //Windows系统下
 //#define XEE_OS_LINUX        //Linux系统下
 
-#define WITH_ALL_WARNING (0)
+#define WITHOUT_SOME_WARNING (1)
 //只在这里添加关于剔除一些警告的代码，不允许在其他地方有任何类似的添加
-#if WITH_ALL_WARNING == 0
+#if WITHOUT_SOME_WARNING
 #pragma warning(disable: 4244)    //conversion from 'int' to 'float', possible loss of data  
 #pragma warning(disable: 4267)    //conversion from 'size_t' to 'int', possible loss of data 
 #pragma warning(disable: 4100)    //unreferenced formal parameter
@@ -19,6 +19,8 @@
 #pragma warning(disable: 4018)    //signed/unsigned mismatch
 #pragma warning(disable: 4996)    //'sscanf' was declared deprecated
 #pragma warning(disable: 4800)    //“GLboolean”: 将值强制为布尔值“true”或“false”(性能警告)
+#else
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 //由于有的编译环境下中没有定义bool类型，所以这里做一些统一化的处理
@@ -27,24 +29,10 @@
 #include <windows.h>
 #include <assert.h>
 #endif
-namespace XE{
-#if 1
-//typedef BOOL XBool;
-//#define XFalse (FALSE)
-//#define XTrue (TRUE)
-typedef int XBool;
-#define XFalse (0)
-#define XTrue (1)
-#else
-typedef bool XBool;
-#define XFalse (false)
-#define XTrue (true)
-#endif
-}
 
-#if defined DLL_EXPORT
-#define DECLDIR __declspec(dllexport)
-#else
-#define DECLDIR __declspec(dllimport)
-#endif
+//#if defined DLL_EXPORT
+//#define DECLDIR __declspec(dllexport)
+//#else
+//#define DECLDIR __declspec(dllimport)
+//#endif
 #endif

@@ -9,29 +9,30 @@
 #include "XObjectManager.h"
 namespace XE{
 XNodeLine::XNodeLine()
-	:m_node(NULL)
-	,m_isACopy(XFalse)
-	,m_myOrder(0)
+	:m_myOrder(0)
 	,m_leadMode(LEAD_MODE_FOREWORD)	//ÇúÏßµÄÒýµ¼Ä£Ê½
-	,m_lineLength(0)					//ÇúÏßµÄ×Ü³¤¶È
+	,m_lineLength(0.0f)					//ÇúÏßµÄ×Ü³¤¶È
+	,m_bezLineLength(0.0f)
 	//,m_nodeSum(0)						//Òýµ¼ÇúÏßÖÐµÄÒýµ¼½ÚµãµÄÊýÁ¿
-	,m_offsetPosition(0,0)
-	,m_scale(1.0f,1.0f)
+	,m_offsetPosition(0.0f)
+	,m_scale(1.0f)
 	,m_isLoop(XFalse)
 	,m_isVisible(XTrue)
+	,m_withAngleSmooth(true)
+	,m_withBezier(false)
 {
-	m_node = XMem::createArrayMem<XNode>(m_maxNodeSum);
-	if(m_node == NULL) printf("Memory error!\n");
-	m_bezierPoint = XMem::createArrayMem<XVector2>(m_maxNodeSum * 2);
-	if(m_bezierPoint == NULL) printf("Memory error!\n");
-	try
-	{
-		m_cp = new XSCounter;
-		if(m_cp == NULL) printf("Memory error!\n");
-	}catch(...)
-	{
-		printf("Memory error!\n");
-	}
+//	m_node = XMem::createArrayMem<XNode>(m_maxNodeSum);
+//	if(m_node == NULL) printf("Memory error!\n");
+//	m_bezierPoint = XMem::createArrayMem<XVec2>(m_maxNodeSum * 2);
+//	if(m_bezierPoint == NULL) printf("Memory error!\n");
+//	try
+//	{
+//		m_cp = new XSCounter;
+//		if(m_cp == NULL) printf("Memory error!\n");
+//	}catch(...)
+//	{
+//		printf("Memory error!\n");
+//	}
 
 	m_specialPoint.isEnable = XFalse;
 	clearUp();
@@ -42,118 +43,116 @@ XNodeLine::XNodeLine()
 }
 XNodeLine::~XNodeLine()
 {
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
-	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		XMem::XDELETE_ARRAY(m_node);
-		XMem::XDELETE_ARRAY(m_bezierPoint);
-		XMem::XDELETE(m_cp);
-	}
+//	if(m_cp != NULL && -- m_cp->m_counter <= 0)
+//	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
+//		XMem::XDELETE_ARRAY(m_node);
+//		XMem::XDELETE_ARRAY(m_bezierPoint);
+//		XMem::XDELETE(m_cp);
+//	}
 	release();
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(this);
 #endif
 }
-void XNodeLine::addOneNode(float x,float y)		//ÏòÇúÏßÍ·²¿Ìí¼ÓÒ»¸öµã
+void XNodeLine::addOneNode(const XVec2& p)		//ÏòÇúÏßÍ·²¿Ìí¼ÓÒ»¸öµã
 {
-	if(m_isACopy) return;//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
 	int prevNodeNumber;
-	if(m_nodeSum >= m_maxNodeSum || m_node == NULL) return;	//Èç¹û¼ÇÂ¼µÄµçÒÑ¾­ÂúÁËÔòÖ±½Ó·µ»Ø
-	m_node[m_nodeSum].myPoint.set(x,y);		//¼ÇÂ¼µ±Ç°µÄµãµÄÐÅÏ¢
-	m_node[m_nodeSum].toNextAngle = 0;
-	m_node[m_nodeSum].toNextCos = 0;
-	m_node[m_nodeSum].toNextSin = 0;
-	m_node[m_nodeSum].toNextLength = 0;
-	if(m_nodeSum > 0)
+	XNode tmp(p);
+	if(m_node.size() > 0)
 	{//ÌîÐ´ÉÏÒ»¸öµãµÄÏà¹ØÒýµ¼ÐÅÏ¢
-		prevNodeNumber = m_nodeSum - 1;
-		m_node[prevNodeNumber].toNextAngle = m_node[prevNodeNumber].myPoint.getAngle(m_node[m_nodeSum].myPoint);
-		m_node[prevNodeNumber].toNextCos = cos(m_node[prevNodeNumber].toNextAngle);
-		m_node[prevNodeNumber].toNextSin = sin(m_node[prevNodeNumber].toNextAngle);
-		m_node[prevNodeNumber].toNextLength = m_node[prevNodeNumber].myPoint.getLength(m_node[m_nodeSum].myPoint);
-
-		//ÌîÐ´µ±Ç°µãµÄÏà¹ØÐÅÏ¢
-		m_node[m_nodeSum].toPreviousAngle = m_node[prevNodeNumber].toNextAngle + PI;
-		if(m_node[m_nodeSum].toPreviousAngle >= PI2) m_node[m_nodeSum].toPreviousAngle -= PI2;
-		m_node[m_nodeSum].toPreviousCos = cos(m_node[m_nodeSum].toPreviousAngle);
-		m_node[m_nodeSum].toPreviousSin = sin(m_node[m_nodeSum].toPreviousAngle);
-		m_node[m_nodeSum].toPreviousLength = m_node[prevNodeNumber].toNextLength;
-		m_lineLength += m_node[m_nodeSum].toPreviousLength;
+		if(tmp.myPoint.getLengthSqure(m_node[int(m_node.size()) - 1].myPoint) <= 0.0f)
+			return;	//µãÌ«¿¿½ü£¬´ËÊ±²»ÄÜ²åÈë
+		prevNodeNumber = m_node.size() - 1;
+		m_node[prevNodeNumber].setNext(tmp);
+		m_lineLength += tmp.toPreviousLength;
 		
 		if(!m_isLoop)
 		{
 			//×îºóÒ»¸öµãµÄ·½ÏòÓëÇ°Ò»¸öµãµÄ·½Ïò±£³ÖÒ»ÖÂ
-			m_node[m_nodeSum].toNextAngle = m_node[prevNodeNumber].toNextAngle;
-			m_node[m_nodeSum].toNextCos = m_node[prevNodeNumber].toNextCos;
-			m_node[m_nodeSum].toNextSin = m_node[prevNodeNumber].toNextSin;
-			if(m_nodeSum == 1)
+			tmp.toNextAngle = m_node[prevNodeNumber].toNextAngle;
+			tmp.toNextCos = m_node[prevNodeNumber].toNextCos;
+			tmp.toNextSin = m_node[prevNodeNumber].toNextSin;
+			if(m_node.size() == 1)
 			{//Í·µÄµã±£³ÖºóÒ»¸öµãµÄ·½Ïò
-				m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
-				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
-				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
+				m_node[0].toPreviousAngle = tmp.toPreviousAngle;
+				m_node[0].toPreviousCos = tmp.toPreviousCos;
+				m_node[0].toPreviousSin = tmp.toPreviousSin;
 			}
+		}else
+		{
+			m_lineLength -= m_node[0].toPreviousLength;
+			tmp.setNext(m_node[0]);
+			m_lineLength += m_node[0].toPreviousLength;
 		}
 	}
-	++ m_nodeSum;
-	if(m_isLoop) setLoop();	//ÉèÖÃÇúÏß±ÕºÏ
+	m_node.push_back(tmp);
 	m_needUpdateData = XTrue;
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd || m_node.size() < 2) return;	//²»ÐèÒª¼ÆËã
+	//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+	//	if(m_isLoop)
+	//	{//Ñ­»·£¬²»ÐèÒª´¦Àí
+	//	}else
+	//	{//²»Ñ­»·£¬²»ÐèÒª´¦Àí
+	//	}
+	}else
+	{//ÄæÐò
+		if(m_isLoop)
+		{//Ñ­»·
+			m_specialPoint.curLength += m_node[int(m_node.size()) - 1].toPreviousLength;
+			m_specialPoint.upNodeLength += m_node[int(m_node.size()) - 1].toPreviousLength;
+		}else
+		{//²»Ñ­»·
+			m_specialPoint.curLength += m_node[int(m_node.size()) - 1].toPreviousLength;
+			m_specialPoint.upNodeLength += m_node[int(m_node.size()) - 1].toPreviousLength;
+		}
+	}
 }
-void XNodeLine::setOneNode(float x,float y,int nodeOrder)
+void XNodeLine::setOneNode(const XVec2& p,int nodeOrder)
 {
-	if(m_isACopy ||
-		m_node == NULL) return;
+	if(nodeOrder < 0 || nodeOrder >= m_node.size()) return;
+	float tmpOldLineLength = m_lineLength;
+	float tmpOldLoopLen = m_node[0].toPreviousLength;
 	if(nodeOrder == 0)
 	{//Í·
-		m_lineLength -= m_node[0].toNextLength;
-		m_node[0].myPoint.set(x,y);
-		m_node[0].toNextAngle = m_node[0].myPoint.getAngle(m_node[1].myPoint);
-		m_node[0].toNextCos = cos(m_node[0].toNextAngle);
-		m_node[0].toNextSin = sin(m_node[0].toNextAngle);
-		m_node[0].toNextLength = m_node[0].myPoint.getLength(m_node[1].myPoint);
-
-		m_lineLength += m_node[0].toNextLength;
-		m_node[1].toPreviousAngle = m_node[0].toNextAngle + PI;
-		if(m_node[1].toPreviousAngle >= PI2) m_node[1].toPreviousAngle -= PI2;
-		m_node[1].toPreviousCos = cos(m_node[1].toPreviousAngle);
-		m_node[1].toPreviousSin = sin(m_node[1].toPreviousAngle);
-		m_node[1].toPreviousLength = m_node[0].toNextLength;
-		if(!m_isLoop)
+		//ÕâÀïÐèÒªÅÐ¶Ï0½ÚµãÓëÏàÁÚ½Úµã¼äµÄ¾àÀëÊÇ·ñÌ«Ð¡£¬·ñÔò»áÔì³ÉÎÊÌâ(ÉÐÎ´Íê³É)
+		m_node[0].myPoint = p;
+		if(m_node.size() > 1)
 		{
-			if(m_nodeSum > 1)
-			{//Í·µÄµã±£³ÖºóÒ»¸öµãµÄ·½Ïò
-				m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
-				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
-				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
-			}
-			if(m_nodeSum == 2)
+			m_lineLength -= m_node[0].toNextLength;
+			m_node[0].setNext(m_node[1]);
+			m_lineLength += m_node[0].toNextLength;
+			if(!m_isLoop)
 			{
-				m_node[1].toNextAngle = m_node[0].toNextAngle;
-				m_node[1].toNextCos = m_node[0].toNextCos;
-				m_node[1].toNextSin = m_node[0].toNextSin;
+				if(m_node.size() > 1)
+				{//Í·µÄµã±£³ÖºóÒ»¸öµãµÄ·½Ïò
+					m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
+					m_node[0].toPreviousCos = m_node[1].toPreviousCos;
+					m_node[0].toPreviousSin = m_node[1].toPreviousSin;
+				}
+				if(m_node.size() == 2)
+				{
+					m_node[1].toNextAngle = m_node[0].toNextAngle;
+					m_node[1].toNextCos = m_node[0].toNextCos;
+					m_node[1].toNextSin = m_node[0].toNextSin;
+				}
+			}else
+			{
+				m_lineLength -= m_node[0].toPreviousLength;
+				m_node[int(m_node.size()) - 1].setNext(m_node[0]);
+				m_lineLength += m_node[0].toPreviousLength;
 			}
 		}
-		if(m_isLoop) setLoop();
 	}else
-	if(nodeOrder == m_nodeSum - 1)
+	if(nodeOrder == int(m_node.size()) - 1)
 	{//Î²
-		m_lineLength -= m_node[nodeOrder].toPreviousLength;
-		m_node[nodeOrder].myPoint.set(x,y);		//¼ÇÂ¼µ±Ç°µÄµãµÄÐÅÏ¢
-		m_node[nodeOrder].toNextAngle = 0;
-		m_node[nodeOrder].toNextCos = 0;
-		m_node[nodeOrder].toNextSin = 0;
-		m_node[nodeOrder].toNextLength = 0;
-		if(m_nodeSum > 1)
+		//ÕâÀïÐèÒªÅÐ¶ÏÎ²½ÚµãÓëÏàÁÚ½Úµã¼äµÄ¾àÀëÊÇ·ñÌ«Ð¡£¬·ñÔò»áÔì³ÉÎÊÌâ(ÉÐÎ´Íê³É)
+		m_node[nodeOrder].myPoint = p;		//¼ÇÂ¼µ±Ç°µÄµãµÄÐÅÏ¢
+		if(m_node.size() > 1)
 		{//ÌîÐ´ÉÏÒ»¸öµãµÄÏà¹ØÒýµ¼ÐÅÏ¢
-			m_node[nodeOrder - 1].toNextAngle = m_node[nodeOrder - 1].myPoint.getAngle(m_node[nodeOrder].myPoint);
-			m_node[nodeOrder - 1].toNextCos = cos(m_node[nodeOrder - 1].toNextAngle);
-			m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
-			m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
-
-			//ÌîÐ´µ±Ç°µãµÄÏà¹ØÐÅÏ¢
-			m_node[nodeOrder].toPreviousAngle = m_node[nodeOrder - 1].toNextAngle + PI;
-			if(m_node[nodeOrder].toPreviousAngle >= PI2) m_node[nodeOrder].toPreviousAngle -= PI2;
-			m_node[nodeOrder].toPreviousCos = cos(m_node[nodeOrder].toPreviousAngle);
-			m_node[nodeOrder].toPreviousSin = sin(m_node[nodeOrder].toPreviousAngle);
-			m_node[nodeOrder].toPreviousLength = m_node[nodeOrder - 1].toNextLength;
+			m_lineLength -= m_node[nodeOrder].toPreviousLength;
+			m_node[nodeOrder - 1].setNext(m_node[nodeOrder]);
 			m_lineLength += m_node[nodeOrder].toPreviousLength;
 			//×îºóÒ»¸öµãµÄ·½ÏòÓëÇ°Ò»¸öµãµÄ·½Ïò±£³ÖÒ»ÖÂ
 			if(!m_isLoop)
@@ -161,45 +160,33 @@ void XNodeLine::setOneNode(float x,float y,int nodeOrder)
 				m_node[nodeOrder].toNextAngle = m_node[nodeOrder - 1].toNextAngle;
 				m_node[nodeOrder].toNextCos = m_node[nodeOrder - 1].toNextCos;
 				m_node[nodeOrder].toNextSin = m_node[nodeOrder - 1].toNextSin;
-				if(m_nodeSum == 2)
+				if(m_node.size() == 2)
 				{//Í·µÄµã±£³ÖºóÒ»¸öµãµÄ·½Ïò
 					m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
 					m_node[0].toPreviousCos = m_node[1].toPreviousCos;
 					m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 				}
+			}else
+			{
+				m_lineLength -= m_node[nodeOrder].toNextLength;
+				m_node[nodeOrder].setNext(m_node[0]);
+				m_lineLength += m_node[nodeOrder].toNextLength;
 			}
 		}
-		if(m_isLoop) setLoop();	//ÉèÖÃÇúÏß±ÕºÏ
+		if(m_isLoop) setLoop(m_isLoop);	//ÉèÖÃÇúÏß±ÕºÏ
 	}else
 	{//ÖÐ¼ä
+		//ÕâÀïÐèÒªÅÐ¶Ï¸Ã½ÚµãÓëÏàÁÚ½Úµã¼äµÄ¾àÀëÊÇ·ñÌ«Ð¡£¬·ñÔò»áÔì³ÉÎÊÌâ(ÉÐÎ´Íê³É)
 		m_lineLength -= m_node[nodeOrder].toPreviousLength;
 		m_lineLength -= m_node[nodeOrder].toNextLength;
 
-		m_node[nodeOrder].myPoint.set(x,y);
-		m_node[nodeOrder].toNextAngle = m_node[nodeOrder].myPoint.getAngle(m_node[nodeOrder + 1].myPoint);
-		m_node[nodeOrder].toNextCos = cos(m_node[nodeOrder].toNextAngle);
-		m_node[nodeOrder].toNextSin = sin(m_node[nodeOrder].toNextAngle);
-		m_node[nodeOrder].toNextLength = m_node[nodeOrder].myPoint.getLength(m_node[nodeOrder + 1].myPoint);
-
+		m_node[nodeOrder].myPoint = p;
+		m_node[nodeOrder].setNext(m_node[nodeOrder + 1]);
 		m_lineLength += m_node[nodeOrder].toNextLength;
 
-		m_node[nodeOrder + 1].toPreviousAngle = m_node[nodeOrder].toNextAngle + PI;
-		if(m_node[nodeOrder + 1].toPreviousAngle >= PI2) m_node[nodeOrder + 1].toPreviousAngle -= PI2;
-		m_node[nodeOrder + 1].toPreviousCos = cos(m_node[nodeOrder + 1].toPreviousAngle);
-		m_node[nodeOrder + 1].toPreviousSin = sin(m_node[nodeOrder + 1].toPreviousAngle);
-		m_node[nodeOrder + 1].toPreviousLength = m_node[nodeOrder].toNextLength;
-
-		m_node[nodeOrder].toPreviousAngle = m_node[nodeOrder].myPoint.getAngle(m_node[nodeOrder - 1].myPoint);
-		m_node[nodeOrder].toPreviousCos = cos(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousSin = sin(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousLength = m_node[nodeOrder].myPoint.getLength(m_node[nodeOrder - 1].myPoint);
+		m_node[nodeOrder - 1].setNext(m_node[nodeOrder]);
 		m_lineLength += m_node[nodeOrder].toPreviousLength;
 
-		m_node[nodeOrder - 1].toNextAngle = m_node[nodeOrder].toPreviousAngle + PI;
-		if(m_node[nodeOrder - 1].toNextAngle >= PI2) m_node[nodeOrder - 1].toNextAngle -= PI2;
-		m_node[nodeOrder - 1].toNextCos = cos(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
 		if(!m_isLoop)
 		{
 			if(nodeOrder == 1)
@@ -208,7 +195,7 @@ void XNodeLine::setOneNode(float x,float y,int nodeOrder)
 				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
 				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 			}
-			if(nodeOrder == m_nodeSum - 2 && !m_isLoop)
+			if(nodeOrder == int(m_node.size()) - 2)
 			{//×îºóÒ»¸öµãÒª±£³ÖÇ°Ò»¸öµãµÄ·½Ïò
 				m_node[nodeOrder + 1].toNextAngle = m_node[nodeOrder].toNextAngle;
 				m_node[nodeOrder + 1].toNextCos = m_node[nodeOrder].toNextCos;
@@ -216,59 +203,150 @@ void XNodeLine::setOneNode(float x,float y,int nodeOrder)
 			}
 		}
 	}
-	m_needUpdateData = XTrue;	//ÐÂ²åÈëµã£¬ÐèÒªÖØÐÂ¼ÆËã²îÖµµã
+	m_needUpdateData = XTrue;	//ÐÂ²åÈëµã£¬ÐèÒªÖØÐÂ¼ÆËã²åÖµµã
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd || m_node.size() < 2) return;	//²»ÐèÒª¼ÆËã
+	//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		if(m_isLoop)
+		{//Ñ­»·
+			if(nodeOrder <= m_specialPoint.upNodeOrder)
+			{
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.curLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+			}
+		}else
+		{//²»Ñ­»·
+			if(nodeOrder <= m_specialPoint.upNodeOrder)
+			{
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+			}
+		}
+	}else
+	{//ÄæÐò
+		if(m_isLoop)
+		{//Ñ­»·
+			if(nodeOrder >= m_specialPoint.upNodeOrder)
+			{
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.curLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+			}
+		}else
+		{//²»Ñ­»·
+			if(nodeOrder >= m_specialPoint.upNodeOrder)
+			{
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+			}
+		}
+	}
 }
 void XNodeLine::decreaseOneNode()
 {
-	if(m_isACopy ||	//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-		m_nodeSum <= 0 || m_node == NULL) return;
-	m_lineLength -= m_node[m_nodeSum - 1].toPreviousLength;
-	m_node[m_nodeSum - 1].myPoint.set(0,0);
-//	m_node[m_nodeSum - 1].toNextAngle = 0;
-//	m_node[m_nodeSum - 1].toNextCos = 0;
-//	m_node[m_nodeSum - 1].toNextSin = 0;
-	m_node[m_nodeSum - 1].toNextLength = 0;
-	m_node[m_nodeSum - 1].toPreviousAngle = 0;
-	m_node[m_nodeSum - 1].toPreviousCos = 0;
-	m_node[m_nodeSum - 1].toPreviousSin = 0;
-	m_node[m_nodeSum - 1].toPreviousLength = 0;
-	-- m_nodeSum;
-	if(m_isLoop) setLoop();	//ÉèÖÃÇúÏß±ÕºÏ
+	if(m_node.size() <= 0) return;
+	float tmpOldLineLength = m_lineLength;
+	float tmpOldLoopLen = m_node[0].toPreviousLength;
+	if(m_isLoop)
+	{
+		m_lineLength -= m_node[m_node.size() - 1].toPreviousLength;
+		m_lineLength -= m_node[m_node.size() - 1].toNextLength;
+		m_node.pop_back();
+		if(m_node.size() <= 0) return;
+		if(m_node.size() == 1)
+		{
+			m_node[m_node.size() - 1].resetToNext();
+			m_node[m_node.size() - 1].resetToPreviouse();
+		}else
+		{
+			m_node[m_node.size() - 1].setNext(m_node[0]);
+			m_lineLength += m_node[0].toPreviousLength; //¼ÓÉÏÐÂµÄ³¤¶È
+		}
+	}else
+	{
+		m_lineLength -= m_node[m_node.size() - 1].toPreviousLength;
+		m_node.pop_back();
+		if(m_node.size() <= 0) return;
+		if(m_node.size() == 1)
+		{
+			m_node[m_node.size() - 1].resetToNext();
+			m_node[m_node.size() - 1].resetToPreviouse();
+		}else
+		{
+			m_node[m_node.size() - 1].toNextLength = 0.0f;
+			m_node[m_node.size() - 1].toNextAngle = m_node[m_node.size() - 2].toNextAngle;
+			m_node[m_node.size() - 1].toNextSin = m_node[m_node.size() - 2].toNextSin;
+			m_node[m_node.size() - 1].toNextCos = m_node[m_node.size() - 2].toNextCos;
+		}
+	}
 	m_needUpdateData = XTrue;
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd || m_node.size() < 2) return;	//²»ÐèÒª¼ÆËã
+	//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		if(m_isLoop)
+		{//Ñ­»·
+			if(m_specialPoint.upNodeOrder == (int)(m_node.size()))
+			{//µ½´ï±ÕºÏµã
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.curLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+			}
+		}else
+		{//²»Ñ­»·,²»ÐèÒª¸Ä±ä
+		}
+	}else
+	{//ÄæÐò
+		if(m_isLoop)
+		{//Ñ­»·£¬Èç¹û´ËÊ±ÒÆ¶¯²Å¿ªÊ¼£¬É¾³ý×îºóÒ»¸öµã»áÔì³ÉÌøÔ¾
+			if(m_specialPoint.upNodeOrder == (int)(m_node.size()))
+			{
+				m_specialPoint.curLength += m_lineLength - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeLength = m_lineLength - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeOrder = 0;
+			}else
+			{
+				m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.curLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+				m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+				m_specialPoint.upNodeLength += tmpOldLoopLen - m_node[0].toPreviousLength;
+			}
+		}else
+		{//²»Ñ­»·
+			m_specialPoint.curLength -= tmpOldLineLength - m_lineLength;
+			m_specialPoint.upNodeLength -= tmpOldLineLength - m_lineLength;
+		}
+	}
 }
-
-void XNodeLine::addOneNode(float x,float y,int nodeOrder)		//ÏòÇúÏßÖÐ¼äÌí¼ÓÒ»¸öµã
+void XNodeLine::addOneNode(const XVec2& node, int nodeOrder)		//ÏòÇúÏßÖÐ¼äÌí¼ÓÒ»¸öµã
 {
-	if(m_isACopy ||//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-		m_nodeSum >= m_maxNodeSum || m_node == NULL) return;	//Èç¹û¼ÇÂ¼µÄµçÒÑ¾­ÂúÁËÔòÖ±½Ó·µ»Ø
+	if(nodeOrder < 0 || nodeOrder > m_node.size()) return;	//Èç¹û¼ÇÂ¼µÄµçÒÑ¾­ÂúÁËÔòÖ±½Ó·µ»Ø
 	if(nodeOrder == 0)
 	{//Í·
-		for(int i = m_nodeSum;i > 0;-- i)
+		if(m_node[0].myPoint.getLengthSqure(node) <= 0.0f)
+			return;	//µãÌ«¿¿½ü£¬´ËÊ±²»ÄÜ²åÈë
+		m_node.push_back(XNode(0.0f,0.0f));
+		for(int i = m_node.size() - 1;i > 0;-- i)
 		{
 			m_node[i] = m_node[i - 1];
 		}
-		m_node[0].myPoint.set(x,y);
-		m_node[0].toNextAngle = m_node[0].myPoint.getAngle(m_node[1].myPoint);
-		m_node[0].toNextCos = cos(m_node[0].toNextAngle);
-		m_node[0].toNextSin = sin(m_node[0].toNextAngle);
-		m_node[0].toNextLength = m_node[0].myPoint.getLength(m_node[1].myPoint);
-		++ m_nodeSum;
-		//m_lineLength += m_node[1].toPreviousLength;	//ÕâÐÐÓ¦¸ÃÊÇÓÐÂß¼­´íÎóµÄ
+		m_node[0].myPoint = node;
+		m_node[0].setNext(m_node[1]);
 		m_lineLength += m_node[0].toNextLength;
-		m_node[1].toPreviousAngle = m_node[0].toNextAngle + PI;
-		if(m_node[1].toPreviousAngle >= PI2) m_node[1].toPreviousAngle -= PI2;
-		m_node[1].toPreviousCos = cos(m_node[1].toPreviousAngle);
-		m_node[1].toPreviousSin = sin(m_node[1].toPreviousAngle);
-		m_node[1].toPreviousLength = m_node[0].toNextLength;
 		if(!m_isLoop)
 		{
-			if(m_nodeSum > 1)
+			if(m_node.size() > 1)
 			{//Í·Õâ¸öµã±£³ÖÇ°Ò»¸öµãµÄ·½Ïò
 				m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
 				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
 				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 			}
-			if(m_nodeSum == 2)
+			if(m_node.size() == 2)
 			{
 				m_node[1].toNextAngle = m_node[0].toNextAngle;
 				m_node[1].toNextCos = m_node[0].toNextCos;
@@ -276,44 +354,60 @@ void XNodeLine::addOneNode(float x,float y,int nodeOrder)		//ÏòÇúÏßÖÐ¼äÌí¼ÓÒ»¸öµ
 			}
 		}else
 		{
-			setLoop();
+			m_lineLength -= m_node[m_node.size() - 1].toNextLength;
+			m_node[m_node.size() - 1].setNext(m_node[0]);
+			m_lineLength += m_node[m_node.size() - 1].toNextLength;
+		}
+		if(m_specialPoint.isEnable && !m_specialPoint.isEnd && m_node.size() >= 2)
+		{
+			//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+			if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+			{//Ë³Ðò
+				if(m_isLoop)
+				{//Ñ­»·
+					++m_specialPoint.upNodeOrder;
+					m_specialPoint.curLength += m_node[0].toNextLength;
+					m_specialPoint.upNodeLength += m_node[0].toNextLength;
+				}else
+				{//²»Ñ­»·
+					++m_specialPoint.upNodeOrder;
+					m_specialPoint.curLength += m_node[0].toNextLength;
+					m_specialPoint.upNodeLength += m_node[0].toNextLength;
+				}
+			}else
+			{//ÄæÐò
+				if(m_isLoop)
+				{//Ñ­»·
+					++m_specialPoint.upNodeOrder;
+				}else
+				{//²»Ñ­»·
+					++m_specialPoint.upNodeOrder;
+				}
+			}
 		}
 	}else
-	if(nodeOrder == m_nodeSum)
+	if(nodeOrder == (int)(m_node.size()))
 	{//Î²
-		addOneNode(x,y);
+		addOneNode(node);
 	}else
 	{//ÖÐ¼ä
-		for(int i = m_nodeSum;i > nodeOrder;-- i)
+		if(m_node[nodeOrder].myPoint.getLengthSqure(node) <= 0.0f ||
+			m_node[nodeOrder - 1].myPoint.getLengthSqure(node) <= 0.0f)
+			return;	//µãÌ«¿¿½ü£¬´ËÊ±²»ÄÜ²åÈë
+		float tmpOldLineLength = m_lineLength;
+		float tmpOldLoopLen = m_node[0].toPreviousLength;
+		m_node.push_back(XNode(0.0f,0.0f));
+		for(int i = m_node.size() - 1;i > nodeOrder;-- i)
 		{
 			m_node[i] = m_node[i - 1];
 		}
 		m_lineLength -= m_node[nodeOrder].toPreviousLength;
-		m_node[nodeOrder].myPoint.set(x,y);
-		m_node[nodeOrder].toNextAngle = m_node[nodeOrder].myPoint.getAngle(m_node[nodeOrder + 1].myPoint);
-		m_node[nodeOrder].toNextCos = cos(m_node[nodeOrder].toNextAngle);
-		m_node[nodeOrder].toNextSin = sin(m_node[nodeOrder].toNextAngle);
-		m_node[nodeOrder].toNextLength = m_node[nodeOrder].myPoint.getLength(m_node[nodeOrder + 1].myPoint);
+		m_node[nodeOrder].myPoint = node;
+		m_node[nodeOrder].setNext(m_node[nodeOrder + 1]);
 		m_lineLength += m_node[nodeOrder].toNextLength;
 
-		m_node[nodeOrder + 1].toPreviousAngle = m_node[nodeOrder].toNextAngle + PI;
-		if(m_node[nodeOrder + 1].toPreviousAngle >= PI2) m_node[nodeOrder + 1].toPreviousAngle -= PI2;
-		m_node[nodeOrder + 1].toPreviousCos = cos(m_node[nodeOrder + 1].toPreviousAngle);
-		m_node[nodeOrder + 1].toPreviousSin = sin(m_node[nodeOrder + 1].toPreviousAngle);
-		m_node[nodeOrder + 1].toPreviousLength = m_node[nodeOrder].toNextLength;
-
-		m_node[nodeOrder].toPreviousAngle = m_node[nodeOrder].myPoint.getAngle(m_node[nodeOrder - 1].myPoint);
-		m_node[nodeOrder].toPreviousCos = cos(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousSin = sin(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousLength = m_node[nodeOrder].myPoint.getLength(m_node[nodeOrder - 1].myPoint);
+		m_node[nodeOrder].setPrevious(m_node[nodeOrder - 1]);
 		m_lineLength += m_node[nodeOrder].toPreviousLength;
-
-		m_node[nodeOrder - 1].toNextAngle = m_node[nodeOrder].toPreviousAngle + PI;
-		if(m_node[nodeOrder - 1].toNextAngle >= PI2) m_node[nodeOrder - 1].toNextAngle -= PI2;
-		m_node[nodeOrder - 1].toNextCos = cos(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
-		++ m_nodeSum;
 		if(!m_isLoop)
 		{
 			if(nodeOrder == 1)
@@ -322,94 +416,263 @@ void XNodeLine::addOneNode(float x,float y,int nodeOrder)		//ÏòÇúÏßÖÐ¼äÌí¼ÓÒ»¸öµ
 				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
 				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 			}
-			if(nodeOrder == m_nodeSum - 2)
+			if(nodeOrder == (int)(m_node.size()) - 2)
 			{//×îºóÒ»¸öµãÓëÇ°Ò»¸öµã±£³ÖÒ»ÖÂ
-				m_node[m_nodeSum - 1].toNextAngle = m_node[nodeOrder].toNextAngle;
-				m_node[m_nodeSum - 1].toNextCos = m_node[nodeOrder].toNextCos;
-				m_node[m_nodeSum - 1].toNextSin = m_node[nodeOrder].toNextSin;
+				m_node[m_node.size() - 1].toNextAngle = m_node[nodeOrder].toNextAngle;
+				m_node[m_node.size() - 1].toNextCos = m_node[nodeOrder].toNextCos;
+				m_node[m_node.size() - 1].toNextSin = m_node[nodeOrder].toNextSin;
 			}
-		}else
-		{
-			setLoop();	//ÉèÖÃÇúÏß±ÕºÏ
+		}
+		if(m_specialPoint.isEnable && !m_specialPoint.isEnd && m_node.size() >= 2)
+		{//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+			if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+			{//Ë³Ðò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						++ m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}
+				}else
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						++ m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+					}
+				}
+			}else
+			{//ÄæÐò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						++ m_specialPoint.upNodeOrder;
+					}else
+					{
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}
+				}else
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						++ m_specialPoint.upNodeOrder;
+					}else
+					{
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+					}
+				}
+			}
 		}
 	}
 	m_needUpdateData = XTrue;
 }
-
 void XNodeLine::decreaseOneNode(int nodeOrder)
 {
 	//¼ì²éÊý¾ÝµÄºÏÀíÐÔ
-	if(m_isACopy ||//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-		nodeOrder <= 0 || nodeOrder >= m_nodeSum) return;
+	if(nodeOrder < 0 || nodeOrder >= m_node.size()) return;
 	if(nodeOrder == 0)
 	{//Í·
-		for(int i = 0;i < m_nodeSum - 1;++ i)
+		float tmpOldLineLength = m_lineLength;
+		float tmpOldLoopLen = m_node[0].toPreviousLength;
+		if(m_isLoop)
 		{
-			m_node[i] = m_node[i + 1];
+			m_lineLength -= m_node[0].toNextLength;
+			m_lineLength -= m_node[0].toPreviousLength;
+			for(int i = 0;i < int(m_node.size()) - 1;++ i)
+			{
+				m_node[i] = m_node[i + 1];
+			}
+			m_node.pop_back();
+			if(m_node.size() == 1)
+			{
+				m_node[0].resetToNext();
+				m_node[0].resetToPreviouse();
+			}
+			if(m_node.size() > 1)
+			{
+				m_node[m_node.size() - 1].setNext(m_node[0]);
+				m_lineLength += m_node[0].toPreviousLength;
+			}
+		}else
+		{
+			m_lineLength -= m_node[0].toNextLength;
+			for(int i = 0;i < int(m_node.size()) - 1;++ i)
+			{
+				m_node[i] = m_node[i + 1];
+			}
+			m_node.pop_back();
+			if(m_node.size() == 1)
+			{
+				m_node[0].resetToNext();
+				m_node[0].resetToPreviouse();
+			}
+			if(m_node.size() > 1)
+			{
+				m_node[0].toPreviousLength = 0.0f;
+				m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
+				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
+				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
+			}
 		}
-		m_lineLength -= m_node[0].toPreviousLength;
-	//	m_node[0].toPreviousAngle = 0;
-	//	m_node[0].toPreviousCos = 0;
-	//	m_node[0].toPreviousSin = 0;
-		m_node[0].toPreviousLength = 0;
-		//Õâ¸öÒ»ÐÐÊÇÎªÁËÖÐºÍdecreaseOneNodeº¯ÊýÖÐµÄ¼õ²Ù×÷¶øÔö¼ÓµÄ
-		m_lineLength += m_node[m_nodeSum - 1].toPreviousLength;
-		decreaseOneNode();
+		if(m_specialPoint.isEnable && !m_specialPoint.isEnd && m_node.size() >= 2)
+		{//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+			if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+			{//Ë³Ðò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder > 0)
+					{
+						-- m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}else
+					{
+						m_specialPoint.upNodeOrder = m_node.size() - 1;
+						m_specialPoint.curLength += m_lineLength - m_node[0].toPreviousLength;
+						m_specialPoint.upNodeLength = m_lineLength - m_node[0].toPreviousLength;
+					}
+				}else
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder > 0)
+					{
+						-- m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+					}else
+					{
+						resetSpecialPoint();
+					}
+				}
+			}else
+			{//ÄæÐò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder == 0)
+					{
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}else
+					{
+						-- m_specialPoint.upNodeOrder;
+					}
+				}else
+				{//²»Ñ­»·
+					-- m_specialPoint.upNodeOrder;
+				}
+			}
+		}
 	}else
-	if(nodeOrder == m_nodeSum - 1)
+	if(nodeOrder == (int)(m_node.size()) - 1)
 	{//Î²
 		decreaseOneNode();
 	}else
 	{//ÖÐ¼ä
+		float tmpOldLineLength = m_lineLength;
+		float tmpOldLoopLen = m_node[0].toPreviousLength;
 		m_lineLength -= m_node[nodeOrder].toPreviousLength;
 		m_lineLength -= m_node[nodeOrder + 1].toPreviousLength;
-		for(int i = nodeOrder;i < m_nodeSum - 1;++ i)
+		for(int i = nodeOrder;i < int(m_node.size()) - 1;++ i)
 		{
 			m_node[i] = m_node[i + 1];
 		}
-		m_node[nodeOrder - 1].toNextAngle = m_node[nodeOrder - 1].myPoint.getAngle(m_node[nodeOrder].myPoint);
-		m_node[nodeOrder - 1].toNextCos = cos(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextSin = sin(m_node[nodeOrder - 1].toNextAngle);
-		m_node[nodeOrder - 1].toNextLength = m_node[nodeOrder - 1].myPoint.getLength(m_node[nodeOrder].myPoint);
+		m_node[nodeOrder - 1].setNext(m_node[nodeOrder]);
 		m_lineLength += m_node[nodeOrder - 1].toNextLength;
-		m_node[nodeOrder].toPreviousAngle = m_node[nodeOrder - 1].toNextAngle + PI;
-		if(m_node[nodeOrder].toPreviousAngle >= PI2) m_node[nodeOrder].toPreviousAngle -= PI2;
-		m_node[nodeOrder].toPreviousCos = cos(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousSin = sin(m_node[nodeOrder].toPreviousAngle);
-		m_node[nodeOrder].toPreviousLength = m_node[nodeOrder - 1].toNextLength;
-		//Õâ¸öÒ»ÐÐÊÇÎªÁËÖÐºÍdecreaseOneNodeº¯ÊýÖÐµÄ¼õ²Ù×÷¶øÔö¼ÓµÄ
-		m_lineLength += m_node[m_nodeSum - 1].toPreviousLength;
-		decreaseOneNode();
+		if(!m_isLoop)
+		{
+			if(nodeOrder == 1)
+			{
+				m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
+				m_node[0].toPreviousCos = m_node[1].toPreviousCos;
+				m_node[0].toPreviousSin = m_node[1].toPreviousSin;
+			}
+			if(nodeOrder == (int)(m_node.size()) - 2)
+			{
+				m_node[m_node.size() - 2].toNextAngle = m_node[m_node.size() - 3].toNextAngle;
+				m_node[m_node.size() - 2].toNextCos = m_node[m_node.size() - 3].toNextCos;
+				m_node[m_node.size() - 2].toNextSin = m_node[m_node.size() - 3].toNextSin;
+			}
+		}
+		m_node.pop_back();
+		if(m_specialPoint.isEnable && !m_specialPoint.isEnd && m_node.size() >= 2)
+		{//ÏÂÃæÐèÒª¶ÔÒÆ¶¯µãµÄÊý¾Ý½øÐÐ¸üÐÂÒÔ±ãÓÚ¾¡Á¿µÄ±£Ö¤ÒÆ¶¯µãµÄÎÈ¶¨
+			if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+			{//Ë³Ðò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						--m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}
+				}else
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder >= nodeOrder)
+					{
+						--m_specialPoint.upNodeOrder;
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+					}
+				}
+			}else
+			{//ÄæÐò
+				if(m_isLoop)
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder > nodeOrder)
+					{
+						-- m_specialPoint.upNodeOrder;
+					}else
+					{
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.curLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength -= m_node[0].toPreviousLength - tmpOldLoopLen;
+					}
+				}else
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder > nodeOrder)
+					{
+						-- m_specialPoint.upNodeOrder;
+					}else
+					{
+						m_specialPoint.curLength += m_lineLength - tmpOldLineLength;
+						m_specialPoint.upNodeLength += m_lineLength - tmpOldLineLength;
+					}
+				}
+			}
+		}
 	}
 	m_needUpdateData = XTrue;
 }
 void XNodeLine::clearUp()
 {//Ö»ÐèÒªÇå³ýµÚÒ»¸öµãµÄÐÅÏ¢¼´¿É
-	if(m_isACopy) return;//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-	m_node[0].myPoint.set(0,0);
-	m_node[0].toNextAngle = 0;
-	m_node[0].toNextCos = 0;
-	m_node[0].toNextSin = 0;
-	m_node[0].toNextLength = 0;
-	m_node[0].toPreviousAngle = 0;
-	m_node[0].toPreviousCos = 0;
-	m_node[0].toPreviousSin = 0;
-	m_node[0].toPreviousLength = 0;
-	m_nodeSum = 0;
-	m_lineLength = 0;
-	m_isLoop = XFalse;
+	m_node.clear();
+	m_lineLength = 0.0f;
+	m_bezLineLength = 0.0f;
+	m_specialPoint.isEnd = true;
 }
 XBool XNodeLine::saveNodeLine()
 {
-	if(m_isACopy ||//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-		m_nodeSum <= 1) return XFalse;
+	if(m_node.size() <= 1) return XFalse;
 	FILE *fp;
-	char fileName[] = NODELINE_DATA_FILE_NAME;
-	if(m_myOrder >= 0) fileName[13] = m_myOrder % 10 + '0';
-	if(m_myOrder >= 10) fileName[12] = (m_myOrder/10) % 10 + '0';
-	if(m_myOrder >= 100) fileName[11] = (m_myOrder/100) % 10 + '0';
-	if(m_myOrder >= 1000) fileName[10] = (m_myOrder/1000) % 10 + '0';
-	if(m_myOrder >= 10000) fileName[9] = (m_myOrder/10000) % 10 + '0';
+	char fileName[MAX_FILE_NAME_LENGTH];
+	sprintf_s(fileName,MAX_FILE_NAME_LENGTH,NODELINE_DATA_FILE_NAME,m_myOrder);
 	//´ò¿ªÎÄ¼þ
 	if((fp = fopen(fileName,"wb")) == NULL)
 	{
@@ -417,10 +680,12 @@ XBool XNodeLine::saveNodeLine()
 		return XFalse;
 	}
 	//Ð´ÈëÊý¾Ý
-	fwrite(&m_nodeSum,sizeof(int),1,fp);			//½ÚµãÊýÁ¿
+	int sum = m_node.size();
+	fwrite(&sum,sizeof(int),1,fp);			//½ÚµãÊýÁ¿
 	fwrite(&m_lineLength,sizeof(float),1,fp);		//Òýµ¼Ïß³¤¶È
+	fwrite(&m_isLoop,sizeof(m_isLoop),1,fp);		//Òýµ¼Ïß³¤¶È
 	//ÒÀ´ÎÐ´Èë½ÚµãÐÅÏ¢
-	for(int i = 0;i < m_nodeSum;++ i)
+	for(int i = 0;i < m_node.size();++ i)
 	{
 		fwrite(&m_node[i],sizeof(XNode),1,fp);	
 	}
@@ -437,10 +702,18 @@ bool XNodeLine::loadFromFolder(const char *filename)	//´ÓÎÄ¼þ¼ÐÖÐÔØÈë×ÊÔ´
 		return XFalse;
 	}
 	//¶ÁÈ¡Êý¾Ý
-	fread(&m_nodeSum,sizeof(int),1,fp);		//½ÚµãÊýÁ¿
+	int sum;
+	fread(&sum,sizeof(int),1,fp);		//½ÚµãÊýÁ¿
+	if(sum <= 1)
+	{
+		fclose(fp);
+		return false;
+	}
+	m_node.resize(sum);
 	fread(&m_lineLength,sizeof(float),1,fp);		//Òýµ¼Ïß³¤¶È
+	fread(&m_isLoop,sizeof(m_isLoop),1,fp);		//Òýµ¼Ïß³¤¶È
 	//ÒÀ´Î¶ÁÈ¡½ÚµãÐÅÏ¢
-	for(int i = 0;i < m_nodeSum;++ i)
+	for(int i = 0;i < m_node.size();++ i)
 	{
 		fread(&m_node[i],sizeof(XNode),1,fp);	
 	}
@@ -459,12 +732,15 @@ bool XNodeLine::loadFromPacker(const char *filename)	//´ÓÑ¹Ëõ°üÖÐÔØÈë×ÊÔ´
 	}
 	//½«ÌáÈ¡µÄÊý¾ÝÊÍ·Åµ½Ö¸¶¨µÄÎ»ÖÃ
 	int offset = 0;
-	memcpy(&m_nodeSum,p + offset,sizeof(int));
-	offset += sizeof(int);
+	memcpy(&offset,p,sizeof(int));
+	m_node.resize(offset);
+	offset = sizeof(int);
 	memcpy(&m_lineLength,p + offset,sizeof(float));
 	offset += sizeof(float);
+	memcpy(&m_isLoop,p + offset,sizeof(m_isLoop));
+	offset += sizeof(m_isLoop);
 	//ÒÀ´ÎÐ´Èë½ÚµãÐÅÏ¢
-	for(int i = 0;i < m_nodeSum;++ i)
+	for(int i = 0;i < m_node.size();++ i)
 	{
 		memcpy(&m_node[i],p + offset,sizeof(XNode));
 		offset += sizeof(XNode);
@@ -476,31 +752,24 @@ bool XNodeLine::loadFromWeb(const char *filename)		//´ÓÍøÒ³ÖÐ¶ÁÈ¡×ÊÔ´
 {
 	return false;
 }
-
-XBool XNodeLine::getNodeLine(XResourcePosition resoursePosition)
+XBool XNodeLine::getNodeLine(XResPos resPos)
 {
-	if(m_isACopy) return XFalse;//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
 	char fileName[MAX_FILE_NAME_LENGTH] = "";
-	sprintf(fileName,"%s%s",BASE_RESOURCE_PATH,NODELINE_DATA_FILE_NAME);
-	int len = strlen(fileName);
-	if(m_myOrder >= 0) fileName[len - 5] = m_myOrder % 10 + '0';
-	if(m_myOrder >= 10) fileName[len - 6] = (m_myOrder/10) % 10 + '0';
-	if(m_myOrder >= 100) fileName[len - 7] = (m_myOrder/100) % 10 + '0';
-	if(m_myOrder >= 1000) fileName[len - 8] = (m_myOrder/1000) % 10 + '0';
-	if(m_myOrder >= 10000) fileName[len - 9] = (m_myOrder/10000) % 10 + '0';
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	sprintf_s(fileName,MAX_FILE_NAME_LENGTH,NODELINE_DATA_FILE_NAME,m_myOrder);
+	strcpy_s(fileName,MAX_FILE_NAME_LENGTH,(std::string(BASE_RESOURCE_PATH) + fileName).c_str());
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(fileName)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(fileName)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(fileName)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(fileName) && !loadFromFolder(fileName) &&
 			!loadFromWeb(fileName)) return false;
 		break;
@@ -509,27 +778,41 @@ XBool XNodeLine::getNodeLine(XResourcePosition resoursePosition)
 	return XTrue;
 }
 void XNodeLine::updateData()
-{
+{//Ä¿Ç°ÕâÀïÃ»ÓÐ´¦ÀíÑ­»·Óë²»Ñ­»·£¬ËùÒÔ´æÔÚÎÊÌâ
 	if(!m_needUpdateData) return;
 	m_needUpdateData = XFalse;	//ÏÂÃæ¸üÐÂÊý¾Ý
-	if(m_nodeSum < 2) return;
-	//ÏÂÃæ¿ªÊ¼¼ÆËã²îÖµ¹Ø¼üµã(Ã¿¸öµãÓÐÁ½¸öÒýµ¼µã)
-	XVector2 tempPoint0;
-	XVector2 tempPoint1;
-	XVector2 tempPoint2;
+	if(m_node.size() < 2) return;
+	//ÏÂÃæ¿ªÊ¼¼ÆËã²åÖµ¹Ø¼üµã(Ã¿¸öµãÓÐÁ½¸öÒýµ¼µã)
+	XVec2 tempPoint0;
+	XVec2 tempPoint1;
+	XVec2 tempPoint2;
+	m_bezierPoint.resize(m_node.size() << 1);
 	//µÚÒ»¸öµãÒª·Ö¿ª¼ÆËã
-	tempPoint0 = (m_node[0].myPoint + m_node[m_nodeSum - 1].myPoint) * 0.5f;	//ÓëÇ°Ò»¸öµãµÄÖÐµã
-	tempPoint1 = (m_node[0].myPoint + m_node[1].myPoint) * 0.5f;	//ÓëºóÒ»¸öµãµÄÖÐµã
-	tempPoint2 = (tempPoint0 + tempPoint1) * 0.5f;	//Á½ÖÐµãµÄÖÐµã
-	m_bezierPoint[0] = tempPoint0 + m_node[0].myPoint - tempPoint2;	//Á½ÖÐµãÁ¬ÏßµÄÆ½ÒÆ
-	m_bezierPoint[1] = tempPoint1 + m_node[0].myPoint - tempPoint2;
-	//×îºóÒ»¸öµãÒª·Ö¿ª¼ÆËã
-	//tempPoint0 = (m_node[0].myPoint + m_node[m_nodeSum - 1].myPoint) * 0.5f;
-	tempPoint1 = (m_node[m_nodeSum - 1].myPoint + m_node[m_nodeSum - 2].myPoint) * 0.5f;
-	tempPoint2 = (tempPoint0 + tempPoint1) * 0.5f;
-	m_bezierPoint[(m_nodeSum - 1) << 1] = tempPoint1 + m_node[m_nodeSum - 1].myPoint - tempPoint2;
-	m_bezierPoint[((m_nodeSum - 1) << 1) + 1] = tempPoint0 + m_node[m_nodeSum - 1].myPoint - tempPoint2;
-	for(int i = 1;i < m_nodeSum - 1;++ i)
+	if(m_isLoop)
+	{
+		tempPoint0 = (m_node[0].myPoint + m_node[m_node.size() - 1].myPoint) * 0.5f;	//ÓëÇ°Ò»¸öµãµÄÖÐµã
+		tempPoint1 = (m_node[0].myPoint + m_node[1].myPoint) * 0.5f;	//ÓëºóÒ»¸öµãµÄÖÐµã
+		tempPoint2 = (tempPoint0 + tempPoint1) * 0.5f;	//Á½ÖÐµãµÄÖÐµã
+		m_bezierPoint[0] = tempPoint0 + m_node[0].myPoint - tempPoint2;	//Á½ÖÐµãÁ¬ÏßµÄÆ½ÒÆ
+		m_bezierPoint[1] = tempPoint1 + m_node[0].myPoint - tempPoint2;
+		//×îºóÒ»¸öµãÒª·Ö¿ª¼ÆËã
+		//tempPoint0 = (m_node[0].myPoint + m_node[m_nodeSum - 1].myPoint) * 0.5f;
+		tempPoint1 = (m_node[m_node.size() - 1].myPoint + m_node[m_node.size() - 2].myPoint) * 0.5f;
+		tempPoint2 = (tempPoint0 + tempPoint1) * 0.5f;
+		m_bezierPoint[(m_node.size() - 1) << 1] = tempPoint1 + m_node[m_node.size() - 1].myPoint - tempPoint2;
+		m_bezierPoint[((m_node.size() - 1) << 1) + 1] = tempPoint0 + m_node[m_node.size() - 1].myPoint - tempPoint2;
+	}else
+	{
+		tempPoint0 = (m_node[1].myPoint - m_node[0].myPoint) * 0.3333f;
+		m_bezierPoint[0] = m_node[0].myPoint - tempPoint0;	//Á½ÖÐµãÁ¬ÏßµÄÆ½ÒÆ
+		m_bezierPoint[1] = m_node[0].myPoint + tempPoint0;
+
+		//×îºóÒ»¸öµãÒª·Ö¿ª¼ÆËã
+		tempPoint0 = (m_node[m_node.size() - 1].myPoint - m_node[m_node.size() - 2].myPoint) * 0.3333f;
+		m_bezierPoint[(m_node.size() - 1) << 1] = m_node[m_node.size() - 1].myPoint - tempPoint0;
+		m_bezierPoint[((m_node.size() - 1) << 1) + 1] = m_node[m_node.size() - 1].myPoint + tempPoint0;
+	}
+	for(int i = 1;i < m_node.size() - 1;++ i)
 	{
 		tempPoint0 = (m_node[i].myPoint + m_node[i - 1].myPoint) * 0.5f;
 		tempPoint1 = (m_node[i].myPoint + m_node[i + 1].myPoint) * 0.5f;
@@ -537,357 +820,664 @@ void XNodeLine::updateData()
 		m_bezierPoint[i << 1] = tempPoint0 + m_node[i].myPoint - tempPoint2;
 		m_bezierPoint[(i << 1) + 1] = tempPoint1 + m_node[i].myPoint - tempPoint2;
 	}
+	//ÏÂÃæÐèÒª¸üÐÂËùÓÐµãµÄ±´Èû¶ûÐÅÏ¢
+	XBezierSpline tmpBz;
+	m_bezLineLength = 0.0f;
+	if(m_isLoop)
+	{
+		for(int i = 0;i < m_node.size();++ i)
+		{
+			setBezierSplinePar(tmpBz,i);
+			m_node[i].toBezNextLength = tmpBz.getLength();
+			m_node[i].toBezNextAngle = tmpBz.getBezierSplineAngle(0.0f);
+			m_node[(i + 1) % m_node.size()].toBezPreviousLength = tmpBz.getLength();
+			m_node[(i + 1) % m_node.size()].toBezPreviousAngle = tmpBz.getBezierSplineAngle(1.0f);
+			m_bezLineLength += m_node[i].toBezNextLength;
+		}
+	}else
+	{
+		m_node[0].toBezPreviousLength = 0.0f;
+		m_node[0].toBezPreviousAngle = m_node[0].toPreviousAngle;
+		m_node[m_node.size() - 1].toBezNextLength = 0.0f;
+		m_node[m_node.size() - 1].toBezNextAngle = m_node[m_node.size() - 1].toNextAngle;
+		for(int i = 0;i < m_node.size() - 1;++ i)
+		{
+			setBezierSplinePar(tmpBz,i);
+			m_node[i].toBezNextLength = tmpBz.getLength();
+			m_node[i].toBezNextAngle = tmpBz.getBezierSplineAngle(0.0f);
+			m_node[i + 1].toBezPreviousLength = tmpBz.getLength();
+			m_node[i + 1].toBezPreviousAngle = tmpBz.getBezierSplineAngle(1.0f);
+			m_bezLineLength += m_node[i].toBezNextLength;
+		}
+	}
+}
+void XNodeLine::updateBezierInfo()
+{
+	if(m_node.size() <= 2) return;
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd) return;	//²»ÐèÒª¼ÆËã
+	setBezierSplinePar(m_bezierSpline,m_specialPoint.upNodeOrder,!((m_leadMode & LEAD_MODE_FOREWORD) != 0));
+	//if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	//{//Ë³Ðò
+	//	//µ±µãµÄÊýÁ¿·¢Éú±ä»¯Ê±ÕâÀïÐèÒª¸úÐÂÏà¹ØÊý¾Ý±£Ö¤Êý¾ÝµÄºÏÀíÐÔ
+	//	if(!m_isLoop)
+	//	{//²»Ñ­»·
+	//		m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//			m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+	//			m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
+	//			m_node[m_specialPoint.upNodeOrder + 1].myPoint);
+	//	}else
+	//	{
+	//		if(m_specialPoint.upNodeOrder >= m_node.size() - 1)
+	//		{//×îºóÒ»¸öµã
+	//			m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//				m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+	//				m_bezierPoint[0],
+	//				m_node[0].myPoint);
+	//		}else
+	//		{
+	//			m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//				m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+	//				m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
+	//				m_node[m_specialPoint.upNodeOrder + 1].myPoint);
+	//		}
+	//	}
+	//}else
+	//{//ÄæÐò
+	//	if(!m_isLoop)
+	//	{//²»Ñ­»·
+	//		m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//			m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+	//			m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
+	//			m_node[m_specialPoint.upNodeOrder - 1].myPoint);
+	//	}else
+	//	{
+	//		if(m_specialPoint.upNodeOrder == 0)
+	//		{
+	//			m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//				m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+	//				m_bezierPoint[((m_node.size() - 1) << 1) + 1],
+	//				m_node[m_node.size() - 1].myPoint);
+	//		}else
+	//		{
+	//			m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+	//				m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+	//				m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
+	//				m_node[m_specialPoint.upNodeOrder - 1].myPoint);
+	//		}
+	//	}
+	//}
 }
 //×¢Òâ×îÉÙÐèÒªÓÐ2¸öµã
-void XNodeLine::moveSpecialPoint(int timeDelay,int isLoop,XBool needBezier)
+void XNodeLine::moveSpecialPoint(float timeDelay)
 {
-	if(m_nodeSum <= 1) return;
-	updateData();	//Èç¹ûÓÐ±ØÒª¸üÐÂ²îÖµÊý¾Ý
-	if(isLoop != 0 && !m_isLoop) setLoop();
-	if(m_specialPoint.isEnable && !m_specialPoint.isEnd)
-	{
-		m_specialPoint.curLength += timeDelay * m_specialPoint.speed;
+	if(m_node.size() <= 1) return;
+	XBool needBezier = m_withBezier;
+	if(m_node.size() <= 2 && needBezier) needBezier = false;	//Ð¡ÓÚÁ½¸öµãµÄÊ±ºò±´Èû¶ûÎÞÐ§ 
+	bool needUpdate = m_needUpdateData;
+	updateData();	//Èç¹ûÓÐ±ØÒª¸üÐÂ²åÖµÊý¾Ý
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd) return;	//²»ÐèÒª¼ÆËã
+	if(!m_isLoop)
+	{//Èç¹û²»Ñ­»·£¬µ«ÊÇµãÔÚÑ­»·Â·ÉÏ£¬ÔòÐèÒªÖØÐÂ¼ÆËã
 		if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
 		{//Ë³Ðò
-			while(true)
+			if(m_specialPoint.upNodeOrder == (int)(m_node.size()) - 1) 
 			{
-				if(m_specialPoint.curLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toNextLength)
-				{//ÒÑ¾­Ô½¹ýÏÂÃæÒ»¸öµã
-					if(isLoop == 0)
-					{//²»Ñ­»·
-						if(m_specialPoint.upNodeOrder + 1 == m_nodeSum - 1)
-						{//ÒÑ¾­µ½´ïÖÕµã
-							m_specialPoint.isEnd = XTrue;
-							m_specialPoint.angle = m_node[m_nodeSum - 2].toNextAngle;
-							m_specialPoint.curLength = m_lineLength;
-							m_specialPoint.position = m_node[m_nodeSum - 1].myPoint;
-							m_specialPoint.upNodeOrder = m_nodeSum - 2;
-							m_specialPoint.upNodeLength = m_lineLength - m_node[m_nodeSum - 1].toPreviousLength;
-							break;
-						}else
-						{
-							++ m_specialPoint.upNodeOrder;
-							m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toPreviousLength;
-							if(needBezier)
-							{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-								m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-									m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
-									m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
-									m_node[m_specialPoint.upNodeOrder + 1].myPoint);
-							}
-						}
-					}else
-					{//Ñ­»·
-						if(m_specialPoint.upNodeOrder == m_nodeSum - 1)
-						{//ÖØÐÂµ½´ïÆðµã
-							m_specialPoint.isEnd = XTrue;
-							m_specialPoint.angle = m_node[0].toNextAngle;
-							m_specialPoint.curLength = m_lineLength + m_node[m_nodeSum - 1].toNextLength;
-							m_specialPoint.position = m_node[0].myPoint;
-							m_specialPoint.upNodeOrder = m_nodeSum - 1;
-							m_specialPoint.upNodeLength = m_lineLength;
-							break;
-						}else
-						{
-							++ m_specialPoint.upNodeOrder;
-							m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toPreviousLength;
-							if(needBezier)
-							{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-								if(m_specialPoint.upNodeOrder == m_nodeSum - 1)
-								{//×îºóÒ»¸öµã
-									m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-										m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
-										m_bezierPoint[0],
-										m_node[0].myPoint);
-								}else
-								{
-									m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-										m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
-										m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
-										m_node[m_specialPoint.upNodeOrder + 1].myPoint);
-								}
-							}
-						}
-					}
-				}else
-				{//Ã»ÓÐÔ½¹ýÏÂÃæÒ»¸öµã
-					if(m_specialPoint.upNodeOrder == m_nodeSum - 1)
-					{//¾­¹ý×îºóÒ»¸öµã£¬ÖØÐÂÏòÆðµã
-						if(needBezier)
-						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-							float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
-							tempPos = m_bezierSpline.getT(tempPos);
-							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
-							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
-						}else
-						{
-							m_specialPoint.position.x = m_node[m_specialPoint.upNodeOrder].myPoint.x 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toNextCos;
-							m_specialPoint.position.y = m_node[m_specialPoint.upNodeOrder].myPoint.y 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toNextSin;
-							if(m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle <= PI
-								&& m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle >= -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle);
-							}else
-							if(m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle > PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (PI2 - (m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle));
-							}else
-							if(m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle < -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (PI2 + (m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle));
-							}
-						}
-					}else
-					{//Õý³£µÄµã
-						if(needBezier)
-						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-							float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
-							tempPos = m_bezierSpline.getT(tempPos);
-							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
-							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
-						}else
-						{
-							m_specialPoint.position.x = m_node[m_specialPoint.upNodeOrder].myPoint.x 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toNextCos;
-							m_specialPoint.position.y = m_node[m_specialPoint.upNodeOrder].myPoint.y 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toNextSin;
-							if(m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle <= PI
-								&& m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle >= -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle);
-							}else
-							if(m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle > PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle - PI2);
-							}else
-							if(m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle < -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
-									* (PI2 + (m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle));
-							}	
-						}
-					}
-					break;
-				}
+				m_specialPoint.isEnd = XTrue;
+				m_specialPoint.angle = m_node[m_node.size() - 1].toNextAngle;
+				m_specialPoint.position = m_node[m_node.size() - 1].myPoint;
+				m_specialPoint.curLength = 0.0f;
+				m_specialPoint.upNodeOrder = 0;
+				m_specialPoint.upNodeLength = 0.0f;
+				return;
 			}
 		}else
-		{//ÄæÐÐ
-			while(true)
+		{//ÄæÐò
+			if(m_specialPoint.upNodeOrder == 0)
 			{
-				if(m_specialPoint.curLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toPreviousLength)
-				{//ÒÔ¼°Ô½¹ýÏÂÃæÒ»¸öµã
-					if(isLoop == 0)
-					{//²»Ñ­»·
-						if(m_specialPoint.upNodeOrder == 1)
-						{//ÒÑ¾­µ½´ïÖÕµã
-							m_specialPoint.isEnd = XTrue;
-							m_specialPoint.angle = m_node[1].toPreviousAngle;
-							m_specialPoint.curLength = m_lineLength;
-							m_specialPoint.position = m_node[0].myPoint;
-							m_specialPoint.upNodeOrder = 1;
-							m_specialPoint.upNodeLength = m_lineLength - m_node[0].toNextLength;
-							break;
-						}else
-						{
-							-- m_specialPoint.upNodeOrder;
-							m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toNextLength;
-							if(needBezier)
-							{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-								m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-									m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
-									m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
-									m_node[m_specialPoint.upNodeOrder - 1].myPoint);
-							}
-						}
-					}else
-					{
-						if(m_specialPoint.upNodeOrder == 0)
-						{//ÒÑ¾­µ½´ïÖÕµã
-							m_specialPoint.isEnd = XTrue;
-							m_specialPoint.angle = m_node[m_nodeSum - 1].toPreviousAngle;
-							m_specialPoint.curLength = m_lineLength + m_node[0].toPreviousLength;
-							m_specialPoint.position = m_node[m_nodeSum - 1].myPoint;
-							m_specialPoint.upNodeOrder = 0;
-							m_specialPoint.upNodeLength = m_lineLength;
-							break;
-						}else
-						{
-							-- m_specialPoint.upNodeOrder;
-							m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toNextLength;
-							if(needBezier)
-							{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-								if(m_specialPoint.upNodeOrder == 0)
-								{
-									m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-										m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
-										m_bezierPoint[((m_nodeSum - 1) << 1) + 1],
-										m_node[m_nodeSum - 1].myPoint);
-								}else
-								{
-									m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
-										m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
-										m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
-										m_node[m_specialPoint.upNodeOrder - 1].myPoint);
-								}
-							}
-						}
+				m_specialPoint.isEnd = XTrue;
+				m_specialPoint.angle = m_node[0].toPreviousAngle;
+				m_specialPoint.position = m_node[0].myPoint;
+				m_specialPoint.curLength = 0.0f;
+				m_specialPoint.upNodeOrder = 0;
+				m_specialPoint.upNodeLength = 0.0f;
+				return;
+			}
+		}
+	}
+	if(needUpdate) //Èç¹ûÊý¾Ý·¢ÉúÁË¸úÐÂ£¬ÕâÀïÐèÒª¸üÐÂÏà¹ØµÄ±´Èû¶ûÊý¾Ý
+	{
+		if(needBezier)
+			updateBezierInfo();
+		else
+		{//ÏÂÃæ¶Ô²ÎÊýºÏ·¨ÐÔ½øÐÐ´¦Àí
+			if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+			{//Ë³Ðò
+				if(!m_isLoop)
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder >= m_node.size() - 1)
+					{//ÒÑ¾­µ½´ïÖÕµã
+						m_specialPoint.isEnd = XTrue;
+						m_specialPoint.angle = m_node[m_node.size() - 2].toNextAngle;
+						m_specialPoint.curLength = m_lineLength;
+						m_specialPoint.position = m_node[m_node.size() - 1].myPoint;
+						m_specialPoint.upNodeOrder = m_node.size() - 2;
+						m_specialPoint.upNodeLength = m_lineLength - m_node[m_node.size() - 1].toPreviousLength;
 					}
 				}else
-				{//Ã»ÓÐÔ½¹ýÏÂÃæÒ»¸öµã
-					if(m_specialPoint.upNodeOrder == 0)
-					{//×ßÏòÄæÐÐµÄÆðµã
-						if(needBezier)
-						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-							float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength;
-							tempPos = m_bezierSpline.getT(tempPos);
-							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
-							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
-						}else
-						{
-							m_specialPoint.position.x = m_node[m_specialPoint.upNodeOrder].myPoint.x 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toPreviousCos;
-							m_specialPoint.position.y = m_node[m_specialPoint.upNodeOrder].myPoint.y 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toPreviousSin;
-							if(m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle <= PI
-								&& m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle >= -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* (m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle);
-							}else
-							if(m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle > PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* ((m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle) - PI2);
-							}else
-							if(m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle < -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* (PI2 + (m_node[m_nodeSum - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle));
-							}
-						}
-					}else
-					{//ÆÕÍ¨µÄµã
-						if(needBezier)
-						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
-							float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength;
-							tempPos = m_bezierSpline.getT(tempPos);
-							m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
-							m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
-						}else
-						{
-							m_specialPoint.position.x = m_node[m_specialPoint.upNodeOrder].myPoint.x 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toPreviousCos;
-							m_specialPoint.position.y = m_node[m_specialPoint.upNodeOrder].myPoint.y 
-								+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * m_node[m_specialPoint.upNodeOrder].toPreviousSin;
-							if(m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle <= PI
-								&& m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle >=  -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* (m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle);
-							}else
-							if(m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle > PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* ((m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle) - PI2);
-							}else
-							if(m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle < -PI)
-							{
-								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
-									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
-									* (PI2 + (m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle));
-							}
-						}
+				{
+					if(m_specialPoint.upNodeOrder > m_node.size() - 1)
+					{//ÖØÐÂµ½´ïÆðµã
+						m_specialPoint.isEnd = XTrue;
+						m_specialPoint.angle = m_node[0].toNextAngle;
+						m_specialPoint.position = m_node[0].myPoint;
+						m_specialPoint.curLength = 0.0f;
+						m_specialPoint.upNodeOrder = 0;
+						m_specialPoint.upNodeLength = 0.0f;
 					}
-					break;
+				}
+			}else
+			{//ÄæÐò
+				if(!m_isLoop)
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder > (int)(m_node.size()) - 1)
+						resetSpecialPoint();
+				}else
+				{
+					if(m_specialPoint.upNodeOrder > (int)(m_node.size()) - 1)
+						resetSpecialPoint();
 				}
 			}
 		}
 	}
+	m_specialPoint.curLength += timeDelay * m_specialPoint.speed;
+	float tmpAngle;
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		while(true)
+		{
+			if(m_specialPoint.curLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toNextLength)
+			{//ÒÑ¾­Ô½¹ýÏÂÃæÒ»¸öµã
+				if(!m_isLoop)
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder + 1 == (int)(m_node.size()) - 1)
+					{//ÒÑ¾­µ½´ïÖÕµã
+						m_specialPoint.isEnd = XTrue;
+						m_specialPoint.angle = m_node[m_node.size() - 2].toNextAngle;
+						m_specialPoint.curLength = m_lineLength;
+						m_specialPoint.position = m_node[m_node.size() - 1].myPoint;
+						m_specialPoint.upNodeOrder = m_node.size() - 2;
+						m_specialPoint.upNodeLength = m_lineLength - m_node[m_node.size() - 1].toPreviousLength;
+						break;
+					}else
+					{
+						++ m_specialPoint.upNodeOrder;
+						m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+						if(needBezier)
+						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+							setBezierSplinePar(m_bezierSpline,m_specialPoint.upNodeOrder);
+							//m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//	m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+							//	m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
+							//	m_node[m_specialPoint.upNodeOrder + 1].myPoint);
+						}
+					}
+				}else
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder == (int)(m_node.size()) - 1)
+					{//ÖØÐÂµ½´ïÆðµã
+						m_specialPoint.isEnd = XTrue;
+						if(needBezier)
+						{
+							setBezierSplinePar(m_bezierSpline,0);
+							//m_bezierSpline.init(m_node[0].myPoint,m_bezierPoint[1],m_bezierPoint[2],m_node[1].myPoint);
+						}else
+						{
+							m_specialPoint.angle = m_node[0].toNextAngle;
+							m_specialPoint.position = m_node[0].myPoint;
+						}
+						m_specialPoint.curLength = 0.0f;
+						m_specialPoint.upNodeOrder = 0;
+						m_specialPoint.upNodeLength = 0.0f;
+						break;
+					}else
+					{
+						++ m_specialPoint.upNodeOrder;
+						m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+						if(needBezier)
+						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+							setBezierSplinePar(m_bezierSpline,m_specialPoint.upNodeOrder);
+							//if(m_specialPoint.upNodeOrder == m_node.size() - 1)
+							//{//×îºóÒ»¸öµã
+							//	m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//		m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+							//		m_bezierPoint[0],
+							//		m_node[0].myPoint);
+							//}else
+							//{
+							//	m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//		m_bezierPoint[(m_specialPoint.upNodeOrder << 1) + 1],
+							//		m_bezierPoint[(m_specialPoint.upNodeOrder + 1) << 1],
+							//		m_node[m_specialPoint.upNodeOrder + 1].myPoint);
+							//}
+						}
+					}
+				}
+			}else
+			{//Ã»ÓÐÔ½¹ýÏÂÃæÒ»¸öµã
+				if(m_specialPoint.upNodeOrder == (int)(m_node.size()) - 1)
+				{//¾­¹ý×îºóÒ»¸öµã£¬ÖØÐÂÏòÆðµã
+					if(needBezier)
+					{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+						float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
+						tempPos = m_bezierSpline.getT(tempPos);
+						m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
+						m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
+					}else
+					{
+						m_specialPoint.position = m_node[m_specialPoint.upNodeOrder].myPoint 
+							+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * 
+							XVec2(m_node[m_specialPoint.upNodeOrder].toNextCos,m_node[m_specialPoint.upNodeOrder].toNextSin);
+						if(m_withAngleSmooth)
+						{
+							tmpAngle = m_node[0].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* (PI2 - tmpAngle);
+							}else
+							if(tmpAngle < -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* (PI2 + tmpAngle);
+							}
+						}else
+						{
+							m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle;
+						}
+					}
+				}else
+				{//Õý³£µÄµã
+					if(needBezier)
+					{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+						float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toNextLength;
+						tempPos = m_bezierSpline.getT(tempPos);
+						m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
+						m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
+					}else
+					{
+						m_specialPoint.position = m_node[m_specialPoint.upNodeOrder].myPoint
+							+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * 
+							XVec2(m_node[m_specialPoint.upNodeOrder].toNextCos,m_node[m_specialPoint.upNodeOrder].toNextSin);
+						if(m_withAngleSmooth)
+						{
+							tmpAngle = m_node[m_specialPoint.upNodeOrder + 1].toNextAngle - m_node[m_specialPoint.upNodeOrder].toNextAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) / m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) / m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) / m_node[m_specialPoint.upNodeOrder].toNextLength 
+									* (PI2 + tmpAngle);
+							}	
+						}else
+						{
+							m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toNextAngle ;
+						}
+					}
+				}
+				break;
+			}
+		}
+	}else
+	{//ÄæÐÐ
+		while(true)
+		{
+			if(m_specialPoint.curLength > m_specialPoint.upNodeLength + m_node[m_specialPoint.upNodeOrder].toPreviousLength)
+			{//ÒÔ¼°Ô½¹ýÏÂÃæÒ»¸öµã
+				if(!m_isLoop)
+				{//²»Ñ­»·
+					if(m_specialPoint.upNodeOrder == 1)
+					{//ÒÑ¾­µ½´ïÖÕµã
+						m_specialPoint.isEnd = XTrue;
+						m_specialPoint.angle = m_node[1].toPreviousAngle;
+						m_specialPoint.curLength = m_lineLength;
+						m_specialPoint.position = m_node[0].myPoint;
+						m_specialPoint.upNodeOrder = 1;
+						m_specialPoint.upNodeLength = m_lineLength - m_node[0].toNextLength;
+						break;
+					}else
+					{
+						-- m_specialPoint.upNodeOrder;
+						m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toNextLength;
+						if(needBezier)
+						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+							setBezierSplinePar(m_bezierSpline,m_specialPoint.upNodeOrder,true);
+							//m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//	m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+							//	m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
+							//	m_node[m_specialPoint.upNodeOrder - 1].myPoint);
+						}
+					}
+				}else
+				{//Ñ­»·
+					if(m_specialPoint.upNodeOrder == 0)
+					{//ÒÑ¾­µ½´ïÖÕµã
+						m_specialPoint.isEnd = XTrue;
+						if(needBezier)
+						{
+							setBezierSplinePar(m_bezierSpline,m_node.size() - 1,true);
+							//m_bezierSpline.init(m_node[m_node.size() - 1].myPoint,
+							//	m_bezierPoint[(m_node.size() - 1) << 1],
+							//	m_bezierPoint[((m_node.size() - 2) << 1) + 1],
+							//	m_node[m_node.size() - 2].myPoint);
+						}else
+						{
+							//m_specialPoint.isEnd = XTrue;
+							m_specialPoint.angle = m_node[m_node.size() - 1].toPreviousAngle;
+							m_specialPoint.position = m_node[m_node.size() - 1].myPoint;
+						}
+						m_specialPoint.curLength = 0.0f;
+						m_specialPoint.upNodeOrder = m_node.size() - 1;
+						m_specialPoint.upNodeLength = 0.0f;
+						break;
+					}else
+					{
+						-- m_specialPoint.upNodeOrder;
+						m_specialPoint.upNodeLength += m_node[m_specialPoint.upNodeOrder].toNextLength;
+						if(needBezier)
+						{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+							setBezierSplinePar(m_bezierSpline,m_specialPoint.upNodeOrder,true);
+							//if(m_specialPoint.upNodeOrder == 0)
+							//{
+							//	m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//		m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+							//		m_bezierPoint[((m_node.size() - 1) << 1) + 1],
+							//		m_node[m_node.size() - 1].myPoint);
+							//}else
+							//{
+							//	m_bezierSpline.init(m_node[m_specialPoint.upNodeOrder].myPoint,
+							//		m_bezierPoint[(m_specialPoint.upNodeOrder << 1)],
+							//		m_bezierPoint[((m_specialPoint.upNodeOrder - 1) << 1) + 1],
+							//		m_node[m_specialPoint.upNodeOrder - 1].myPoint);
+							//}
+						}
+					}
+				}
+			}else
+			{//Ã»ÓÐÔ½¹ýÏÂÃæÒ»¸öµã
+				if(m_specialPoint.upNodeOrder == 0)
+				{//×ßÏòÄæÐÐµÄÆðµã
+					if(needBezier)
+					{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+						float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength) / m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+						tempPos = m_bezierSpline.getT(tempPos);
+						m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
+						m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
+					}else
+					{
+						m_specialPoint.position = m_node[m_specialPoint.upNodeOrder].myPoint 
+							+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * 
+							XVec2(m_node[m_specialPoint.upNodeOrder].toPreviousCos,m_node[m_specialPoint.upNodeOrder].toPreviousSin);
+						if(m_withAngleSmooth)
+						{
+							tmpAngle = m_node[m_node.size() - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* (PI2 + tmpAngle);
+							}
+						}else
+						{
+							m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle;
+						}
+					}
+				}else
+				{//ÆÕÍ¨µÄµã
+					if(needBezier)
+					{//ÕâÀïÊÇÐèÒªÔö¼ÓµÄ²¿·Ö
+						float tempPos = (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength;
+						tempPos = m_bezierSpline.getT(tempPos);
+						m_specialPoint.position = m_bezierSpline.getBezierSplineValue(tempPos);
+						m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(tempPos);
+					}else
+					{
+						m_specialPoint.position = m_node[m_specialPoint.upNodeOrder].myPoint 
+							+ (m_specialPoint.curLength - m_specialPoint.upNodeLength) * 
+							XVec2(m_node[m_specialPoint.upNodeOrder].toPreviousCos,m_node[m_specialPoint.upNodeOrder].toPreviousSin);
+						if(m_withAngleSmooth)
+						{
+							tmpAngle = m_node[m_specialPoint.upNodeOrder - 1].toPreviousAngle - m_node[m_specialPoint.upNodeOrder].toPreviousAngle;
+							if(tmpAngle <= PI && tmpAngle >=  -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle 
+									+ (m_specialPoint.curLength - m_specialPoint.upNodeLength)/m_node[m_specialPoint.upNodeOrder].toPreviousLength 
+									* (PI2 + tmpAngle);
+							}
+						}else
+						{
+							m_specialPoint.angle = m_node[m_specialPoint.upNodeOrder].toPreviousAngle;
+						}
+					}
+				}
+				break;
+			}
+		}
+	}
 }
-void XNodeLine::resetSpecialPoint(XBool needBezier)
+void XNodeLine::resetSpecialPt(int index,float distance)
 {
-	if(m_nodeSum <= 1) return;
-	updateData();	//Èç¹ûÓÐ±ØÒª¸üÐÂ²îÖµÊý¾Ý
+	if(index < 0 || index >= m_node.size()) return;
+	if(distance < 0.0f) distance = 0.0f;
+	if(m_node.size() <= 1) return;
+	XBool needBezier = m_withBezier;
+	if(m_node.size() <= 2 && needBezier) needBezier = false;
+	updateData();	//Èç¹ûÓÐ±ØÒª¸üÐÂ²åÖµÊý¾Ý
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		m_specialPoint.isEnable = XTrue;
+		m_specialPoint.isEnd = XFalse;
+		m_specialPoint.position = m_node[index].myPoint;
+		m_specialPoint.angle = m_node[index].toNextAngle;
+		m_specialPoint.upNodeOrder = index;
+		m_specialPoint.curLength = 0.0f;
+		for(int i = 0;i < index;++ i)
+		{
+			m_specialPoint.curLength += m_node[i].toNextLength;
+		}
+		m_specialPoint.curLength += distance;
+		m_specialPoint.upNodeLength = m_specialPoint.curLength;
+		if(m_isLoop)
+		{//Ñ­»·
+			if(needBezier)
+			{
+				setBezierSplinePar(m_bezierSpline,index);
+				//if(index < m_node.size() - 1)
+				//	m_bezierSpline.init(m_node[index].myPoint,m_bezierPoint[(index << 1) + 1],	
+				//		m_bezierPoint[(index << 1) + 2],m_node[index + 1].myPoint);
+				//else
+				//	m_bezierSpline.init(m_node[index].myPoint,m_bezierPoint[(index << 1) + 1],	
+				//		m_bezierPoint[0],m_node[0].myPoint);
+			}
+		}else
+		{//²»Ñ­»·
+			if(needBezier && index < (int)(m_node.size()) - 1)
+				setBezierSplinePar(m_bezierSpline,index);
+				//m_bezierSpline.init(m_node[index].myPoint,m_bezierPoint[(index << 1) + 1],	
+				//	m_bezierPoint[(index << 1) + 2],m_node[index + 1].myPoint);
+		}
+		if(needBezier)
+			m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(0.0f);	
+		else
+			m_specialPoint.angle = m_node[index].toNextAngle;
+	}else
+	{//ÄæÐÐ
+		m_specialPoint.isEnable = XTrue;
+		m_specialPoint.isEnd = XFalse;
+		m_specialPoint.position = m_node[index].myPoint;
+		m_specialPoint.upNodeOrder = index;
+		m_specialPoint.curLength = 0.0f;
+		for(int i = m_node.size() - 1;i > index;-- i)
+		{
+			m_specialPoint.curLength += m_node[i].toPreviousLength;
+		}
+		m_specialPoint.curLength += distance;
+		m_specialPoint.upNodeLength = m_specialPoint.curLength;
+		if(m_isLoop)
+		{//Ñ­»·
+			if(needBezier)
+			{
+				setBezierSplinePar(m_bezierSpline,index,true);
+				//if(index > 0)
+				//	m_bezierSpline.init(m_node[index].myPoint,
+				//		m_bezierPoint[index << 1],
+				//		m_bezierPoint[(index << 1) - 1],
+				//		m_node[index - 1].myPoint);
+				//else
+				//	m_bezierSpline.init(m_node[0].myPoint,
+				//		m_bezierPoint[0],
+				//		m_bezierPoint[(m_node.size() << 1) - 1],
+				//		m_node[m_node.size() - 1].myPoint);
+			}
+		}else
+		{//²»Ñ­»·
+			if(needBezier && index > 0)
+				setBezierSplinePar(m_bezierSpline,index,true);
+				//m_bezierSpline.init(m_node[index].myPoint,
+				//	m_bezierPoint[index << 1],
+				//	m_bezierPoint[(index << 1) - 1],
+				//	m_node[index - 1].myPoint);
+		}
+		if(needBezier)
+			m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(0.0f);	
+		else
+			m_specialPoint.angle = m_node[index].toPreviousAngle;
+	}
+}
+void XNodeLine::resetSpecialPoint()
+{
+	if(m_node.size() <= 1) return;
+	XBool needBezier = m_withBezier;
+	if(m_node.size() <= 2 && needBezier) needBezier = false;
+	updateData();	//Èç¹ûÓÐ±ØÒª¸üÐÂ²åÖµÊý¾Ý
 	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
 	{//Ë³Ðò
 		m_specialPoint.isEnable = XTrue;
 		m_specialPoint.isEnd = XFalse;
 		m_specialPoint.curLength = 0.0f;
-		m_specialPoint.position.set(m_node[0].myPoint.x,m_node[0].myPoint.y);
+		m_specialPoint.position = m_node[0].myPoint;
 		m_specialPoint.angle = m_node[0].toNextAngle;
 		m_specialPoint.upNodeLength = 0.0f;
 		m_specialPoint.upNodeOrder = 0;
 		if(needBezier)
 		{
-			m_bezierSpline.init(m_node[0].myPoint,m_bezierPoint[1],	m_bezierPoint[2],m_node[1].myPoint);
+			setBezierSplinePar(m_bezierSpline,0);
+			//m_bezierSpline.init(m_node[0].myPoint,m_bezierPoint[1],m_bezierPoint[2],m_node[1].myPoint);
+			m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(0.0f);
+		}else
+		{
+			m_specialPoint.angle = m_node[0].toNextAngle;
 		}
 	}else
 	{//ÄæÐÐ
 		m_specialPoint.isEnable = XTrue;
 		m_specialPoint.isEnd = XFalse;
 		m_specialPoint.curLength = 0.0f;
-		m_specialPoint.position.set(m_node[m_nodeSum - 1].myPoint.x,m_node[m_nodeSum - 1].myPoint.y);
-		m_specialPoint.angle = m_node[m_nodeSum - 1].toPreviousAngle;
+		m_specialPoint.position = m_node[m_node.size() - 1].myPoint;
 		m_specialPoint.upNodeLength = 0.0f;
-		m_specialPoint.upNodeOrder = m_nodeSum - 1;
+		m_specialPoint.upNodeOrder = m_node.size() - 1;
 		if(needBezier)
 		{
-			m_bezierSpline.init(m_node[m_nodeSum - 1].myPoint,m_bezierPoint[(m_nodeSum - 1) << 1],m_bezierPoint[((m_nodeSum - 2) << 1) + 1],m_node[m_nodeSum - 2].myPoint);
+			setBezierSplinePar(m_bezierSpline,m_node.size() - 1,true);
+			//m_bezierSpline.init(m_node[m_node.size() - 1].myPoint,m_bezierPoint[(m_node.size() - 1) << 1],
+			//	m_bezierPoint[((m_node.size() - 2) << 1) + 1],m_node[m_node.size() - 2].myPoint);
+			m_specialPoint.angle = m_bezierSpline.getBezierSplineAngle(0.0f);
+		}else
+		{
+			m_specialPoint.angle = m_node[m_node.size() - 1].toPreviousAngle;
 		}
 	}
 }
-void XNodeLine::setLoop()
+void XNodeLine::setLoop(bool flag)
 {
-	if(m_isACopy) return;//¸±±¾²»ÄÜ½øÐÐÕâ¸ö²Ù×÷
-	if(m_nodeSum < 2) return;	//Ð¡ÓàÁ½¸öµãÊÇ²»ÄÜÑ­»·µÄ
-	//½«µÚÒ»¸öµãºÍ×îºóÒ»¸öµãÁ¬½ÓÆðÀ´
-	m_node[m_nodeSum - 1].toNextAngle = m_node[m_nodeSum - 1].myPoint.getAngle(m_node[0].myPoint);
-	m_node[m_nodeSum - 1].toNextCos = cos(m_node[m_nodeSum - 1].toNextAngle);
-	m_node[m_nodeSum - 1].toNextSin = sin(m_node[m_nodeSum - 1].toNextAngle);
-	m_node[m_nodeSum - 1].toNextLength = m_node[m_nodeSum - 1].myPoint.getLength(m_node[0].myPoint);
-	if(m_isLoop)
-	{//Èç¹ûÒýµ¼ÏßÔ­À´¾ÍÊÇ±ÕºÏµÄ£¬ÕâÀïÐèÒª¼õÈ¥Ô­À´µÄ³¤¶È
-		m_lineLength -= m_node[0].toPreviousLength;
+	if(m_node.size() < 2) 	//Ð¡ÓàÁ½¸öµãÊÇ²»ÄÜÑ­»·µÄ
+	{
+		m_isLoop = flag;
+		return;
 	}
-	m_node[0].toPreviousAngle = m_node[m_nodeSum - 1].toNextAngle + PI;
-	if(m_node[0].toPreviousAngle >= PI2) m_node[0].toPreviousAngle -= PI2;
-	m_node[0].toPreviousCos = cos(m_node[0].toPreviousAngle);
-	m_node[0].toPreviousSin = sin(m_node[0].toPreviousAngle);
-	m_node[0].toPreviousLength = m_node[m_nodeSum - 1].toNextLength;
+	//½«µÚÒ»¸öµãºÍ×îºóÒ»¸öµãÁ¬½ÓÆðÀ´
+	if(flag)
+	{//ÉèÖÃÎªÑ­»·
+		if(m_isLoop)//Èç¹ûÒýµ¼ÏßÔ­À´¾ÍÊÇ±ÕºÏµÄ£¬ÕâÀïÐèÒª¼õÈ¥Ô­À´µÄ³¤¶È
+			m_lineLength -= m_node[0].toPreviousLength;
+		m_node[m_node.size() - 1].setNext(m_node[0]);
+		m_lineLength += m_node[0].toPreviousLength; //¼ÓÉÏÐÂµÄ³¤¶È
+		m_isLoop = XTrue;
+	}else
+	{//È¡ÏûÑ­»·
+		if(m_isLoop)//Èç¹ûÒýµ¼ÏßÔ­À´¾ÍÊÇ±ÕºÏµÄ£¬ÕâÀïÐèÒª¼õÈ¥Ô­À´µÄ³¤¶È
+			m_lineLength -= m_node[0].toPreviousLength;
+		m_node[0].resetToPreviouse();
+		m_node[m_node.size() - 1].resetToNext();
+		if(m_node.size() > 1)
+		{
+			m_node[0].toPreviousAngle = m_node[1].toPreviousAngle;
+			m_node[0].toPreviousCos = m_node[1].toPreviousCos;
+			m_node[0].toPreviousSin = m_node[1].toPreviousSin;
 
-	m_lineLength += m_node[0].toPreviousLength; //¼ÓÉÏÐÂµÄ³¤¶È
-	m_isLoop = XTrue;
+			m_node[m_node.size() - 1].toNextAngle = m_node[m_node.size() - 2].toNextAngle;
+			m_node[m_node.size() - 1].toNextCos = m_node[m_node.size() - 2].toNextCos;
+			m_node[m_node.size() - 1].toNextSin = m_node[m_node.size() - 2].toNextSin;
+		}
+		m_isLoop = XFalse;
+	}
+	m_needUpdateData = true;
 }
 XBool XNodeLine::setACopy(const XNodeLine &temp)
 {
 	if(this == &temp) return XFalse;		//·ÀÖ¹×ÔÉú¿½±´
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-	//ÊÍ·Å×ÔÉíµÄ×ÊÔ´
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
-	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		XMem::XDELETE_ARRAY(m_node);
-		XMem::XDELETE_ARRAY(m_bezierPoint);
-		XMem::XDELETE(m_cp);
-	}
-	m_cp = temp.m_cp;
 
 //	if(m_isACopy == 0)
 //	{//Èç¹û±¾Éí²»ÊÇ¸±±¾ÔòÐèÒªÊÍ·Å×ÊÔ´
@@ -895,44 +1485,46 @@ XBool XNodeLine::setACopy(const XNodeLine &temp)
 //		m_isACopy = 1;
 //	}
 	//¿½±´ÊôÐÔ
+	m_needUpdateData = temp.m_needUpdateData;						//Òýµ¼ÏßÖÐµÄ½Úµã
+	m_isLoop = temp.m_isLoop;					//ÇúÏßÊÇ·ñ±ÕºÏ0²»±ÕºÏ 1±ÕºÏ£¬×¢Òâ±ÕºÏµÄµã£¬Ê×µãºÍÎ²µã²»ÄÜÖØºÏ£¬·ñÔò½«»áÊ§È¥Î²µãµÄ·½Ïò
 	m_isVisible = temp.m_isVisible;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
+	m_bezierPoint = temp.m_bezierPoint;	
+	m_bezierSpline = temp.m_bezierSpline;						//Òýµ¼ÏßÖÐµÄ½Úµã
+
 	m_myOrder = temp.m_myOrder;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
 	m_node = temp.m_node;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_bezierPoint = temp.m_bezierPoint;	
 	m_leadMode = temp.m_leadMode;				//ÇúÏßµÄÒýµ¼Ä£Ê½
-	m_isLoop = temp.m_isLoop;					//ÇúÏßÊÇ·ñ±ÕºÏ0²»±ÕºÏ 1±ÕºÏ£¬×¢Òâ±ÕºÏµÄµã£¬Ê×µãºÍÎ²µã²»ÄÜÖØºÏ£¬·ñÔò½«»áÊ§È¥Î²µãµÄ·½Ïò
-
 	m_offsetPosition = temp.m_offsetPosition;	//ÕûÌåÇúÏßµÄÆ«ÒÆÎ»ÖÃ
 	m_scale = temp.m_scale;						//Õâ¸öÇúÏßµÄËù·Å±ÊÐèÒª°´ÕÕ±ÈÀý½øÐÐ£¬²»ÄÜ¹»Ê¹ÓÃË®Æ½ºÍ´¹Ö±µÄ²»Í¬±ÈÀý£¬·ñÔò½«»áÔì³ÉÇúÏßÖÐ½Ç¶ÈµÄÊ§ÕæÑÏÖØ
-//	m_isACopy = temp.m_isACopy;					//ÊÇ·ñÊÇÒ»¸ö¸±±¾
-
 	m_lineLength = temp.m_lineLength;			//ÇúÏßµÄ×Ü³¤¶È
-	m_nodeSum = temp.m_nodeSum;					//Òýµ¼ÇúÏßÖÐµÄÒýµ¼½ÚµãµÄÊýÁ¿
+	m_bezLineLength = temp.m_bezLineLength;			//ÇúÏßµÄ×Ü³¤¶È
+	m_withAngleSmooth = temp.m_withAngleSmooth;	
+
 	m_specialPoint = temp.m_specialPoint;		//ÇúÏßÉÏµÄÒÆ¶¯µÄµã
+	m_withBezier = temp.m_withBezier;	
 	return XTrue;
 }
 XNodeLine::XNodeLine(const XNodeLine &temp)
 {
 	//m_node = XMem::createArrayMem<XNode>(m_maxNodeSum);
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-	m_cp = temp.m_cp;
-
 	//¿½±´ÊôÐÔ
-	m_isVisible = temp.m_isVisible;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
-	m_myOrder = temp.m_myOrder;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
-	m_leadMode = temp.m_leadMode;				//ÇúÏßµÄÒýµ¼Ä£Ê½
+	m_needUpdateData = temp.m_needUpdateData;						//Òýµ¼ÏßÖÐµÄ½Úµã
 	m_isLoop = temp.m_isLoop;					//ÇúÏßÊÇ·ñ±ÕºÏ0²»±ÕºÏ 1±ÕºÏ£¬×¢Òâ±ÕºÏµÄµã£¬Ê×µãºÍÎ²µã²»ÄÜÖØºÏ£¬·ñÔò½«»áÊ§È¥Î²µãµÄ·½Ïò
+	m_isVisible = temp.m_isVisible;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
+	m_bezierPoint = temp.m_bezierPoint;	
+	m_bezierSpline = temp.m_bezierSpline;						//Òýµ¼ÏßÖÐµÄ½Úµã
 
+	m_myOrder = temp.m_myOrder;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
+	m_node = temp.m_node;						//Òýµ¼ÏßÖÐµÄ½Úµã
+	m_leadMode = temp.m_leadMode;				//ÇúÏßµÄÒýµ¼Ä£Ê½
 	m_offsetPosition = temp.m_offsetPosition;	//ÕûÌåÇúÏßµÄÆ«ÒÆÎ»ÖÃ
 	m_scale = temp.m_scale;						//Õâ¸öÇúÏßµÄËù·Å±ÊÐèÒª°´ÕÕ±ÈÀý½øÐÐ£¬²»ÄÜ¹»Ê¹ÓÃË®Æ½ºÍ´¹Ö±µÄ²»Í¬±ÈÀý£¬·ñÔò½«»áÔì³ÉÇúÏßÖÐ½Ç¶ÈµÄÊ§ÕæÑÏÖØ
-
 	m_lineLength = temp.m_lineLength;			//ÇúÏßµÄ×Ü³¤¶È
-	m_nodeSum = temp.m_nodeSum;					//Òýµ¼ÇúÏßÖÐµÄÒýµ¼½ÚµãµÄÊýÁ¿
+	m_bezLineLength = temp.m_bezLineLength;			//ÇúÏßµÄ×Ü³¤¶È
+	m_withAngleSmooth = temp.m_withAngleSmooth;	
+
 	m_specialPoint = temp.m_specialPoint;		//ÇúÏßÉÏµÄÒÆ¶¯µÄµã
-	m_node = temp.m_node;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_bezierPoint = temp.m_bezierPoint;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_needUpdateData = temp.m_needUpdateData;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_bezierSpline = temp.m_bezierSpline;						//Òýµ¼ÏßÖÐµÄ½Úµã
+	m_withBezier = temp.m_withBezier;	
 //	for(int i = 0;i < m_nodeSum;++ i)
 //	{
 //		m_node[i] = temp.m_node[i];
@@ -940,92 +1532,77 @@ XNodeLine::XNodeLine(const XNodeLine &temp)
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
 #endif
-
-	m_isACopy = XFalse;
 }
 XNodeLine& XNodeLine::operator = (const XNodeLine& temp)
 {
 	if(&temp == this) return *this;
-	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-	//ÊÍ·Å×ÔÉíµÄ×ÊÔ´
-	if(m_cp != NULL && -- m_cp->m_counter <= 0)
-	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		XMem::XDELETE_ARRAY(m_node);
-		XMem::XDELETE_ARRAY(m_bezierPoint);
-		XMem::XDELETE(m_cp);
-	}
-	m_cp = temp.m_cp;
-
 //	if(m_node == NULL || m_isACopy != 0)
 //	{//×ÊÔ´ÒÑ¾­±»ÊÍ·Å£¬»òÕß×ÊÔ´²»ÊôÓÚ×Ô¼º£¬ÔòÕâÀïÖØÐÂ·ÖÅäÄÚ´æ¿Õ¼ä
 //		m_node = XMem::createArrayMem<XNode>(m_maxNodeSum);
 //	}
-	m_isVisible = temp.m_isVisible;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
-	m_myOrder = temp.m_myOrder;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
-	m_leadMode = temp.m_leadMode;				//ÇúÏßµÄÒýµ¼Ä£Ê½
+	m_needUpdateData = temp.m_needUpdateData;						//Òýµ¼ÏßÖÐµÄ½Úµã
 	m_isLoop = temp.m_isLoop;					//ÇúÏßÊÇ·ñ±ÕºÏ0²»±ÕºÏ 1±ÕºÏ£¬×¢Òâ±ÕºÏµÄµã£¬Ê×µãºÍÎ²µã²»ÄÜÖØºÏ£¬·ñÔò½«»áÊ§È¥Î²µãµÄ·½Ïò
+	m_isVisible = temp.m_isVisible;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
+	m_bezierPoint = temp.m_bezierPoint;	
+	m_bezierSpline = temp.m_bezierSpline;						//Òýµ¼ÏßÖÐµÄ½Úµã
 
+	m_myOrder = temp.m_myOrder;					//±¾ÉíÒýµ¼ÏßµÄ±àºÅ
+	m_node = temp.m_node;						//Òýµ¼ÏßÖÐµÄ½Úµã
+	m_leadMode = temp.m_leadMode;				//ÇúÏßµÄÒýµ¼Ä£Ê½
 	m_offsetPosition = temp.m_offsetPosition;	//ÕûÌåÇúÏßµÄÆ«ÒÆÎ»ÖÃ
 	m_scale = temp.m_scale;						//Õâ¸öÇúÏßµÄËù·Å±ÊÐèÒª°´ÕÕ±ÈÀý½øÐÐ£¬²»ÄÜ¹»Ê¹ÓÃË®Æ½ºÍ´¹Ö±µÄ²»Í¬±ÈÀý£¬·ñÔò½«»áÔì³ÉÇúÏßÖÐ½Ç¶ÈµÄÊ§ÕæÑÏÖØ
-
 	m_lineLength = temp.m_lineLength;			//ÇúÏßµÄ×Ü³¤¶È
-	m_nodeSum = temp.m_nodeSum;					//Òýµ¼ÇúÏßÖÐµÄÒýµ¼½ÚµãµÄÊýÁ¿
+	m_bezLineLength = temp.m_bezLineLength;			//ÇúÏßµÄ×Ü³¤¶È
+	m_withAngleSmooth = temp.m_withAngleSmooth;	
+
 	m_specialPoint = temp.m_specialPoint;		//ÇúÏßÉÏµÄÒÆ¶¯µÄµã
-	m_node = temp.m_node;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_bezierPoint = temp.m_bezierPoint;	
-	m_needUpdateData = temp.m_needUpdateData;						//Òýµ¼ÏßÖÐµÄ½Úµã
-	m_bezierSpline = temp.m_bezierSpline;						//Òýµ¼ÏßÖÐµÄ½Úµã
+	m_withBezier = temp.m_withBezier;	
+
 //	for(int i = 0;i < m_nodeSum;++ i)
 //	{
 //		m_node[i] = temp.m_node[i];
 //	}
-	m_isACopy = XFalse;
-
 	return *this;
 }
-XBool XNodeLine::isInRect(float x,float y)
+XBool XNodeLine::isInRect(const XVec2& p)
 {
 //	return getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
-	XVector2 point(x,y);
-	XVector2 pointS,pointE;
-	if(m_nodeSum == 1)
+	XVec2 pointS,pointE;
+	if(m_node.size() == 1)
 	{//Ö»ÓÐÒ»¸öµãµÄ½ÚµãÇúÏß£¬ÅÐ¶ÏÁ½µã¼äµÄ¾àÀë
-		if(point.getLength(XVector2(m_node[0].myPoint.x * m_scale.x + m_offsetPosition.x,
-			m_node[0].myPoint.y * m_scale.y + m_offsetPosition.y)) <= 5) return XTrue;
+		if(p.getLength(m_node[0].myPoint * m_scale + m_offsetPosition) <= 5) return XTrue;
 		else return XFalse;
 	}else
-	if(m_nodeSum >= 1)
+	if(m_node.size() >= 1)
 	{
-		for(int i = 0;i < m_nodeSum - 1;++ i)
+		for(int i = 0;i < (int)(m_node.size()) - 1;++ i)
 		{
-			pointS.set(m_node[i].myPoint.x * m_scale.x + m_offsetPosition.x,
-				m_node[i].myPoint.y * m_scale.y + m_offsetPosition.y);
-			pointE.set(m_node[i + 1].myPoint.x * m_scale.x + m_offsetPosition.x,
-				m_node[i + 1].myPoint.y * m_scale.y + m_offsetPosition.y);
-			if(XMath::minDistancePointToLine(point,pointS,pointE) <= 5) return XTrue;
+			pointS.set(m_node[i].myPoint * m_scale + m_offsetPosition);
+			pointE.set(m_node[i + 1].myPoint * m_scale + m_offsetPosition);
+			if(XMath::minDistancePointToLine(p,pointS,pointE) <= 5) return XTrue;
 		}
 	}
 	return XFalse;
 }
-XVector2 XNodeLine::getBox(int order)
+XVec2 XNodeLine::getBox(int order)
 {//ÕâÀïÐèÒª·µ»Ø°üÎ§ºÐ
 	float left = 0.0f;
 	float right = 0.0f;
 	float top = 0.0f;
 	float bottom = 0.0f;
-	if(m_nodeSum > 0)
+	if(m_node.size() > 0)
 	{//Èç¹û½ÚµãÇúÏßÖÐÓÐ½Úµã£¬ÔòÕâÀï¼ÆËã½ÚµãµÄ°üÎ§ºÐ
 		left = m_node[0].myPoint.x;
 		right = m_node[0].myPoint.x;
 		top = m_node[0].myPoint.y;
 		bottom = m_node[0].myPoint.y;
 		//ÏÂÃæ¿ªÊ¼±éÀúËùÓÐµÄµã£¬Ñ°ÕÒ°üÎ§ºÐ×Ó
-		for(int i = 1;i < m_nodeSum;++ i)
+		for(auto it = m_node.begin() + 1;it != m_node.end();++ it)
 		{
-			if(m_node[i].myPoint.x > right) right = m_node[i].myPoint.x;
-			if(m_node[i].myPoint.x < left) left = m_node[i].myPoint.x;
-			if(m_node[i].myPoint.y > bottom) bottom = m_node[i].myPoint.y;
-			if(m_node[i].myPoint.y < top) top = m_node[i].myPoint.y;
+			if(it->myPoint.x > right) right = it->myPoint.x;else
+			if(it->myPoint.x < left) left = it->myPoint.x;
+			if(it->myPoint.y > bottom) bottom = it->myPoint.y;else
+			if(it->myPoint.y < top) top = it->myPoint.y;
 		}
 	}
 	//ÏÂÃæ¶Ô°üÎ§ºÐ×Ó½øÐÐÀ©Õ¹£¬·ÀÖ¹µ¥µã»òÕßµ¥ÏßµÄÎÊÌâ
@@ -1035,39 +1612,1027 @@ XVector2 XNodeLine::getBox(int order)
 	bottom += 5;
 	switch(order)
 	{
-	case 0:return XVector2(left * m_scale.x + m_offsetPosition.x,	top * m_scale.y + m_offsetPosition.y);
-	case 1:return XVector2(right * m_scale.x + m_offsetPosition.x,	top * m_scale.y + m_offsetPosition.y);
-	case 2:return XVector2(right * m_scale.x + m_offsetPosition.x,	bottom * m_scale.y + m_offsetPosition.y);
-	case 3:return XVector2(left * m_scale.x + m_offsetPosition.x,	bottom * m_scale.y + m_offsetPosition.y);
+	case 0:return XVec2(left,	top) * m_scale + m_offsetPosition;
+	case 1:return XVec2(right,	top) * m_scale + m_offsetPosition;
+	case 2:return XVec2(right,	bottom) * m_scale + m_offsetPosition;
+	case 3:return XVec2(left,	bottom) * m_scale + m_offsetPosition;
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 void XNodeLine::draw()
 {
-	for(int j = 0;j < m_nodeSum - 1;++ j)
+	updateData();
+	if(m_node.size() <= 0) return;
+	for(unsigned int j = 0;j < m_node.size() - 1;++ j)
 	{
 		//Ãè»æÕâ¸öµã
 		if(j == 0)
 		{//µÚÒ»¸öµãÓÃÂÌÉ«
-			XRender::drawPoint(m_node[j].myPoint.x * m_scale.x + m_offsetPosition.x,
-				m_node[j].myPoint.y * m_scale.y + m_offsetPosition.y,4,0.0f,1.0f,0.0f,1.0f);
+			XRender::drawPoint(m_node[j].myPoint * m_scale + m_offsetPosition,4,XFColor::green);
 		}else
 		{//ÆäËûµãÓÃºìÉ«
-			XRender::drawPoint(m_node[j].myPoint.x * m_scale.x + m_offsetPosition.x,
-				m_node[j].myPoint.y * m_scale.y + m_offsetPosition.y,4,1.0f,0.0f,0.0f,1.0f);
+			XRender::drawPoint(m_node[j].myPoint * m_scale + m_offsetPosition,4,XFColor::red);
 		}
 		XRender::drawLine(m_node[j].myPoint * m_scale + m_offsetPosition,m_node[j + 1].myPoint * m_scale + m_offsetPosition);
 	}
-	XRender::drawPoint(m_node[m_nodeSum - 1].myPoint.x * m_scale.x + m_offsetPosition.x,
-		m_node[m_nodeSum - 1].myPoint.y * m_scale.y + m_offsetPosition.y,4,1.0f,0.0f,0.0f,1.0f);
+	XRender::drawPoint(m_node[m_node.size() - 1].myPoint * m_scale + m_offsetPosition,4,XFColor::red);
 	if(m_isLoop)
 	{
-		XRender::drawLine(m_node[m_nodeSum - 1].myPoint * m_scale + m_offsetPosition,m_node[0].myPoint * m_scale + m_offsetPosition);
+		XRender::drawLine(m_node[m_node.size() - 1].myPoint * m_scale + m_offsetPosition,m_node[0].myPoint * m_scale + m_offsetPosition);
 	}
-	XVector2 tmpVec(m_specialPoint.position.x * m_scale.x,m_specialPoint.position.y * m_scale.y);
+	XVec2 tmpVec(m_specialPoint.position.x * m_scale.x,m_specialPoint.position.y * m_scale.y);
 	XRender::drawLine(tmpVec,m_specialPoint.angle * RADIAN2DEGREE,20.0f);
 	//ÔÚµ±Ç°ËùÔÚµãÎ»ÖÃ»­Ò»¸öÊ®×Ö
 	XRender::drawCross(tmpVec,10.0f * m_scale.x);
+	if(m_withBezier && m_node.size() >= 2)
+	{
+		m_bezierSpline.draw();
+		XBezierSpline tmpBz;
+		if(m_isLoop)
+		{
+			for(int i = 0;i < m_node.size();++ i)
+			{
+				setBezierSplinePar(tmpBz,i);
+				tmpBz.draw();
+			}
+		}else
+		{
+			for(int i = 0;i < ((int)m_node.size()) - 1;++ i)
+			{
+				setBezierSplinePar(tmpBz,i);
+				tmpBz.draw();
+			}
+		}
+	}
+}
+XVec2 XNodeLine::getRatePosition(float rate,int *pIndex,bool needBezier)
+{//Ä¿Ç°ÉÐ²»Ö§³ÖneedBezier,Õâ¸öº¯Êý²¢Ã»ÓÐÑÏ¸ñ²âÊÔ¹ý
+	if(m_node.size() <= 0) return XVec2::zero;
+	if(rate < 0.0f)
+	{
+		if(pIndex != NULL) *pIndex = 0;
+		return m_offsetPosition + m_node[0].myPoint * m_scale;
+	}
+	if(rate > 1.0f)
+	{
+		if(m_isLoop)
+		{
+			if(pIndex != NULL) *pIndex = 0;
+			return m_offsetPosition + m_node[0].myPoint * m_scale;
+		}else
+		{
+			if(pIndex != NULL) *pIndex = m_node.size() - 1;
+			return m_offsetPosition + m_node[m_node.size() - 1].myPoint * m_scale;
+		}
+	}
+//	float tmpLine = m_lineLength * rate;
+//	float tmpLen = 0.0f;
+	if(m_isLoop)
+	{
+		if(rate > 1.0f) return m_offsetPosition + m_node[0].myPoint * m_scale;
+		float tmpLine = m_lineLength * rate;
+		float tmpLen = 0.0f;
+		for(int i = 0;i < m_node.size();++ i)
+		{
+			if(tmpLen + m_node[i].toNextLength >= tmpLine)
+			{//Ä¿±êµã¾ÍÔÚÕâÁ½¸öÖ®¼ä
+				if(pIndex != NULL) *pIndex = i;
+				if(i != (int)(m_node.size()) - 1)
+					return m_offsetPosition + 
+						XMath::lineSlerp(m_node[i].myPoint,m_node[i + 1].myPoint,(tmpLine - tmpLen) / m_node[i].toNextLength) * m_scale;
+				else
+					return m_offsetPosition + 
+						XMath::lineSlerp(m_node[i].myPoint,m_node[0].myPoint,(tmpLine - tmpLen) / m_node[i].toNextLength) * m_scale;
+			}else
+			{
+				tmpLen += m_node[i].toNextLength;
+			}
+		}
+	}else
+	{
+		if(rate > 1.0f) return m_offsetPosition + m_node[m_node.size() - 1].myPoint * m_scale;
+		float tmpLine = m_lineLength * rate;
+		float tmpLen = 0.0f;
+		for(int i = 0;i < (int)(m_node.size()) - 1;++ i)
+		{
+			if(tmpLen + m_node[i].toNextLength >= tmpLine)
+			{//Ä¿±êµã¾ÍÔÚÕâÁ½¸öÖ®¼ä
+				if(pIndex != NULL) *pIndex = i;
+				return m_offsetPosition +
+					XMath::lineSlerp(m_node[i].myPoint,m_node[i + 1].myPoint,(tmpLine - tmpLen) / m_node[i].toNextLength) * m_scale;
+			}else
+			{
+				tmpLen += m_node[i].toNextLength;
+			}
+		}
+	}
+	return XVec2::zero;
+}
+XVec2 XNodeLine::getRate(const XVec2& pos,int *pIndex,bool needBezier)
+{
+	if(m_node.size() <= 0) return XVec2(-1.0f);
+	double a,b,c;	//Ö±Ïß²ÎÊý
+	XVec2 tmp;
+	float distance = -1.0f;
+	XVec2 tmpPos = (pos - m_offsetPosition) / m_scale;
+	float tmpDis;
+	int curIndex = -1;
+	XVec2 curPoint;	//×î½üµÄ´¹×ãµÄÎ»ÖÃ
+	if(m_isLoop)
+	{
+		for(int i = 0;i < m_node.size();++ i)
+		{
+			XMath::twoPointLine(m_node[i].myPoint,m_node[(i + 1) % m_node.size()].myPoint,&a,&b,&c);
+			tmp = XMath::curtatePointToLine(tmpPos,a,b,c);
+			if(XMath::isInArea(tmp.x,m_node[i].myPoint.x,m_node[(i + 1) % m_node.size()].myPoint.x) &&
+				XMath::isInArea(tmp.y,m_node[i].myPoint.y,m_node[(i + 1) % m_node.size()].myPoint.y))
+			{
+				tmpDis = tmpPos.getLengthSqure(tmp);
+				if(distance < 0.0f || tmpDis < distance)
+				{
+					curPoint = tmp;
+					distance = tmpDis;
+					curIndex = i;
+				}
+			}
+		}
+	}else
+	{
+		for(int i = 0;i < (int)(m_node.size()) - 1;++ i)
+		{
+			XMath::twoPointLine(m_node[i].myPoint,m_node[i + 1].myPoint,&a,&b,&c);
+			tmp = XMath::curtatePointToLine(tmpPos,a,b,c);
+			if(XMath::isInArea(tmp.x,m_node[i].myPoint.x,m_node[i + 1].myPoint.x) &&
+				XMath::isInArea(tmp.y,m_node[i].myPoint.y,m_node[i + 1].myPoint.y))
+			{
+				tmpDis = tmpPos.getLengthSqure(tmp);
+				if(distance < 0.0f || tmpDis < distance)
+				{
+					curPoint = tmp;
+					distance = tmpDis;
+					curIndex = i;
+				}
+			}
+		}
+	}
+	//¼ÆËãÍê´¹×ãÖ®ºóÐèÒª¼ÆËã¶¥µã£¬Èç¹ûÀë¶¥µãµÄ¾àÀë¸ü½ü£¬Ôò¿¼ÂÇÎª¶¥µã
+	for(int i = 0;i < m_node.size();++ i)
+	{
+		tmpDis = tmpPos.getLengthSqure(m_node[i].myPoint);
+		if(distance < 0.0f || tmpDis < distance)
+		{
+			curPoint = m_node[i].myPoint;
+			distance = tmpDis;
+			curIndex = i;
+		}
+	}
+	if(pIndex != NULL) *pIndex = curIndex;
+	if(curIndex >= 0)
+	{
+		XVec2 ret;
+		ret.x = 0.0f;
+		for(int i = 0;i < curIndex;++ i)
+		{
+			ret.x += m_node[i].toNextLength;
+		}
+		ret.x += m_node[curIndex].myPoint.getLength(curPoint);
+		ret.x = ret.x / m_lineLength;
+		ret.y = sqrt(distance);
+		//printf("%f,%f\n",ret.x,ret.y);
+		return ret;
+	}
+	return XVec2(-1.0f);
+}
+void XNodeLine::setLeadMode(XLeadMode mode)
+{
+	if(m_leadMode == mode) return;	//Èç¹ûÃ»ÓÐ·¢Éú±ä»¯£¬ÔòÖ±½ÓÍË³ö
+	switch (mode)
+	{
+	case LEAD_MODE_FOREWORD:m_leadMode = LEAD_MODE_FOREWORD;break;
+	case LEAD_MODE_BACKWORD:m_leadMode = LEAD_MODE_BACKWORD;break;
+	}
+	if(!m_specialPoint.isEnable || m_specialPoint.isEnd) return;	//²»ÐèÒª¼ÆËã
+	//ÏÂÃæ¸üÐÂµãµÄÊý¾Ý
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		if(m_isLoop)
+		{
+			m_specialPoint.curLength = m_lineLength - m_node[0].toPreviousLength - m_specialPoint.curLength;
+			if(m_specialPoint.curLength < 0.0f) m_specialPoint.curLength += m_lineLength;
+			m_specialPoint.upNodeOrder = m_specialPoint.upNodeOrder - 1;
+			if(m_specialPoint.upNodeOrder < 0) m_specialPoint.upNodeOrder += m_node.size();
+			//ÕâÀïÐèÒª¼ÆËã³¤¶È
+			m_specialPoint.upNodeLength = 0.0f;
+			for(int i = 1;i <= m_specialPoint.upNodeOrder;++ i)
+				m_specialPoint.upNodeLength += m_node[i].toPreviousLength;
+		}else
+		{
+			m_specialPoint.curLength = m_lineLength - m_specialPoint.curLength;
+			m_specialPoint.upNodeOrder = m_specialPoint.upNodeOrder - 1;
+			if(m_specialPoint.upNodeOrder < 0) m_specialPoint.upNodeOrder += m_node.size();
+			//ÕâÀïÐèÒª¼ÆËã³¤¶È
+			m_specialPoint.upNodeLength = 0.0f;
+			for(int i = 0;i <= m_specialPoint.upNodeOrder;++ i)
+				m_specialPoint.upNodeLength += m_node[i].toPreviousLength;
+		}
+		updateBezierInfo();
+	}else
+	{//ÄæÐò
+		if(m_isLoop)
+		{
+			m_specialPoint.curLength = m_lineLength - m_node[0].toPreviousLength - m_specialPoint.curLength;
+			if(m_specialPoint.curLength < 0.0f) m_specialPoint.curLength += m_lineLength;
+			m_specialPoint.upNodeOrder = (m_specialPoint.upNodeOrder + 1) % m_node.size();
+			//ÕâÀïÐèÒª¼ÆËã³¤¶È
+			m_specialPoint.upNodeLength = 0.0f;
+			for(int i = m_node.size() - 2;i >= m_specialPoint.upNodeOrder;-- i)
+				m_specialPoint.upNodeLength += m_node[i].toNextLength;
+			if(m_specialPoint.upNodeLength >= m_lineLength) m_specialPoint.upNodeLength -= m_lineLength;
+		}else
+		{
+			m_specialPoint.curLength = m_lineLength - m_specialPoint.curLength;
+			m_specialPoint.upNodeOrder = (m_specialPoint.upNodeOrder + 1) % m_node.size();
+			//ÕâÀïÐèÒª¼ÆËã³¤¶È
+			m_specialPoint.upNodeLength = 0.0f;
+			for(int i = m_node.size() - 1;i >= m_specialPoint.upNodeOrder;-- i)
+				m_specialPoint.upNodeLength += m_node[i].toNextLength;
+			if(m_specialPoint.upNodeLength >= m_lineLength) m_specialPoint.upNodeLength -= m_lineLength;
+		}
+		updateBezierInfo();
+	}
+}
+void XNodeLine::setWithBezier(bool flag)
+{
+	if(!m_withBezier && flag)
+		updateBezierInfo();
+	m_withBezier = flag;
+}
+void XNodeLine::bezierOptimization()
+{
+	updateData();
+	float average = 0.0f;
+	if(m_node.size() > 2 && m_withBezier)
+	{
+		if(m_isLoop)
+		{
+			average = m_lineLength / m_node.size();
+			for(int i = 0;i < m_node.size();++ i)
+			{
+				if(m_node[i].toNextLength > average)
+				{
+					if(i < m_node.size() - 1)
+					{
+						addOneNode((m_node[i].myPoint + m_node[i + 1].myPoint) * 0.5f,i + 1);
+						-- i;
+					}else
+					{
+						addOneNode((m_node[i].myPoint + m_node[0].myPoint) * 0.5f,0);
+						i = 0;
+					}
+				}
+			}
+		}else
+		{
+			average = m_lineLength / (m_node.size() - 1.0f);
+			for(int i = 0;i < (int)(m_node.size()) - 1;++ i)
+			{
+				if(m_node[i].toNextLength > average)
+				{
+					addOneNode((m_node[i].myPoint + m_node[i + 1].myPoint) * 0.5f,i + 1);
+				}
+			}
+		}
+	}
+	updateData();
+}
+void XNodeLine::getCrossInfo(const XNodeLine &line,std::vector<XNodeCrossInfo> &ret)
+{//Ä¿Ç°±´Èû¶ûÏà½»£¬½»µãµÄ¼ÆËã²¢Ã»ÓÐÀíÂÛÉÏµÄÊýÑ§¹«Ê½£¬ËùÒÔÄ¿Ç°¼ÙÉèÎª·Ç±´Èû¶û½»µã
+	ret.clear();
+	if(m_node.size() <= 0 || line.getNodeSum() <= 0) return;	//Ã»ÓÐ×ã¹»µÄÊý¾Ý
+	if(m_node.size() == 1) return;//Ö»ÓÐÒ»¸öµãµÄÌØÊâÇé¿ö(Ä¿Ç°ÉÐÎ´´¦Àí)
+	if(line.getNodeSum() == 1) return;//Ö»ÓÐÒ»¸öµãµÄÌØÊâÐÎ¿ö(Ä¿Ç°ÉÐÎ´´¦Àí)
+	int endA = m_node.size() - 1;
+	if(m_isLoop) endA = m_node.size();
+	int endB = line.getNodeSum() - 1;
+	if(line.getIsLoop()) endB = line.getNodeSum();
+	if(m_withBezier || line.getWithBezier())
+	{//Èç¹ûÓÐÒ»ÌõÇúÏßÖ§³Ö±´Èû¶û²åÖµ£¬ÔòÐèÒª½øÐÐ±´Èû¶û²åÖµ¼ÆËã
+		std::vector<XVec2> intersectPoints;
+		XBezierSpline bsA,bsB;
+		if(m_withBezier && line.getWithBezier())
+		{//¶¼´æÔÚ±´Èû¶ûÆ½»¬£¬ÏÂÃæÒÀ´Î¼ÆËãËùÓÐ±´Èû¶ûÇúÏßµÄ½»µã
+			for(int i = 0;i < endA; ++ i)
+			{
+				setBezierSplinePar(bsA,i);
+				for(int j = 0;j < endB;++ j)
+				{
+					line.setBezierSplinePar(bsB,j);
+					intersectPoints.clear();
+					XMath::getBezIntersectPointsEx(bsA,bsB,intersectPoints);
+					for(auto kt = intersectPoints.begin();kt != intersectPoints.end();++ kt)
+					{
+						XNodeCrossInfo tmp;
+						tmp.pos = bsA.getBezierSplineValue(kt->x);
+						tmp.indexA = i;
+						tmp.indexB = j;
+						tmp.angleA = bsA.getBezierSplineAngle(kt->x);
+						tmp.angleB = bsB.getBezierSplineAngle(kt->y);
+						ret.push_back(tmp);
+					}
+				}
+			}
+		}else
+		if(m_withBezier)
+		{//Ö»ÓÐ×ÔÉíÓÐÆ½»¬
+			XVec2 p0,p1;
+			for(int i = 0;i < endA; ++ i)
+			{
+				setBezierSplinePar(bsA,i);
+				for(int j = 0;j < endB;++ j)
+				{
+					p0 = line.getNode(j);
+					p1 = line.getNode((j + 1) % line.getNodeSum());
+					bsB.init(p0,(p0 + p1) * 0.333333f,(p0 + p1) * 0.666667f,p1);
+					intersectPoints.clear();
+					XMath::getBezIntersectPointsEx(bsA,bsB,intersectPoints);
+					for (auto kt = intersectPoints.begin(); kt != intersectPoints.end(); ++kt)
+					{
+						XNodeCrossInfo tmp;
+						tmp.pos = bsA.getBezierSplineValue(kt->x);
+						tmp.indexA = i;
+						tmp.indexB = j;
+						tmp.angleA = bsA.getBezierSplineAngle(kt->x);
+						tmp.angleB = bsB.getBezierSplineAngle(kt->y);
+						ret.push_back(tmp);
+					}
+				}
+			}
+		}else
+		{//Ö»ÓÐ¶Ô·½ÓÐÆ½»¬
+			XVec2 p0,p1;
+			for(int i = 0;i < endA; ++ i)
+			{
+				p0 = getNode(i);
+				p1 = getNode((i + 1) % getNodeSum());
+				bsA.init(p0,(p0 + p1) * 0.333333f,(p0 + p1) * 0.666667f,p1);
+				for(int j = 0;j < endB;++ j)
+				{
+					setBezierSplinePar(bsB,j);
+					intersectPoints.clear();
+					XMath::getBezIntersectPointsEx(bsA,bsB,intersectPoints);
+					for (auto kt = intersectPoints.begin(); kt != intersectPoints.end(); ++kt)
+					{
+						XNodeCrossInfo tmp;
+						tmp.pos = bsA.getBezierSplineValue(kt->x);
+						tmp.indexA = i;
+						tmp.indexB = j;
+						tmp.angleA = bsA.getBezierSplineAngle(kt->x);
+						tmp.angleB = bsB.getBezierSplineAngle(kt->y);
+						ret.push_back(tmp);
+					}
+				}
+			}
+		}
+	}else
+	{
+		for(int i = 0;i < endA; ++ i)
+		{
+			for(int j = 0;j < endB;++ j)
+			{
+				//·½°¸2£ºÏÈÅÐ¶ÏÊÇ·ñÏà½»£¬ÔÙ¼ÆËã½»µãµÄÎ»ÖÃ
+				if(XMath::isLineIntersect(m_node[i].myPoint,m_node[(i + 1) % m_node.size()].myPoint,
+					line.getNode(j),line.getNode((j + 1) % line.getNodeSum())))
+				{
+					XNodeCrossInfo tmp;
+					tmp.pos = XMath::crossPointLineToLine(m_node[i].myPoint,m_node[(i + 1) % m_node.size()].myPoint,
+						line.getNode(j),line.getNode((j + 1) % line.getNodeSum()));
+					tmp.indexA = i;
+					tmp.indexB = j;
+					tmp.angleA = m_node[i].toNextAngle;
+					tmp.angleB = line.getNodeInfo(j).toNextAngle;
+					ret.push_back(tmp);
+				}
+				//·½°¸1£ºÏÈ¼ÆËã½»µã£¬ÔÙÅÐ¶Ï½»µãÊÇ·ñÔÚ·¶Î§ÄÚ
+				//XVec2 pos = XMath::crossPointLineToLine(m_node[i].myPoint,m_node[(i + 1) % m_node.size()].myPoint,
+				//	line.getNode(j),line.getNode((j + 1) % line.getNodeSum()));
+				////ÅÐ¶Ï½»µãÊÇ·ñÔÚ·¶Î§ÄÚ
+				//if(XMath::isInArea(pos.x,m_node[i].myPoint.x,m_node[(i + 1) % m_node.size()].myPoint.x) && 
+				//	XMath::isInArea(pos.y,m_node[i].myPoint.y,m_node[(i + 1) % m_node.size()].myPoint.y) &&
+				//	XMath::isInArea(pos.x,line.getNode(j).x,line.getNode((j + 1) % line.getNodeSum()).x) &&
+				//	XMath::isInArea(pos.y,line.getNode(j).y,line.getNode((j + 1) % line.getNodeSum()).y))
+				//{//Èç¹û¶¼ÔÚ·¶Î§ÄÚ£¬ÔòÊÇÓÐÐ§µÄµã
+				//	XNodeCrossInfo tmp;
+				//	tmp.pos = pos;
+				//	tmp.indexA = i;
+				//	tmp.indexB = j;
+				//	tmp.angleA = m_node[i].toNextAngle;
+				//	tmp.angleB = line.getNodeInfo(j).toNextAngle;
+				//	ret.push_back(tmp);
+				//}
+			}
+		}
+	}
+}
+XNodeMatchInfo XNodeLine::simpleMatch(const XNodeLine &line)
+{//ÉÐÎ´ÊµÏÖ
+	XNodeMatchInfo ret;
+	return ret;	
+}
+XNodePointInfo XNodeLine::getNodePointInfo(float distance)	//¼ÆËã¾àÀë¿ªÊ¼µã¾àÀëÎªdistanceµÄµãµÄÐÅÏ¢
+{//×¢Òâ£ºÕâ¸öº¯ÊýÉÐÎ´¾­¹ý²âÊÔ
+	updateData();
+	XNodePointInfo ret;
+	if(m_node.size() <= 0) return ret;	//Êý¾Ý·Ç·¨
+	if(m_withBezier)
+	{
+		if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+		{//Ë³Ðò
+			if(m_isLoop)
+			{//Ñ­»·
+				if(distance >= m_bezLineLength || distance <= 0.0f)
+				{//Íê³É
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,0);
+						ret.angle = tmpBS.getBezierSplineAngle(0.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[0].toNextAngle;
+					}
+					ret.isEnd = (distance > 0.0f);
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = 0;i < m_node.size(); ++ i)
+					{
+						tmpDis += m_node[i].toBezNextLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toBezNextLength;
+						break;
+					}
+					ret.isEnd = false;
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,ret.upIndex);
+						ret.pos = tmpBS.getBezierSplineValueEx(tmpDis);
+						ret.angle = tmpBS.getBezierSplineAngleEx(tmpDis);
+					}else
+					{//Ö±Ïß
+						ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[(ret.upIndex + 1) % m_node.size()].myPoint,tmpDis);
+						if(m_withAngleSmooth)
+						{
+							float tmpAngle = m_node[(ret.upIndex + 1) % m_node.size()].toNextAngle - m_node[ret.upIndex].toNextAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (PI2 + tmpAngle);
+							}
+						}else ret.angle = m_node[ret.upIndex].toNextAngle;
+					}
+					return ret;
+				}
+			}else
+			{//²»Ñ­»·
+				if(distance >= m_bezLineLength)
+				{//Íê³É
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,m_node.size() - 2);
+						ret.angle = tmpBS.getBezierSplineAngle(1.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[m_node.size() - 1].toNextAngle;
+					}
+					ret.isEnd = true;
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				if(distance <= 0.0f)
+				{//ÉÐÎ´¿ªÊ¼
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,0);
+						ret.angle = tmpBS.getBezierSplineAngle(0.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[0].toNextAngle;
+					}
+					ret.isEnd = false;
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = 0;i < m_node.size(); ++ i)
+					{
+						tmpDis += m_node[i].toBezNextLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toBezNextLength;
+						break;
+					}
+					ret.isEnd = false;
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,ret.upIndex);
+						ret.pos = tmpBS.getBezierSplineValueEx(tmpDis);
+						ret.angle = tmpBS.getBezierSplineAngleEx(tmpDis);
+					}else
+					{//Ö±Ïß
+						ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex + 1].myPoint,tmpDis);
+						if(m_withAngleSmooth)
+						{
+							float tmpAngle = m_node[ret.upIndex + 1].toNextAngle - m_node[ret.upIndex].toNextAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (PI2 + tmpAngle);
+							}
+						}else ret.angle = m_node[ret.upIndex].toNextAngle;
+					}
+					return ret;
+				}
+			}
+		}else
+		{//ÄæÐò
+			if(m_isLoop)
+			{//Ñ­»·
+				if(distance >= m_bezLineLength || distance <= 0.0f)
+				{//Íê³É
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,m_node.size() - 1,true);
+						ret.angle = tmpBS.getBezierSplineAngle(0.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[m_node.size() - 1].toPreviousAngle;
+					}
+					ret.isEnd = (distance > 0.0f);
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = m_node.size() - 1;i >= 0;-- i)
+					{
+						tmpDis += m_node[i].toBezPreviousLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toBezPreviousLength;
+						break;
+					}
+					ret.isEnd = false;
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,ret.upIndex,true);
+						ret.pos = tmpBS.getBezierSplineValueEx(tmpDis);
+						ret.angle = tmpBS.getBezierSplineAngleEx(tmpDis);
+					}else
+					{//Ö±Ïß
+						if(ret.upIndex == 0)
+							ret.pos = XMath::lineSlerp(m_node[0].myPoint,m_node[m_node.size() - 1].myPoint,tmpDis);
+						else
+							ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex - 1].myPoint,tmpDis);
+						if(m_withAngleSmooth)
+						{
+							float tmpAngle;
+							if(ret.upIndex == 0)
+								tmpAngle = m_node[m_node.size() - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+							else
+								tmpAngle = m_node[ret.upIndex - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (PI2 + tmpAngle);
+							}
+						}else ret.angle = m_node[ret.upIndex].toPreviousAngle;
+					}
+					return ret;
+				}
+			}else
+			{//²»Ñ­»·
+				if(distance >= m_bezLineLength)
+				{//Íê³É
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,1,true);
+						ret.angle = tmpBS.getBezierSplineAngle(1.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[0].toPreviousAngle;
+					}
+					ret.isEnd = true;
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+					return ret;
+				}else
+				if(distance <= 0.0f)
+				{//ÉÐÎ´¿ªÊ¼
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,m_node.size() - 1,true);
+						ret.angle = tmpBS.getBezierSplineAngle(0.0f);
+					}else
+					{//Ö±Ïß
+						ret.angle = m_node[m_node.size() - 1].toPreviousAngle;
+					}
+					ret.isEnd = false;
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = m_node.size() - 1;i >= 0;-- i)
+					{
+						tmpDis += m_node[i].toBezPreviousLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toBezPreviousLength;
+						break;
+					}
+					ret.isEnd = false;
+					if(m_node.size() > 2)
+					{
+						XBezierSpline tmpBS;
+						setBezierSplinePar(tmpBS,ret.upIndex,true);
+						ret.pos = tmpBS.getBezierSplineValueEx(tmpDis);
+						ret.angle = tmpBS.getBezierSplineAngleEx(tmpDis);
+					}else
+					{//Ö±Ïß
+						ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex - 1].myPoint,tmpDis);
+						if(m_withAngleSmooth)
+						{
+							float tmpAngle = m_node[ret.upIndex - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+							if(tmpAngle <= PI && tmpAngle >= -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * tmpAngle;
+							}else
+							if(tmpAngle > PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (tmpAngle - PI2);
+							}else
+							if(tmpAngle < -PI)
+							{
+								ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (PI2 + tmpAngle);
+							}
+						}else ret.angle = m_node[ret.upIndex].toPreviousAngle;
+					}
+					return ret;
+				}
+			}
+		}	
+	}else
+	{
+		if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+		{//Ë³Ðò
+			if(m_isLoop)
+			{//Ñ­»·
+				if(distance >= m_lineLength || distance <= 0.0f)
+				{//Íê³É
+					ret.angle = m_node[0].toNextAngle;
+					ret.isEnd = (distance > 0.0f);
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = 0;i < m_node.size(); ++ i)
+					{
+						tmpDis += m_node[i].toNextLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toNextLength;
+						break;
+					}
+					ret.isEnd = false;
+					ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[(ret.upIndex + 1) % m_node.size()].myPoint,tmpDis);
+					if(m_withAngleSmooth)
+					{
+						float tmpAngle = m_node[(ret.upIndex + 1) % m_node.size()].toNextAngle - m_node[ret.upIndex].toNextAngle;
+						if(tmpAngle <= PI && tmpAngle >= -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * tmpAngle;
+						}else
+						if(tmpAngle > PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (tmpAngle - PI2);
+						}else
+						if(tmpAngle < -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (PI2 + tmpAngle);
+						}
+					}else ret.angle = m_node[ret.upIndex].toNextAngle;
+					return ret;
+				}
+			}else
+			{//²»Ñ­»·
+				if(distance >= m_lineLength)
+				{//Íê³É
+					ret.angle = m_node[m_node.size() - 1].toNextAngle;
+					ret.isEnd = true;
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				if(distance <= 0.0f)
+				{//ÉÐÎ´¿ªÊ¼
+					ret.angle = m_node[0].toNextAngle;
+					ret.isEnd = false;
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = 0;i < m_node.size(); ++ i)
+					{
+						tmpDis += m_node[i].toNextLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toNextLength;
+						break;
+					}
+					ret.isEnd = false;
+					ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex + 1].myPoint,tmpDis);
+					if(m_withAngleSmooth)
+					{
+						float tmpAngle = m_node[ret.upIndex + 1].toNextAngle - m_node[ret.upIndex].toNextAngle;
+						if(tmpAngle <= PI && tmpAngle >= -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * tmpAngle;
+						}else
+						if(tmpAngle > PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (tmpAngle - PI2);
+						}else
+						if(tmpAngle < -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toNextAngle + tmpDis * (PI2 + tmpAngle);
+						}
+					}else ret.angle = m_node[ret.upIndex].toNextAngle;
+				}
+				return ret;
+			}
+		}else
+		{//ÄæÐò
+			if(m_isLoop)
+			{//Ñ­»·
+				if(distance >= m_lineLength || distance <= 0.0f)
+				{//Íê³É
+					ret.angle = m_node[m_node.size() - 1].toPreviousAngle;
+					ret.isEnd = (distance > 0.0f);
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = m_node.size() - 1;i >= 0;-- i)
+					{
+						tmpDis += m_node[i].toPreviousLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toPreviousLength;
+						break;
+					}
+					ret.isEnd = false;
+
+					if(ret.upIndex == 0)
+						ret.pos = XMath::lineSlerp(m_node[0].myPoint,m_node[m_node.size() - 1].myPoint,tmpDis);
+					else
+						ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex - 1].myPoint,tmpDis);
+					if(m_withAngleSmooth)
+					{
+						float tmpAngle;
+						if(ret.upIndex == 0)
+							tmpAngle = m_node[m_node.size() - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+						else
+							tmpAngle = m_node[ret.upIndex - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+						if(tmpAngle <= PI && tmpAngle >= -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * tmpAngle;
+						}else
+						if(tmpAngle > PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (tmpAngle - PI2);
+						}else
+						if(tmpAngle < -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (PI2 + tmpAngle);
+						}
+					}else ret.angle = m_node[ret.upIndex].toPreviousAngle;
+
+					return ret;
+				}
+			}else
+			{//²»Ñ­»·
+				if(distance >= m_lineLength)
+				{//Íê³É
+					ret.angle = m_node[0].toPreviousAngle;
+					ret.isEnd = true;
+					ret.pos = m_node[0].myPoint;
+					ret.upIndex = 0;
+					return ret;
+				}else
+				if(distance <= 0.0f)
+				{//ÉÐÎ´¿ªÊ¼
+					ret.angle = m_node[m_node.size() - 1].toPreviousAngle;
+					ret.isEnd = false;
+					ret.pos = m_node[m_node.size() - 1].myPoint;
+					ret.upIndex = m_node.size() - 1;
+					return ret;
+				}else
+				{//Ã»µ½ÖÕµã
+					float tmpDis = 0.0f;
+					for(int i = m_node.size() - 1;i >= 0;-- i)
+					{
+						tmpDis += m_node[i].toPreviousLength;
+						if(tmpDis <= distance) continue;
+						ret.upIndex = i;
+						tmpDis = 1.0f - (tmpDis - distance) / m_node[i].toPreviousLength;
+						break;
+					}
+					ret.isEnd = false;
+					ret.pos = XMath::lineSlerp(m_node[ret.upIndex].myPoint,m_node[ret.upIndex - 1].myPoint,tmpDis);
+					if(m_withAngleSmooth)
+					{
+						float tmpAngle = m_node[ret.upIndex - 1].toPreviousAngle - m_node[ret.upIndex].toPreviousAngle;
+						if(tmpAngle <= PI && tmpAngle >= -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * tmpAngle;
+						}else
+						if(tmpAngle > PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (tmpAngle - PI2);
+						}else
+						if(tmpAngle < -PI)
+						{
+							ret.angle = m_node[ret.upIndex].toPreviousAngle + tmpDis * (PI2 + tmpAngle);
+						}
+					}else ret.angle = m_node[ret.upIndex].toPreviousAngle;
+					return ret;
+				}
+			}
+		}
+	}
+}
+float XNodeLine::getDistanceFromStart(int index)				//¼ÆËãÄ³¸ö½Úµã¾àÀëÆðÊ¼µãÖ®¼äµÄ¾àÀë
+{
+	float ret = 0.0f;
+	if(m_node.size() <= 0) return ret;
+	if((m_leadMode & LEAD_MODE_FOREWORD) != 0)
+	{//Ë³Ðò
+		if(index <= 0) return ret;
+		if(index >= (int)(m_node.size()) - 1) index = (int)(m_node.size()) - 1;
+
+		if(m_withBezier)
+		{
+			for(int i = 0;i < index;++ i)
+			{
+				ret += m_node[i].toBezNextLength;
+			}
+		}else
+		{
+			for(int i = 0;i < index;++ i)
+			{
+				ret += m_node[i].toNextLength;
+			}
+		}
+		return ret;
+	}else
+	{
+		if(index <= 0) index = 0;
+		if(index >= (int)(m_node.size()) - 1) return ret;
+
+		if(m_withBezier)
+		{
+			for(int i = (int)(m_node.size()) - 1;i > index;-- i)
+			{
+				ret += m_node[i].toBezPreviousLength;
+			}
+		}else
+		{
+			for(int i = (int)(m_node.size()) - 1;i > index;-- i)
+			{
+				ret += m_node[i].toPreviousLength;
+			}
+		}
+		return ret;
+	}
+}
+void XNodeLine::setBezierSplinePar(XBezierSpline &sp,int index,bool isBack)const	//ÉèÖÃµÚindex¸öµãµÄ±´Èû¶ûÇúÏßµÄ²ÎÊý
+{
+	if(index < 0 || index >= m_node.size()) return;	//·Ç·¨µÄÊý¾Ý
+	if(isBack)	
+	{
+		if(index > 0)
+			sp.init(m_node[index].myPoint,m_bezierPoint[index << 1],m_bezierPoint[(index << 1) - 1],m_node[index - 1].myPoint);
+		else
+			sp.init(m_node[0].myPoint,m_bezierPoint[0],	m_bezierPoint[(m_node.size() << 1) - 1],m_node[m_node.size() - 1].myPoint);
+	}else
+	{
+		if(index < (int)(m_node.size()) - 1)	//²»ÊÇ×îºóÒ»¸öµã
+			sp.init(m_node[index].myPoint,m_bezierPoint[(index << 1) + 1],m_bezierPoint[(index << 1) + 2],m_node[index + 1].myPoint);
+		else
+			sp.init(m_node[index].myPoint,m_bezierPoint[(index << 1) + 1],m_bezierPoint[0],m_node[0].myPoint);
+	}
+}
+//»ñÈ¡±äÐÎÏµÊý£¬·µ»ØÖµÔ½´ó»ûÐÎÏµÊýÔ½´ó
+float XNodeLine::getDeformityRate()const
+{//×î´ó³¤¶ÈÓë×îÐ¡³¤¶ÈµÄ±ÈÖµ
+	if(m_node.size() <= 1) return 1.0f;
+	float minLen = 0.0f;
+	float maxLen = 0.0f;
+	if(m_withBezier)
+	{
+		minLen = m_node[0].toBezNextLength;
+		maxLen = m_node[0].toBezNextLength;
+		if(m_isLoop)
+		{
+			for(std::vector<XNode>::const_iterator it = m_node.begin() + 1;it != m_node.end();++ it)
+			{
+				if(it->toBezNextLength > maxLen)
+					maxLen = it->toBezNextLength;
+				if(it->toBezNextLength < minLen)
+					minLen = it->toBezNextLength;
+			}
+		}else
+		{
+			for(std::vector<XNode>::const_iterator it = m_node.begin() + 1;it != m_node.end() - 1;++ it)
+			{
+				if(it->toBezNextLength > maxLen)
+					maxLen = it->toBezNextLength;
+				if(it->toBezNextLength < minLen)
+					minLen = it->toBezNextLength;
+			}
+		}
+	}else
+	{
+		minLen = m_node[0].toNextLength;
+		maxLen = m_node[0].toNextLength;
+		if(m_isLoop)
+		{
+			for(std::vector<XNode>::const_iterator it = m_node.begin() + 1;it != m_node.end();++ it)
+			{
+				if(it->toNextLength > maxLen)
+					maxLen = it->toNextLength;
+				if(it->toNextLength < minLen)
+					minLen = it->toNextLength;
+			}
+		}else
+		{
+			for(std::vector<XNode>::const_iterator it = m_node.begin() + 1;it != m_node.end() - 1;++ it)
+			{
+				if(it->toNextLength > maxLen)
+					maxLen = it->toNextLength;
+				if(it->toNextLength < minLen)
+					minLen = it->toNextLength;
+			}
+		}
+	}
+	if(minLen <= 0.0f) return FLT_MAX;
+	return maxLen / minLen;
 }
 #if !WITH_INLINE_FILE
 #include "XNodeLine.inl"

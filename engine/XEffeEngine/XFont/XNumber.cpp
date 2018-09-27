@@ -12,7 +12,7 @@
 namespace XE{
 XNumber::XNumber()
 :m_isInited(XFalse)
-,m_rotateBasicPoint(0.0f,0.0f)
+,m_rotateBasicPoint(0.0f)
 ,m_angleSin(0.0f)
 ,m_angleCos(1.0f)
 ,m_needUpdateData(XFalse)
@@ -24,8 +24,8 @@ XNumber::XNumber()
 {//字符串保存的时候使用倒序保存，但是符号使用正常的顺序例如：-12.5%，将会保存为-5.12%
 	m_string = XMem::createArrayMem<char>(MAX_NUMBER_LENGTH);
 	m_string[0] = '\0';
-	m_textPosition = XMem::createArrayMem<XVector2>(MAX_NUMBER_LENGTH);
-	m_textRect = XMem::createArrayMem<XRect>(MAX_NUMBER_LENGTH);
+	m_textPosition.resize(MAX_NUMBER_LENGTH);
+	m_textRect.resize(MAX_NUMBER_LENGTH);
 	m_objType = OBJ_NUMBER;
 }
 XNumber::~XNumber()
@@ -37,8 +37,6 @@ XBool XNumber::release()
 {
 	if(!m_isInited) return XFalse;
 	XMem::XDELETE_ARRAY(m_string);
-	XMem::XDELETE_ARRAY(m_textPosition);
-	XMem::XDELETE_ARRAY(m_textRect);
 	m_sprite.release();
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
 	XObjManager.decreaseAObject(this);
@@ -46,21 +44,21 @@ XBool XNumber::release()
 	m_isInited = XFalse;
 	return XTrue;
 }
-XBool XNumber::init(const char *fileName,const XVector2 &size,const XVector2 &layout,XResourcePosition resoursePosition)
+XBool XNumber::init(const char *fileName,const XVec2& size,const XVec2& layout,XResPos resPos)
 {
 	if(m_isInited) return XFalse;
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
+	m_position.reset();
+	m_setPosition.reset();
 	setAngle(0);
 	m_alpha = 1.0f;
 	m_distance = 0;
 	m_size = size;
 	if(layout.x <= 0 || layout.y <= 0) return XFalse;
 	m_layout = layout;
-	m_scale.set(1.0,1.0);
+	m_scale.set(1.0f);
 	if(!m_sprite.init(fileName,m_resoursePosition,POINT_LEFT_TOP)) return XFalse;
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
@@ -116,47 +114,48 @@ bool XNumber::loadFromWeb(const char *filename)		//从网页中读取资源
 
 //尚未完成
 XBool XNumber::initEx(const char *fileName,	//字体图片的名字
-		XResourcePosition resoursePosition)
+		XResPos resPos)
 {
 	if(m_isInited ||
 		fileName == NULL) return XFalse;
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
+	m_position.reset();
+	m_setPosition.reset();
 	setAngle(0);
 	m_alpha = 1.0f;
 	m_distance = 0;
 
 	//下面从文件中读取数据
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	strcpy(tempFilename,fileName);
+	strcpy_s(tempFilename,MAX_FILE_NAME_LENGTH,fileName);
 	int len = strlen(tempFilename);
-	tempFilename[len - 3] = 't';
-	tempFilename[len - 2] = 'x';
-	tempFilename[len - 1] = 't';
+	memcpy(tempFilename + len - 3, &"txt", 3);
+	//tempFilename[len - 3] = 't';
+	//tempFilename[len - 2] = 'x';
+	//tempFilename[len - 1] = 't';
 
 	switch(m_resoursePosition)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(tempFilename)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(tempFilename)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(tempFilename)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(tempFilename) && !loadFromFolder(tempFilename) &&
 			!loadFromWeb(tempFilename)) return false;
 		break;
 	}
 
-	m_scale.set(1.0,1.0);
+	m_scale.set(1.0f);
 	if(!m_sprite.init(fileName,m_resoursePosition,POINT_LEFT_TOP)) return XFalse;
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
@@ -169,24 +168,24 @@ XBool XNumber::initEx(const char *fileName,	//字体图片的名字
 }
 XBool XNumber::initFromTTF(const char *filename,	//ttf字体库的名称
 		int fontSize,
-		XResourcePosition resoursePosition)
+		XResPos resPos)
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse;
 
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
-	setAngle(0);
+	m_position.reset();
+	m_setPosition.reset();
+	setAngle(0.0f);
 	m_alpha = 1.0f;
 	m_distance = 0;
 
-	int fontOrder = XTTFFont.loadTTFFile(filename,fontSize,m_resoursePosition);
+	int fontOrder = XTTFFont.loadTTFFile(filename, fontSize, fontSize, m_resoursePosition);
 	if(fontOrder < 0) return XFalse;
 	unsigned int tex;
-	XVector2 layout;
+	XVec2 layout;
 	if(!XTTFFont.getTextureNumber(fontOrder,tex,layout)) return XFalse;
 	//释放资源
 	XTTFFont.releaseTTFFile(fontOrder);
@@ -198,7 +197,7 @@ XBool XNumber::initFromTTF(const char *filename,	//ttf字体库的名称
 	if(layout.x <= 0 || layout.y <= 0) return XFalse;
 	m_layout = layout;
 
-	m_scale.set(1.0,1.0);
+	m_scale.set(1.0f);
 	//if(!m_sprite.init(fileName,m_resoursePosition,POINT_LEFT_TOP)) return XFalse;
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
@@ -300,16 +299,14 @@ void XNumber::updateData()
 	{//居中，每个文字左移半个宽度
 		for(int i = 0;i < m_needShowTextSum;++ i)
 		{
-			m_textPosition[i].x -= m_maxPixelWidth * 0.5f * m_angleCos;
-			m_textPosition[i].y -= m_maxPixelWidth * 0.5f * m_angleSin;
+			m_textPosition[i] -= XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
 		}
 	}else
 	if(m_alignmentMode == NUMBER_ALIGNMENT_MODE_RIGHT)
 	{//右对齐，每个文字左移整个宽度
 		for(int i = 0;i < m_needShowTextSum;++ i)
 		{
-			m_textPosition[i].x -= m_maxPixelWidth * m_angleCos;
-			m_textPosition[i].y -= m_maxPixelWidth * m_angleSin;
+			m_textPosition[i] -= XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
 		}
 	}
 }
@@ -331,7 +328,7 @@ XBool XNumber::setNumber(int temp)
 		if(curCharPoint >= MAX_NUMBER_LENGTH) return XFalse;
 		if(temp == 0) break;
 	}
-	int i = 0;;
+	int i = 0;
 	if(tempNumber[0] < '0' || tempNumber[0] > '9')
 	{//如果是符号位则不变
 		m_string[0] = tempNumber[0];
@@ -436,13 +433,10 @@ XBool XNumber::setACopy(const XNumber &temp)
 	m_maxPixelHeight = temp.m_maxPixelHeight;
 	m_needUpdateData = temp.m_needUpdateData;
 	m_needShowTextSum = temp.m_needShowTextSum;
-	for(int i = 0;i < MAX_NUMBER_LENGTH;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
 
-	strcpy(m_string,temp.m_string);
+	strcpy_s(m_string,MAX_NUMBER_LENGTH,temp.m_string);
 	m_position = temp.m_position;	//字体的位置
 	m_setPosition = temp.m_setPosition;	//字体的位置
 	m_angle = temp.m_angle;			//字体的角度
@@ -478,13 +472,10 @@ XNumber& XNumber::operator = (const XNumber& temp)
 	m_maxPixelHeight = temp.m_maxPixelHeight;
 	m_needUpdateData = temp.m_needUpdateData;
 	m_needShowTextSum = temp.m_needShowTextSum;
-	for(int i = 0;i < MAX_NUMBER_LENGTH;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
 
-	strcpy(m_string,temp.m_string);
+	strcpy_s(m_string,MAX_NUMBER_LENGTH,temp.m_string);
 	m_position = temp.m_position;	//字体的位置
 	m_setPosition = temp.m_setPosition;	//字体的位置
 	m_angle = temp.m_angle;			//字体的角度
@@ -505,49 +496,43 @@ XNumber& XNumber::operator = (const XNumber& temp)
 
 	return * this;
 }
-XVector2 XNumber::getBox(int order)
+XVec2 XNumber::getBox(int order)
 {//暂时不考虑角度
 	if(m_alignmentMode == NUMBER_ALIGNMENT_MODE_LEFT)
 	{
 		switch(order)
 		{
 		case 0: return m_setPosition;
-		case 1: return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos,
-			m_setPosition.y + m_maxPixelWidth * m_angleSin); 
-		case 2: return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos); 
-		case 3: return XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y + m_maxPixelHeight * m_angleCos);
+		case 1: return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
+		case 2: return m_setPosition + XVec2(m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+			m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos); 
+		case 3: return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight;
 		}
 	}else
 	if(m_alignmentMode == NUMBER_ALIGNMENT_MODE_MIDDLE)
 	{
 		switch(order)
 		{
-		case 0: return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
-			m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin);
-		case 1: return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
-			m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin);
-		case 2: return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
-		case 3: return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+		case 0: return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
+		case 1: return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
+		case 2: return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+			m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+		case 3: return m_setPosition + XVec2(- m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+			- m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
 		}
 	}else
 	if(m_alignmentMode == NUMBER_ALIGNMENT_MODE_RIGHT)
 	{
 		switch(order)
 		{
-		case 0: return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos,
-			m_setPosition.y - m_maxPixelWidth * m_angleSin);
+		case 0: return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
 		case 1: return m_setPosition;
-		case 2: return XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y + m_maxPixelHeight * m_angleCos);
-		case 3: return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-			m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
+		case 2: return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight;
+		case 3: return m_setPosition + XVec2(- m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+			- m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
 		}
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 #if !WITH_INLINE_FILE
 #include "XNumber.inl"

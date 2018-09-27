@@ -1,4 +1,5 @@
 #include "XStdHead.h"
+#if AUDIO_MATHOD == 1
 #include "XSoundFmod.h"
 namespace XE{
 bool XSoundFmod::init()
@@ -89,16 +90,16 @@ void XSoundFmod::update(float stepTime)
 		}
 	}
 }
-int XSoundFmod::musicFadeIn(void * p,int loop,int ms) 
+void* XSoundFmod::musicFadeIn(void * p,int loop,int ms) 
 {
-	if(m_musicState != SOUND_STATE_NORMAL) return 0;
-	if(playMusic(p,loop) < 0) return -1;
+	if(m_musicState != SOUND_STATE_NORMAL) return nullptr;
+	if(playMusic(p,loop) == nullptr) return nullptr;
 	m_musicState = SOUND_STATE_FADEIN;
 	m_musicTimer = 0;
 	m_curMusicVolume = getMusicVolume();
 	setMusicVolume(0);
 	m_musicFadeTime = ms;
-	return (int)m_musicChannel;
+	return m_musicChannel;
 }
 int XSoundFmod::musicFadeOut(int ms) 
 {
@@ -109,7 +110,7 @@ int XSoundFmod::musicFadeOut(int ms)
 	m_musicFadeTime = ms;
 	return 1;
 }
-int XSoundFmod::soundFadeIn(void * p,int loop,int ms) 
+void* XSoundFmod::soundFadeIn(void * p,int loop,int ms) 
 {
 	XSoundFadeData tmp;
 	tmp.state = SOUND_STATE_FADEIN;
@@ -122,7 +123,7 @@ int XSoundFmod::soundFadeIn(void * p,int loop,int ms)
 	m_soundFadeList.push_back(tmp);
 	return tmp.channel;
 }
-int XSoundFmod::soundFadeOut(int c,int ms) 
+int XSoundFmod::soundFadeOut(void* c,int ms)
 {
 	for(unsigned int i = 0;i < m_soundFadeList.size();++ i)
 	{
@@ -197,4 +198,6 @@ void XSoundFmod::setCallBack(SND_CALLBACK_FUN fun, void *arg)
 		m_isCallBackOpen = true;
 	}
 }	//ипн╢й╣ож
+void XSoundFmod::setSpeed(void* c, float spd) { FMOD_Channel_SetFrequency((FMOD_CHANNEL *)c, XEG.getAudioSampleRate() * spd); }
 }
+#endif

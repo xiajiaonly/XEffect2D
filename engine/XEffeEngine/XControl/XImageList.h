@@ -29,11 +29,11 @@ protected:
 	void draw();	
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);				//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);				//对于鼠标动作的响应函数
 	XBool keyboardProc(int,XKeyState){return XFalse;}	//返回是否触发按键动作
 private:
 	float m_buttonWidth;	//左右按钮的宽度
-	XVector2 m_imageSize;	//列表中的图片宽度
+	XVec2 m_imageSize;	//列表中的图片宽度
 	int m_showImageSum;
 	int m_curSelectImageIndex;	//当前选择的图片编号
 	int m_curShowImageIndex;	//当前显示的图片的起始编号
@@ -49,7 +49,7 @@ private:
 	static void ctrlProc(void *,int,int);
 public:
 	XBool initWithoutSkin(float buttonWidth,	//左右按钮的宽度
-		const XVector2 &imageSize,	//图片的尺寸
+		const XVec2& imageSize,	//图片的尺寸
 		int showImageSum);	//显示图片的数量
 	XBool addImage(const char * filename);
 	XBool addImage(const XTextureData &tex);	//尚未实现
@@ -66,28 +66,28 @@ public:
 	}
 	~XImageList() {release();}
 	void release();
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	void setTextColor(const XFColor&) {;}	//设置字体的颜色
-	XFColor getTextColor() const {return XFColor::white;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return XFColor::white;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 	void setCallbackFun(void (* funInit)(void *,int),
 		void (* funRelease)(void *,int),
 		void (* funSelectChange)(void *,int),
 		void *pClass = NULL);
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}
 	//void setLostFocus();	//设置失去焦点
 	void disable();
 	void enable();

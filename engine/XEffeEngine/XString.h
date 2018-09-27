@@ -17,13 +17,8 @@ private:
 	char * m_patt;
 public:
 	XBool init(const char *patt);
-	XBool search(const char *text,int &position);
-	XSunday()
-		:m_isInited(XTrue)
-		,m_patt(NULL)
-	{
-		m_shift = XMem::createArrayMem<int>(m_maxCharsSum);
-	}
+	XBool search(const char *text, int &position);
+	XSunday();
 	~XSunday();
 };
 namespace XString
@@ -32,6 +27,7 @@ namespace XString
 	extern XBool sundaySearch(const char *text,const char *patt,int &position);
 	//使用kmp算法在字符串中查找制定的字符串
 	extern XBool kmpSearch(const char *text,const char *m,int &pos);
+	static std::string gNullStr = "";
 }
 }
 #endif

@@ -3,7 +3,8 @@
 namespace XE{
 namespace XMem
 {
-	unsigned char *spliceData(unsigned char * baseBuff, int &baseLen, int &offset, const unsigned char * addBuff, int len)
+	unsigned char *spliceData(unsigned char *baseBuff, int &baseLen, int &offset, 
+		const void * addBuff, int len)
 	{
 		if (addBuff == NULL) return baseBuff;
 		if (offset + len > baseLen || baseBuff == NULL)
@@ -28,8 +29,17 @@ namespace XMem
 			return baseBuff;
 		}
 	}
+	void randomMem(void *mem,int size)
+	{
+		if(mem == NULL || size <= 0) return;
+		unsigned char *tmp = (unsigned char *)mem;
+		for(int i = 0; i < size;++ i)
+		{
+			tmp[i] = XRand::random(256);
+		}
+	}
 }
-	bool XBuffer::pushData(const unsigned char *data,int len)	//向队列中添加数据
+	bool XBuffer::pushData(const void *data,int len)	//向队列中添加数据
 	{
 		if(data == NULL || len <= 0) return false;
 		//下面将数据加入
@@ -42,7 +52,7 @@ namespace XMem
 		m_usage += len;
 		return true;
 	}
-	bool XBuffer::pushAData(int data)
+	bool XBuffer::pushAData(unsigned char data)
 	{
 		//下面将数据加入
 		if(m_buffSize - m_usage < 1)
@@ -57,17 +67,37 @@ namespace XMem
 	}
 	bool XBuffer::resize(int size)
 	{
-		if(size <= 0) return false;
+		if(size <= 0) return false;		
+		size = XMath::fit4(size);	//这里做四字节对其，防止出现太多碎片
 		if(size == m_buffSize) return true;
-		unsigned char *tmp = m_pData;
+		unsigned char* tmp = m_pData;
 		m_pData = XMem::createArrayMem<unsigned char>(size);
 		if(m_pData == NULL)
 		{//内存分配失败
 			m_pData = tmp;
+			LogStr("MemError!");
 			return false;
 		}
 		//目前的策略，丢弃以前的数据，比较合适的策略是尽可能多的保存原有的数据(尚未实现)
 		m_usage = 0;
+		XMem::XDELETE_ARRAY(tmp);
+		m_buffSize = size;
+		return true;
+	}
+	bool XBuffer::resizeEx(int size)
+	{
+		if(size <= 0) return false;		
+		size = XMath::fit4(size);	//这里做四字节对其，防止出现太多碎片
+		if(size == m_buffSize) return true;
+		unsigned char* tmp = m_pData;
+		m_pData = XMem::createArrayMem<unsigned char>(size);
+		if(m_pData == NULL)
+		{//内存分配失败
+			m_pData = tmp;
+			LogStr("MemError!");
+			return false;
+		}
+		memcpy(m_pData, tmp, m_buffSize);
 		XMem::XDELETE_ARRAY(tmp);
 		m_buffSize = size;
 		return true;

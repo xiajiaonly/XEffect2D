@@ -15,6 +15,7 @@ std::string objectTypeStr[] = {
 	"OBJ_FONTUNICODE",	//显示字符的物件
 	"OBJ_FONTX",			//显示字符的物件
 	"OBJ_NODELINE",		//节点曲线的物件
+	"OBJ_TURNBOARD",		//节点曲线的物件
 	"OBJ_CONTROL",		//控件的物件
 };
 void XObjectBasic::updateChildPos()
@@ -61,7 +62,7 @@ void XObjectBasic::updateChildAngle()
 	{//寻找到自己的编号
 		if(m_parent->m_childList[i] == this)
 		{
-			m_parent->m_childRelativeAngle[i] = getAngle() - m_parent->getAngle();;
+			m_parent->m_childRelativeAngle[i] = getAngle() - m_parent->getAngle();
 			break;
 		}
 	}
@@ -70,14 +71,14 @@ void XObjectBasic::updateChildAlpha()
 {
 	for(unsigned int i = 0;i < m_childList.size();++ i)
 	{
-		m_childList[i]->setAlpha(getColor().fA);
+		m_childList[i]->setAlpha(getColor().a);
 	}
 }
 void XObjectBasic::updateChildColor()
 {
 	for(unsigned int i = 0;i < m_childList.size();++ i)
 	{
-		m_childList[i]->setColor(getColor().fR,getColor().fG,getColor().fB,getColor().fA);
+		m_childList[i]->setColor(getColor().r,getColor().g,getColor().b,getColor().a);
 	}
 }
 void XObjectBasic::updateChildVisible()

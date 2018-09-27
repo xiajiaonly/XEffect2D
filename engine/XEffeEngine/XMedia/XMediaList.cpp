@@ -41,29 +41,29 @@ bool XMediaList::loadFromFile(const char * filename)	//从文件中读取列表
 bool XMediaList::saveToFile(const char * filename)
 {
 	std::string filenameStr;
-	if(filename == NULL) filenameStr = DEFAULT_PLAY_LIST_FILENAME;
+	if (filename == NULL) filenameStr = DEFAULT_PLAY_LIST_FILENAME;
 	else filenameStr = filename;
 
 	TiXmlDocument doc(filenameStr);
-	TiXmlDeclaration declaration("1.0","gb2312","yes");
+	TiXmlDeclaration declaration("1.0", "gb2312", "yes");
 	doc.InsertEndChild(declaration);
 	TiXmlElement elmRoot("root");
 
-	if(!XXml::addLeafNode(elmRoot,"playMode",XString::toString((int)(m_playMode)))) return false;
-	if(!XXml::addLeafNode(elmRoot,"loopTimes",XString::toString(m_loopTimes))) return false;
-	for(unsigned int i = 0;i < m_playList.size();++ i)
+	if (!XXml::addLeafNode(elmRoot, "playMode", XString::toString((int)(m_playMode)))) return false;
+	if (!XXml::addLeafNode(elmRoot, "loopTimes", XString::toString(m_loopTimes))) return false;
+	for (unsigned int i = 0; i < m_playList.size(); ++i)
 	{
-		TiXmlElement elmNode("itemInfo");  
-		if(!XXml::addLeafNode(elmNode,"headDelayTime",XString::toString(m_playList[i].m_headDelayTime))) return false;
-		if(!XXml::addLeafNode(elmNode,"loopTimes",XString::toString(m_playList[i].m_loopTimes))) return false;
-		if(!XXml::addLeafNode(elmNode,"loopHeadDelayTime",XString::toString(m_playList[i].m_loopHeadDelayTime))) return false;
-		if(!XXml::addLeafNode(elmNode,"videoFilename",m_playList[i].m_videoFilename)) return false;
-		if(!XXml::addLeafNode(elmNode,"loopEndDelayTime",XString::toString(m_playList[i].m_loopEndDelayTime))) return false;
-		if(!XXml::addLeafNode(elmNode,"endDelayTime",XString::toString(m_playList[i].m_endDelayTime))) return false;
-		if(!XXml::addLeafNode(elmNode,"stopAtEnd",m_playList[i].m_stopAtEnd)) return false;
-		if(elmRoot.InsertEndChild(elmNode) == NULL) return false;  
+		TiXmlElement elmNode("itemInfo");
+		if (!XXml::addLeafNode(elmNode, "headDelayTime", XString::toString(m_playList[i].m_headDelayTime))) return false;
+		if (!XXml::addLeafNode(elmNode, "loopTimes", XString::toString(m_playList[i].m_loopTimes))) return false;
+		if (!XXml::addLeafNode(elmNode, "loopHeadDelayTime", XString::toString(m_playList[i].m_loopHeadDelayTime))) return false;
+		if (!XXml::addLeafNode(elmNode, "videoFilename", m_playList[i].m_videoFilename)) return false;
+		if (!XXml::addLeafNode(elmNode, "loopEndDelayTime", XString::toString(m_playList[i].m_loopEndDelayTime))) return false;
+		if (!XXml::addLeafNode(elmNode, "endDelayTime", XString::toString(m_playList[i].m_endDelayTime))) return false;
+		if (!XXml::addLeafNode(elmNode, "stopAtEnd", m_playList[i].m_stopAtEnd)) return false;
+		if (elmRoot.InsertEndChild(elmNode) == NULL) return false;
 	}
-	if(doc.InsertEndChild(elmRoot) == NULL) return false;
+	if (doc.InsertEndChild(elmRoot) == NULL) return false;
 	return doc.SaveFile();
 }
 }

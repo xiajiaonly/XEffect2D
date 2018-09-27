@@ -147,8 +147,8 @@ void XRigidBalls::crashTimerProc(double timeDelay,double upTime)
 						if(m_pCrashData[order].m_needFrash != 0)
 						//if(1)
 						{
-							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2B(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),	//这个速度需要乘以0.0001
-								m_pRigidBall[j].m_positionS,m_pRigidBall[j].m_speed,XVector2(0.0f,gravity),
+							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2B(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),	//这个速度需要乘以0.0001
+								m_pRigidBall[j].m_positionS,m_pRigidBall[j].m_speed,XVec2(0.0f,gravity),
 								m_pRigidBall[i].m_radius + m_pRigidBall[j].m_radius,timeDelay);
 							m_pCrashData[order].m_needFrash = 0;
 							if(m_pCrashData[order].m_crashTime >= 0 && m_minTimer > 0 && abs(m_pCrashData[order].m_crashTime - m_minTimer) <= 0.0001f)
@@ -203,12 +203,12 @@ void XRigidBalls::crashTimerProc(double timeDelay,double upTime)
 						{//需要进行碰撞判断
 							//double tempTime;
 							//线段本体
-							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 								m_pLine[j - m_rigidBallSum],m_pRigidBall[i].m_radius,timeDelay);
-							//m_pCrashData[order].m_crashTime = getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							//m_pCrashData[order].m_crashTime = getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 							//	m_pLine[j - m_rigidBallSum].getStartPosition(),m_pLine[j - m_rigidBallSum].getEndPosition(),m_pRigidBall[i].m_radius,timeDelay);
 
-							//tempTime = getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							//tempTime = getCrashTimerB2L(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 							//	&(m_pLine[j - m_rigidBallSum]),m_pRigidBall[i].m_radius,timeDelay);
 							//if(m_pCrashData[order].m_needFrash == 0 && tempTime >= 0 && m_pCrashData[order].m_crashTime < 0)
 							//{
@@ -234,10 +234,10 @@ void XRigidBalls::crashTimerProc(double timeDelay,double upTime)
 							}
 							++order;
 							//线段端点
-							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 								m_pLine[j - m_rigidBallSum].getStartPosition(),m_pRigidBall[i].m_radius,timeDelay);
 
-							//tempTime = getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							//tempTime = getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 							//	m_pLine[j - m_rigidBallSum].getStartPosition(),m_pRigidBall[i].m_radius,timeDelay);
 							//if(m_pCrashData[order].m_needFrash == 0 && tempTime >= 0 && m_pCrashData[order].m_crashTime < 0)
 							//{
@@ -263,10 +263,10 @@ void XRigidBalls::crashTimerProc(double timeDelay,double upTime)
 							}
 							++order;
 							//线段端点
-							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							m_pCrashData[order].m_crashTime = XMath::getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 								m_pLine[j - m_rigidBallSum].getEndPosition(),m_pRigidBall[i].m_radius,timeDelay);
 
-							//tempTime = getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVector2(0.0f,gravity),
+							//tempTime = getCrashTimerB2P(m_pRigidBall[i].m_positionS,m_pRigidBall[i].m_speed,XVec2(0.0f,gravity),
 							//	m_pLine[j - m_rigidBallSum].getEndPosition(),m_pRigidBall[i].m_radius,timeDelay);
 							//if(m_pCrashData[order].m_needFrash == 0 && tempTime >= 0 && m_pCrashData[order].m_crashTime < 0)
 							//{
@@ -425,17 +425,19 @@ XBool XRigidBalls::crashInsideProc(double timeDelay,double upTime)
 	//	}
 //		printf("dx:%f,dy:%f,px:%f,py:%f\n",m_pRigidBall[m_crashObj0].m_speed.x,m_pRigidBall[m_crashObj0].m_speed.y,
 //			m_pRigidBall[m_crashObj0].m_position.x,m_pRigidBall[m_crashObj0].m_position.y);
+		float tmpTime = m_minTimer * 0.001f;
+		XVec2 addSpeed = XVec2(0.0f, 0.5f * gravity * tmpTime * tmpTime);
 		for(int i = 0;i < m_rigidBallSum;++ i)
 		{
-			if(m_pRigidBall[i].getIsEnable())
+			XRigidBall &ref = m_pRigidBall[i];
+			if(ref.getIsEnable())
 			{
-				m_pRigidBall[i].m_positionS.set(m_pRigidBall[i].m_position.x + m_pRigidBall[i].m_speed.x * m_minTimer * 0.001f,
-					m_pRigidBall[i].m_position.y + m_pRigidBall[i].m_speed.y * m_minTimer * 0.001f + 0.5f * gravity * (m_minTimer * 0.001f) * (m_minTimer * 0.001f));
-				m_pRigidBall[i].m_position = m_pRigidBall[i].m_positionS;
+				ref.m_positionS = ref.m_position + ref.m_speed * tmpTime + addSpeed;
+				ref.m_position = ref.m_positionS;
 				//计算空气阻力
 				//计算重力
 				{
-					m_pRigidBall[i].m_speed.y += gravity * m_minTimer * 0.001f;
+					ref.m_speed.y += gravity * m_minTimer * 0.001f;
 				}
 			}
 		}
@@ -634,12 +636,13 @@ XBool XRigidBalls::crashInsideProc(double timeDelay,double upTime)
 		return crashInsideProc(timeDelay - m_minTimer,m_minTimer);
 	}else
 	{
+		float tmpTime = timeDelay * 0.001f;
 		for(int i = 0;i < m_rigidBallSum;++ i)
 		{
 			if(m_pRigidBall[i].getIsEnable())
 			{
-				m_pRigidBall[i].m_positionS.set(m_pRigidBall[i].m_position.x + m_pRigidBall[i].m_speed.x * timeDelay * 0.001f,
-					m_pRigidBall[i].m_position.y + m_pRigidBall[i].m_speed.y * timeDelay * 0.001f + 0.5f * gravity * (timeDelay * 0.001f) * (timeDelay * 0.001f));
+				m_pRigidBall[i].m_positionS.set(m_pRigidBall[i].m_position + m_pRigidBall[i].m_speed * tmpTime +
+					XVec2(0.0f, 0.5f * gravity * tmpTime * tmpTime));
 				m_pRigidBall[i].m_position = m_pRigidBall[i].m_positionS;
 				//计算空气阻力
 				//计算重力
@@ -699,7 +702,7 @@ XBool XRigidBalls::crashInsideProc(double timeDelay,double upTime)
 		return XTrue;	//完成计算
 	}
 }
-XBool XRigidBalls::addOneBall(const XVector2& position,float radius,float mass,const XVector2 &speed,float airResistance,float adhereRate,float adhereRadius)	//增加一个例子，返回增加是否成功
+XBool XRigidBalls::addOneBall(const XVec2& position,float radius,float mass,const XVec2& speed,float airResistance,float adhereRate,float adhereRadius)	//增加一个例子，返回增加是否成功
 {
 	if(!m_isInited &&
 		!m_isEnable) return XFalse;
@@ -715,7 +718,7 @@ XBool XRigidBalls::addOneBall(const XVector2& position,float radius,float mass,c
 	}
 	return XFalse;
 }
-XBool XRigidBalls::addOneLine(const XVector2& startPosition,const XVector2 &endPosition)
+XBool XRigidBalls::addOneLine(const XVec2& startPosition,const XVec2& endPosition)
 {
 	if(!m_isInited &&
 		!m_isEnable) return XFalse;

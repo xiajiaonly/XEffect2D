@@ -124,7 +124,11 @@ DWORD WINAPI XSocketEx::boardcastThread(void * pParam)
 		memset(&addrUDP,0,sizeof(addrUDP)); 
 		addrUDP.sin_family = AF_INET;
 		addrUDP.sin_port = htons(BOARDCAST_PORT);
-		addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST); 
+#ifdef WITH_LOCAL_BOARDCAST_IP
+		addrUDP.sin_addr.s_addr = inet_addr(BOARDCASR_IP); 
+#else
+		addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);      
+#endif
 		//下面准备需要发送的数据
 		needSendData[0] = 0xcc;needSendData[1] = 0x00;offset = 2;
 		memcpy(needSendData + offset,&par.m_serverPort,sizeof(int));offset += sizeof(int);
@@ -368,14 +372,13 @@ DWORD WINAPI XSocketEx::acceptThread(void * pParam)
 {
 	XSocketEx &par = *(XSocketEx *)pParam;
 	par.m_acceptThreadState = STATE_START;
-	int clientSocket;
+	SOCKET clientSocket = INVALID_SOCKET;
 	while(par.m_acceptThreadState != STATE_SET_TO_END)
 	{
-		//if(par.m_acceptThreadState == STATE_SET_TO_END) break;
         clientSocket = accept(par.m_netSocket,NULL,NULL);
-		if(clientSocket < 0)
+		if(clientSocket == INVALID_SOCKET)
 		{//接收客户端失败
-			LogStr("客户端加入失败!");
+			//LogStr("客户端加入失败!");
 		}else
 		{//接收客户端成功之后开启一个接收线程
 			LogStr("客户端加入成功!");
@@ -411,7 +414,7 @@ void XSocketEx::addAClient(int clientSocket)
 	//向其他客户端发送新客户端接入的信息
 	//更新用户信息
 	char tempCStr[128];
-	sprintf(tempCStr,"%d",m_IDIndex);
+	sprintf_s(tempCStr,128,"%d",m_IDIndex);
 	std::string tempStr = DEFAULT_CLIENT_NAME;
 	tempStr += tempCStr;
 	XSocketUserInfo *newInfo = XMem::createMem<XSocketUserInfo>();
@@ -420,7 +423,7 @@ void XSocketEx::addAClient(int clientSocket)
 	newInfo->userSocket = clientSocket;
 	newInfo->userNameLen = (int)(tempStr.size()) + 1;
 	newInfo->userName = XMem::createArrayMem<char>(newInfo->userNameLen);
-	strcpy(newInfo->userName,tempStr.c_str());
+	strcpy_s(newInfo->userName,newInfo->userNameLen,tempStr.c_str());
 	newInfo->userState = CLIENT_STATE_ONLINE;
 	m_userInfoMutex.Lock();
 	m_usersInfo.push_back(newInfo);
@@ -784,8 +787,11 @@ bool XSocketEx::connectToServer()
 }
 bool XSocketEx::createServer()
 {
-	if(m_netSocket == INVALID_SOCKET && !getANewSocket(m_netSocket)) return false;
-	resetSocketAddr(m_netSocket);
+	if(m_netSocket != INVALID_SOCKET) resetSocketAddr(m_netSocket);
+	else
+	{
+		if (!getANewSocket(m_netSocket)) return false;
+	}
 	int opt = SO_REUSEADDR;
 	setsockopt(m_netSocket,SOL_SOCKET,SO_REUSEADDR,(const char *)&opt,sizeof(opt));
 	sockaddr_in addrRemote;
@@ -810,7 +816,7 @@ bool XSocketEx::createServer()
 		//newInfo->userNameLen = sizeof(DEFAULT_CLIENT_NAME);
 		newInfo->userNameLen = (int)(m_myName.size()) + 1;
 		newInfo->userName = XMem::createArrayMem<char>(newInfo->userNameLen);
-		strcpy(newInfo->userName,m_myName.c_str());
+		strcpy_s(newInfo->userName,newInfo->userNameLen,m_myName.c_str());
 		newInfo->userState = CLIENT_STATE_ONLINE;
 		m_userInfoMutex.Lock();
 		m_usersInfo.push_back(newInfo);
@@ -820,7 +826,7 @@ bool XSocketEx::createServer()
 	m_sendThreadState = STATE_BEFORE_START;
 	if(CreateThread(0,0,sendThread,this,0,NULL) == 0) return false;	//连接线程建立失败
 	m_acceptThreadState = STATE_BEFORE_START;
-	if((m_acceptThreadHandle = CreateThread(0,0,acceptThread,this,0,NULL)) == 0)
+	if(CreateThread(0,0,acceptThread,this,0,NULL) == 0)
 	{//连接线程建立失败
 		waitThreadEnd(m_sendThreadState);
 		return false;
@@ -905,8 +911,6 @@ void XSocketEx::release()
 	waitThreadEnd(m_connectThreadState);
 	waitThreadEnd(m_recvThreadState);
 	waitThreadEnd(m_sendThreadState);
-	CloseHandle(m_acceptThreadHandle);
-	//waitThreadEnd(m_acceptThreadState);	//这里有问题
 	waitThreadEnd(m_boardcastThreadState);
 	if(m_socketRole == NET_SERVER)
 	{//如果是服务器端的话，需要等待所有客户端接收线程结束
@@ -915,21 +919,22 @@ void XSocketEx::release()
 			waitThreadEnd(m_usersData[i]->recvThreadState);
 		}
 	}
-	
 	closesocket(m_netSocket);
 	m_netSocket = INVALID_SOCKET;
 	WSACleanup(); //++
+
+	waitThreadEnd(m_acceptThreadState);	//这里有问题
 	//下面释放掉所有的资源
-	for(unsigned int i = 0;i < m_recvDeque.size();++ i)
+	for(auto it = m_recvDeque.begin();it != m_recvDeque.end();++ it)
 	{
-		XMem::XDELETE_ARRAY(m_recvDeque[i]->data);
-		XMem::XDELETE(m_recvDeque[i]);
+		XMem::XDELETE_ARRAY((*it)->data);
+		XMem::XDELETE((*it));
 	}
 	m_recvDeque.clear();
-	for(unsigned int i = 0;i < m_sendDeque.size();++ i)
+	for (auto it = m_sendDeque.begin(); it != m_sendDeque.end(); ++it)
 	{
-		XMem::XDELETE_ARRAY(m_sendDeque[i]->data);
-		XMem::XDELETE(m_sendDeque[i]);
+		XMem::XDELETE_ARRAY((*it)->data);
+		XMem::XDELETE((*it));
 	}
 	m_sendDeque.clear();
 	for(unsigned int i = 0;i < m_usersInfo.size();++ i)
@@ -946,7 +951,7 @@ void XSocketEx::release()
 	
 	m_isInited = false;
 }
-bool XSocketEx::setMyName(const std::string &myName)
+bool XSocketEx::setMyName(const std::string& myName)
 {//注意这里不考虑重名问题
 	if(m_myName == myName) return false;
 	if(m_socketRole == NET_NULL)
@@ -961,7 +966,7 @@ bool XSocketEx::setMyName(const std::string &myName)
 		m_usersInfo[0]->userNameLen = (int)(m_myName.size()) + 1;
 		XMem::XDELETE_ARRAY(m_usersInfo[0]->userName);
 		m_usersInfo[0]->userName = XMem::createArrayMem<char>(m_usersInfo[0]->userNameLen);
-		strcpy(m_usersInfo[0]->userName,m_myName.c_str());
+		strcpy_s(m_usersInfo[0]->userName,m_usersInfo[0]->userNameLen,m_myName.c_str());
 		m_userInfoMutex.Unlock();
 		sendClientInfo();
 	}
@@ -972,7 +977,7 @@ bool XSocketEx::setMyName(const std::string &myName)
 	}
 	return true;
 }
-bool XSocketEx::sendAData(int toID,const unsigned char * data,int len)
+bool XSocketEx::sendAData(int toID,const void * data,int len)
 {
 	if(len <= 0 || data == NULL ||
 		toID == m_myID) return false;
@@ -1086,8 +1091,11 @@ bool XSocketEx::sendBoardcast()
     memset(&addrUDP,0,sizeof(addrUDP)); 
 	addrUDP.sin_family = AF_INET;
 	addrUDP.sin_port = htons(BOARDCAST_PORT);
-	addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);       
-	//addrUDP.sin_addr.s_addr = inet_addr("192.168.1.255"); 
+#ifdef WITH_LOCAL_BOARDCAST_IP
+	addrUDP.sin_addr.s_addr = inet_addr(BOARDCASR_IP); 
+#else
+	addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);      
+#endif
 
 	//下面准备需要发送的数据(尚未完成)
 	unsigned char needSendData[BOARDCAST_DATA_LEN];

@@ -27,11 +27,9 @@ public:
 	}
 
 	//music部分
-	bool loadMusic(const std::string &filename,void *&p)
+	bool loadMusic(const std::string& filename,void *&p)
 	{
-		char * tmp = XString::ANSIToUTF8(filename.c_str());
-		p = (void *)Mix_LoadMUS(tmp);
-		XMem::XDELETE_ARRAY(tmp);
+		p = (void *)Mix_LoadMUS(XString::ANSI2UTF8(filename.c_str()).c_str());
 		return p != NULL;
 	}
 	void clearMusic(void *p){Mix_FreeMusic((Mix_Music *)p);}
@@ -44,13 +42,21 @@ public:
 	void pauseMusic(){Mix_PauseMusic();}
 	void resumeMusic() {Mix_ResumeMusic();}
 	void rewindMusic() {Mix_RewindMusic();}
-	bool isMusicPause() {return Mix_PausedMusic() == 1;}
-	bool isMusicPlaying() {return Mix_PlayingMusic() == 1;}
+	bool isMusicPause() {return Mix_PausedMusic() != 0;}
+	bool isMusicPlaying() {return Mix_PlayingMusic() != 0;}
 	int haltMusic() {return Mix_HaltMusic();} 
 	//sound部分
-	bool loadSound(const std::string &filename,void *&p)	//从文件中读取声音资源
+	bool loadSound(const std::string& filename,void *&p)	//从文件中读取声音资源
 	{
-		char * tmp =XString::ANSIToUTF8(filename.c_str());
+		char* tmp = XString::ANSIToUTF8(filename.c_str());
+		//SDL_RWops* rw = SDL_RWFromFile(tmp, "rb");
+		//if (rw == nullptr) return false;
+		//p = (void *)Mix_LoadWAV_RW(rw, 1);
+
+		//Mix_Chunk* pSnd = Mix_LoadWAV(tmp);
+		//if (pSnd == NULL) return false;
+		//p = (void *)pSnd;
+		
 		p = (void *)Mix_LoadWAV(tmp);
 		XMem::XDELETE_ARRAY(tmp);
 		return p != NULL;

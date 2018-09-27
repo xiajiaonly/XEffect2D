@@ -14,6 +14,7 @@ XBool XFontBasic::setACopy(const XFontBasic &temp)
 	m_isCliped = temp.m_isCliped;		
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
+	m_fontPtSize = temp.m_fontPtSize;
 
 	m_withFBO = temp.m_withFBO;
 	m_needUpdateFBO = temp.m_needUpdateFBO;
@@ -30,10 +31,10 @@ XBool XFontBasic::setACopy(const XFontBasic &temp)
 	m_fboSprite.setACopy(temp.m_fboSprite);		//贴图
 
 //	m_maxStringLen = temp.m_maxStringLen;
-//	strcpy(m_string,temp.m_string);			//需要现实的字符串
+//	strcpy_s(m_string,m_maxStringLen,temp.m_string);			//需要现实的字符串
 	//由于默认的字符串长度可能不一致所以上面的操作会带来问题
 	if(m_maxStringLen >= temp.m_maxStringLen)
-		strcpy(m_string,temp.m_string);
+		strcpy_s(m_string,m_maxStringLen,temp.m_string);
 
 	m_needUpdateData = temp.m_needUpdateData;
 	m_alignmentModeX = temp.m_alignmentModeX;
@@ -71,6 +72,7 @@ XFontBasic& XFontBasic::operator = (const XFontBasic& temp)
 	m_isCliped = temp.m_isCliped;		
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
+	m_fontPtSize = temp.m_fontPtSize;
 
 	m_withFBO = temp.m_withFBO;
 	m_needUpdateFBO = temp.m_needUpdateFBO;
@@ -87,10 +89,10 @@ XFontBasic& XFontBasic::operator = (const XFontBasic& temp)
 	m_fboSprite.setACopy(temp.m_fboSprite);
 
 //	m_maxStringLen = temp.m_maxStringLen;
-//	strcpy(m_string,temp.m_string);		//需要现实的字符串
+//	strcpy_s(m_string,m_maxStringLen,temp.m_string);		//需要现实的字符串
 	//由于默认的字符串长度可能不一致所以上面的操作会带来问题
 	if(m_maxStringLen >= temp.m_maxStringLen)
-		strcpy(m_string,temp.m_string);
+		strcpy_s(m_string,m_maxStringLen,temp.m_string);
 
 	m_needUpdateData = temp.m_needUpdateData;
 	m_alignmentModeX = temp.m_alignmentModeX;
@@ -120,9 +122,10 @@ XFontBasic::XFontBasic(const XFontBasic& temp)
 {
 	if(this == &temp) return;		//防止自生拷贝
 	m_isVisible = temp.m_isVisible;
-	m_isCliped = temp.m_isCliped;		
+	m_isCliped = temp.m_isCliped;
 	m_clipRect = temp.m_clipRect;
 	m_isPassword = temp.m_isPassword;
+	m_fontPtSize = temp.m_fontPtSize;
 
 	m_maxStringLen = temp.m_maxStringLen;
 	m_string = XMem::createArrayMem<char>(m_maxStringLen);
@@ -136,7 +139,7 @@ XFontBasic::XFontBasic(const XFontBasic& temp)
 	m_maxPixelHeight = temp.m_maxPixelHeight;
 
 	m_sprite.setACopy(temp.m_sprite);		//贴图
-	strcpy(m_string,temp.m_string);		//需要现实的字符串
+	strcpy_s(m_string,m_maxStringLen,temp.m_string);		//需要现实的字符串
 	m_position = temp.m_position;	//字体的位置
 	m_setPosition = temp.m_setPosition;	//字体的位置
 	m_rotateBasicPoint = temp.m_rotateBasicPoint;	//字体的位置
@@ -153,7 +156,7 @@ XFontBasic::XFontBasic(const XFontBasic& temp)
 	m_needShowTextSum = temp.m_needShowTextSum;
 }
 //这个函数存在已经隐藏的bug就是如果位置或者角度等相关信息改变但是又没有调用updateData(),这时候，这个函数获得的值，时间上是不正确的
-XVector2 XFontBasic::getBox(int order)
+XVec2 XFontBasic::getBox(int order)
 {
 	if(m_needUpdateData)
 	{
@@ -169,36 +172,30 @@ XVector2 XFontBasic::getBox(int order)
 			switch(order)
 			{
 			case 0:return m_setPosition;
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * m_angleCos);
+			case 1:return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
+			case 2:return m_setPosition + XVec2(m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 3:return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight;
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * 0.5 * m_angleCos);
+			case 0:return m_setPosition + XVec2(m_angleSin, -m_angleCos) * m_maxPixelHeight * 0.5f;
+			case 1:return m_setPosition + XVec2(m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 2:return m_setPosition + XVec2(m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 3:return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight * 0.5f;
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_DOWN:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * m_angleSin);
+			case 0:return m_setPosition + XVec2(m_angleSin, -m_angleCos);
+			case 1:return m_setPosition + XVec2(m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 2:return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
 			case 3:return m_setPosition;
 			}
 			break;
@@ -210,40 +207,36 @@ XVector2 XFontBasic::getBox(int order)
 		case FONT_ALIGNMENT_MODE_Y_UP:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 0:return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
+			case 1:return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
+			case 2:return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+				m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 3:return m_setPosition + XVec2(- m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * m_angleSin,
+				- m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * m_angleCos);
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 0:return m_setPosition + XVec2(- m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				- m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 1:return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 2:return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 3:return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				m_maxPixelWidth * 0.5f * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_DOWN:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
-			case 2:return XVector2(m_setPosition.x + m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y + m_maxPixelWidth * 0.5f * m_angleSin);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * 0.5f * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * 0.5f * m_angleSin);
+			case 0:return m_setPosition + XVec2(- m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
+				- m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 1:return m_setPosition + XVec2(m_maxPixelWidth * 0.5f * m_angleCos + m_maxPixelHeight * m_angleSin,
+				m_maxPixelWidth * 0.5f * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 2:return m_setPosition + XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
+			case 3:return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth * 0.5f;
 			}
 			break;
 		}
@@ -254,44 +247,38 @@ XVector2 XFontBasic::getBox(int order)
 		case FONT_ALIGNMENT_MODE_Y_UP:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin);
+			case 0:return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
 			case 1:return m_setPosition;
-			case 2:return XVector2(m_setPosition.x - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
+			case 2:return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight;
+			case 3:return m_setPosition + XVec2(- m_maxPixelWidth * m_angleCos - m_maxPixelHeight * m_angleSin,
+				- m_maxPixelWidth * m_angleSin + m_maxPixelHeight * m_angleCos);
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_MIDDLE:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * 0.5f * m_angleCos);
-			case 2:return XVector2(m_setPosition.x - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y + m_maxPixelHeight * 0.5f * m_angleCos);
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
+			case 0:return m_setPosition + XVec2(- m_maxPixelWidth * m_angleCos + m_maxPixelHeight * 0.5f * m_angleSin,
+				- m_maxPixelWidth * m_angleSin - m_maxPixelHeight * 0.5f * m_angleCos);
+			case 1:return m_setPosition + XVec2(m_angleSin, -m_angleCos) * m_maxPixelHeight * 0.5f;
+			case 2:return m_setPosition + XVec2(-m_angleSin, m_angleCos) * m_maxPixelHeight * 0.5f;
+			case 3:return m_setPosition + XVec2(- m_maxPixelWidth * m_angleCos - m_maxPixelHeight * 0.5f * m_angleSin,
+				- m_maxPixelWidth * m_angleSin + m_maxPixelHeight * 0.5f * m_angleCos);
 			}
 			break;
 		case FONT_ALIGNMENT_MODE_Y_DOWN:
 			switch(order)
 			{
-			case 0:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
-			case 1:return XVector2(m_setPosition.x + m_maxPixelHeight * m_angleSin,
-				m_setPosition.y - m_maxPixelHeight * m_angleCos);
+			case 0:return m_setPosition + XVec2(- m_maxPixelWidth * m_angleCos + m_maxPixelHeight * m_angleSin,
+				- m_maxPixelWidth * m_angleSin - m_maxPixelHeight * m_angleCos);
+			case 1:return m_setPosition + XVec2(m_angleSin, -m_angleCos) * m_maxPixelHeight;
 			case 2:return m_setPosition;
-			case 3:return XVector2(m_setPosition.x - m_maxPixelWidth * m_angleCos,
-				m_setPosition.y - m_maxPixelWidth * m_angleSin);
+			case 3:return m_setPosition - XVec2(m_angleCos, m_angleSin) * m_maxPixelWidth;
 			}
 			break;
 		}
 		break;
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 #if !WITH_INLINE_FILE
 #include "XFontBasic.inl"

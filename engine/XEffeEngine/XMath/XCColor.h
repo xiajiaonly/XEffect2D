@@ -22,7 +22,7 @@ public:
 	operator unsigned char* () const {return (unsigned char*) this;}
 	operator const unsigned char* () const {return (unsigned char*) this;}
 
-	XCColor(const XFColor &temp);
+	XCColor(const XFColor& temp);
 	XCColor& operator = (const XFColor& temp);
 	XCColor(unsigned int color)
 	{
@@ -31,12 +31,15 @@ public:
 		b = (color >> 8) % 256;
 		a = color % 256;
 	}
-	void calculateW(){w = XEE_Max(r,XEE_Max(g,b));}
+	void calculateW(){w = (std::max)(r,(std::max)(g,b));}
     XCColor()
         :r(0),g(0),b(0),a(0),w(0)
     {}
 	XCColor(unsigned char R,unsigned char G,unsigned char B,unsigned char A = 255)
 		:r(R),g(G),b(B),a(A),w(0)
+	{}
+	XCColor(unsigned char L,unsigned char A = 255)
+		:r(L),g(L),b(L),a(A),w(0)
 	{}
 	bool operator==(const XCColor& c) const{return (r == c.r && g == c.g && b == c.b && a == c.a);}
 	//XCColor(float R,float G,float B,float A)

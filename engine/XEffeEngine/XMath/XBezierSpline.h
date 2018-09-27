@@ -6,6 +6,7 @@
 //Date:		2011.4.9
 //--------------------------------
 //可以参考的资料
+//https://sites.google.com/site/nurbsintersection/
 ////set up texture map for bezier surface
 //glMap2f(GL_MAP2_TEXTURE_COORD_2, 0, 1, 2, 2, 0, 1, 4, 2, &texpts[0][0][0]);
 //glEnable(GL_MAP2_TEXTURE_COORD_2);
@@ -27,39 +28,27 @@ namespace XE{
 class XSimpleBezierSpline
 {
 protected:
-	XVector2 m_pS;		//3次贝塞尔曲线中的起点
-	XVector2 m_pSP;		//起点偏移点
-	XVector2 m_pEP;		//终点偏移点
-	XVector2 m_pE;		//终点
+	XVec2 m_pS;		//3次贝塞尔曲线中的起点
+	XVec2 m_pSP;		//起点偏移点
+	XVec2 m_pEP;		//终点偏移点
+	XVec2 m_pE;		//终点
+	bool m_withOpti;
 public:
-	virtual void init(const XVector2& pStart,const XVector2& pSP,const XVector2& pEP,const XVector2& pEnd)
+	virtual void init(const XVec2& pStart, const XVec2& pSP, 
+		const XVec2& pEP, const XVec2& pEnd, bool withOpti = false);
+	virtual void init(float pSx, float pSy, float pSPx, float pSPy, 
+		float pEPx, float pEPy, float pEx, float pEy, bool withOpti = false);
+	virtual XVec2 getBezierSplineValue(float temp)const;	//temp属于(0,1)
+	virtual std::vector<XVec2> getPolygon()const
 	{
-		m_pS = pStart;
-		m_pSP = pSP;
-		m_pEP = pEP;
-		m_pE = pEnd;
+		std::vector<XVec2> ret;
+		ret.push_back(m_pS);
+		ret.push_back(m_pSP);
+		ret.push_back(m_pEP);
+		ret.push_back(m_pE);
+		return ret;
 	}
-	virtual void init(float pSx,float pSy,float pSPx,float pSPy,float pEPx,float pEPy,float pEx,float pEy)
-	{
-		m_pS.set(pSx,pSy);
-		m_pSP.set(pSPx,pSPy);
-		m_pEP.set(pEPx,pEPy);
-		m_pE.set(pEx,pEy);
-	}
-	virtual XVector2 getBezierSplineValue(float temp)	//temp属于(0,1)
-	{
-		if(temp <= 0) return m_pS;
-		if(temp >= 1) return m_pE;
-		float Ftemp = 1.0f - temp;
-		//二次贝塞尔曲线(临时测试用，或者封装2次贝塞尔曲线的类)
-		//return XVector2(m_pS.x * Ftemp * Ftemp + 2.0f * m_pSP.x * Ftemp * temp + m_pE.x * temp * temp,
-		//	m_pS.y * Ftemp * Ftemp + 2.0f * m_pSP.y * Ftemp * temp + m_pE.y * temp * temp);
-		return XVector2(m_pS.x * Ftemp * Ftemp * Ftemp + 3.0f * m_pSP.x * Ftemp * Ftemp * temp + 3.0f * m_pEP.x * temp * temp * Ftemp + m_pE.x * temp * temp * temp,
-			m_pS.y * Ftemp * Ftemp * Ftemp + 3.0f * m_pSP.y * Ftemp * Ftemp * temp + 3.0f * m_pEP.y * temp * temp * Ftemp + m_pE.y * temp * temp * temp);
-		//求导公式如下
-		//XVector2(3.0f * m_pS.x * Ftemp * Ftemp + 3.0f * m_pSP.x * Ftemp * (2.0f * temp - Ftemp) + 3.0f * m_pEP.x * temp * (temp - 2.0f * Ftemp) + 3.0f * m_pE.x * temp * temp,
-		//	3.0f * m_pS.y * Ftemp * Ftemp + 3.0f * m_pSP.y * Ftemp * (2.0f * temp - Ftemp) + 3.0f * m_pEP.y * temp * (temp - 2.0f * Ftemp) + 3.0f * m_pE.y * temp * temp);
-	}
+	virtual ~XSimpleBezierSpline(){}
 };
 //当三次贝塞尔曲线的控制点为直线的1/3时，点是均匀分布的
 //可以移动的三次贝塞尔曲线的类
@@ -68,150 +57,85 @@ class XBezierSpline:public XSimpleBezierSpline
 protected:
 	XBool m_isEnd;				//是否已经移动到末尾
 	float m_speed;				//曲线中点的移动速度
-	XVector2 m_curValue;		//当前的贝塞尔取值
+	XVec2 m_curValue;		//当前的贝塞尔取值
 	float m_curAngle;			//当前的角度
 	float m_curPosition;		//曲线中点的当前位置
 public:
+	float m_centerValue;	//中点的值，用于贝塞尔曲线拆分是标记拆分之后的贝塞尔曲线的位置
+	float m_partLenght;		//当前这一部分占总长度的比例
+
 	float getBezierSplineAngle(float temp);		//目前的方法比较原始，建议改进用数学公式推导	
 	XBool getIsEnd() const {return m_isEnd;}
 	float getSpeed() const {return m_speed;}
 	void setSpeed(float speed) {m_speed = speed;}
-	XVector2 getCurValue() const {return m_curValue;}
+	XVec2 getCurValue() const {return m_curValue;}
 	float getCurAngle() const {return m_curAngle;}
 	float getCurPosition() const {return m_curPosition;}
 
 	//贝塞尔曲线可以自动移动取值
 	void move(float timeDelay);	//移动曲线中的点
 	XBezierSpline();
+	virtual ~XBezierSpline(){}
 	void draw();
 
-	virtual void init(const XVector2& pStart,const XVector2& pSP,const XVector2& pEP,const XVector2& pEnd);
-	virtual void init(float pSx,float pSy,float pSPx,float pSPy,float pEPx,float pEPy,float pEx,float pEy);
+	virtual void init(const XVec2& pStart, const XVec2& pSP,
+		const XVec2& pEP, const XVec2& pEnd, bool withOpti = false);
+	virtual void init(float pSx,float pSy,float pSPx,float pSPy,
+		float pEPx,float pEPy,float pEx,float pEy, bool withOpti = false);
 	void reset();				//重置曲线移动点
 	//下面是为了实现匀速直线运动而定义的接口
 private:
 	double m_length;	//线的长度
 	double m_startSpeed;
 	double m_endSpeed;
-//	XVector2 m_ts,m_tp,m_te;
-	void calculate()
-	{
-//		m_ts = (m_pSP - m_pS) * 3.0f;
-//		m_tp = (m_pEP - m_pSP) * 6.0f;
-//		m_te = (m_pE - m_pEP) * 3.0f;
-		m_startSpeed = speed(0.0f);
-		m_endSpeed = speed(1.0f);
-		m_length = getLength(1.0f);
-	}
+//	XVec2 m_ts,m_tp,m_te;
+	void calculate();
+	//通过空间换时间的方式都效率进行优化
+	std::vector<double> m_tmpData;	//等分数据
 public:
-	XVector2 getBezierSplineValueEx(float temp){return getBezierSplineValue(getT(temp));}
-	float getBezierSplineAngleEx(float temp){return getBezierSplineAngle(getT(temp));}//目前的方法比较原始，建议改进用数学公式推导	
-	double speedX(double t)  
-	{  
-		double it = 1.0 - t;  
-		//return -3.0*m_pS.x*it*it + 3.0*m_pSP.x*it*it - 6.0*m_pSP.x*it*t + 6.0*m_pEP.x*it*t - 3.0*m_pEP.x*t*t + 3.0*m_pE.x*t*t;  
-		return 3.0 * ((m_pSP.x - m_pS.x) * it * it + 2.0 * (m_pEP.x - m_pSP.x) * it * t + (m_pE.x - m_pEP.x) * t * t);  
+	XVec2 getBezierSplineValueEx(float temp)
+	{	
+		if (m_withOpti) return getBezierSplineValue(getTEx(temp));
+		else return getBezierSplineValue(getT(temp));
 	}
-	double speedY(double t)  
-	{  
-		double it = 1.0 - t;  
-		return 3.0 * ((m_pSP.y - m_pS.y) * it * it + 2.0 * (m_pEP.y - m_pSP.y) * it * t + (m_pE.y - m_pEP.y) * t * t);  
-	} 
-	double speed(double t)  
-	{  
-		double sx = speedX(t);  
-		double sy = speedY(t);  
-		return sqrt(sx*sx+sy*sy);  
-		//对上面的算法进行优化
-//		double it = 1.0 - t;  
-//		return (m_ts * (it * it) + m_tp * (it * t) + m_te * (t * t)).getLength();  
-	}  
-	double getLength(double t)  
-	{//算法有问题  
-		//在总长度范围内，使用simpson算法的分割数  
-		#define TOTAL_SIMPSON_STEP  (512)  
-		//分割份数  
-		int stepCounts = (int)(TOTAL_SIMPSON_STEP * t);  
-		if(stepCounts & 1) ++ stepCounts; else    //保证stepCounts为偶数
-		if(stepCounts == 0) return 0.0;  
+	//目前的方法比较原始，建议改进用数学公式推导	
+	float getBezierSplineAngleEx(float temp)
+	{
+		if (m_withOpti) return getBezierSplineAngle(getTEx(temp));
+		else return getBezierSplineAngle(getT(temp));
+	}
+	double speedX(double t);
+	double speedY(double t);
+	double speed(double t);
+	double getLength(double t);
+	//double getLengthX(double t);
+	double getLength()const{return m_length;}
+	double getT(double t);  
+	double getTEx(double t);  //对上面的算法进行优化
 
-		double sum1 = 0.0,sum2 = 0.0;  
-		double dStepH = t / stepCounts;  
-		double dStep = dStepH * 2.0;  
-		double data = 0.0;
-		for(int i = 0; i < stepCounts;i += 2,data += dStep)  
-		{  
-			sum1 += speed(data + dStepH);  
-			if(i != 0)
-				sum2 += speed(data); 
-		}  
-		return (m_startSpeed + m_endSpeed + 2.0f * sum2 + 4.0f * sum1) * dStep / 6.0;  
-	}
-	double getT(double t)  
-	{  
-		double len = t * m_length; //如果按照匀速增长,此时对应的曲线长度  
-		double t1 = t;  
-		double t2 = t1 - (getLength(t1) - len) / speed(t1);
-		double oldT = abs(t1 - t2);//由于下面的循环不是逻辑上收缩的，所以定义这个变量防止无法跳出
-		while(oldT > 0.001)  
-		{  
-			t1 = t2;  
-			t2 = t1 - (getLength(t1) - len) / speed(t1);  
-			t = abs(t1 - t2);
-			if(oldT <= t) break;
-			oldT = t;
-		} 
-		return t2;  
-	}  
+	XBezierSpline getUpHalf()const;	//获取上半部分曲线
+	XBezierSpline getDownHalf()const;	//获取上半部分曲线
 };
-inline void XBezierSpline::init(const XVector2& pStart,const XVector2& pSP,const XVector2& pEP,const XVector2& pEnd)
-{
-	XSimpleBezierSpline::init(pStart,pSP,pEP,pEnd);
-	calculate();
-}
-inline void XBezierSpline::init(float pSx,float pSy,float pSPx,float pSPy,float pEPx,float pEPy,float pEx,float pEy)
-{
-	XSimpleBezierSpline::init(pSx,pSy,pSPx,pSPy,pEPx,pEPy,pEx,pEy);
-	calculate();
-}
-inline void XBezierSpline::reset()				//重置曲线移动点
-{
-	m_curPosition = 0.0f;
-	m_isEnd = XFalse;
-	m_curValue = m_pS;
-}
 //简单的不可移动的贝塞尔曲线的类
 class XSimpleBezierSpline2
 {
 protected:
-	XVector2 m_pS;		//贝塞尔曲线中的起点
-	XVector2 m_pP;	//偏移点
-	XVector2 m_pE;		//终点
+	XVec2 m_pS;		//贝塞尔曲线中的起点
+	XVec2 m_pP;	//偏移点
+	XVec2 m_pE;		//终点
 public:
-	virtual XVector2 getBezierSplineValue(float temp)	//temp属于(0,1)
+	virtual XVec2 getBezierSplineValue(float temp)const;	//temp属于(0,1)
+	virtual void init(const XVec2& pStart,const XVec2& pP,const XVec2& pEnd);
+	virtual void init(float pSx,float pSy,float pPx,float pPy,float pEx,float pEy);
+	virtual std::vector<XVec2> getPolygon()const
 	{
-		if(temp <= 0) return m_pS;
-		if(temp >= 1) return m_pE;
-		float Ftemp = 1.0f - temp;
-		//二次贝塞尔曲线(临时测试用，或者封装2次贝塞尔曲线的类)
-		return XVector2(m_pS.x * Ftemp * Ftemp + 2.0f * m_pP.x * Ftemp * temp + m_pE.x * temp * temp,
-			m_pS.y * Ftemp * Ftemp + 2.0f * m_pP.y * Ftemp * temp + m_pE.y * temp * temp);
-		//求导公式如下
-		//XVector2(3.0f * m_pS.x * Ftemp * Ftemp + 3.0f * m_pSP.x * Ftemp * (2.0f * temp - Ftemp) + 3.0f * m_pEP.x * temp * (temp - 2.0f * Ftemp) + 3.0f * m_pE.x * temp * temp,
-		//	3.0f * m_pS.y * Ftemp * Ftemp + 3.0f * m_pSP.y * Ftemp * (2.0f * temp - Ftemp) + 3.0f * m_pEP.y * temp * (temp - 2.0f * Ftemp) + 3.0f * m_pE.y * temp * temp);
+		std::vector<XVec2> ret;
+		ret.push_back(m_pS);
+		ret.push_back(m_pP);
+		ret.push_back(m_pE);
+		return ret;
 	}
-	virtual void init(const XVector2& pStart,const XVector2& pP,const XVector2& pEnd)
-	{
-		m_pS = pStart;
-		m_pP = pP;
-		m_pE = pEnd;
-	}
-	virtual void init(float pSx,float pSy,float pPx,float pPy,float pEx,float pEy)
-	{
-		m_pS.set(pSx,pSy);
-		m_pP.set(pPx,pPy);
-		m_pE.set(pEx,pEy);
-	}
+	virtual ~XSimpleBezierSpline2(){}
 };
 //当二次贝塞尔曲线的控制点为直线的中点时，点是均匀分布的
 //可以移动的二次贝塞尔曲线的类
@@ -220,10 +144,13 @@ class XBezierSpline2:public XSimpleBezierSpline2
 protected:
 	XBool m_isEnd;				//是否已经移动到末尾
 	float m_speed;				//曲线中点的移动速度
-	XVector2 m_curValue;		//当前的贝塞尔取值
+	XVec2 m_curValue;		//当前的贝塞尔取值
 	float m_curAngle;			//当前的角度
 	float m_curPosition;		//曲线中点的当前位置
 public:
+	float m_centerValue;	//中点的值，用于贝塞尔曲线拆分是标记拆分之后的贝塞尔曲线的位置
+	float m_partLenght;		//当前这一部分占总长度的比例
+
 	/*float getLength(float tmp)	//tmp为[0 - 1]
 	{
 		const float csX = m_pP.x - m_pS.x;
@@ -274,49 +201,13 @@ private:
 	//下面是一些提速的临时变量
 	double D,E,sqrtA,sqrtC,powA;
 public:
-	void calculate()
-	{
-		ax = m_pS.x - 2.0*m_pP.x + m_pE.x;  
-		ay = m_pS.y - 2.0*m_pP.y + m_pE.y;  
-		bx = 2.0*m_pP.x - 2.0*m_pS.x;  
-		by = 2.0*m_pP.y - 2.0*m_pS.y;  
-
-		A = 4.0 * (ax*ax+ay*ay);  
-		B = 4.0 * (ax*bx+ay*by);  
-		C = bx*bx+by*by; 
-		sqrtA = sqrt(A);
-		sqrtC = sqrt(C);
-		D = log(B + 2.0 * sqrtA * sqrtC); 
-		powA = 1.0 / (8.0 * pow(A,1.5));
-		E = (B * B - 4.0 * A * C);
-		D = D * E;
-		m_length = getLength(1.0f);
-	}
+	void calculate();
 public:
-	double getLength(double t)  //计算[0 - 1]之间的长度
-	{  
-		double temp1 = sqrt(C + t * (B + A * t));  
-		double temp2 = 2.0 * sqrtA * (2.0 * A * t * temp1 + B * (temp1 - sqrtC));  
-		double temp3 = D - E * log(B + 2.0 * A * t + 2.0 * sqrtA * temp1);  
-		return (temp2 + temp3) * powA;  
-	} 
+	double getLength(double t);  //计算[0 - 1]之间的长度
+	double getLength()const{return m_length;}
 	//使用牛顿切线法求解
-	float speed(float t){return sqrt(A * t * t + B * t + C);}
-	double getT(float t)  //计算长度到百分比之间的转换
-	{  
-		float l = t * m_length;
-		float t1 = t,t2;  
-		//int timer = 0;
-		while(true)  
-		{  
-			t2 = t1 - (getLength(t1) - l) / speed(t1);  
-			if(abs(t1 - t2) < 0.001) break;  //误差限制
-			t1 = t2;  
-		//	++ timer;
-		} 
-		//printf("%d\n",timer);
-		return t2;  
-	} 
+	float speed(float t) { return sqrt(A * t * t + B * t + C); }
+	double getT(float t);  //计算长度到百分比之间的转换
 /*	float getTimeByDistance(float distance)
     {
 		if(distance <= 0.0f) return 0.0f;
@@ -394,7 +285,7 @@ public:
 	XBool getIsEnd() const {return m_isEnd;}
 	float getSpeed() const {return m_speed;}
 	void setSpeed(float speed) {m_speed = speed;}
-	XVector2 getCurValue() const {return m_curValue;}
+	XVec2 getCurValue() const {return m_curValue;}
 	float getCurAngle() const {return m_curAngle;}
 	float getCurPosition() const {return m_curPosition;}
 
@@ -404,14 +295,26 @@ public:
 	void draw();
 
 	void reset();				//重置曲线移动点
+	XBezierSpline2 getUpHalf()const;	//获取上半部分曲线
+	XBezierSpline2 getDownHalf()const;	//获取上半部分曲线
 };
-inline void XBezierSpline2::reset()				//重置曲线移动点
+namespace XMath
 {
-	m_curPosition = 0.0f;
-	m_isEnd = XFalse;
-	m_curValue = m_pS;
+//获取两条二次贝塞尔曲线的交点,返回的是交点的坐标
+void getBez2IntersectPoints(const XBezierSpline2 &bez0,const XBezierSpline2 &bez1,std::vector<XVec2> &points);
+//获取两条二次贝塞尔曲线的交点,返回的是交点在两条曲线中的归一化位置
+void getBez2IntersectPointsEx(const XBezierSpline2 &bez0,const XBezierSpline2 &bez1,std::vector<XVec2> &points);
+//获取两条三次贝塞尔曲线的交点，返回交点的坐标
+void getBezIntersectPoints(const XBezierSpline &bez0,const XBezierSpline &bez1,std::vector<XVec2> &points);
+//获取两条三次贝塞尔曲线的交点,返回的是交点在两条曲线中的归一化位置
+void getBezIntersectPointsEx(const XBezierSpline &bez0,const XBezierSpline &bez1,std::vector<XVec2> &points);
+//目前下面这个算法在效率上和准确度上来说都需要优化
+void getBezIntersectPoints(const XBezierSpline &bez,std::vector<XVec2> &points);		//获取三次贝塞尔曲线自身是否有交点
 }
 
+#if WITH_INLINE_FILE
+#include "XBezierSpline.inl"
+#endif
 /*
 #include <stdio.h>  
   

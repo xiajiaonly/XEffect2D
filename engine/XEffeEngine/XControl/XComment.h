@@ -32,7 +32,9 @@ public:
 	XBool init();
 	void update(float stepTime);
 	XBool setACopy(const XComment & temp);
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
+	//注释没有显示出来时利用这个接口来更新注释的位置
+	void updatePosition(const XVec2& p);
 	void draw();
 	void setString(const char *str);
 	void setVisible(){m_visible = XTrue;}
@@ -58,10 +60,10 @@ public:
 	XBool getIsShow(){return m_needShow;}
 	XComment()
 		:m_isInited(XFalse)
-		,m_haveString(XFalse)
-		,m_visible(XTrue)
-		,m_needShow(XFalse)
-		,m_alpha(1.0f)
+		, m_haveString(XFalse)
+		, m_visible(XTrue)
+		, m_needShow(XFalse)
+		, m_alpha(1.0f)
 	{}
 	~XComment(){}
 private:

@@ -1,7 +1,7 @@
 #include "XStdHead.h"
 #include "XEquidistantInterpolation.h"
 namespace XE{
-int XEquidistantIterpolation::calPoint(const XVector2 &p,std::vector<XVector2> &data)
+int XEquidistantIterpolation::calPoint(const XVec2& p, std::vector<XVec2> &data)
 {
 	data.clear();
 	if (m_isFirstData)
@@ -15,12 +15,12 @@ int XEquidistantIterpolation::calPoint(const XVector2 &p,std::vector<XVector2> &
 	float len = p.getLength(m_upPoint);
 	if (len <= 0.0f) return data.size();	//非法的临界数据
 	if (m_upLength + len >= m_distance)
-	{//长度超过范围这里需要差值,这里依次计算插入点的位置
+	{//长度超过范围这里需要插值,这里依次计算插入点的位置
 		float tmpLen = m_distance - m_upLength;
-		XVector2 point;
+		XVec2 point;
 		while (true)
 		{
-			point = XMath::lineSlerp<XVector2>(m_upPoint, p, tmpLen / len);
+			point = XMath::lineSlerp<XVec2>(m_upPoint, p, tmpLen / len);
 			data.push_back(point);
 			tmpLen += m_distance;
 			if (tmpLen > len) break;
@@ -30,7 +30,7 @@ int XEquidistantIterpolation::calPoint(const XVector2 &p,std::vector<XVector2> &
 		return data.size();
 	}
 	else
-	{//长度尚未超过范围，这里不需要差值
+	{//长度尚未超过范围，这里不需要插值
 		m_upLength += len;
 		m_upPoint = p;
 		return data.size();

@@ -27,27 +27,27 @@ private:
 	int m_horizontalNetSum;	//水平细分格的数量
 	int m_verticalNetSum;	//垂直细分格的数量
 
-	//std::vector<XVector2> m_datas[m_chartMaxLineSum];	//这里是所有的数据
-	std::deque<XVector2> m_datas[m_chartMaxLineSum];
+	//std::vector<XVec2> m_datas[m_chartMaxLineSum];	//这里是所有的数据
+	std::deque<XVec2> m_datas[m_chartMaxLineSum];
 	int m_maxDataSum;	//单条线上允许显示的最大数据的数量
 	//std::string m_dataName[m_chartMaxLineSum];	//线的说明文字
 	XCheck m_dataChecks[m_chartMaxLineSum];
 	int m_maxLineLen;	//点成员最多的点的数量
 	//下面是用于数值描绘的基准数据
-	XVector2 m_baseValue;	//原点的基准数值
-	XVector2 m_sizeValue;	//盘面的大小
+	XVec2 m_baseValue;	//原点的基准数值
+	XVec2 m_sizeValue;	//盘面的大小
 
 	XRect m_dataRange;	//数据的范围
 	int m_dataSum;	//数据的数量
-	XVector2 m_showDataRange;
+	XVec2 m_showDataRange;
 
 	//下面是文字显示的东西
 	XFontUnicode m_caption;
 	XFontUnicode m_textFont;	//显示的数字
 
 	//下面是用于绘图的临时数据
-	XVector2 m_firstNetValue;	//描绘网格的第一个数据
-	XVector2 m_stepWidth;		//描绘网格的步进
+	XVec2 m_firstNetValue;	//描绘网格的第一个数据
+	XVec2 m_stepWidth;		//描绘网格的步进
 	int m_dataAccuracyX;		//数字的精度
 	int m_dataAccuracyY;		//数字的精度
 
@@ -70,36 +70,38 @@ private:
 	float m_downHeight;			//下面坐标显示的高度
 	float m_allLineRectHeight;	//下面显示所有线的区域的高度
 public:
-	bool initWithoutSkin(const XRect &rect,const char *caption,const XFontUnicode &font);
-	bool initWithoutSkin(const XRect &rect,const char *caption) {return initWithoutSkin(rect,caption,getDefaultFont());}
-	bool initWithoutSkin(const XVector2 &pixelSize,const char *caption) 
+	bool initWithoutSkin(const XRect& rect,const char *caption,const XFontUnicode& font);
+	bool initWithoutSkin(const XRect& rect,const char *caption) {return initWithoutSkin(rect,caption,getDefaultFont());}
+	bool initWithoutSkin(const XVec2& pixelSize,const char *caption) 
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),caption,getDefaultFont());
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),caption,getDefaultFont());
 	}
 protected:
 	void draw();
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
 	XBool keyboardProc(int,XKeyState) {return XFalse;}
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);//是否可以获得焦点
-	XBool canLostFocus(float,float) {return XTrue;}	//当前控件是否可以失去焦点，用于处理焦点抢夺问题
+	XBool canGetFocus(const XVec2& p);//是否可以获得焦点
+	XBool canLostFocus(const XVec2& ) {return XTrue;}	//当前控件是否可以失去焦点，用于处理焦点抢夺问题
 public:
 	int getMaxDataSum()const{ return m_maxDataSum; }
 	void setMaxDataSum(int sum);	//设置单条先允许插入的最大点的数量,<=0 为不受限制
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);
-	void insertData(const XVector2 &data,int lineIndex);
-	void setLineName(const std::string &name,int lineIndex);
+	void setScale(const XVec2& s);
+	void insertData(const XVec2& data,int lineIndex);
+	void clearData(int lineIndex);
+	void clearAllData();
+	void setLineName(const std::string& name,int lineIndex);
 
-	XBool isInRect(float x,float y);
-	XVector2 getBox(int order);
+	XBool isInRect(const XVec2& p);
+	XVec2 getBox(int order);
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 	void release();
 	void setDrawPointer(bool flag);	//设置是否描绘点
@@ -108,16 +110,16 @@ public:
 	void enable();
 	XChart()
 		:m_isInited(false)
-		,m_baseValue(0.0f,0.0f)
-		,m_sizeValue(1.0f,1.0f)
+		, m_baseValue(0.0f)
+		, m_sizeValue(1.0f)
 		//,m_isMouseDown(false)
-		,m_chooseArm(0)
-		,m_dataSum(0)
-		,m_maxLineLen(0)
-		,m_drawDataBuff(NULL)
-		,m_withPoint(false)
-		,m_neadUpdateAllLineData(false)
-		,m_neddUpdateCurLineData(false)
+		, m_chooseArm(0)
+		, m_dataSum(0)
+		, m_maxLineLen(0)
+		, m_drawDataBuff(NULL)
+		, m_withPoint(false)
+		, m_neadUpdateAllLineData(false)
+		, m_neddUpdateCurLineData(false)
 		, m_maxDataSum(-1)
 	{
 		m_ctrlType = CTRL_OBJ_CHART;

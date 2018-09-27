@@ -5,15 +5,15 @@
 //Version:	1.0.0
 //Date:		2014.3.25
 //--------------------------------
-#include "XOSDefine.h"
+//#include "XOSDefine.h"
 #include <string>
-namespace XE{
+namespace XE {
 class XWindowCore
 {
 public:
-	virtual ~XWindowCore() {;}
-	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame) = 0;
-	virtual void setWindowTitle(const std::string &title) = 0;
+	virtual ~XWindowCore() { ; }
+	virtual bool createWindow(int width, int height, const char *windowTitle, bool isFullScreen, bool withFrame) = 0;
+	virtual void setWindowTitle(const std::string& title) = 0;
 	virtual void setCurcor(bool flag) = 0;
 	virtual bool getCurcor() = 0;
 	virtual void release() = 0;

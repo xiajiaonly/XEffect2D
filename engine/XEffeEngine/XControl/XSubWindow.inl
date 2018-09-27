@@ -1,19 +1,19 @@
-INLINE XBool XSubWindow::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XSubWindow::isInRect(const XVec2& p)		//µãx£¬yÊÇ·ñÔÚÎï¼şÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
-INLINE XVector2 XSubWindow::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
+INLINE XVec2 XSubWindow::getBox(int order)			//»ñÈ¡ËÄ¸ö¶¥µãµÄ×ø±ê£¬Ä¿Ç°ÏÈ²»¿¼ÂÇĞı×ªºÍËõ·Å
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0:return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1:return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2:return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3:return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
+	case 0:return m_curMouseRect.getLT();
+	case 1:return m_curMouseRect.getRT();
+	case 2:return m_curMouseRect.getRB();
+	case 3:return m_curMouseRect.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 INLINE void XSubWindow::setTitle(const char * title)
 {
@@ -22,7 +22,7 @@ INLINE void XSubWindow::setTitle(const char * title)
 	else m_titleString = title;
 	m_titleFont.setString(XString::getCanShowString(m_titleString.c_str(),(int)(m_area.getWidth() - 96.0f),15).c_str());
 }
-INLINE XBool XSubWindow::canGetFocus(float x,float y)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
+INLINE XBool XSubWindow::canGetFocus(const XVec2& p)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿ÉÒÔ»ñµÃ½¹µã
 {
 	if(!m_isInited ||		//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
@@ -33,7 +33,12 @@ INLINE XBool XSubWindow::canGetFocus(float x,float y)				//ÓÃÓÚÅĞ¶Ïµ±Ç°Îï¼şÊÇ·ñ¿
 //	tmpRect.set(m_curMouseRect.left,m_curMouseRect.top,
 //		m_curMouseRect.right,m_curMouseRect.top + 32.0f * m_scale.y);
 //	return tmpRect.isInRect(x,y);
-	return m_curMouseRect.isInRect(x,y);
+	//Èç¹ûËùÓĞµÄ×ÓÎïÌåÖĞÓĞÄÜ»ñÈ¡µ½½¹µãµÄÎïÌå£¬Ôò×ÔÉíÄÜ»ñÈ¡µ½½¹µã,µ±ÓĞÆ¯¸¡ÔÚÍâÃæµÄ¿Ø¼şÊ±Õâ¸ö¿ÉÄÜ·ÀÖ¹½¹µã´©Í¸
+	for (unsigned int i = 0;i < m_objects.size();++i)
+	{
+		if (m_objects[i].obj->canGetFocus(p)) return true;
+	}
+	return m_curMouseRect.isInRect(p);
 }
 INLINE XSubWindow::XShrinkDirection XSubWindow::calShrinkDir()	//¼ÆËãµ±Ç°¿ÉÄÜµÄÊÕËõ·½Ïò
 {
@@ -57,14 +62,14 @@ INLINE void XSubWindow::update(float stepTime)
 	updateShrinkState(stepTime);
 	m_ctrlManager.update(stepTime);
 }
-INLINE XBool XSubWindow::getIsInDragRect(float x,float y)	//ÅĞ¶ÏÎ»ÖÃÊÇ·ñÔÚÍÏ×§ÇøÓòÄÚ
+INLINE XBool XSubWindow::getIsInDragRect(const XVec2& p)	//ÅĞ¶ÏÎ»ÖÃÊÇ·ñÔÚÍÏ×§ÇøÓòÄÚ
 {
-	return XRect(m_curMouseRect.left,m_curMouseRect.top,
-		m_curMouseRect.right - 96.0f * m_scale.x,m_curMouseRect.top + 32.0f * m_scale.y).isInRect(x,y);
+	return XRect(m_curMouseRect.getLT(),
+		m_curMouseRect.getRT() + XVec2(-96.0f, 32.0f) * m_scale).isInRect(p);
 }
-INLINE XVector2 XSubWindow::correctPos(const XVector2 &pos)	//¸ü¾ß´«ÈëµÄÍÏ×§Î»ÖÃ£¬ĞŞÕı¸ÃÎ»ÖÃ£¬µ±Î»ÖÃ³öÓÚ·Ç·¨×´Ì¬Ê±£¬ĞŞÕı³ÉºÏ·¨µÄÎ»ÖÃ
+INLINE XVec2 XSubWindow::correctPos(const XVec2& pos)	//¸ü¾ß´«ÈëµÄÍÏ×§Î»ÖÃ£¬ĞŞÕı¸ÃÎ»ÖÃ£¬µ±Î»ÖÃ³öÓÚ·Ç·¨×´Ì¬Ê±£¬ĞŞÕı³ÉºÏ·¨µÄÎ»ÖÃ
 {
-	XVector2 ret = pos;
+	XVec2 ret = pos;
 	//if(pos.x < -(m_curMouseRect.getWidth() - 96.0f * m_scale.x - 5.0f)) ret.x = -(m_curMouseRect.getWidth() - 96.0f * m_scale.x - 5.0f);
 	if(pos.x < 0.0f) ret.x = 0.0f;
 	if(pos.x > getWindowWidth() - 5.0f) ret.x = getWindowWidth() - 5.0f;
@@ -73,18 +78,31 @@ INLINE XVector2 XSubWindow::correctPos(const XVector2 &pos)	//¸ü¾ß´«ÈëµÄÍÏ×§Î»ÖÃ
 	if(pos.y > getSceneHeight() - 5.0f) ret.y = getSceneHeight() - 5.0f;
 	return ret;
 }
-INLINE void XSubWindow::updateShrinkPosition()
-{
-	switch(m_curShrinkDir)
+	INLINE void XSubWindow::updateShrinkPosition()
 	{
-	case DIR_UP:		//ÏòÉÏÊÕËõ
-		setPosition(m_position.x,(5.0f - m_curMouseRect.getHeight()) * m_shrinkRate);
-		break;
-	case DIR_LEFT:		//Ïò×óÊÕËõ
-		setPosition((5.0f - m_curMouseRect.getWidth()) * m_shrinkRate,m_position.y);
-		break;
-	case DIR_RIGHT:		//ÏòÓÒÊÕËõ
-		setPosition(getWindowWidth() - 5.0f * m_shrinkRate - m_curMouseRect.getWidth() * (1.0f - m_shrinkRate),m_position.y);
-		break;
+		switch(m_curShrinkDir)
+		{
+		case DIR_UP:		//ÏòÉÏÊÕËõ
+			setPosition(m_position.x,(5.0f - m_curMouseRect.getHeight()) * m_shrinkRate);
+			break;
+		case DIR_LEFT:		//Ïò×óÊÕËõ
+			setPosition((5.0f - m_curMouseRect.getWidth()) * m_shrinkRate,m_position.y);
+			break;
+		case DIR_RIGHT:		//ÏòÓÒÊÕËõ
+			setPosition(getWindowWidth() - 5.0f * m_shrinkRate - m_curMouseRect.getWidth() * (1.0f - m_shrinkRate),m_position.y);
+			break;
+		case DIR_DOWN:		//ÏòÏÂÊÕËõ
+			setPosition(m_position.x,getSceneHeight() - 5.0f * m_shrinkRate - m_curMouseRect.getHeight() * (1.0f - m_shrinkRate));
+			break;
+		}
 	}
-}
+	INLINE XBool XSubWindow::keyboardProc(int keyOrder, XKeyState keyState)
+	{
+		if (!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+			!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
+			!m_isVisible) return XFalse; 	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
+		if (m_withAction && m_isInAction) return XTrue;	//Èç¹ûÖ§³Ö¶¯×÷²¥·Å¶øÇÒÕıÔÚ²¥·Å¶¯»­ÄÇÃ´²»½ÓÊÜÊó±ê¿ØÖÆ
+		if (m_isSilent) return XFalse;
+		m_ctrlManager.keyProc(keyOrder, keyState);
+		return XFalse;
+	}

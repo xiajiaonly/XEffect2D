@@ -12,7 +12,7 @@ namespace XEE
 {
 	bool createLink()
 	{
-		if(!SUCCEEDED(CoInitialize(NULL))) return false;
+		if (!SUCCEEDED(CoInitialize(NULL))) return false;
 		IShellLink *pisl;
 		if (!SUCCEEDED(CoCreateInstance(CLSID_ShellLink, NULL,
 			CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&pisl)))
@@ -24,52 +24,107 @@ namespace XEE
 		std::string tmpStr = XFile::getCurrentExeFileFullPath();
 		pisl->SetPath(tmpStr.c_str());
 		pisl->SetWorkingDirectory(XFile::getWorkPath().c_str());
-		if(!SUCCEEDED(pisl->QueryInterface(IID_IPersistFile, (void**)&pIPF)))
+		if (!SUCCEEDED(pisl->QueryInterface(IID_IPersistFile, (void**)&pIPF)))
 		{
 			pisl->Release();
 			CoUninitialize();
 			return false;
 		}
-		tmpStr[tmpStr.size() - 3] = 'l';
-		tmpStr[tmpStr.size() - 2] = 'n';
-		tmpStr[tmpStr.size() - 1] = 'k';
+		if (tmpStr.size() >= 3)
+		{
+			memcpy(&tmpStr[tmpStr.size() - 3], &"lnk", 3);
+			//tmpStr[tmpStr.size() - 3] = 'l';
+			//tmpStr[tmpStr.size() - 2] = 'n';
+			//tmpStr[tmpStr.size() - 1] = 'k';
+		}
+		else
+			return false;
 
 		wchar_t wsz[MAX_PATH]; // 定义Unicode字符串 
-		MultiByteToWideChar(CP_ACP, 0, tmpStr.c_str(), -1, wsz, MAX_PATH); 
+		MultiByteToWideChar(CP_ACP, 0, tmpStr.c_str(), -1, wsz, MAX_PATH);
 		pIPF->Save(wsz, FALSE);
 		pIPF->Release();
 		pisl->Release();
 		CoUninitialize();
 		return true;
 	}
+	bool isRegRun()
+	{
+		HKEY hKey;
+		//打开指定子键
+		DWORD dwDisposition = REG_OPENED_EXISTING_KEY;    // 如果不存在不创建
+		if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 0, NULL,
+			REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition) != ERROR_SUCCESS)
+			return false;
+
+		std::string filename = XFile::getCurrentExeFileFullPath();
+		if (filename.size() >= 3)
+		{
+			memcpy(&filename[filename.size() - 3], &"lnk", 3);
+			//filename[filename.size() - 3] = 'l';
+			//filename[filename.size() - 2] = 'n';
+			//filename[filename.size() - 1] = 'k';
+		}
+		else
+			return false;
+		DWORD dataType = REG_SZ;
+		DWORD dataSize = 1024;
+		char tmpName[1024];
+		//读取注册表中该键的键值，如果已经相同则不重复设置。
+
+#if (_WIN32_WINNT >= 0x0601)	//这个方法XP下不支持
+		if (RegGetValue(hKey, NULL,
+			XEG.m_windowData.windowTitle.c_str(), RRF_RT_REG_SZ, &dataType, tmpName, &dataSize) == ERROR_SUCCESS)
+#else
+		if (RegQueryValueEx(hKey, XEG.m_windowData.windowTitle.c_str(), NULL, &dataType, (LPBYTE)tmpName, &dataSize) == ERROR_SUCCESS)
+#endif
+		{
+			RegCloseKey(hKey);
+			//下面判断字符串是否相同
+			//if(dataSize - 1 != filename.size()) return false;
+			return XFile::fileNameCompare(tmpName, filename.c_str());
+		}
+
+		// 关闭子键句柄
+		RegCloseKey(hKey);
+		return false;
+	}
 	bool setRegRun(bool stat)
 	{
 		HKEY hKey;
 		//打开指定子键
 		DWORD dwDisposition = REG_OPENED_EXISTING_KEY;    // 如果不存在不创建
-		if(RegCreateKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 0, NULL,
-            REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition) != ERROR_SUCCESS)
+		if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 0, NULL,
+			REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition) != ERROR_SUCCESS)
 			return false;
 		//创建一个新的键值，设置键值数据为文件名
-		if(stat)
+		if (stat)
 		{
-			if(createLink())
+			if (createLink())
 			{
 				std::string filename = XFile::getCurrentExeFileFullPath();
-				filename[filename.size() - 3] = 'l';
-				filename[filename.size() - 2] = 'n';
-				filename[filename.size() - 1] = 'k';
+				if (filename.size() >= 3)
+				{
+					memcpy(&filename[filename.size() - 3], &"lnk", 3);
+					//filename[filename.size() - 3] = 'l';
+					//filename[filename.size() - 2] = 'n';
+					//filename[filename.size() - 1] = 'k';
+				}
+				else
+					return false;
 				//读取注册表中该键的键值，如果已经相同则不重复设置。
-				if(RegSetValueEx(hKey,XEG.m_windowData.windowTitle.c_str(), 0, REG_SZ, (BYTE*)filename.c_str(), filename.length()) == ERROR_SUCCESS)
+				if (RegSetValueEx(hKey, XEG.m_windowData.windowTitle.c_str(), 0, REG_SZ, (BYTE*)filename.c_str(), filename.length()) == ERROR_SUCCESS)
 					LogStr("自动启动设置成功!");
-			}else
+			}
+			else
 			{
 				RegCloseKey(hKey);
 				return false;
 			}
-		}else
+		}
+		else
 		{
-			if(RegDeleteValue(hKey,XEG.m_windowData.windowTitle.c_str()) == ERROR_SUCCESS)
+			if (RegDeleteValue(hKey, XEG.m_windowData.windowTitle.c_str()) == ERROR_SUCCESS)
 				LogStr("取消自动启动!");
 		}
 		// 关闭子键句柄
@@ -78,69 +133,70 @@ namespace XEE
 	}
 	int sleep(unsigned long sleepUSecond)
 	{//注意到这里的最小延迟设置为1ms，凡是小于1ms的延迟都模认为1ms
-	#ifdef XEE_OS_WINDOWS
+#ifdef XEE_OS_WINDOWS
 		int delay = (int)(sleepUSecond * 0.001f);
-		if(delay <= 0) Sleep(1);
+		if (delay <= 0) Sleep(1);
 		else Sleep(delay);
-	#endif
-	#ifdef XEE_OS_LINUX
-	//方案1
-	//	if(sleepUSecond < 1000) sleepUSecond = 1000;
-	//	usleep(sleepUSecond);
-	//方案2
-	/*	if(sleepUSecond < 1000) sleepUSecond = 1000;
-		timespec t_timeval;
-		if(sleepUSecond >= 1000000)
-		{//超过秒的延迟直接用秒    
-			t_timeval.tv_sec = sleepUSecond /1000000;
-			t_timeval.tv_nsec = (sleepUSecond % 1000000) * 1000; 
-		}else
-		{
-			t_timeval.tv_sec = 0;
-			t_timeval.tv_nsec = sleepUSecond * 1000; 
-		}
-		if(nanosleep(&t_timeval,NULL) == -1)
-		{
-			//DSHOW("sleep error!\n");
-		}*/
-	//方案3
-		if(sleepUSecond < 1000) sleepUSecond = 1000;
+#endif
+#ifdef XEE_OS_LINUX
+		//方案1
+		//	if(sleepUSecond < 1000) sleepUSecond = 1000;
+		//	usleep(sleepUSecond);
+		//方案2
+		/*	if(sleepUSecond < 1000) sleepUSecond = 1000;
+			timespec t_timeval;
+			if(sleepUSecond >= 1000000)
+			{//超过秒的延迟直接用秒
+				t_timeval.tv_sec = sleepUSecond /1000000;
+				t_timeval.tv_nsec = (sleepUSecond % 1000000) * 1000;
+			}else
+			{
+				t_timeval.tv_sec = 0;
+				t_timeval.tv_nsec = sleepUSecond * 1000;
+			}
+			if(nanosleep(&t_timeval,NULL) == -1)
+			{
+				//DSHOW("sleep error!\n");
+			}*/
+			//方案3
+		if (sleepUSecond < 1000) sleepUSecond = 1000;
 		timeval t_timeval;
-		if(sleepUSecond >= 1000000)
+		if (sleepUSecond >= 1000000)
 		{//超过秒的延迟直接用秒    
-			t_timeval.tv_sec = sleepUSecond /1000000;
-			t_timeval.tv_usec = sleepUSecond % 1000000; 
-		}else
+			t_timeval.tv_sec = sleepUSecond / 1000000;
+			t_timeval.tv_usec = sleepUSecond % 1000000;
+		}
+		else
 		{
 			t_timeval.tv_sec = 0;
-			t_timeval.tv_usec = sleepUSecond; 
+			t_timeval.tv_usec = sleepUSecond;
 		}
-		if(select(0, NULL, NULL, NULL, &t_timeval) == -1)
+		if (select(0, NULL, NULL, NULL, &t_timeval) == -1)
 		{
 			//DSHOW("sleep error!\n");
 		}
-	//方案4
-	/*	pthread_cond_t mycond;     
-		pthread_mutex_t mymutex;
-	
-		pthread_cond_init(&mycond, NULL);
-   		pthread_mutex_init(&mymutex, NULL);
-	
-		pthread_mutex_lock(&mymutex); 
-	
-		if(sleepUSecond < 10000) sleepUSecond = 10000;
-		struct timeval now; 
-		gettimeofday(&now, NULL); 
-    
-		timespec abstime;
-		abstime.tv_nsec = now.tv_usec * 1000 + (sleepUSecond % 1000000) * 1000; 
-		abstime.tv_sec = now.tv_sec + sleepUSecond / 1000000;
-		pthread_cond_timedwait(&mycond, &mymutex, &abstime);      
-  		//DSHOW("time out dispatch something...\n");   
- 
-		pthread_mutex_unlock(&mymutex);*/       
-	#endif
-		return 0;	
+		//方案4
+		/*	pthread_cond_t mycond;
+			pthread_mutex_t mymutex;
+
+			pthread_cond_init(&mycond, NULL);
+			pthread_mutex_init(&mymutex, NULL);
+
+			pthread_mutex_lock(&mymutex);
+
+			if(sleepUSecond < 10000) sleepUSecond = 10000;
+			struct timeval now;
+			gettimeofday(&now, NULL);
+
+			timespec abstime;
+			abstime.tv_nsec = now.tv_usec * 1000 + (sleepUSecond % 1000000) * 1000;
+			abstime.tv_sec = now.tv_sec + sleepUSecond / 1000000;
+			pthread_cond_timedwait(&mycond, &mymutex, &abstime);
+			//DSHOW("time out dispatch something...\n");
+
+			pthread_mutex_unlock(&mymutex);*/
+#endif
+		return 0;
 	}
 	inline ULONGLONG subtractTime(const FILETIME &a, const FILETIME &b)
 	{
@@ -269,83 +325,9 @@ namespace XEE
 		//	setWindowPos(0,0);
 	}
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-#ifdef CREATE_WINDOW_WITH_GLUT
-	void draw(){}
-	void idle()
+	XBool startProgram(const char* programPath)
 	{
-		pGame->move(engineIdle());
-		clearScreen();			//清除屏幕
-		pGame->draw();
-		updateScreen();			//更新屏幕的内容
-		//mySleep(1);
-	}
-	void inputProc(const XInputEvent &input)
-	{
-		pGame->input(input);
-		inputEvent(input);
-	}
-	void input(unsigned char c, int x, int y)
-	{
-		XInputEvent tmpEvent;
-		tmpEvent.type = EVENT_KEYBOARD;
-		tmpEvent.keyState = KEY_STATE_DOWN;
-		tmpEvent.keyValue = (XKeyValue)XWindow.mapKey(c);
-		tmpEvent.mouseX = x;
-		tmpEvent.mouseY = y;
-		inputProc(tmpEvent);
-		if (tmpEvent.keyValue == XKEY_ESCAPE) exit(1);
-	}
-	void sInput(int k, int x, int y)
-	{
-		XInputEvent tmpEvent;
-		tmpEvent.type = EVENT_KEYBOARD;
-		tmpEvent.keyState = KEY_STATE_DOWN;
-		tmpEvent.keyValue = (XKeyValue)XWindow.mapKey(k + 512);
-		tmpEvent.mouseX = x;
-		tmpEvent.mouseY = y;
-		inputProc(tmpEvent);
-		if (tmpEvent.keyValue == XKEY_ESCAPE) exit(1);
-	}
-	void mouseMove(int x, int y)
-	{
-		XInputEvent tmpEvent;
-		tmpEvent.type = EVENT_MOUSE;
-		tmpEvent.mouseState = MOUSE_MOVE;
-		tmpEvent.mouseX = x;
-		tmpEvent.mouseY = y;
-		inputProc(tmpEvent);
-	}
-	void mouseProc(int b, int s, int x, int y)
-	{
-		XInputEvent tmpEvent;
-		tmpEvent.type = EVENT_MOUSE;
-		tmpEvent.mouseX = x;
-		tmpEvent.mouseY = y;
-		if (s == GLUT_DOWN)
-		{
-			switch (b)
-			{
-			case GLUT_LEFT_BUTTON: tmpEvent.mouseState = MOUSE_LEFT_BUTTON_DOWN; break;
-			case GLUT_RIGHT_BUTTON: tmpEvent.mouseState = MOUSE_RIGHT_BUTTON_DOWN; break;
-			case GLUT_MIDDLE_BUTTON: tmpEvent.mouseState = MOUSE_MIDDLE_BUTTON_DOWN; break;
-			}
-		}
-		else
-		{
-			switch (b)
-			{
-			case GLUT_LEFT_BUTTON: tmpEvent.mouseState = MOUSE_LEFT_BUTTON_UP; break;
-			case GLUT_RIGHT_BUTTON: tmpEvent.mouseState = MOUSE_RIGHT_BUTTON_UP; break;
-			case GLUT_MIDDLE_BUTTON: tmpEvent.mouseState = MOUSE_MIDDLE_BUTTON_UP; break;
-			}
-		}
-		inputProc(tmpEvent);
-	}
-#endif
-	XBool startProgram(const char * programPath)
-	{
-		if(programPath == NULL) return XFalse;
+		if (programPath == NULL) return XFalse;
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 
@@ -373,9 +355,9 @@ namespace XEE
 		CloseHandle(pi.hProcess);
 		return XTrue;
 	}
-	XBool startProgram(const char * programPath,HANDLE &hProcess)
+	XBool startProgram(const char* programPath, HANDLE &hProcess)
 	{
-		if(programPath == NULL) return XFalse;
+		if (programPath == NULL) return XFalse;
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 
@@ -403,9 +385,13 @@ namespace XEE
 		hProcess = pi.hProcess;
 		return XTrue;
 	}
+	XBool startProgramEx(const char* programPath,int mode)//启动一个程序
+	{
+		return ShellExecuteA(0, "open", programPath, "", "", mode) > (HINSTANCE)32;
+	}
 	XBool exitProgram(HANDLE hProcess)
 	{
-		return TerminateProcess(hProcess,0);
+		return TerminateProcess(hProcess, 0);
 	}
 	XBool activateGame(HWND h)
 	{
@@ -447,7 +433,7 @@ namespace XEE
 			LookupPrivilegeValue(NULL, value, &tkp.Privileges[0].Luid);
 			tkp.PrivilegeCount = 1;
 			tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-			if(AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, (PTOKEN_PRIVILEGES)NULL, 0))
+			if (AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, (PTOKEN_PRIVILEGES)NULL, 0))
 			{
 				CloseHandle(hToken);
 				return true;
@@ -459,20 +445,77 @@ namespace XEE
 	void shutDownSystem(XShutDownSystemMode mode)
 	{
 		if (!getSysPrivilege(SE_SHUTDOWN_NAME)) return;
-		switch(mode)
+		switch (mode)
 		{
 		case SYS_SD_MODE_G:
 			//InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE,SHTDN_REASON_MAJOR_APPLICATION);	//关闭自身的计算机
 			//InitiateSystemShutdownEx("192.168.0.1",NULL,0,TRUE,FALSE,SHTDN_REASON_MAJOR_APPLICATION);	//关闭远程的计算机
-			ExitWindowsEx(EWX_SHUTDOWN|EWX_POWEROFF,0);
+			ExitWindowsEx(EWX_SHUTDOWN | EWX_POWEROFF, 0);
 			break;
 		case SYS_SD_MODE_Z:
-			ExitWindowsEx(EWX_LOGOFF,0); 
+			ExitWindowsEx(EWX_LOGOFF, 0);
 			break;
 		case SYS_SD_MODE_C:
-			ExitWindowsEx(EWX_REBOOT,0);
+			ExitWindowsEx(EWX_REBOOT, 0);
 			break;
 		}
+	}
+	bool turnOnSystem(const void *MAC)
+	{
+		if (MAC == NULL) return false;
+		unsigned char data[128];
+		int offset = 6;
+		memset(data, 0xff, 6);
+		for (int i = 0; i < 16; ++i)
+		{
+			memcpy(data + offset, MAC, 6);
+			offset += 6;
+		}
+		//启动WSA
+		WSADATA WSAData;
+		if (WSAStartup(MAKEWORD(2, 0), &WSAData) != 0)
+		{
+			LogNull("WSAStartup failed: %d\n", GetLastError());
+			return false;
+		}
+
+		//创建socket
+		SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+		if (sock == INVALID_SOCKET)
+		{
+			LogNull("Socket create error: %d\n", GetLastError());
+			return false;
+		}
+
+		//设置为广播发送
+		BOOL bOptVal = TRUE;
+		int iOptLen = sizeof(BOOL);
+		if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&bOptVal, iOptLen) == SOCKET_ERROR)
+		{
+			LogNull("setsockopt error: %d\n", WSAGetLastError());
+			closesocket(sock);
+			WSACleanup();
+			return false;
+		}
+
+		sockaddr_in to;
+		to.sin_family = AF_INET;
+		to.sin_port = htons(0);
+#ifdef WITH_LOCAL_BOARDCAST_IP
+		to.sin_addr.s_addr = inet_addr(BOARDCASR_IP);
+#else
+		to.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+#endif
+
+		//发送Magic Packet
+		if (sendto(sock, (const char *)data, offset, 0, (const struct sockaddr *)&to, sizeof(to)) == SOCKET_ERROR)
+			LogNull("Magic packet send error: %d", WSAGetLastError());
+		else
+			LogStr("Magic packet send!");
+
+		closesocket(sock);
+		WSACleanup();
+		return true;
 	}
 #endif
 }

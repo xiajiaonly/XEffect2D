@@ -286,7 +286,7 @@ namespace XPng
 		return ret;
 	}
 	XBool savePngRGB2RGB(const char *fileName,
-				const unsigned char * data,
+				const void * data,
 				int w,int h,
 				int compression)
 	{
@@ -307,7 +307,7 @@ namespace XPng
 		return XTrue;
 	}
 	XBool savePngRGBA2RGBA(const char *fileName,
-				const unsigned char * data,
+				const void * data,
 				int w,int h,
 				int compression)
 	{
@@ -384,8 +384,8 @@ namespace XPng
 		picArm = NULL;
 		return XTrue;
 	}
-	int savePNG(const std::string &filename,
-				const unsigned char * data,int w,int h,XColorMode color,
+	int savePNG(const std::string& filename,
+				const void * data,int w,int h,XColorMode color,
 				int compression)
 	{
 		if(data == NULL) return XFalse;
@@ -411,6 +411,9 @@ namespace XPng
 	#else
 			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
 	#endif
+			break;
+		case COLOR_GRAY:
+			picArm = SDL_CreateRGBSurface(SDL_SWSURFACE,w,h,8,0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
 			break;
 		default:	//其他格式不支持
 			return -1;

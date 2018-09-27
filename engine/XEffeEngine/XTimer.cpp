@@ -5,6 +5,7 @@
 //Date:		See the header file
 //--------------------------------
 #include "XTimer.h"
+#include "XSDL.h"
 namespace XE{
 XTimer::XTimer()
 	:m_stopped(false)
@@ -90,7 +91,19 @@ namespace XTime
 		t.millisecond = curTime.tv_usec/1000.0f;
 	#endif
 	}
-	long getElapsedTime(const XSystemTime &ts,const XSystemTime &te)
+	long getCurrentTicks()
+	{
+#if CREATE_WINDOW_METHOD == 0
+		return SDL_GetTicks();	//在SDL环境下
+#else
+#if WITH_64BIT_SUPPLY		//windows下得API
+		return GetTickCount64();
+#else 
+		return GetTickCount();
+#endif
+#endif
+	}
+	long long getElapsedTime(const XSystemTime &ts,const XSystemTime &te)
 	{//尚未测试
 		if(!getDateIsCorrect(ts) || !getDateIsCorrect(te)) return 0;
 		XSystemTime t1 = ts;
@@ -100,7 +113,7 @@ namespace XTime
 			t1 = te;
 			t2 = ts;
 		}
-		long ret = 0;
+		long long ret = 0;
 		for(int i = t1.year;i < t2.year;++ i)
 		{
 			if(isLeapYear(i)) ret += DAY_IN_ONE_LEAP_YEAR * MILLISECOND_IN_ONE_DAY;
@@ -142,10 +155,10 @@ namespace XTime
 			return false;
 			break;
 		}
-		if(t.hour <= 0 || t.hour >= 24) return false;
-		if(t.minute <= 0 || t.minute >= 60) return false;
-		if(t.second <= 0 || t.second >= 60) return false;
-		if(t.millisecond <= 0 || t.millisecond >= 1000) return false;
+		if(t.hour < 0 || t.hour >= 24) return false;
+		if(t.minute < 0 || t.minute >= 60) return false;
+		if(t.second < 0 || t.second >= 60) return false;
+		if(t.millisecond < 0 || t.millisecond >= 1000) return false;
 		return true;
 	}
 	bool isBefore(const XSystemTime &t1,const XSystemTime &t2)

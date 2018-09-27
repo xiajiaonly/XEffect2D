@@ -70,14 +70,14 @@ void XMultiText::ctrlProc(void*pClass,int id,int eventID)
 				pPar.m_curStartPixels = temp;
 				pPar.updateLineStr();
 			}
-		/*	if(temp != pPar.m_lineStr[0].showStart)
-			{
-				for(int i = 0;i < pPar.m_canShowLineSum;++ i)
-				{
-					pPar.m_lineStr[i].showStart = temp;
-				}
-				pPar.updateLineStr();
-			}*/
+			//if(temp != pPar.m_lineStr[0].showStart)
+			//{
+			//	for(int i = 0;i < pPar.m_canShowLineSum;++ i)
+			//	{
+			//		pPar.m_lineStr[i].showStart = temp;
+			//	}
+			//	pPar.updateLineStr();
+			//}
 		}else
 		if(eventID == XSlider::SLD_VALUE_CHANGE)
 		{
@@ -87,59 +87,59 @@ void XMultiText::ctrlProc(void*pClass,int id,int eventID)
 			int temp = pPar.m_horizontalSlider.getCurValue();
 			if(temp != pPar.m_curStartPixels)
 			{
-				printf("%d\n",temp);
+				//printf("%d\n",temp);
 				pPar.m_curStartPixels = temp;
 				pPar.updateLineStr();
 				pPar.m_horizontalSlider.setCurValue(temp);
 			}
-		/*	if(temp != pPar.m_lineStr[0].showStart)
-			{
-				for(int i = 0;i < pPar.m_canShowLineSum;++ i)
-				{
-					pPar.m_lineStr[i].showStart = temp;
-				}
-				pPar.updateLineStr();
-				pPar.m_horizontalSlider.setCurValue(temp);
-			}else
-			{
-				if(pPar.m_horizontalSlider.getCurValue() > pPar.m_lineStr[0].showStart)
-				{
-					++ temp;
-					for(int i = 0;i < pPar.m_canShowLineSum;++ i)
-					{
-						pPar.m_lineStr[i].showStart = temp;
-					}
-					pPar.updateLineStr();
-					pPar.m_horizontalSlider.setCurValue(temp);
-				}else
-				if(pPar.m_horizontalSlider.getCurValue() < pPar.m_lineStr[0].showStart)
-				{
-					-- temp;
-					for(int i = 0;i < pPar.m_canShowLineSum;++ i)
-					{
-						pPar.m_lineStr[i].showStart = temp;
-					}
-					pPar.updateLineStr();
-					pPar.m_horizontalSlider.setCurValue(temp);
-				}
-			}*/
+			//if(temp != pPar.m_lineStr[0].showStart)
+			//{
+			//	for(int i = 0;i < pPar.m_canShowLineSum;++ i)
+			//	{
+			//		pPar.m_lineStr[i].showStart = temp;
+			//	}
+			//	pPar.updateLineStr();
+			//	pPar.m_horizontalSlider.setCurValue(temp);
+			//}else
+			//{
+			//	if(pPar.m_horizontalSlider.getCurValue() > pPar.m_lineStr[0].showStart)
+			//	{
+			//		++ temp;
+			//		for(int i = 0;i < pPar.m_canShowLineSum;++ i)
+			//		{
+			//			pPar.m_lineStr[i].showStart = temp;
+			//		}
+			//		pPar.updateLineStr();
+			//		pPar.m_horizontalSlider.setCurValue(temp);
+			//	}else
+			//	if(pPar.m_horizontalSlider.getCurValue() < pPar.m_lineStr[0].showStart)
+			//	{
+			//		-- temp;
+			//		for(int i = 0;i < pPar.m_canShowLineSum;++ i)
+			//		{
+			//			pPar.m_lineStr[i].showStart = temp;
+			//		}
+			//		pPar.updateLineStr();
+			//		pPar.m_horizontalSlider.setCurValue(temp);
+			//	}
+			//}
 		}
 		return;
 	}
 }
 XMultiText::XMultiText()
 	:m_isInited(XFalse)
-	,m_multiEditNormal(NULL)			//ÊäÈë¿òÆÕÍ¨×´Ì¬
-	,m_multiEditDisable(NULL)		//ÊäÈë¿òÎÞÐ§×´Ì¬
-	,m_multiEditSelect(NULL)			//ÊäÈë¿òÆ¬Ñ¡ÑÕÉ«
+	, m_multiEditNormal(NULL)			//ÊäÈë¿òÆÕÍ¨×´Ì¬
+	, m_multiEditDisable(NULL)		//ÊäÈë¿òÎÞÐ§×´Ì¬
+	, m_multiEditSelect(NULL)			//ÊäÈë¿òÆ¬Ñ¡ÑÕÉ«
 	//,m_funInputChenge(NULL)			//ÊäÈëÄÚÈÝ·¢Éú¸Ä±äµÄÊ±ºòµ÷ÓÃ
 	//,m_funInputOver(NULL)			//È·ÈÏÊäÈë½áÊøÖ®ºóµÄÊ±ºòµ÷ÓÃ
-	,m_lineStr(NULL)
-	,m_resInfo(NULL)
-	,m_withoutTex(XFalse)
+	, m_lineStr(NULL)
+	, m_resInfo(NULL)
+	, m_withoutTex(XFalse)
 	//,m_funSelect(NULL)
 	//,m_pClass(NULL)
-	,m_curMaxLineSum(0)
+	, m_curMaxLineSum(0)
 {
 	m_ctrlType = CTRL_OBJ_MUTITEXT;
 }
@@ -147,14 +147,16 @@ void XMultiText::release()
 {
 	if(!m_isInited) return ;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 	XMem::XDELETE_ARRAY(m_lineStr);
-	for(int i = 0;i < m_curStr.size();++ i)
+	for(auto it = m_curStr.begin();it != m_curStr.end();++ it)
 	{
-		XMem::XDELETE(m_curStr[i]);
+		XMem::XDELETE(*it);
 	}
-	for(int i = 0;i < m_freeStr.size();++ i)
+	m_curStr.clear();
+	for (auto it = m_freeStr.begin(); it != m_freeStr.end(); ++it)
 	{
-		XMem::XDELETE(m_freeStr[i]);
+		XMem::XDELETE(*it);
 	}
+	m_freeStr.clear();
 	XCtrlManager.decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼þ
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(this);
@@ -187,11 +189,11 @@ void XMultiText::setStartLine(int temp)
 		}
 	}
 }
-XBool XMultiText::init(const XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
-		const XRect& Area,	//¿Ø¼þµÄ·¶Î§
+XBool XMultiText::init(const XVec2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
+		const XRect& area,	//¿Ø¼þµÄ·¶Î§
 		const XMultiTextSkin& tex,	//¿Ø¼þµÄÌùÍ¼
 		const char *str,const XFontUnicode& font,float strSize,		//¿Ø¼þµÄ×ÖÌå¼°Ïà¹ØÐÅÏ¢
-		//const XVector2& strPosition,
+		//const XVec2& strPosition,
 		//const XMouseRightButtonMenu &mouseMenu,
 		const XSlider &vSlider,const XSlider &hSlider)	//¿Ø¼þµÄÆäËû¸½ÊôÒÀÀµ¿Ø¼þ
 {
@@ -199,23 +201,23 @@ XBool XMultiText::init(const XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 	if(tex.editNormal == NULL || tex.editInsert == NULL || tex.editDisable == NULL || tex.editSelect == NULL) return XFalse;
 
 	//ÐèÒª×¢ÒâµÄÊÇÊäÈë·¶Î§±ØÐëÒªÄÜÏÔÊ¾×îÉÙÒ»¸ö×Ö·û£¬·ñÔò½«»áÔì³ÉÎÊÌâ£¬Ä¿Ç°ÕâÀï²¢Ã»ÓÐ´úÂëÈ¥ÅÐ¶Ï£¬µ«ÊÇÊµ¼ÊÊ¹ÓÃÖÐÐèÒª×¢ÒâÕâ¸öÎÊÌâ
-	if(Area.getWidth() <= 0 || Area.getHeight() <= 0) return XFalse;	//ÊäÈë·¶Î§²»ÄÜÎª¿Õ
+	if(area.getWidth() <= 0 || area.getHeight() <= 0) return XFalse;	//ÊäÈë·¶Î§²»ÄÜÎª¿Õ
 	if(strSize <= 0) return XFalse;		//×Ö·û´®µÄ´óÐ¡²»ÄÜÎª·Ç·¨Öµ
 //	if(str != NULL && strlen(str) >= MAX_STRING_LENGTH) return XFalse;
 
 	//ÏÂÃæ¿ªÊ¼¸³Öµ
 	m_position = position;
-	m_mouseRect = Area;
+	m_mouseRect = area;
 	m_withoutTex = XFalse;
 
 	m_multiEditNormal = tex.editNormal;			//ÊäÈë¿òÆÕÍ¨×´Ì¬
 	m_multiEditDisable = tex.editDisable;		//ÊäÈë¿òÎÞÐ§×´Ì¬
 	m_multiEditSelect = tex.editSelect;			//ÊäÈë¿òÆ¬Ñ¡ÑÕÉ«
 	m_multiEditUpon = tex.editUpon;
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 
 	//m_textPosition = strPosition;			//ÎÄ×ÖÏÔÊ¾µÄÎ»ÖÃ£¬ÊÇÏà¶ÔÓÚ¿Ø¼þµÄÎ»ÖÃÀ´¶¨µÄ
-	m_textSize.set(strSize,strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
+	m_textSize.set(strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
 
 	m_spriteBackGround.init(m_multiEditNormal->texture.m_w,m_multiEditNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
@@ -260,14 +262,14 @@ XBool XMultiText::init(const XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 	m_curMaxLineWidthPixels = 0;
 	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + (m_mouseRect.getRB() -
+			XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight())) * m_scale);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
 	m_lineStr = XMem::createArrayMem<XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].isEnable = XFalse;
@@ -308,9 +310,7 @@ XBool XMultiText::init(const XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
 	m_selectLineOrder = -1;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
@@ -322,10 +322,10 @@ XBool XMultiText::init(const XVector2& position,	//¿Ø¼þËùÔÚµÄÎ»ÖÃ
 }
 XBool XMultiText::initPlus(const char *path,
 		const char *str,const XFontUnicode& font, float strSize,
-		XResourcePosition resoursePosition)
+		XResPos resPos)
 {
 	if(m_isInited) return XFalse;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
-	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXEDIT_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXEDIT_TEX,resPos);
 	if(m_resInfo == NULL) return XFalse;
 	XEditSkin * tex = (XEditSkin *)m_resInfo->m_pointer;
 	if(tex->editNormal == NULL || tex->editInsert == NULL || tex->editDisable == NULL || tex->editSelect == NULL) return XFalse;
@@ -336,7 +336,7 @@ XBool XMultiText::initPlus(const char *path,
 //	if(str != NULL && strlen(str) >= MAX_STRING_LENGTH) return XFalse;
 
 	//ÏÂÃæ¿ªÊ¼¸³Öµ
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	m_mouseRect = tex->m_mouseRect;
 	m_withoutTex = XFalse;
 
@@ -344,10 +344,10 @@ XBool XMultiText::initPlus(const char *path,
 	m_multiEditDisable = tex->editDisable;		//ÊäÈë¿òÎÞÐ§×´Ì¬
 	m_multiEditSelect = tex->editSelect;			//ÊäÈë¿òÆ¬Ñ¡ÑÕÉ«
 	m_multiEditUpon = tex->editUpon;
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 
 	//m_textPosition = strPosition;			//ÎÄ×ÖÏÔÊ¾µÄÎ»ÖÃ£¬ÊÇÏà¶ÔÓÚ¿Ø¼þµÄÎ»ÖÃÀ´¶¨µÄ
-	m_textSize.set(strSize,strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
+	m_textSize.set(strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
 
 	m_spriteBackGround.init(m_multiEditNormal->texture.m_w,m_multiEditNormal->texture.m_h,1);
 #if WITH_OBJECT_MANAGER
@@ -359,8 +359,8 @@ XBool XMultiText::initPlus(const char *path,
 
 	//m_verticalSlider.setACopy(vSlider);
 	char tempPath[MAX_FILE_NAME_LENGTH];
-	sprintf(tempPath,"%s/SliderV",path);
-	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resoursePosition);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/SliderV",path);
+	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resPos);
 	XCtrlManager.decreaseAObject(&m_verticalSlider);
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_verticalSlider);
@@ -373,8 +373,8 @@ XBool XMultiText::initPlus(const char *path,
 	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 
 	//m_horizontalSlider.setACopy(hSlider);
-	sprintf(tempPath,"%s/SliderH",path);
-	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resoursePosition);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/SliderH",path);
+	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resPos);
 	XCtrlManager.decreaseAObject(&m_horizontalSlider);
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_horizontalSlider);
@@ -397,14 +397,14 @@ XBool XMultiText::initPlus(const char *path,
 	m_curMaxLineWidthPixels = 0;
 	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + (m_mouseRect.getRB() -
+			XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight())) * m_scale);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
 	m_lineStr = XMem::createArrayMem<XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].isEnable = XFalse;
@@ -445,9 +445,7 @@ XBool XMultiText::initPlus(const char *path,
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
 	m_selectLineOrder = -1;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
@@ -460,22 +458,21 @@ XBool XMultiText::initPlus(const char *path,
 XBool XMultiText::initWithoutSkin(const XRect& area,
 		const char *str,const XFontUnicode& font, float strSize)
 {
-	if(m_isInited) return XFalse;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
-
-	//ÐèÒª×¢ÒâµÄÊÇÊäÈë·¶Î§±ØÐëÒªÄÜÏÔÊ¾×îÉÙÒ»¸ö×Ö·û£¬·ñÔò½«»áÔì³ÉÎÊÌâ£¬Ä¿Ç°ÕâÀï²¢Ã»ÓÐ´úÂëÈ¥ÅÐ¶Ï£¬µ«ÊÇÊµ¼ÊÊ¹ÓÃÖÐÐèÒª×¢ÒâÕâ¸öÎÊÌâ
-	if(strSize <= 0) return XFalse;		//×Ö·û´®µÄ´óÐ¡²»ÄÜÎª·Ç·¨Öµ
+	if(m_isInited ||	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
+		//ÐèÒª×¢ÒâµÄÊÇÊäÈë·¶Î§±ØÐëÒªÄÜÏÔÊ¾×îÉÙÒ»¸ö×Ö·û£¬·ñÔò½«»áÔì³ÉÎÊÌâ£¬Ä¿Ç°ÕâÀï²¢Ã»ÓÐ´úÂëÈ¥ÅÐ¶Ï£¬µ«ÊÇÊµ¼ÊÊ¹ÓÃÖÐÐèÒª×¢ÒâÕâ¸öÎÊÌâ
+		strSize <= 0) return XFalse;		//×Ö·û´®µÄ´óÐ¡²»ÄÜÎª·Ç·¨Öµ
 //	if(str != NULL && strlen(str) >= MAX_STRING_LENGTH) return XFalse;
 
 	//ÏÂÃæ¿ªÊ¼¸³Öµ
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	m_mouseRect = area;
 	m_withoutTex = XTrue;
 
-	m_scale.set(1.0f,1.0f);
-	m_textSize.set(strSize,strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
+	m_scale.set(1.0f);
+	m_textSize.set(strSize);				//ÎÄ×ÖÏÔÊ¾µÄ³ß´ç£¬Õâ¸ö³ß´ç»áÓë¿Õ¼äµÄËõ·Å³ß´çµþ¼Ó
 
 //	m_verticalSlider.initWithoutSkin(XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),
-//		XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,XVector2::zero);
+//		XRect(0,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,XVec2::zero);
 	m_verticalSlider.initWithoutSkin(XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight() - DEFAULT_SLIDER_WIDTH),
 		100.0f,0.0f,SLIDER_TYPE_VERTICAL);
 	XCtrlManager.decreaseAObject(&m_verticalSlider);
@@ -490,7 +487,7 @@ XBool XMultiText::initWithoutSkin(const XRect& area,
 	m_needShowVSlider = XFalse;			//ÊÇ·ñÐèÒªÏÔÊ¾´¹Ö±»¬¶¯Ìõ
 
 //	m_horizontalSlider.initWithoutSkin(XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),
-//		XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,XVector2::zero);
+//		XRect(0,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,XVec2::zero);
 	m_horizontalSlider.initWithoutSkin(XRect(0,0,m_mouseRect.getWidth() - DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),
 		100.0f,0.0f,SLIDER_TYPE_HORIZONTAL);
 	XCtrlManager.decreaseAObject(&m_horizontalSlider);
@@ -515,14 +512,14 @@ XBool XMultiText::initWithoutSkin(const XRect& area,
 	m_curMaxLineWidthPixels = 0;
 	m_maxLineWidthPixels = m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth();
 
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + (m_mouseRect.getRB() - 
+			XVec2(m_verticalSlider.getMouseRectWidth(),m_horizontalSlider.getMouseRectHeight())) * m_scale);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	//ÎªÃ¿ÐÐ·ÖÅäÄÚ´æ¿Õ¼ä
 	m_lineStr = XMem::createArrayMem<XMultiTextLineString>(m_canShowLineSum);
 	if(m_lineStr == NULL) return XFalse;
 
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].isEnable = XFalse;
@@ -558,9 +555,7 @@ XBool XMultiText::initWithoutSkin(const XRect& area,
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
 	m_selectLineOrder = -1;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
@@ -583,13 +578,14 @@ void XMultiText::updateLineStr()
 
 	int maxlineWidth = 0;
 	//»úÐµµÄ·­Òë
-	for(unsigned int i = 0;i < m_curStr.size();++ i)
+	int i = 0;
+	for(auto it = m_curStr.begin();it != m_curStr.end();++ it, ++ i)
 	{
 		if(i >= m_showStartLine && i < m_showStartLine + m_canShowLineSum)
 		{//ÐèÒªÏÔÊ¾µÄÐÐ;
 			m_lineStr[i - m_showStartLine].isEnable = XTrue;
-			m_lineStr[i - m_showStartLine].curText.setString(m_curStr[i]->c_str());
-			m_lineStr[i - m_showStartLine].lineWidthPixel = m_curStr[i]->length() * m_lineStr[i - m_showStartLine].curText.getTextSize().x * 0.5f;
+			m_lineStr[i - m_showStartLine].curText.setString((*it)->c_str());
+			m_lineStr[i - m_showStartLine].lineWidthPixel = (*it)->length() * m_lineStr[i - m_showStartLine].curText.getTextSize().x * 0.5f;
 			if(m_lineStr[i - m_showStartLine].lineWidthPixel > maxlineWidth)
 			{
 				maxlineWidth = m_lineStr[i - m_showStartLine].lineWidthPixel;
@@ -605,7 +601,7 @@ void XMultiText::updateLineStr()
 //			m_lineStr[i - m_showStartLine].lineEndOrder = i;
 		}else
 		{//²»ÐèÒªÏÔÊ¾µÄÐÐ
-			int w = m_curStr[i]->length() * m_lineStr[0].curText.getTextSize().x * 0.5f;
+			int w = (*it)->length() * m_lineStr[0].curText.getTextSize().x * 0.5f;
 			if(maxlineWidth < w) maxlineWidth = w;
 		}
 	}
@@ -649,14 +645,14 @@ void XMultiText::draw()
 	{
 		if(!m_isEnable) 
 		{
-			XRender::drawFillBoxA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y),
-				XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),XCCS::specialColor * m_color,true);
+			XRender::drawFillRectA(m_position + m_mouseRect.getLT() * m_scale,
+				(m_mouseRect.getSize() - XVec2(m_verticalSlider.getMouseRectWidth(),m_horizontalSlider.getMouseRectHeight())) * m_scale, 
+				XCCS::specialColor * m_color,true);
 		}else 
 		{
-			XRender::drawFillBoxA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y),
-				XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),XCCS::normalColor * m_color,true);
+			XRender::drawFillRectA(m_position + m_mouseRect.getLT() * m_scale,
+				(m_mouseRect.getSize() - XVec2(m_verticalSlider.getMouseRectWidth(),m_horizontalSlider.getMouseRectHeight())) * m_scale, 
+				XCCS::normalColor * m_color,true);
 		}
 		//if(m_haveSelect) m_spriteSelect.draw(&(m_mutiEditSelect->m_texture));	//ÏÔÊ¾Ñ¡ÔñµÄ·¶Î§
 		if(m_actionMD.getIsEnd())
@@ -664,8 +660,8 @@ void XMultiText::draw()
 			if(m_haveSelect && m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
 			{//ÏÂÃæÏÔÊ¾Ñ¡ÔñµÄ±êÇ©
 				int index = m_selectLineOrder - m_showStartLine;
-				XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y + index * m_curTextHeight),
-					XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
+				XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y + index * m_curTextHeight),
+					XVec2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
 					m_curTextHeight),XCCS::onColor * m_color);
 			}
 		}else
@@ -675,10 +671,9 @@ void XMultiText::draw()
 			case MLTTXT_ACTION_TYPE_IN:		//Ñ¡Ïî³öÏÖ
 				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
 				{
-					XRender::drawFillBoxExA(XVector2(m_position.x + m_mouseRect.left * m_scale.x,
-						m_position.y + m_mouseRect.top * m_scale.y + 
+					XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left * m_scale.x, m_mouseRect.top * m_scale.y +
 						(m_actionPosition - m_showStartLine) * m_curTextHeight + m_curTextHeight * (1.0f - m_actionMD.getCurData()) * 0.5f),
-						XVector2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight * m_actionMD.getCurData()),
+						XVec2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight * m_actionMD.getCurData()),
 						XCCS::onColor * m_color);
 				}
 				break;
@@ -687,9 +682,8 @@ void XMultiText::draw()
 				{//Õý³£Çé¿ö
 					float pos = XMath::lineSlerp<float>((m_actionPosition - m_showStartLine) * m_curTextHeight,
 						(m_selectLineOrder - m_showStartLine) * m_curTextHeight,m_actionMD.getCurData());
-					XRender::drawFillBoxExA(XVector2(m_position.x + m_mouseRect.left * m_scale.x,
-						m_position.y + m_mouseRect.top  * m_scale.y + pos),
-						XVector2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight),
+					XRender::drawFillRectExA(m_position + m_mouseRect.getLT() * m_scale + XVec2(0,pos),
+						XVec2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight),
 						XCCS::onColor * m_color);
 				}else
 				if(m_actionPosition < m_showStartLine)
@@ -704,9 +698,8 @@ void XMultiText::draw()
 					}
 					if(h > 0.0f)
 					{
-						XRender::drawFillBoxExA(XVector2(m_position.x + m_mouseRect.left * m_scale.x,
-							m_position.y + m_mouseRect.top * m_scale.y + pos),
-							XVector2(m_maxLineWidthPixels * m_scale.x,h),
+						XRender::drawFillRectExA(m_position + m_mouseRect.getLT() * m_scale + XVec2(0, pos),
+							XVec2(m_maxLineWidthPixels * m_scale.x,h),
 							XCCS::onColor * m_color);
 					}
 				}else
@@ -721,9 +714,8 @@ void XMultiText::draw()
 					}
 					if(h > 0.0f)
 					{
-						XRender::drawFillBoxExA(XVector2(m_position.x + m_mouseRect.left * m_scale.x,
-							m_position.y + m_mouseRect.top * m_scale.y + pos),
-							XVector2(m_maxLineWidthPixels * m_scale.x,h),
+						XRender::drawFillRectExA(m_position + m_mouseRect.getLT() * m_scale + XVec2(0.0f, pos),
+							XVec2(m_maxLineWidthPixels * m_scale.x,h),
 							XCCS::onColor * m_color);
 					}
 				}
@@ -732,10 +724,9 @@ void XMultiText::draw()
 			case MLTTXT_ACTION_TYPE_OUT:	//È¡ÏûÑ¡Ôñ
 				if(m_actionPosition >= m_showStartLine && m_actionPosition < m_showStartLine + m_canShowLineSum)
 				{
-					XRender::drawFillBoxExA(XVector2(m_position.x + m_mouseRect.left * m_scale.x,
-						m_position.y + m_mouseRect.top * m_scale.y + 
+					XRender::drawFillRectExA(m_position + m_mouseRect.getLT() * m_scale + XVec2(0.0f,
 						(m_actionPosition - m_showStartLine) * m_curTextHeight + m_curTextHeight * (1.0f - m_actionMD.getCurData()) * 0.5f),
-						XVector2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight * m_actionMD.getCurData()),
+						XVec2(m_maxLineWidthPixels * m_scale.x,m_curTextHeight * m_actionMD.getCurData()),
 						XCCS::onColor * m_color);
 				}
 				break;
@@ -748,33 +739,29 @@ void XMultiText::draw()
 			{
 				//if(m_lineStr[i].haveAllSelect)
 				//{//ÏÔÊ¾ÕâÒ»ÐÐ±»Ñ¡ÖÐ
-				//	drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y + i * m_curTextHeight),
-				//		XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				//		m_curTextHeight),0.85f * m_color.fR,0.85f * m_color.fG,0.85f * m_color.fB,m_color.fA);
+				//	drawFillRectExA(m_position + XVec2(m_mouseRect.left * m_scale.x,m_mouseRect.top * m_scale.y + i * m_curTextHeight),
+				//		XVec2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
+				//		m_curTextHeight),0.85f * m_color.r,0.85f * m_color.g,0.85f * m_color.b,m_color.a);
 				//}
 				m_lineStr[i].curText.draw();
 			}
 		}
 		if(!m_isEnable) 
 		{
-			XRender::drawFillBoxExA(m_position + XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				m_mouseRect.top * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),XCCS::downColor * m_color,true);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),
-				XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::downColor * m_color,true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(), m_mouseRect.top) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(), m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::downColor * m_color, true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XVec2(m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::downColor * m_color, true);
 		}else 
 		{
-			XRender::drawFillBoxExA(m_position + XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				m_mouseRect.top * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				(m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),XCCS::lightSpecialColor * m_color,true);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),
-				XVector2((m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightSpecialColor * m_color,true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(), m_mouseRect.top) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(), m_mouseRect.getHeight() - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::lightSpecialColor * m_color, true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XVec2(m_mouseRect.getWidth() - m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::lightSpecialColor * m_color, true);
 		}
 		//ÏÔÊ¾»¬¶¯Ìõ
 		if(m_needShowVSlider) m_verticalSlider.draw();
@@ -782,17 +769,17 @@ void XMultiText::draw()
 		//if(m_mutiEditUpon != NULL) m_spriteBackGround.draw(m_mutiEditUpon);
 		if(!m_isEnable) 
 		{
-			XRender::drawFillBoxExA(m_position + XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::blackDownColor * m_color,true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(),
+				m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::blackDownColor * m_color,true);
 			//m_spriteBackGround.draw(m_mutiEditDisable);	//Èç¹ûÎÞÐ§ÔòÏÔÊ¾ÎÞÐ§,²»ÏÔÊ¾²åÈë·ûºÅ
 		}else 
 		{
-			XRender::drawFillBoxExA(m_position + XVector2((m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-				(m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightMouseColor * m_color,true);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(),
+				m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight()) * m_scale,
+				XCCS::lightMouseColor * m_color, true);
 			//m_spriteBackGround.draw(m_mutiEditNormal); //Èç¹ûÓÐÐ§ÔòÏÔÊ¾ÓÐÐ§,ÏÔÊ¾²åÈë·ûºÅ
 		}
 	}else
@@ -803,14 +790,10 @@ void XMultiText::draw()
 		//ÏÔÊ¾µ±Ç°ÊäÈëµÄ×Ö·û´®
 		for(int i = 0;i < m_canShowLineSum;++ i)
 		{
-			if(m_lineStr[i].isEnable)
-			{
-				if(m_lineStr[i].haveAllSelect)
-				{
-					m_lineStr[i].spriteSelect.draw(m_multiEditSelect);
-				}
-				m_lineStr[i].curText.draw();
-			}
+			if (!m_lineStr[i].isEnable) continue;
+			if(m_lineStr[i].haveAllSelect)
+				m_lineStr[i].spriteSelect.draw(m_multiEditSelect);
+			m_lineStr[i].curText.draw();
 		}
 		//ÏÔÊ¾»¬¶¯Ìõ
 		if(m_needShowVSlider) m_verticalSlider.draw();
@@ -818,17 +801,18 @@ void XMultiText::draw()
 		if(m_multiEditUpon != NULL) m_spriteBackGround.draw(m_multiEditUpon);
 	}
 }
-XBool XMultiText::mouseProc(float x,float y,XMouseState mouseState)
+XBool XMultiText::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
 		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
+	if(m_isSilent) return XFalse;
 	
 	if(m_needShowVSlider) 
 	{
-		m_verticalSlider.mouseProc(x,y,mouseState);
-		if(m_curMouseRect.isInRect(x,y))
+		m_verticalSlider.mouseProc(p,mouseState);
+		if(m_curMouseRect.isInRect(p))
 		{//ÕâÀïÏìÓ¦¹öÂÖÊÂ¼þ
 			switch(mouseState)
 			{
@@ -841,37 +825,34 @@ XBool XMultiText::mouseProc(float x,float y,XMouseState mouseState)
 			}
 		}
 	}
-	if(m_needShowHSlider) m_horizontalSlider.mouseProc(x,y,mouseState);
+	if(m_needShowHSlider) m_horizontalSlider.mouseProc(p,mouseState);
 	//ÅÐ¶ÏÊó±êµã»÷ÊÇ·ñÔÚ·¶Î§ÄÚ
-	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_curMouseRect.isInRect(x,y))
+	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_curMouseRect.isInRect(p))
 	{//µãÑ¡ÓÐÐ§£¬¼ÆËãµãÑ¡µÄÐÐÖµ
-		int temp = (y - m_curMouseRect.top) / m_curTextHeight;	//¼ÆËãµ±Ç°Ñ¡ÔñµÄÐÐÊý
-		if(temp < 0) temp = 0;
-		if(temp >= m_canShowLineSum) temp = m_canShowLineSum - 1;
-		if(temp + m_showStartLine < m_curMaxLineSum)
+		int tmp = (p.y - m_curMouseRect.top) / m_curTextHeight;	//¼ÆËãµ±Ç°Ñ¡ÔñµÄÐÐÊý
+		tmp = XMath::clamp(tmp,0, m_canShowLineSum - 1);
+		if(tmp + m_showStartLine < m_curMaxLineSum)
 		{
-			if(m_haveSelect && m_selectLineOrder != temp + m_showStartLine)
+			if(m_haveSelect && m_selectLineOrder != tmp + m_showStartLine)
 			{//ÕâÑùÔòÐèÒªÌÞ³ýÔ­ÓÐµÄÑ¡Ôñ£¬Õû¸öÖ»ÄÜÓÐÒ»¸ö´¦ÓÚÑ¡Ôñ×´Ì¬
 				if(m_selectLineOrder - m_showStartLine >= 0 && m_selectLineOrder - m_showStartLine < m_canShowLineSum)
 					m_lineStr[m_selectLineOrder - m_showStartLine].haveAllSelect = XFalse;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
 				setAction(MLTTXT_ACTION_TYPE_MOVE,m_selectLineOrder);	//±êÇ©ÒÆ¶¯
 			}
-			if(m_haveSelect && m_selectLineOrder == temp + m_showStartLine)
-			{//Èç¹ûÖØ¸´Ñ¡ÔñÔò²»×÷±ê¼Ç
-			}else
+			if(!m_haveSelect || m_selectLineOrder != tmp + m_showStartLine)
 			{
-				if(!m_haveSelect) setAction(MLTTXT_ACTION_TYPE_IN,temp + m_showStartLine);	//ÓÐÑ¡Ôñ
+				if(!m_haveSelect) setAction(MLTTXT_ACTION_TYPE_IN, tmp + m_showStartLine);	//ÓÐÑ¡Ôñ
 				m_haveSelect = XTrue;
-				m_selectLineOrder = temp + m_showStartLine;
+				m_selectLineOrder = tmp + m_showStartLine;
 				if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,MLTTXT_SELECT);
 				else XCtrlManager.eventProc(m_objectID,MLTTXT_SELECT);
 				//±ê¼ÇËùÑ¡µÄÐÐ
-				m_lineStr[temp].haveAllSelect = XTrue;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
+				m_lineStr[tmp].haveAllSelect = XTrue;	//×¢ÒâÕâÀïÊÇÏÔÊ¾Ò»ÕûÐÐ±»Ñ¡ÖÐ£¬ËùÒÔ£¬²»ÐèÒª±ê¼ÇÍ·ºÍÎ²
 				//¼ÆËãÑ¡È¡µÄÎ»ÖÃ
 				if(!m_withoutTex)
 				{
-					m_lineStr[temp].spriteSelect.setPosition(m_curMouseRect.left, m_curMouseRect.top + m_curTextHeight * temp);
-					m_lineStr[temp].spriteSelect.setScale(m_curMouseRect.getWidth() / m_multiEditSelect->textureSize.x,
+					m_lineStr[tmp].spriteSelect.setPosition(m_curMouseRect.left, m_curMouseRect.top + m_curTextHeight * tmp);
+					m_lineStr[tmp].spriteSelect.setScale(m_curMouseRect.getWidth() / m_multiEditSelect->textureSize.x,
 						m_curTextHeight / m_multiEditSelect->textureSize.y);
 				}
 			}
@@ -880,19 +861,17 @@ XBool XMultiText::mouseProc(float x,float y,XMouseState mouseState)
 	}
 	return XTrue;
 }
-void XMultiText::setPosition(float x,float y)
+void XMultiText::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;
-	m_position.set(x,y);
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
+	m_position = p;
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + (m_mouseRect.getRB() - 
+			XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight())) * m_scale);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 
 	if(!m_withoutTex) m_spriteBackGround.setPosition(m_position);
-	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + m_mouseRect.top * m_scale.y);
-	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);
+	m_verticalSlider.setPosition(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(), m_mouseRect.top) * m_scale);
+	m_horizontalSlider.setPosition(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale);
 	for(int i = 0;i < m_canShowLineSum;++ i)
 	{
 		m_lineStr[i].curText.setPosition(m_position.x + (m_mouseRect.left - m_curStartPixels) * m_scale.x,
@@ -900,28 +879,25 @@ void XMultiText::setPosition(float x,float y)
 	}
 	if(m_haveSelect && !m_withoutTex)
 	{//´æÔÚÑ¡È¡
-		int temp = m_selectLineOrder - m_showStartLine;
-		m_lineStr[temp].spriteSelect.setPosition(m_curMouseRect.left,m_curMouseRect.top + m_curTextHeight * temp);
+		int tmp = m_selectLineOrder - m_showStartLine;
+		m_lineStr[tmp].spriteSelect.setPosition(m_curMouseRect.left,m_curMouseRect.top + m_curTextHeight * tmp);
 	}
 }
-void XMultiText::setScale(float x,float y)
+void XMultiText::setScale(const XVec2& s)
 {
-	if(!m_isInited) return;
-	if(x <= 0 || y <= 0) return;
-	m_scale.set(x,y);
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
+	if(!m_isInited || s.x <= 0 || s.y <= 0) return;
+	m_scale = s;
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + (m_mouseRect.getRB() -
+			XVec2(m_verticalSlider.getMouseRectWidth(), m_horizontalSlider.getMouseRectHeight())) * m_scale);	//µ±Ç°µÄÊó±êÏìÓ¦·¶Î§
 	if(!m_withoutTex)
 	{
 		m_spriteBackGround.setPosition(m_position);
 		m_spriteBackGround.setScale(m_scale);
 	}
-	m_verticalSlider.setPosition(m_position.x + (m_mouseRect.right - m_verticalSlider.getMouseRectWidth()) * m_scale.x,
-		m_position.y + m_mouseRect.top * m_scale.y);
+	m_verticalSlider.setPosition(m_position + XVec2(m_mouseRect.right - m_verticalSlider.getMouseRectWidth(), m_mouseRect.top) * m_scale);
 	m_verticalSlider.setScale(m_scale);
-	m_horizontalSlider.setPosition(m_position.x + m_mouseRect.left * m_scale.x,
-		m_position.y + (m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale.y);
+	m_horizontalSlider.setPosition(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom - m_horizontalSlider.getMouseRectHeight()) * m_scale);
 	m_horizontalSlider.setScale(m_scale);
 
 	m_lineStr[0].curText.setScale(m_scale);
@@ -935,42 +911,39 @@ void XMultiText::setScale(float x,float y)
 	}
 	if(m_haveSelect && !m_withoutTex)
 	{//´æÔÚÑ¡È¡
-		int temp = m_selectLineOrder - m_showStartLine;
-		m_lineStr[temp].spriteSelect.setPosition(m_curMouseRect.left,m_curMouseRect.top + m_curTextHeight * temp);
-		m_lineStr[temp].spriteSelect.setScale(m_curMouseRect.getWidth() / m_multiEditSelect->textureSize.x,
+		int tmp = m_selectLineOrder - m_showStartLine;
+		m_lineStr[tmp].spriteSelect.setPosition(m_curMouseRect.left,m_curMouseRect.top + m_curTextHeight * tmp);
+		m_lineStr[tmp].spriteSelect.setScale(m_curMouseRect.getWidth() / m_multiEditSelect->textureSize.x,
 			m_curTextHeight / m_multiEditSelect->textureSize.y);
 	}
 }
 void XMultiText::checkStr()			//¼ì²é×Ö·û´®µÄµ¥ÐÐ¿í¶ÈÊÇ·ñ´óÓÚÏÞÖÆ
 {
-	for(unsigned int i = 0;i < m_curStr.size();++ i)
+	for(auto it = m_curStr.begin();it != m_curStr.end();++ it)
 	{
-		if(m_curStr[i]->length() >= MAX_LINE_STRING_LENGTH - 2)
-		{//³¤¶È³¬¹ýÏÞÖÆ£¬ÕâÀï½øÐÐ½Ø¶Ï
-			*m_curStr[i] = m_curStr[i]->substr(0,MAX_LINE_STRING_LENGTH - 2);
-		}
+		if ((*it)->length() < MAX_LINE_STRING_LENGTH - 2) continue;
+		//³¤¶È³¬¹ýÏÞÖÆ£¬ÕâÀï½øÐÐ½Ø¶Ï
+		*(*it) = (*it)->substr(0,MAX_LINE_STRING_LENGTH - 2);
 	}
 }
 void XMultiText::clearAllStrData()
 {//½«ËùÓÐÏÖÔÚÊ¹ÓÃµÄÊý¾Ý»ØÊÕ
-	std::string *tmp;
-	for(int i = 0;i < m_curStr.size();++ i)
+	for (auto it = m_curStr.begin(); it != m_curStr.end(); ++it)
 	{
-		tmp = m_curStr[0];
-		m_curStr.pop_front();
-		m_freeStr.push_back(tmp);
-		--i;
+		m_freeStr.push_back(*it);
 	}
+	m_curStr.clear();
 }
 bool XMultiText::addAStrData(const char * str)
 {
 	bool ret = false;
 	std::string *tmp = NULL;
-	if(m_freeStr.size() > 0)
+	if (m_freeStr.size() > 0)
 	{//×ã¹»
 		tmp = m_freeStr[0];
 		m_freeStr.pop_front();
-	}else
+	}
+	else
 	{//²»×ã
 		tmp = m_curStr[0];
 		m_curStr.pop_front();
@@ -982,35 +955,37 @@ bool XMultiText::addAStrData(const char * str)
 }
 void XMultiText::setString(const char *str)
 {
-	if(!m_isInited ||	//±ØÐëÒª³õÊ¼»¯
+	if (!m_isInited ||	//±ØÐëÒª³õÊ¼»¯
 		str == NULL) return;		//¿ÕÖ¸ÕëÐèÒªÍË³ö
 	//ÕâÀïÐèÒª½«×Ö·û´®·Ö¶Î·ÅÈë
 	clearAllStrData();
 	int len = strlen(str) + 1;	//ÐèÒª¼ÓÉÏ½áÊø·û
-	if(len > 0)
+	if (len > 0)
 	{
 		char tmpStr[MAX_LINE_STRING_LENGTH];
 		int start = 0;
-		for(int i = 0;i < len;++ i)
+		for (int i = 0; i < len; ++i)
 		{
-			if(str[i] < 0)
+			if (str[i] < 0)
 			{//ÖÐÎÄ
-				++ i;
-			}else
-			if(str[i] == '\0' || str[i] == '\n')
-			{//Ò»ÐÐµÄ½áÊø
-				if(i - start >= MAX_LINE_STRING_LENGTH - 2)
-				{//³¬¹ý³¤¶È
-					memcpy(tmpStr,str + start,MAX_LINE_STRING_LENGTH - 2);
-					tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
-				}else
-				{
-					memcpy(tmpStr,str + start,i - start);
-					tmpStr[i - start] = '\0';
-				}
-				addAStrData(tmpStr);
-				start = i + 1;
+				++i;
 			}
+			else
+				if (str[i] == '\0' || str[i] == '\n')
+				{//Ò»ÐÐµÄ½áÊø
+					if (i - start >= MAX_LINE_STRING_LENGTH - 2)
+					{//³¬¹ý³¤¶È
+						memcpy(tmpStr, str + start, MAX_LINE_STRING_LENGTH - 2);
+						tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
+					}
+					else
+					{
+						memcpy(tmpStr, str + start, i - start);
+						tmpStr[i - start] = '\0';
+					}
+					addAStrData(tmpStr);
+					start = i + 1;
+				}
 		}
 	}
 	//ÕâÀï×îºÃÄÜÕûÀí×Ö·û´®£¬²»Òª³¬³öÒ»ÐÐµÄ×î´óÏÔÊ¾£¬ÕâÑù×ÓÓÐÀûÓÚºóÃæµÄÍ³Ò»´¦Àí
@@ -1020,39 +995,40 @@ void XMultiText::setString(const char *str)
 	m_showStartLine = 0;
 	updateLineStr();
 
-	if(m_haveSelect) setAction(MLTTXT_ACTION_TYPE_OUT,m_selectLineOrder);	//È¡ÏûÑ¡Ôñ
+	if (m_haveSelect) setAction(MLTTXT_ACTION_TYPE_OUT, m_selectLineOrder);	//È¡ÏûÑ¡Ôñ
 	m_haveSelect = XFalse;		//ÊÇ·ñÔÚ×Ö·û´®ÖÐÓÐÑ¡Ôñ
 	m_selectLineOrder = -1;
-	for(int i = 0;i < m_canShowLineSum;++ i)
+	for (int i = 0; i < m_canShowLineSum; ++i)
 	{
 		m_lineStr[i].haveAllSelect = XFalse;
 	}
 }
 void XMultiText::addALine(const char *str)		//Ïò×Ö·û´®ÖÐÌí¼Ó×Ö·û´®
 {
-	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+	if (!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		str == NULL) return;
 	char tmpStr[MAX_LINE_STRING_LENGTH];
-	if(strlen(str) >= MAX_LINE_STRING_LENGTH - 2)
+	if (strlen(str) >= MAX_LINE_STRING_LENGTH - 2)
 	{
-		memcpy(tmpStr,str,MAX_LINE_STRING_LENGTH - 2);
+		memcpy(tmpStr, str, MAX_LINE_STRING_LENGTH - 2);
 		tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
-	}else
-	{
-		strcpy(tmpStr,str);
 	}
-	int index = XString::getCharPosition(tmpStr,'\n');
-	if(index >= 0) tmpStr[index] = '\0';	//¶ªÆú¶àÓàµÄ²¿·Ö
+	else
+	{
+		strcpy_s(tmpStr, MAX_LINE_STRING_LENGTH, str);
+	}
+	int index = XString::getCharPosition(tmpStr, '\n');
+	if (index >= 0) tmpStr[index] = '\0';	//¶ªÆú¶àÓàµÄ²¿·Ö
 
 	m_mutex.Lock();
 	//½«ÕâÒ»ÐÐ²åÈë
-	if(addAStrData(tmpStr))
+	if (addAStrData(tmpStr))
 	{//×¢ÒâÕâÀïÃ»ÓÐ´¦Àí·­¹öÔì³ÉµÄºÜ¶à×´Ì¬±ä¸ü(ÉÐÎ´Íê³É)
 		//Ñ¡ÔñµÄÐÐÐèÒªÉÏÒÆ
-		if(m_haveSelect) 
+		if (m_haveSelect)
 		{
-			-- m_selectLineOrder;
-			if(m_selectLineOrder < 0)
+			--m_selectLineOrder;
+			if (m_selectLineOrder < 0)
 			{//³¬³ö·¶Î§
 				m_selectLineOrder = 0;
 				m_haveSelect = XFalse;
@@ -1062,11 +1038,12 @@ void XMultiText::addALine(const char *str)		//Ïò×Ö·û´®ÖÐÌí¼Ó×Ö·û´®
 	}
 
 	checkStr();
-	if(m_needShowVSlider && m_verticalSlider.getCurValue() == m_verticalSlider.getMaxValue())
+	if (m_needShowVSlider && m_verticalSlider.getCurValue() == m_verticalSlider.getMaxValue())
 	{
 		updateLineStr();
 		m_verticalSlider.setCurValue(m_verticalSlider.getMaxValue());
-	}else
+	}
+	else
 	{
 		updateLineStr();
 	}
@@ -1074,36 +1051,38 @@ void XMultiText::addALine(const char *str)		//Ïò×Ö·û´®ÖÐÌí¼Ó×Ö·û´®
 }
 void XMultiText::addString(const char *str)			//Ïò×Ö·û´®ÖÐÌí¼Ó×Ö·û´®
 {
-	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
+	if (!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		str == NULL) return;
 	int len = strlen(str) + 1;
-	if(len <= 0)
+	if (len <= 0)
 	{
 		addALine("");
 		return;
 	}
 	char tmpStr[MAX_LINE_STRING_LENGTH];
 	int start = 0;
-	for(int i = 0;i < len;++ i)
+	for (int i = 0; i < len; ++i)
 	{
-		if(str[i] < 0)
+		if (str[i] < 0)
 		{//ÖÐÎÄ
-			++ i;
-		}else
-		if(str[i] == '\0' || str[i] == '\n')
-		{//Ò»ÐÐµÄ½áÊø
-			if(i - start >= MAX_LINE_STRING_LENGTH - 2)
-			{//³¬¹ý³¤¶È
-				memcpy(tmpStr,str + start,MAX_LINE_STRING_LENGTH - 2);
-				tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
-			}else
-			{
-				memcpy(tmpStr,str + start,i - start);
-				tmpStr[i - start] = '\0';
-			}
-			addALine(tmpStr);
-			start = i + 1;
+			++i;
 		}
+		else
+			if (str[i] == '\0' || str[i] == '\n')
+			{//Ò»ÐÐµÄ½áÊø
+				if (i - start >= MAX_LINE_STRING_LENGTH - 2)
+				{//³¬¹ý³¤¶È
+					memcpy(tmpStr, str + start, MAX_LINE_STRING_LENGTH - 2);
+					tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
+				}
+				else
+				{
+					memcpy(tmpStr, str + start, i - start);
+					tmpStr[i - start] = '\0';
+				}
+				addALine(tmpStr);
+				start = i + 1;
+			}
 	}
 }
 XBool XMultiText::setACopy(const XMultiText &temp)
@@ -1149,11 +1128,11 @@ XBool XMultiText::setACopy(const XMultiText &temp)
 		if(tmpStr == NULL) return XFalse;
 		m_freeStr.push_back(tmpStr);
 	}
-	for(unsigned int i = 0;i < temp.m_curStr.size();++ i)
+	for(auto it = temp.m_curStr.begin();it != temp.m_curStr.end();++ it)
 	{
 		tmpStr = XMem::createMem<std::string>();
 		if(tmpStr == NULL) return XFalse;
-		*tmpStr = *temp.m_curStr[i];
+		*tmpStr = *(*it);
 		m_curStr.push_back(tmpStr);
 	}
 
@@ -1240,9 +1219,9 @@ XBool XMultiText::exportData(const char *fileName)		//Êý¾Ýµ¼³ö
 			return XFalse;
 		}
 	}
-	for(int i = 0;i < m_curStr.size();++ i)
+	for(auto it = m_curStr.begin();it != m_curStr.end();++ it)
 	{
-		fprintf(fp,"%s\n",m_curStr[i]->c_str());
+		fprintf(fp,"%s\n",(*it)->c_str());
 	}
 	fclose(fp);
 	return XTrue;
@@ -1281,9 +1260,9 @@ XBool XMultiText::saveState(TiXmlNode &e)
 {
 	if(!m_needSaveAndLoad) return XTrue;	//Èç¹û²»ÐèÒª±£´æÔòÖ±½Ó·µ»Ø
 	std::string tmpStr = "";
-	for(int i = 0;i < m_curStr.size();++ i)
+	for (auto it = m_curStr.begin(); it != m_curStr.end(); ++it)
 	{
-		tmpStr += (*m_curStr[i]) + "\n";
+		tmpStr += (*(*it)) + "\n";
 	}
 	if(!XXml::addLeafNode(e,m_ctrlName.c_str(),tmpStr)) return XFalse;
 	return XTrue;
@@ -1301,10 +1280,11 @@ XBool XMultiText::deleteSelectLine()		//É¾³ýµ±Ç°Ñ¡ÔñµÄÒ»ÐÐ
 	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_haveSelect) return XFalse;
 	std::string tmpStr = "";
-	for(int i = 0;i < m_curStr.size();++ i)
+	auto sT = m_curStr.begin() + m_selectLineOrder;
+	for (auto it = m_curStr.begin(); it != m_curStr.end(); ++it)
 	{
-		if(i == m_selectLineOrder) continue;
-		tmpStr += (*m_curStr[i]) + "\n";
+		if(it == sT) continue;
+		tmpStr += (*(*it)) + "\n";
 	}
 	setString(tmpStr.c_str());
 	//setStringÒÑ¾­½øÐÐÁËÈ¡ÏûÑ¡ÔñµÄ²Ù×÷
@@ -1338,17 +1318,6 @@ XBool XMultiText::moveUpSelectLine()	//½«Ñ¡ÔñµÄÒ»ÐÐÉÏÒÆ
 		return XTrue;
 	}
 }
-XBool XMultiText::moveUpLine(int order)	//½«Ä³Ò»ÐÐÉÏÒÆ
-{
-	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-		!m_haveSelect) return XFalse;
-	if(order <= 0 || order >= m_curMaxLineSum) return XFalse;	//·Ç·¨µÄÖµÔòÍË³ö
-	std::string *tmpStr = m_curStr[order];
-	m_curStr[order] = m_curStr[order - 1];
-	m_curStr[order - 1] = tmpStr;
-	updateLineStr();
-	return XTrue;
-}
 XBool XMultiText::moveDownSelectLine()	//½«Ñ¡ÔñµÄÒ»ÐÐÏÂÒÆ
 {
 	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
@@ -1376,17 +1345,6 @@ XBool XMultiText::moveDownSelectLine()	//½«Ñ¡ÔñµÄÒ»ÐÐÏÂÒÆ
 		return XTrue;
 	}
 }
-XBool XMultiText::moveDownLine(int order)	//½«Ä³Ò»ÐÐÏÂÒÆ
-{
-	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-		!m_haveSelect) return XFalse;
-	if(order < 0 || order >= m_curMaxLineSum - 1) return XFalse;	//·Ç·¨µÄÖµÔòÍË³ö
-	std::string *tmpStr = m_curStr[order];
-	m_curStr[order] = m_curStr[order + 1];
-	m_curStr[order + 1] = tmpStr;
-	updateLineStr();
-	return XTrue;
-}
 XBool XMultiText::insertALine(const char *str,int lineOrder)	//ÏòÎÄ±¾µÄÖ¸¶¨ÐÐ²åÈëÒ»ÐÐ
 {
 	if(!m_isInited ||		//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
@@ -1400,7 +1358,7 @@ XBool XMultiText::insertALine(const char *str,int lineOrder)	//ÏòÎÄ±¾µÄÖ¸¶¨ÐÐ²åÈ
 		tmpStr[MAX_LINE_STRING_LENGTH - 1] = '\0';
 	}else
 	{
-		strcpy(tmpStr,str);
+		strcpy_s(tmpStr,MAX_LINE_STRING_LENGTH,str);
 	}
 	int index = XString::getCharPosition(tmpStr,'\n');
 	if(index >= 0) tmpStr[index] = '\0';	//¶ªÆú¶àÓàµÄ²¿·Ö
@@ -1441,6 +1399,7 @@ XBool XMultiText::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 		!m_isEnable ||
 		!m_isBeChoose) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
+	if(m_isSilent) return XFalse;
 	if(keyState == KEY_STATE_UP)
 	{
 		switch(keyOrder)

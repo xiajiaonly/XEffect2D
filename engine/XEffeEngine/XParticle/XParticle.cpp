@@ -18,22 +18,22 @@ int XAloneParticles::init(const XTexture *texture)
 	halfH = m_texture->m_h >> 1;
 
 	//初始化一些基本数值
-	m_isEnable = 0;			
+	m_isEnable = false;			
 
-	m_initPosition.set(0,0);	
-	m_initSize.set(1,1);		
+	m_initPosition.set(0.0f);	
+	m_initSize.set(1.0f);		
 	m_initAngle = 0;				
-	m_initColor.setColor(1.0,1.0,1.0,1.0);	
+	m_initColor.set(1.0f, 1.0f);
 
-	m_dPosition.set(0,0);	
-	m_dSize.set(0,0);		
+	m_dPosition.set(0.0f);
+	m_dSize.set(0.0f);
 	m_dAngle = 0;			
-	m_dColor.setColor(1.0,1.0,1.0,1.0);		
+	m_dColor.set(1.0f, 1.0f);
 
-	m_curPosition.set(0,0);	
-	m_curSize.set(1.0,1.0);		
+	m_curPosition.set(0.0f);
+	m_curSize.set(1.0f);		
 	m_curAngle = 0;		
-	m_curColor.setColor(1.0,1.0,1.0,1.0);	
+	m_curColor.set(1.0f, 1.0f);
 
 	if(m_glListOrder <= 0)
 	{
@@ -71,8 +71,7 @@ void XAloneParticles::draw() const
 	if(m_stage == STAGE_SLEEP) return;
 	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture->m_texture);
-	XGL::EnableBlend();
-	XGL::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	XGL::setBlendAlpha();
 //#if WITHXSPRITE_EX
 //	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
 //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
@@ -85,9 +84,9 @@ void XAloneParticles::draw() const
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_curPosition.x + halfW,m_curPosition.y + halfH, 0);
+	glTranslatef(m_curPosition.x + halfW,m_curPosition.y + halfH, 0.0f);
 
-	glScalef(m_curSize.x,m_curSize.x, 0);
+	glScalef(m_curSize.x,m_curSize.x, 0.0f);
 	glColor4fv(m_curColor);
 
 	glCallList(m_glListOrder);																

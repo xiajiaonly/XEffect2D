@@ -15,7 +15,7 @@ INLINE void XMultiListSkin::release()
 }
 INLINE int XMultiList::getSelectIndex()
 {
-	if(!m_haveSelect) return -1;
+	if(!m_isInited || !m_haveSelect) return -1;
 	return m_selectLineOrder;
 }
 //INLINE void XMultiList::setSelectFun(void (* funSelectFun)(void *,int),void * pClass)
@@ -30,9 +30,9 @@ INLINE int XMultiList::getSelectIndex()
 //	if(pClass != NULL) m_pClass = pClass;
 //	else m_pClass = this;
 //}
-INLINE XBool XMultiList::initEx(const XVector2& position,		//对上面接口的简化
+INLINE XBool XMultiList::initEx(const XVec2& position,		//对上面接口的简化
 	const XMultiListSkin &tex,		
-	const XFontUnicode &font,			
+	const XFontUnicode& font,			
 	float strSize,						
 	int rowSum,					
 	int lineSum,				
@@ -42,18 +42,18 @@ INLINE XBool XMultiList::initEx(const XVector2& position,		//对上面接口的简化
 {
 	return init(position,tex.m_mouseRect,tex,font,strSize,rowSum,lineSum,vSlider,hSlider);
 }
-INLINE XBool XMultiList::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XMultiList::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
-INLINE void XMultiList::setColor(float r,float g,float b,float a) 
+INLINE void XMultiList::setColor(const XFColor& c)
 {
 	if(!m_isInited) return;
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	if(!m_withoutTex)
 	{
 		m_spriteBackGround.setColor(m_color);
@@ -70,7 +70,7 @@ INLINE void XMultiList::setColor(float r,float g,float b,float a)
 		{
 			if(tempRow->isEnable && tempRow->isShow != 0)
 			{
-				tempRow->text.setAlpha(m_color.fA);//显示标题文字
+				tempRow->text.setAlpha(m_color.a);//显示标题文字
 			}
 			if(tempRow->nextRow == NULL) break;
 			else tempRow = tempRow->nextRow;
@@ -80,7 +80,7 @@ INLINE void XMultiList::setColor(float r,float g,float b,float a)
 			XMultiListOneBox *tempBox = m_tableBox;
 			while(true)
 			{
-				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(m_color.fA);//显示标题文字
+				if(tempBox->isEnable && tempBox->isShow) tempBox->text.setAlpha(m_color.a);//显示标题文字
 				if(tempBox->nextBox == NULL) break;
 				else tempBox = tempBox->nextBox;
 			}
@@ -124,10 +124,10 @@ INLINE void XMultiList::setAlpha(float a)
 		}
 	}
 }
-INLINE XBool XMultiList::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XMultiList::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
 INLINE void XMultiList::setTextColor(const XFColor& color) 
 {
@@ -168,23 +168,23 @@ INLINE XBool XMultiList::moveLeftRow(int order)		//将order列左移
 {
 	return moveRightRow(order - 1);
 }
-INLINE XVector2 XMultiList::getBox(int order)
+INLINE XVec2 XMultiList::getBox(int order)
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0: return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1: return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2: return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3: return XVector2(m_curMouseRect.left,m_curMouseRect.bottom); 
+	case 0: return m_curMouseRect.getLT();
+	case 1: return m_curMouseRect.getRT();
+	case 2: return m_curMouseRect.getRB();
+	case 3: return m_curMouseRect.getLB(); 
 	}
 
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE XBool XMultiList::canLostFocus(float x,float y) 
+INLINE XBool XMultiList::canLostFocus(const XVec2& p)
 {
-	if(m_needShowVSlider && !m_verticalSlider.canLostFocus(x,y)) return XFalse;
-	if(m_needShowHSlider && !m_horizontalSlider.canLostFocus(x,y)) return XFalse;
+	if(m_needShowVSlider && !m_verticalSlider.canLostFocus(p)) return XFalse;
+	if(m_needShowHSlider && !m_horizontalSlider.canLostFocus(p)) return XFalse;
 	return XTrue;
 }
 INLINE void XMultiList::setLostFocus() 
@@ -214,13 +214,13 @@ INLINE void XMultiList::setAction(XMultiListActionType type,int index)
 	switch(type)
 	{
 	case MLTLST_ACTION_TYPE_IN:		//选项出现
-		m_actionMD.set(0.0f,1.0f,0.005f,MOVE_DATA_MODE_SHAKE);
+		m_actionMD.set(0.0f,1.0f,0.005f,MD_MODE_SHAKE);
 		break;
 	case MLTLST_ACTION_TYPE_MOVE:	//选项移动
 		m_actionMD.set(0.0f,1.0f,0.005f);
 		break;
 	case MLTLST_ACTION_TYPE_DCLICK:	//双击
-		m_actionMD.set(1.0f,1.2f,0.01f,MOVE_DATA_MODE_SIN_MULT,1);
+		m_actionMD.set(1.0f,1.2f,0.01f,MD_MODE_SIN_MULT,1);
 		break;
 	case MLTLST_ACTION_TYPE_OUT:		//取消选择
 		m_actionMD.set(1.0f,0.0f,0.005f);

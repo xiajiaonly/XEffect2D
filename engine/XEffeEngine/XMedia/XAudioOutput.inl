@@ -1,10 +1,14 @@
 INLINE void XAudioOutput::release()
 {
 	stop();
-	XMem::XDELETE_ARRAY(m_audioBuff);
+	m_audioBuff.release();
+//	XMem::XDELETE_ARRAY(m_audioBuff);
 	XMem::XDELETE_ARRAY(m_tmpBuffer);
-	if(m_pSwrContext != NULL) 
+	if (m_pSwrContext != NULL)
+	{
 		swr_free(&m_pSwrContext);
+		m_pSwrContext = nullptr;
+	}
 }
 INLINE bool XAudioOutput::start()	//开始回放
 {
@@ -18,12 +22,14 @@ INLINE bool XAudioOutput::stop()	//停止回放
 {
 	if(!m_isStart) return false;
 	//注销回调函数
-	XCurSndCore.setCallBack(NULL,NULL);
-	m_curUsage = 0;
+	if(gFrameworkData.pSoundCore != nullptr)
+		XCurSndCore.setCallBack(NULL,NULL);
+//	m_curUsage = 0;
+	m_audioBuff.clear();
 	m_isStart = false;
 	return true;
 }
 INLINE float XAudioOutput::getCurCanPlayTime()const//返回当前缓存中的数据可以在播放多长的时间
 {//单位秒
-	return m_curUsage / (XEG.getAudioSampleRate() * XEG.getAudioChannelSum() * 2.0f);
+	return m_audioBuff.getUsage() / (XEG.getAudioSampleRate() * XEG.getAudioChannelSum() * 2.0f);
 }	

@@ -13,12 +13,12 @@ struct XToolBarUnit
 {
 	XBool enable;	//是否有效
 	XControlBasic *obj;
-	XVector2 scale;	//原始大小
+	XVec2 scale;	//原始大小
 	int width;
 	XToolBarUnit()
 		:obj(NULL)
 		,enable(XTrue)
-		,scale(1.0f,1.0f)
+		,scale(1.0f)
 		,width(0)
 	{}
 };
@@ -26,34 +26,34 @@ class XToolBar:public XControlBasic
 {
 private:
 	XBool m_isInited;	//是否已经初始化
-//	XVector2 m_position;
-//	XVector2 m_scale;
+//	XVec2 m_position;
+//	XVec2 m_scale;
 	float m_insertPoint;	//插入点的位置
 
 	int m_height;
 	std::vector<XToolBarUnit> m_objects;
 
 	XBool m_isMouseDown;	//鼠标是否按下
-	XVector2 m_oldMousePosition;	//鼠标按下的位置
+	XVec2 m_oldMousePosition;	//鼠标按下的位置
 public:
 	XBool initWithoutSkin(int height = 32);
 protected:
 	void draw();
 	void drawUp();
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);		//返回是否触发按键动作
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(const XVec2& p);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}	//应该是可以随时失去焦点的
 	//void setLostFocus(){return XTrue;}	//设置失去焦点
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a){m_color.setColor(r,g,b,a);}
+	void setColor(const XFColor& c){m_color = c;}
 	void setAlpha(float a){m_color.setA(a);}
 
 	//这个类不会对资源进行管理，所以不会自动释放资源，如果需要外部没有
@@ -71,8 +71,8 @@ public:
 	~XToolBar(){release();}
 	void release();
 
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	void setVisible();
 	void disVisible();	//设置控件不可见
 	////virtual void justForTest() {;}

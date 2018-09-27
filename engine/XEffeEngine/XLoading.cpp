@@ -15,7 +15,7 @@ XLoading *xLoading = NULL;
 XLoadingScene *xLoadingScene = NULL;
 
 XBool startLoading(XLoadingScene * scene,
-		XResourcePosition/*resoursePosition*/)
+		XResPos/*resPos*/)
 {
 	if(isLoadingStart) return XFalse;
 	if(scene == NULL) return XFalse;
@@ -24,7 +24,7 @@ XBool startLoading(XLoadingScene * scene,
 	if(xLoading == NULL) return XFalse;
 	xLoadingScene = scene;
 
-	xLoading->init(xLoadingScene,RESOURCE_LOCAL_PACK);
+	xLoading->init(xLoadingScene,RES_LOCAL_PACK);
 	xLoading->setStart();
 
 	isLoadingStart = XTrue;
@@ -43,9 +43,9 @@ XBool endLoading()
 	return XTrue;
 }
 #ifdef XEE_OS_WINDOWS
-void XLoading::init(XLoadingScene * scene,XResourcePosition resoursePosition)
+void XLoading::init(XLoadingScene * scene,XResPos resPos)
 {
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 
 	m_isShow = XFalse;
 	m_loadPresent = 0.0f;
@@ -92,10 +92,10 @@ DWORD WINAPI XLoading::loadingProc(void * pParam)
 
 	glMatrixMode(GL_PROJECTION);					//设置当前矩阵模式（对投影矩阵应用之后的矩阵操作）
 	glLoadIdentity();								//变换坐标系函数
-	glOrtho(0,getWindowWidth(),getWindowHeight(), 0, -1, 1);;
+	glOrtho(0,getWindowWidth(),getWindowHeight(), 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glClearColor(XEG.m_defBGColor.fR,XEG.m_defBGColor.fG,XEG.m_defBGColor.fB,XEG.m_defBGColor.fA);			//清除颜色
+	glClearColor(XEG.m_defBGColor.r,XEG.m_defBGColor.g,XEG.m_defBGColor.b,XEG.m_defBGColor.a);			//清除颜色
 	glDisable(GL_DEPTH);							//2D项目不需要深度测试
 
 	if(pPar.m_pScene != NULL) pPar.m_pScene->init(pPar.m_resoursePosition);
@@ -133,9 +133,9 @@ DWORD WINAPI XLoading::loadingProc(void * pParam)
 #endif
 
 #ifdef XEE_OS_LINUX
-void XLoading::init(const XVector2 &windowSize,int resoursePosition)
+void XLoading::init(const XVec2& windowSize,int resPos)
 {
-	if(resoursePosition != RESOURCE_OUTSIDE) m_resoursePosition = RESOURCE_INSIDE;
+	if(resPos != RESOURCE_OUTSIDE) m_resoursePosition = RESOURCE_INSIDE;
 	else m_resoursePosition = RESOURCE_OUTSIDE;
 
 	m_isShow = 0;
@@ -144,7 +144,7 @@ void XLoading::init(const XVector2 &windowSize,int resoursePosition)
 	m_windowSize = windowSize;
 	//在这里载入相关资源
 	m_loadingBG.init("pic/Loading/LoadingBG.png",NULL,1,m_resoursePosition);		//设置界面的第一个界面
-	m_loadingBG.setPosition(XVector2::zero);
+	m_loadingBG.setPosition(XVec2::zero);
 //	m_loadingBG.setSize(m_windowSize.x/64.0,m_windowSize.y/64.0);
 //	m_loadingBG.setIsResizeCenter(POINT_LEFT_TOP);
 
@@ -154,7 +154,7 @@ void XLoading::init(const XVector2 &windowSize,int resoursePosition)
 	float tempSize = m_windowSize.x/1280.0;
 	m_process.init(XRect(m_windowSize.x * 0.5 - 256 * tempSize,m_windowSize.y * 0.5 - 16 * tempSize,
 		m_windowSize.x * 0.5 - 256 * tempSize + 512,m_windowSize.y * 0.5 - 16 * tempSize + 32),
-		&ProgressTexture,&Number,1.0,XVector2(250,0));
+		&ProgressTexture,&Number,1.0,XVec2(250,0));
 	m_process.setSize(tempSize,tempSize);
 	m_loadPresent = 0;
 	m_process.setValue(m_loadPresent);

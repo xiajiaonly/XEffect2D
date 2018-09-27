@@ -13,27 +13,26 @@
 namespace XE{
 XFont::XFont()
 {
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
+	m_textPosition.resize(m_maxStringLen);
+	m_textRect.resize(m_maxStringLen);
 	m_objType = OBJ_FONTX;
 }
 XFont::XFont(int maxStrLen)
 :XFontBasic(maxStrLen)
 {
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
+	m_textPosition.resize(m_maxStringLen);
+	m_textRect.resize(m_maxStringLen);
+	m_objType = OBJ_FONTX;
 }
 XFont::~XFont()
 {
-	XMem::XDELETE_ARRAY(m_textPosition);
-	XMem::XDELETE_ARRAY(m_textRect);
 	m_sprite.release();
 #if WITH_OBJECT_MANAGER	//在物件管理的类中注销这些物件
 	XObjManager.decreaseAObject(this);
 #endif
 }
-XBool XFont::init(const char *filename,const XVector2& size,const XVector2& layout,
-					XResourcePosition resoursePosition,XBool/*withFBO*/)
+XBool XFont::init(const char *filename,const XVec2& size,const XVec2& layout,
+					XResPos resPos,XBool/*withFBO*/)
 {
 	if(m_isInited) 
 	{
@@ -42,7 +41,7 @@ XBool XFont::init(const char *filename,const XVector2& size,const XVector2& layo
 	}
 	if(filename == NULL) return XFalse;
 
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
 	if(!m_sprite.init(filename,m_resoursePosition,POINT_LEFT_TOP)) return XFalse;
@@ -52,8 +51,8 @@ XBool XFont::init(const char *filename,const XVector2& size,const XVector2& layo
 	XObjManager.addAObject(this);
 #endif
 
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
+	m_position.reset();
+	m_setPosition.set(0.0f);
 	m_angle = 0.0f;			
 	m_distance = 0.0f;		
 	m_size = size;			
@@ -97,7 +96,7 @@ bool XFont::loadFromWeb(const char *filename)		//从网页中读取资源
 	return false;
 }
 
-XBool XFont::initEx(const char *filename,XResourcePosition resoursePosition,XBool/*withFBO*/)
+XBool XFont::initEx(const char *filename,XResPos resPos,XBool/*withFBO*/)
 {
 	if(m_isInited) 
 	{
@@ -106,8 +105,8 @@ XBool XFont::initEx(const char *filename,XResourcePosition resoursePosition,XBoo
 	}
 	if(filename == NULL) return XFalse;
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
 	if(!m_sprite.init(filename,m_resoursePosition,POINT_LEFT_TOP)) return XFalse;
@@ -118,25 +117,26 @@ XBool XFont::initEx(const char *filename,XResourcePosition resoursePosition,XBoo
 #endif
 	//下面从文件中读取数据
 	char filenameTemp[MAX_FONT_UNICODE_FILE_NAME_LENGTH];
-	strcpy(filenameTemp,filename);
+	strcpy_s(filenameTemp,MAX_FONT_UNICODE_FILE_NAME_LENGTH,filename);
 	int filenameLength = strlen(filename);
-	filenameTemp[filenameLength - 3] = 'd';
-	filenameTemp[filenameLength - 2] = 'a';
-	filenameTemp[filenameLength - 1] = 't';
-//	XVector2 size(0.0f,0.0f);
-//	XVector2 layout(0.0f,0.0f);
-	switch(resoursePosition)
+	memcpy(filenameTemp + filenameLength - 3, &"dat", 3);
+	//filenameTemp[filenameLength - 3] = 'd';
+	//filenameTemp[filenameLength - 2] = 'a';
+	//filenameTemp[filenameLength - 1] = 't';
+//	XVec2 size(0.0f,0.0f);
+//	XVec2 layout(0.0f,0.0f);
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(filenameTemp)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(filenameTemp)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filenameTemp)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(filenameTemp) && !loadFromFolder(filenameTemp) &&
 			!loadFromWeb(filenameTemp)) return false;
 		break;
@@ -158,7 +158,7 @@ XBool XFont::initEx(const char *filename,XResourcePosition resoursePosition,XBoo
 	m_isInited = XTrue;			
 	return XTrue;
 }
-XBool XFont::initFromTTF(const char * filename,int fontSize,XResourcePosition resoursePosition,XBool/*withFBO*/)
+XBool XFont::initFromTTF(const char * filename,int fontSize,XResPos resPos,XBool/*withFBO*/)
 {
 	if(m_isInited) 
 	{
@@ -167,13 +167,15 @@ XBool XFont::initFromTTF(const char * filename,int fontSize,XResourcePosition re
 	}
 	if(filename == NULL) return XFalse;
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 
-	int fontOrder = XTTFFont.loadTTFFile(filename,fontSize,m_resoursePosition);
+	int fontOrder = -1;
+	if (m_fontPtSize >= 0) fontOrder = XTTFFont.loadTTFFile(filename, m_fontPtSize, fontSize, m_resoursePosition);
+	else fontOrder = XTTFFont.loadTTFFile(filename, fontSize, fontSize, m_resoursePosition);
 	if(fontOrder < 0) return XFalse;
 	unsigned int tex;
-	XVector2 layout;
+	XVec2 layout;
 	if(!XTTFFont.getTextureFont(fontOrder,tex,layout)) return XFalse;
 	//释放资源
 	XTTFFont.releaseTTFFile(fontOrder);
@@ -189,7 +191,7 @@ XBool XFont::initFromTTF(const char * filename,int fontSize,XResourcePosition re
 	XObjManager.addAObject(this);
 #endif
 //	char filenameTemp[MAX_FONT_UNICODE_FILE_NAME_LENGTH];
-//	strcpy(filenameTemp,filename);
+//	strcpy_s(filenameTemp,MAX_FONT_UNICODE_FILE_NAME_LENGTH,filename);
 //	int filenameLength = strlen(filename);
 //	filenameTemp[filenameLength - 3] = 'd';
 //	filenameTemp[filenameLength - 2] = 'a';
@@ -197,7 +199,7 @@ XBool XFont::initFromTTF(const char * filename,int fontSize,XResourcePosition re
 //	FILE *fp = NULL;
 //	XVector2I size(0,0);
 //	XVector2I layout(0,0);
-//	if(m_resoursePosition == RESOURCE_LOCAL_FOLDER)
+//	if(m_resoursePosition == RES_LOCAL_FOLDER)
 //	{
 //		if((fp = fopen(filenameTemp,"r")) == NULL)
 //		{//文件单开失败
@@ -213,8 +215,8 @@ XBool XFont::initFromTTF(const char * filename,int fontSize,XResourcePosition re
 //		XMem::XDELETE_ARRAY(p);
 //	}
 
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
+	m_position.reset();
+	m_setPosition.reset();
 	m_angle = 0.0f;			
 	m_distance = 0.0f;		
 	m_size.set(fontSize * 0.5f,fontSize);			
@@ -326,16 +328,16 @@ void XFont::updateData()
 				switch(m_alignmentModeY)
 				{
 				case FONT_ALIGNMENT_MODE_Y_UP://左对齐，啥也不用做
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * m_lineSum;
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * m_lineSum;
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * m_lineSum,
+						m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * m_lineSum);
 					break;
 				case FONT_ALIGNMENT_MODE_Y_MIDDLE://居中，每个文字左移半个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
+						m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
 					break;
 				case FONT_ALIGNMENT_MODE_Y_DOWN://右对齐，每个文字左移整个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * (m_lineSum - allLineSum);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * (m_lineSum - allLineSum);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * wordsSum - m_angleSin * textPixelY * (m_lineSum - allLineSum),
+						m_angleSin * textPixelX * wordsSum + m_angleCos * textPixelY * (m_lineSum - allLineSum));
 					break;
 				}
 				break;
@@ -343,16 +345,16 @@ void XFont::updateData()
 				switch(m_alignmentModeY)
 				{
 				case FONT_ALIGNMENT_MODE_Y_UP://左对齐，啥也不用做
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * m_lineSum;
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * m_lineSum;
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * m_lineSum,
+						m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * m_lineSum);
 					break;
 				case FONT_ALIGNMENT_MODE_Y_MIDDLE://居中，每个文字左移半个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
+						m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
 					break;
 				case FONT_ALIGNMENT_MODE_Y_DOWN://右对齐，每个文字左移整个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * (m_lineSum - allLineSum);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * (m_lineSum - allLineSum);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth * 0.5f) - m_angleSin * textPixelY * (m_lineSum - allLineSum),
+						m_angleSin * textPixelX * (wordsSum - curLineWidth * 0.5f) + m_angleCos * textPixelY * (m_lineSum - allLineSum));
 					break;
 				}
 				break;
@@ -360,16 +362,16 @@ void XFont::updateData()
 				switch(m_alignmentModeY)
 				{
 				case FONT_ALIGNMENT_MODE_Y_UP://左对齐，啥也不用做
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * m_lineSum;
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * m_lineSum;
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * m_lineSum,
+						m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * m_lineSum);
 					break;
 				case FONT_ALIGNMENT_MODE_Y_MIDDLE://居中，每个文字左移半个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * (m_lineSum - allLineSum * 0.5f),
+						m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * (m_lineSum - allLineSum * 0.5f));
 					break;
 				case FONT_ALIGNMENT_MODE_Y_DOWN://右对齐，每个文字左移整个宽度
-					m_textPosition[m_needShowTextSum].x = m_position.x + m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * (m_lineSum - allLineSum);
-					m_textPosition[m_needShowTextSum].y = m_position.y + m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * (m_lineSum - allLineSum);
+					m_textPosition[m_needShowTextSum] = m_position + XVec2(m_angleCos * textPixelX * (wordsSum - curLineWidth) - m_angleSin * textPixelY * (m_lineSum - allLineSum),
+						m_angleSin * textPixelX * (wordsSum - curLineWidth) + m_angleCos * textPixelY * (m_lineSum - allLineSum));
 					break;
 				}
 				break;
@@ -570,11 +572,8 @@ XBool XFont::setACopy(const XFont &temp)
 	XObjManager.addAObject(this);
 #endif
 		
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
 
 	m_layout = temp.m_layout;		//字体图片的布局
 	return XTrue;
@@ -590,11 +589,9 @@ XFont& XFont::operator = (const XFont& temp)
 	XObjManager.addAObject(this);
 #endif
 
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
+
 	m_layout = temp.m_layout;		//字体图片的布局
 
 	return * this;
@@ -608,14 +605,9 @@ XFont::XFont(const XFont &temp)
 	XObjManager.addAObject(this);
 #endif	
 
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
 
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-	}
 	m_layout = temp.m_layout;			//字体图片的布局
 }
 #if !WITH_INLINE_FILE

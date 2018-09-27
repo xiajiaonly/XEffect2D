@@ -1,51 +1,47 @@
 INLINE XFColor XFColor::operator * (const XFColor& temp) const
 {
-	return XFColor(fR * temp.fR,fG * temp.fG,fB * temp.fB,fA * temp.fA);
+	return XFColor(r * temp.r,g * temp.g,b * temp.b,a * temp.a);
 }
-INLINE void XFColor::setR(float r)
+INLINE XFColor XFColor::operator * (const float& temp) const
 {
-	if(r < 0.0f) r = 0.0f;
-	if(r > 1.0f) r = 1.0f;
-	fR = r;
+	return XFColor(r * temp,g * temp,b * temp,a * temp);
 }
-INLINE void XFColor::setG(float g)
+INLINE void XFColor::setR(float _r)
 {
-	if(g < 0.0f) g = 0.0f;
-	if(g > 1.0f) g = 1.0f;
-	fG = g;
+	r = XMath::clamp(_r, 0.0f, 1.0f);
 }
-INLINE void XFColor::setB(float b)
+INLINE void XFColor::setG(float _g)
 {
-	if(b < 0.0f) b = 0.0f;
-	if(b > 1.0f) b = 1.0f;
-	fB = b;
+	g = XMath::clamp(_g, 0.0f, 1.0f);
 }
-INLINE void XFColor::setA(float a)
+INLINE void XFColor::setB(float _b)
 {
-	if(a < 0.0f) a = 0.0f;
-	if(a > 1.0f) a = 1.0f;
-	fA = a;
+	b = XMath::clamp(_b, 0.0f, 1.0f);
+}
+INLINE void XFColor::setA(float _a)
+{
+	a = XMath::clamp(_a, 0.0f, 1.0f);
 }
 INLINE float XFColor::getR() const 
 {
-	return fR;
+	return r;
 }
 INLINE float XFColor::getG() const 
 {
-	return fG;
+	return g;
 }
 INLINE float XFColor::getB() const 
 {
-	return fB;
+	return b;
 }
 INLINE float XFColor::getA() const 
 {
-	return fA;
+	return a;
 }
 INLINE void XFColor::randColor()
 {
-	fR = XRand::randomf(1);
-	fG = XRand::randomf(1);
-	fB = XRand::randomf(1);
-	fA = XRand::randomf(1);
+	r = XRand::randomf(1.0f);
+	g = XRand::randomf(1.0f);
+	b = XRand::randomf(1.0f);
+	a = XRand::randomf(1.0f);
 }

@@ -28,8 +28,12 @@ struct XSoundInfo
 	unsigned char *slowDownNewData;
 	int slowDownNewLen;
 	int slowDownRate;
+#if AUDIO_MATHOD == 0
 	int lateChannel;	//记录最近播放当前音效的声道，以便于可以控制这个音效的停止等
-
+#endif
+#if AUDIO_MATHOD == 1
+	void* lateChannel;	//记录最近播放当前音效的声道，以便于可以控制这个音效的停止等
+#endif
 	XSoundInfo()
 		:sound(NULL)
 		,resInfo(NULL)
@@ -38,7 +42,12 @@ struct XSoundInfo
 		,slowDownOldData(NULL)
 		,slowDownNewData(NULL)
 		,soundTime(-1)
+#if AUDIO_MATHOD == 0
 		,lateChannel(-1)
+#endif
+#if AUDIO_MATHOD == 1
+		,lateChannel(nullptr)
+#endif
 	{}
 };
 
@@ -53,14 +62,14 @@ protected:
 	XSound(const XSound&);
 	XSound &operator= (const XSound&);
 private:
-	XResourcePosition m_resoursePosition;	//资源位置
+	XResPos m_resoursePosition;	//资源位置
 private:
 	std::vector<XSoundInfo *> m_sound;
 
 	int m_soundVolume;
 	XBool m_firstAddSoundFlag;
 public:
-	XSndHandle addSound(const char* filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);					//载入一个音效，返回这个音效的句柄，用于播放
+	XSndHandle addSound(const char* filename,XResPos resPos = RES_SYS_DEF);					//载入一个音效，返回这个音效的句柄，用于播放
 	void clearUp();											//清除掉所有载入的声音资源
 	void clearOneSound(XSndHandle soundHandle);			//清除掉指定的音效资源
 	XBool play(XSndHandle soundHandle,int loops = 0);	//-1为无限循环
@@ -79,55 +88,21 @@ public:
 	void slowDownAllRelease();	//释放资源
 	//-------------------------------------------------------
 
-	void pause(XSndHandle s)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
-		XCurSndCore.pauseSound(m_sound[s]->lateChannel);
-	}
-	void resume(XSndHandle s)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
-		XCurSndCore.resumeSound(m_sound[s]->lateChannel);
-	}
-	XBool isPause(XSndHandle s)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return XFalse;
-		return XCurSndCore.isSoundPause(m_sound[s]->lateChannel);
-	}
-	void stop(XSndHandle s)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
-		XCurSndCore.soundFadeOut(m_sound[s]->lateChannel,100);
-	}
-	XBool isEnd(XSndHandle s)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return XTrue;
-		return !XCurSndCore.isSoundPlaying(m_sound[s]->lateChannel);
-	}
+	void pause(XSndHandle s);
+	void resume(XSndHandle s);
+	XBool isPause(XSndHandle s);
+	void stop(XSndHandle s);
+	XBool isEnd(XSndHandle s);
 	XBool fadeInSound(XSndHandle s,int loops,int ms);
-	void fadeOutSound(XSndHandle s,int ms)
-	{
-		if(s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
-		XCurSndCore.soundFadeOut(m_sound[s]->lateChannel,ms);
-	}
-	void release()	//注意这里这个类不会自动在析构函数里面调用释放函数，所以一定要记得主动调用释放函数，自动调用的话主要是怕重复调用
-	{
-		XCurSndCore.haltSound();//关闭所有的channel
-		clearUp();
-	}
+	void fadeOutSound(XSndHandle s, int ms);
+	void release();	//注意这里这个类不会自动在析构函数里面调用释放函数，所以一定要记得主动调用释放函数，自动调用的话主要是怕重复调用
+	static bool getIsInvalid(XSndHandle hangle){return hangle < 0;} 
 };
 inline void XSound::setSoundVolume(int volume)
 {
 	if(volume < 0) volume = 0;
 	if(volume > 128) volume = 128;
 	m_soundVolume = volume;
-}
-inline void XSound::setAllVolume(int volume)
-{
-	if(volume < 0) volume = 0;
-	if(volume > 128) volume = 128;
-	m_soundVolume = volume;
-	XCurSndCore.setVolume(-1,m_soundVolume);
 }
 }
 #endif

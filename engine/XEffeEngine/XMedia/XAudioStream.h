@@ -50,7 +50,8 @@ public:
 		//if(temp < 0.0f) temp = 0.0f;
 		//if(temp > 1.0f) temp = 1.0f;
 
-		av_seek_frame(m_pFormatCtx,0,temp * m_allFrameSum,AVSEEK_FLAG_BACKWARD);
+		if(av_seek_frame(m_pFormatCtx,0,temp * m_allFrameSum,AVSEEK_FLAG_BACKWARD) < 0)
+			av_seek_frame(m_pFormatCtx, 0, temp * m_allFrameSum, AVSEEK_FLAG_ANY);
 	}
 	XAudioStream()
 		:m_isLoaded(XFalse)

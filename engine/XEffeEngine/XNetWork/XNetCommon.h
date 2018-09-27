@@ -12,12 +12,17 @@
 #include <string>
 #include "..\XMemory.h"
 namespace XE{
-#define NET_SERVER_IP "192.168.1.110"
+#define MAX_SEND_DATA_BUFF (3200)	//发送队列的大小，防止队列拥堵造成内存溢出
+#define MAX_RECV_DATA_BUFF (6400)	//接收队列的大小，防止队列拥堵造成内存溢出
+
+//#define NET_SERVER_IP "192.168.1.110"
 #define NET_SERVER_PORT (9988)
 #define BOARDCAST_PORT (7898)	//广播端口
 #define BOARDCAST_DATA_LEN (1024)
 #define PROJECT_STRING_LEN (256)	//工程字符串的长度
 #define DEFAULT_PROJECT_STR "xiajia_1981@163.com"	//默认的工程字符串
+//#define WITH_LOCAL_BOARDCAST_IP
+#define BOARDCASR_IP "192.168.1.255"
 //网络连接状态
 enum XConnectState
 {
@@ -41,6 +46,13 @@ enum XNetDataType
 	DATA_TYPE_CONFIG_ITEMS,		//所有配置项的值
 	DATA_TYPE_CONFIG_INJECT,	//数据注入
 	DATA_TYPE_CONFIG_OPERATE,	//对配置界面的操作
+
+	DATA_TYPE_CUSTOM,			//自定义的数据类型 
+	DATA_TYPE_CUSTOM_01,			//自定义的数据类型 
+	DATA_TYPE_CUSTOM_02,			//自定义的数据类型 
+	DATA_TYPE_CUSTOM_03,			//自定义的数据类型 
+	DATA_TYPE_CUSTOM_04,			//自定义的数据类型 
+	DATA_TYPE_CUSTOM_05,			//自定义的数据类型 
 };
 //说明网络传输的数据协议为
 //CMD[1byte]Len[4byte][data]
@@ -63,6 +75,20 @@ struct XNetData	//网络数据
 		isEnable = XFalse;
 	}
 };
+//为简单通讯而封装的数据包形结构
+struct XNetPack
+{
+	int clientID;		//客户端的编号
+	int buffSize;		//内存空间的大小	
+	int curDataLen;		//有效数据的大小
+	unsigned char *data;
+	XNetPack()
+		:data(NULL)
+		, buffSize(0)
+		, curDataLen(0)
+		, clientID(0)
+	{}
+};
 inline void showNetData(XNetData *)//data)
 {
 	//if(data == NULL) return;
@@ -74,14 +100,14 @@ inline void showNetData(XNetData *)//data)
 	//printf("\n");
 }
 //重置指定socket
-inline void resetSocketAddr(int socket)
+inline void resetSocketAddr(SOCKET socket)
 {
 	int opt = 1;
     int len = sizeof(opt);
     setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,len);
 }
 //分配一个socket号
-inline bool getANewSocket(SOCKET &mySock)
+inline bool getANewSocket(SOCKET &mySock,int protocol = SOCK_STREAM)
 {
 	if(mySock != INVALID_SOCKET)
 	{//如果没有分配套接字，这里进入，防止重复分配
@@ -89,9 +115,9 @@ inline bool getANewSocket(SOCKET &mySock)
 		mySock = INVALID_SOCKET;
 	}
 	WSADATA wsaData;
-	if(WSAStartup(MAKEWORD(2,2),&wsaData) != 0) return false;
-	mySock = socket(AF_INET,SOCK_STREAM,0); //分配套接字
-	if(mySock == INVALID_SOCKET) return false;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return false;
+	mySock = socket(AF_INET, protocol, 0); //分配套接字
+	if (mySock == INVALID_SOCKET) return false;
 	resetSocketAddr(mySock);
 	return true;
 }
@@ -99,13 +125,13 @@ inline bool getANewSocket(SOCKET &mySock)
 inline std::string getMyIP()
 {
 	WSADATA wsaData;
-	if(WSAStartup(MAKEWORD(2,2),&wsaData) != 0) return "";
+	if(WSAStartup(MAKEWORD(2,2),&wsaData) != 0) return XString::gNullStr;
 	char hname[128] = "";
 	gethostname(hname,sizeof(hname));
 	hostent *hent = gethostbyname(hname);
 	if(hent != NULL && hent->h_addr_list[0])
 	{
-		sprintf(hname,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
+		sprintf_s(hname,128,"%d.%d.%d.%d",(unsigned char)(hent->h_addr_list[0][0]),
 			(unsigned char)(hent->h_addr_list[0][1]),
 			(unsigned char)(hent->h_addr_list[0][2]),
 			(unsigned char)(hent->h_addr_list[0][3]));
@@ -113,46 +139,5 @@ inline std::string getMyIP()
 	WSACleanup();
 	return hname;
 }
-//#include <IPHlpApi.h>
-////参数pMacAddr应该是8个字节的数组
-//BOOL GetMacAddress(unsigned char* pMacAddr)
-//{
-//    DWORD nRet;
-//    //只查询物理地址
-//    DWORD nFlags = GAA_FLAG_SKIP_UNICAST 
-//        | GAA_FLAG_SKIP_ANYCAST
-//        | GAA_FLAG_SKIP_FRIENDLY_NAME
-//        | GAA_FLAG_SKIP_MULTICAST
-//        | GAA_FLAG_SKIP_DNS_SERVER;
-//
-//    ULONG bufLen = 1024;
-//    PIP_ADAPTER_ADDRESSES pAdapterAddr = (PIP_ADAPTER_ADDRESSES)malloc(bufLen);
-//    if(pAdapterAddr == NULL)
-//        return FALSE;
-//
-//    //AF_INET: return only IPv4 addresses.
-//    nRet = GetAdaptersAddresses(AF_INET, nFlags,  NULL, pAdapterAddr, &bufLen);
-//    if(nRet == ERROR_BUFFER_OVERFLOW)
-//    {
-//        pAdapterAddr = (PIP_ADAPTER_ADDRESSES)realloc(pAdapterAddr, bufLen);
-//        if(pAdapterAddr == NULL)
-//            return FALSE;
-//
-//        nRet = GetAdaptersAddresses(AF_INET, nFlags,  NULL, pAdapterAddr, &bufLen);
-//    }
-//
-//    if(nRet == ERROR_SUCCESS)
-//    {
-//        memcpy(pMacAddr, &pAdapterAddr->PhysicalAddress, pAdapterAddr->PhysicalAddressLength);
-//        free(pAdapterAddr);
-//        return TRUE;
-//    }else
-//    {
-//        //ff-ff-ff-ff-ff-ff: 表示获取失败（未知）
-//        memset(pMacAddr, 0xff, 6);
-//        free(pAdapterAddr);
-//        return FALSE;
-//    }
-//}
 }
 #endif

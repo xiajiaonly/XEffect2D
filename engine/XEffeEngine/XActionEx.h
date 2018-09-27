@@ -6,7 +6,7 @@
 //Date:       2014.5.20
 //--------------------------------
 #include "XActionSimple.h"
-#include "XInputEventCore.h"
+//#include "XInputEventCore.h"
 #include <vector>
 namespace XE{
 //这个是对XActionSimple的整理进一步的规整
@@ -14,7 +14,7 @@ namespace XE{
 class XActionEx
 {
 protected:
-	XResourcePosition m_resoursePosition;	//资源所在的位置
+	XResPos m_resoursePosition;	//资源所在的位置
 	XBool m_isInited;						//是否初始化
 	XActionSimpleType m_type;
 	XActionSimpleState m_actionState;		//动作的状态
@@ -31,7 +31,7 @@ public:
 	void move(float stepTime = 1.0f);
 	XActionSimpleState getActionState()const{return m_actionState;}
 	XBool getIsEnd() const {return m_actionState == ACTION_STATE_END;}
-	std::string getName() const {return m_actionName;}
+	const std::string& getName() const {return m_actionName;}
 
 	XActionEx()
 		:m_isInited(XFalse)
@@ -42,7 +42,7 @@ public:
 		,m_type(ACTION_TYPE_ATOMIC)
 		,m_actionName(" ")
 	{}
-	XBool init(XResourcePosition resoursePosition,
+	XBool init(XResPos resPos,
 		const char *actionName);	
 	void draw();
 	virtual void keepDraw();	//不论是否结束都会保持绘制的函数
@@ -56,7 +56,7 @@ private:
 	int m_actionSum;		//子动作的数据量
 	int m_curActionIndex;
 public:
-	XBool init(XResourcePosition resoursePosition,const char *actionName,int actionSum,...);	//复合动作的初始化
+	XBool init(XResPos resPos,const char *actionName,int actionSum,...);	//复合动作的初始化
 public://下面是需要不同的动作实现的动作控制
 	virtual void funResetData(){}				//重新设置数据
 	virtual void funMove(float stepTime){}		//步进
@@ -65,7 +65,7 @@ public://下面是需要不同的动作实现的动作控制
 	virtual void funAtEnd(){}					//动作结束之后调用
 	virtual XBool funIsEnd(){return XTrue;}	//判断是否动作结束
 	//进行资源管理
-	virtual XBool funInit(XResourcePosition res){return XTrue;}	//资源初始化
+	virtual XBool funInit(XResPos res){return XTrue;}	//资源初始化
 	virtual void funRelease(){}	//资源释放函数
 	//这里尚未加入输入控制
 	virtual void funInput(const XInputEvent &inputEvent){}

@@ -1,6 +1,6 @@
 INLINE XMenuItem *XMenuGroup::getChooseItem()	//获取当前组中被选择的菜单项
 {
-	if(m_chooseIndex >= 0 && m_chooseIndex < m_items.size())
+	if(m_chooseIndex >= 0 && m_chooseIndex < (int)(m_items.size()))
 		return m_items[m_chooseIndex];
 	return NULL;
 }
@@ -27,20 +27,20 @@ INLINE void XMenuGroup::disOpen()
 	}
 	resetChoose();
 }
-INLINE XBool XMenuGroup::isInRect(float x,float y)
+INLINE XBool XMenuGroup::isInRect(const XVec2& p)
 {
 	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
-		if(m_items[i]->isInRect(x,y)) return XTrue;
+		if(m_items[i]->isInRect(p)) return XTrue;
 	}
 	return XFalse;
 }
-INLINE XBool XMenuGroup::mouseProc(float x,float y,XMouseState mouseState)
+INLINE XBool XMenuGroup::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	XBool ret = XFalse;
 	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
-		if(m_items[i]->mouseProc(x,y,mouseState)) ret = XTrue;
+		if(m_items[i]->mouseProc(p,mouseState)) ret = XTrue;
 	}
 	return ret;
 }
@@ -53,12 +53,12 @@ INLINE void XMenuGroup::postPross()
 }
 INLINE void XMenuGroup::openChoose()	//打开选择的项
 {
-	if(m_chooseIndex >= 0 && m_chooseIndex < m_items.size())
+	if(m_chooseIndex >= 0 && m_chooseIndex < (int)(m_items.size()))
 		m_items[m_chooseIndex]->setOpen();
 }
 INLINE void XMenuGroup::closeChoose()	//关闭选择的项
 {
-	if(m_chooseIndex >= 0 && m_chooseIndex < m_items.size())
+	if(m_chooseIndex >= 0 && m_chooseIndex < (int)(m_items.size()))
 		m_items[m_chooseIndex]->disOpen();
 }
 INLINE void XMenuGroup::resetChoose()
@@ -76,16 +76,16 @@ INLINE void XMenuGroup::setHotChooseActive(XBool flag)
 		m_items[i]->setHotChooseActive(flag);
 	}
 }
-INLINE XMenuItem * XMenuGroup::getItem(float x,float y)
+INLINE XMenuItem * XMenuGroup::getItem(const XVec2& p)
 {
 	XMenuItem * tmp = NULL;
 	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
-		if((tmp = m_items[i]->getItem(x,y)) != NULL) return tmp;
+		if((tmp = m_items[i]->getItem(p)) != NULL) return tmp;
 	}
 	return NULL;
 }
-INLINE XMenuItem * XMenuGroup::getItemByNameInGroup(const std::string &name)
+INLINE XMenuItem * XMenuGroup::getItemByNameInGroup(const std::string& name)
 {
 	for(unsigned int i = 0;i < m_items.size();++ i)
 	{
@@ -129,13 +129,13 @@ INLINE XMenuItem *XMenuItem::getItemByHotChooseKey(char k)//从子菜单中寻找指定的
 	if(m_child == NULL) return NULL;
 	return m_child->getItemByHotChooseKey(k);
 }
-INLINE void XMenuItem::setCallbackFun(void (*callbackFun)(void *,const std::string &),void *p)	//设置回调函数，当菜单项被触发时会调用相关的回调函数
+INLINE void XMenuItem::setCallbackFun(void (*callbackFun)(void *,const std::string& ),void *p)	//设置回调函数，当菜单项被触发时会调用相关的回调函数
 {
 	if(m_type == MENU_ITEM_TYPE_DLT) return; //分隔符没有回调
 	m_callbackFun = callbackFun;
 	m_pClass = p;
 }
-INLINE void XMenuItem::setAllCallBackFun(void (*callbackFun)(void *,const std::string &),void *p)
+INLINE void XMenuItem::setAllCallBackFun(void (*callbackFun)(void *,const std::string& ),void *p)
 {
 	if(m_type == MENU_ITEM_TYPE_DLT) return; //分隔符没有回调
 	if(m_child == NULL)
@@ -160,18 +160,16 @@ INLINE void XMenuItem::disOpen()	//设置关闭
 	m_isOpen = XFalse;
 	if(m_child != NULL) m_child->disOpen();
 }
-INLINE XBool XMenuItem::isInRect(float x,float y)
+INLINE XBool XMenuItem::isInRect(const XVec2& p)
 {
-	if(XRect(m_position.x,m_position.y,m_position.x + m_size.x * m_scaleSize.x,
-		m_position.y + m_size.y * m_scaleSize.y).isInRect(x,y)) return XTrue;
-	if(m_child != NULL && m_isOpen) return m_child->isInRect(x,y);
+	if(XRect(m_position,m_position + m_size * m_scaleSize).isInRect(p)) return XTrue;
+	if(m_child != NULL && m_isOpen) return m_child->isInRect(p);
 	return XFalse;
 }
-INLINE XMenuItem * XMenuItem::getItem(float x,float y)
+INLINE XMenuItem * XMenuItem::getItem(const XVec2& p)
 {
-	if(XRect(m_position.x,m_position.y,m_position.x + m_size.x * m_scaleSize.x,
-		m_position.y + m_size.y * m_scaleSize.y).isInRect(x,y)) return this;
-	if(m_child != NULL && m_isOpen) return m_child->getItem(x,y);
+	if(XRect(m_position,m_position + m_size * m_scaleSize).isInRect(p)) return this;
+	if(m_child != NULL && m_isOpen) return m_child->getItem(p);
 	return NULL;
 }
 INLINE void XMenuItem::resetChoose()
@@ -202,47 +200,47 @@ INLINE void XMenuItem::setHotChooseActive(XBool flag)
 	m_isHotChooseActive = flag;
 	if(m_hotChooseKey >= 0) updateStr();
 }
-INLINE XBool XMenu::getCheckState(const std::string &pos)
+INLINE XBool XMenu::getCheckState(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type != MENU_ITEM_TYPE_CHK) return XFalse;
 	return tmpX->m_isChecked;
 }
-INLINE XBool XMenu::setCheckState(const std::string &pos,XBool state)
+INLINE XBool XMenu::setCheckState(const std::string& pos,XBool state)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type != MENU_ITEM_TYPE_CHK) return XFalse;
 	tmpX->setCheckState(state);
 	return XTrue;
 }
-INLINE XBool XMenu::setDisable(const std::string &pos)
+INLINE XBool XMenu::setDisable(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
 	tmpX->m_isEnable = XFalse;
 	return XTrue;
 }
-INLINE XBool XMenu::setEnable(const std::string &pos)
+INLINE XBool XMenu::setEnable(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
 	tmpX->m_isEnable = XTrue;
 	return XTrue;
 }
-INLINE XBool XMenu::getEnable(const std::string &pos)
+INLINE XBool XMenu::getEnable(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
 	return tmpX->m_isEnable;
 }
-INLINE XBool XMenu::setItemIcon(const std::string &pos,const char *filename,XResourcePosition res)
+INLINE XBool XMenu::setItemIcon(const std::string& pos,const char *filename,XResPos res)
 {
 	if(filename == NULL) return XFalse;
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
 	return tmpX->setIcon(filename,res);
 }
-INLINE XBool XMenu::setHotKey(const std::string &pos,char k)
+INLINE XBool XMenu::setHotKey(const std::string& pos,char k)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
@@ -250,13 +248,13 @@ INLINE XBool XMenu::setHotKey(const std::string &pos,char k)
 	m_needPostProcess = XTrue;
 	return tmpX->setHotKey(k);
 }
-INLINE char XMenu::getHotKey(const std::string &pos)
+INLINE char XMenu::getHotKey(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return -1;
 	return tmpX->m_hotKey;
 }
-INLINE XBool XMenu::setHotChooseKey(const std::string &pos,char k)
+INLINE XBool XMenu::setHotChooseKey(const std::string& pos,char k)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return XFalse;
@@ -267,7 +265,7 @@ INLINE XBool XMenu::setHotChooseKey(const std::string &pos,char k)
 	}
 	return XFalse;
 }
-INLINE char XMenu::getHotChooseKey(const std::string &pos)
+INLINE char XMenu::getHotChooseKey(const std::string& pos)
 {
 	XMenuItem * tmpX = getItemByName(pos);
 	if(tmpX == NULL || tmpX->m_type == MENU_ITEM_TYPE_DLT) return -1;
@@ -279,7 +277,7 @@ INLINE void XMenu::postProcess()
 	m_rootItem.postPross();
 	m_needPostProcess = XFalse;
 }
-//INLINE XBool XMenu::setCBFunction(const std::string &pos,void (*callbackFun)(void *,const std::string &),void *p)
+//INLINE XBool XMenu::setCBFunction(const std::string& pos,void (*callbackFun)(void *,const std::string& ),void *p)
 //{//设置菜单响应的回调函数
 //	XMenuItem * tmp = getItemByName(pos);
 //	if(tmp == NULL) return XFalse;
@@ -293,25 +291,25 @@ INLINE void XMenu::draw()
 	postProcess();
 	m_rootItem.draw();
 }
-INLINE std::string XMenu::getItemFullStr(const XMenuItem * it)
+INLINE const std::string XMenu::getItemFullStr(const XMenuItem * it)
 {
-	if(it == NULL) return "";
+	if(it == NULL) return XString::gNullStr;
 	return it->getFullStr();
 }
-INLINE void XMenu::setPosition(float x,float y)
+INLINE void XMenu::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
-	m_rootItem.setPosition(m_position.x,m_position.y);
+	m_position = p;
+	m_rootItem.setPosition(m_position);
 }
-INLINE void XMenu::setScale(float x,float y)
+INLINE void XMenu::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
-	m_rootItem.setScale(x,y);
-	m_rootItem.setPosition(m_position.x,m_position.y);
+	m_scale = s;
+	m_rootItem.setScale(m_scale);
+	m_rootItem.setPosition(m_position);
 }
-INLINE void XMenu::setColor(float r,float g,float b,float a)
+INLINE void XMenu::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_font.setColor(m_color);
 	m_rootItem.setColor(m_color);
 }
@@ -321,29 +319,28 @@ INLINE void XMenu::setAlpha(float a)
 	m_font.setAlpha(a);
 	m_rootItem.setColor(m_color);
 }
-INLINE XVector2 XMenu::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XMenu::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {//这里并没有实际的意义
 	if(!m_isInited || 
-		m_rootItem.m_child == NULL)	return XVector2::zero;
+		m_rootItem.m_child == NULL)	return XVec2::zero;
 	XMenuItem * it = m_rootItem.m_child->m_items[0];	//这里用第一个菜单项的范围，意义上不完整
-	if(it == NULL)	return XVector2::zero;
+	if(it == NULL)	return XVec2::zero;
 	switch(order)
 	{
 	case 0:return it->m_position;
-	case 1:return XVector2(it->m_position.x + it->m_size.x * it->m_scaleSize.x,it->m_position.y);
-	case 2:return XVector2(it->m_position.x + it->m_size.x * it->m_scaleSize.x,
-				it->m_position.y + it->m_size.y * it->m_scaleSize.y);
-	case 3:return XVector2(it->m_position.x,it->m_position.y + it->m_size.y * it->m_scaleSize.y);
+	case 1:return XVec2(it->m_position.x + it->m_size.x * it->m_scaleSize.x,it->m_position.y);
+	case 2:return it->m_position + it->m_size * it->m_scaleSize;
+	case 3:return XVec2(it->m_position.x,it->m_position.y + it->m_size.y * it->m_scaleSize.y);
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE XBool XMenu::canGetFocus(float x,float y)				//用于判断当前物件是否可以获得焦点
+INLINE XBool XMenu::canGetFocus(const XVec2& p)				//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||		//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||		//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
 INLINE void XMenu::setLostFocus()	//设置失去焦点
 {

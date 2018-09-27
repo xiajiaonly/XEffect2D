@@ -11,7 +11,7 @@
 namespace XE{
 namespace XException
 {
-	extern LONG WINAPI unhandledExceptionFilter(struct _EXCEPTION_POINTERS *pExceptionPointers);  
+	extern LONG WINAPI unhandledExceptionFilter(struct _EXCEPTION_POINTERS *pExceptionPointers);
 	extern BOOL WINAPI consoleHandler(DWORD consoleEvent);
 	extern bool initException();	//初始化异常处理机制
 	//为了兼容以前的例子而对外开放的接口

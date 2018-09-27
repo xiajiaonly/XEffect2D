@@ -1,4 +1,5 @@
 #include "XStdHead.h"
+#if AUDIO_MATHOD == 0
 #include "XSoundSDLMixer.h"
 
 namespace XE{
@@ -19,3 +20,4 @@ bool XSoundSDLMixer::init()
 	return true;
 }
 }
+#endif

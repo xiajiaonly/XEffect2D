@@ -18,7 +18,7 @@ private:
 	float m_directionAngle;		//喷射体前进的方向
 	float m_jetAngle;			//喷射体喷射的夹角
 	float m_jetDensity;			//喷射体喷射的密度
-	XVector2 m_curPosition;		//喷射体的当前位置
+	XVec2 m_curPosition;		//喷射体的当前位置
 
 	float m_initSpeed;			//喷射的初始速度
 
@@ -35,13 +35,13 @@ private:
 //	int m_wA;
 //	int m_hA;
 public:
-	int init(const XVector2& position,float jetSpeed,float jetAngle,float jetDensity,
+	int init(const XVec2& position,float jetSpeed,float jetAngle,float jetDensity,
 		const XTexture *texture,const XTexture *textureAton = NULL);
-	void reset(const XVector2& position);
-	void reset(float x,float y);
+	void reset(const XVec2& position);
+	void reset(float x, float y) { reset(XVec2(x,y)); }
 	void move(float timeDelay);
-	void setPosition(const XVector2& position);
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& position);
+	void setPosition(float x,float y) { setPosition(XVec2(x, y)); }
 	void draw() const;
 	void release();
 	void setEnd();
@@ -58,7 +58,7 @@ inline void XJetParticles::setEnd()
 	m_atomBasic->setEnd();
 }
 
-inline void XJetParticles::setPosition(const XVector2& position)
+inline void XJetParticles::setPosition(const XVec2& position)
 {
 	if(m_isInited == 0 ||
 		m_isEnd != 0) return;
@@ -66,16 +66,6 @@ inline void XJetParticles::setPosition(const XVector2& position)
 	m_directionAngle = m_curPosition.getAngle(position);
 	m_curPosition = position;
 	m_atomBasic->setPosition(position);
-}
-
-inline void XJetParticles::setPosition(float x,float y)
-{
-	if(m_isInited == 0 ||
-		m_isEnd != 0) return;
-	//计算角度
-	m_directionAngle = m_curPosition.getAngle(x,y);
-	m_curPosition.set(x,y);
-	m_atomBasic->setPosition(x,y);
 }
 }
 #endif

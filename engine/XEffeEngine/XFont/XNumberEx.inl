@@ -3,58 +3,52 @@ INLINE XBool XNumberEx::setNumber(const char *temp)
 {
 	if(temp == NULL) return XFalse;
 	if(strlen(temp) >= MAX_NUMBER_LENGTH) return XFalse;
-	strcpy(m_number,temp);
+	strcpy_s(m_number,MAX_NUMBER_LENGTH,temp);
 	return XTrue;
 }
-INLINE void XNumberEx::setColor(float r,float g,float b,float a)
+INLINE void XNumberEx::setColor(const XFColor& c)
 {
-	m_sprite.setColor(r,g,b,a);
+	m_sprite.setColor(c);
 }
 INLINE void XNumberEx::setAlpha(float a)
 {
 	m_sprite.setAlpha(a);
 }
-INLINE void XNumberEx::setScale(const XVector2& scale)
+INLINE void XNumberEx::setScale(const XVec2& scale)
 {
-	setScale(scale.x,scale.y);
+	m_showSize = scale;
+	m_sprite.setScale(m_showSize);
 }
-INLINE void XNumberEx::setScale(float x,float y)
-{
-	m_showSize.set(x,y);
-	m_sprite.setScale(x,y);
-}
+//INLINE void XNumberEx::setScale(float x,float y)
+//{
+//	setScale(XVec2(x,y));
+//}
 INLINE void XNumberEx::setAngle(float angle)
 {
 	m_angle = angle;
 	m_sprite.setAngle(angle);
 	m_angleSin = sin(m_angle * DEGREE2RADIAN) ;
 	m_angleCos = cos(m_angle * DEGREE2RADIAN) ;
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
-		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
-		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set(tempPosition.x,tempPosition.y);
+	m_position = m_setPosition + XVec2(-m_rotateBasicPoint.x * m_angleCos
+		+ m_rotateBasicPoint.y * m_angleSin,
+		-m_rotateBasicPoint.x * m_angleSin - m_rotateBasicPoint.y * m_angleCos);
 }
-INLINE void XNumberEx::setRotateBasePoint(float x,float y)
+INLINE void XNumberEx::setRotateBasePoint(const XVec2& r)
 {
-	m_rotateBasicPoint.set(x,y);
+	m_rotateBasicPoint = r;
 	setPosition(m_setPosition);
 }
-INLINE void XNumberEx::setPosition(const XVector2& position)
+INLINE void XNumberEx::setPosition(const XVec2& position)
 {
-	setPosition(position.x,position.y);
+	m_setPosition = position;
+	m_position = m_setPosition + XVec2(-m_rotateBasicPoint.x * m_angleCos
+		+ m_rotateBasicPoint.y * m_angleSin,
+		-m_rotateBasicPoint.x * m_angleSin - m_rotateBasicPoint.y * m_angleCos);
 }
-INLINE void XNumberEx::setPosition(float x,float y)
-{
-	m_setPosition.set(x,y);
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
-		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
-		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set(tempPosition.x,tempPosition.y);
-}
+//INLINE void XNumberEx::setPosition(float x,float y)
+//{
+//	setPosition(XVec2(x,y));
+//}
 INLINE XBool XNumberEx::release()
 {
 	if(!m_isInited) return XFalse;

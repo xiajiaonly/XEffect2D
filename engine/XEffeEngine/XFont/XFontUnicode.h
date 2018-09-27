@@ -12,12 +12,12 @@ namespace XE{
 //注意页面值在代码中被限定最多不能超过100页
 //这个字符的类使用一张完整的贴图
 #define MAX_FONT_UNICODE_FILE_NAME_LENGTH (256)	//字符串图片的文件名的最大长度
-#define UNICODE_FONT_PAGE_SUM (30)	//款字符串的页面数量(10)
+#define UNICODE_FONT_PAGE_SUM (256)	//款字符串的页面数量(10)
 #if WITH_FULL_ALL_CHINESE == 0
 #define MAX_UNICODE_TEXT_SUM (8000)	//字体库中字体元素的数量上限(16384)
 #endif
 #if WITH_FULL_ALL_CHINESE == 1
-#define MAX_UNICODE_TEXT_SUM (50000)	//字体库中字体元素的数量上限(16384)
+#define MAX_UNICODE_TEXT_SUM (45000)	//字体库中字体元素的数量上限(16384)
 #endif
 #if WITH_FULL_ALL_CHINESE == 2
 #define MAX_UNICODE_TEXT_SUM (256)	//字体库中字体元素的数量上限(16384)
@@ -36,23 +36,23 @@ private:
 	int m_libFontSum;		//字体库中实际的元素数量
 
 	void updateData();		//根据需要更新内部数据
-	XVector2 *m_textPosition;	//用于保存每个字符的位置
-	XRect *m_textRect;		//用于保存每个字符的剪切盒子
-	int *m_textPageOrder;	//显示的字符图片的序列编号
+	std::vector<XVec2> m_textPosition;	//用于保存每个字符的位置
+	std::vector<XRect> m_textRect;		//用于保存每个字符的剪切盒子
+	std::vector<int> m_textPageOrder;	//显示的字符图片的序列编号
 
 	XTextureData *m_texture;		//字体的贴图
 	int m_pageSum;
-	XVector2 m_layout;		//字体图片的布局
-
+	XVec2 m_layout;		//字体图片的布局
 public:
 	XBool init(const char *filenameIn,	//字体图片的文件名
-		const XVector2 &size,			//字体的像素大小
-		const XVector2 &layout,		//字体图片的布局
+		const XVec2& size,			//字体的像素大小
+		const XVec2& layout,		//字体图片的布局
 		int pageSum,			//字体库的页面数量
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,XBool withFBO = XFalse);	
-	XBool initEx(const char *filenameIn,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,XBool withFBO = XFalse);	//简化版本，从资源中读取相关数据
+		XResPos resPos = RES_SYS_DEF,XBool withFBO = XFalse);	
+	XBool initEx(const char *filenameIn,XResPos resPos = RES_SYS_DEF,XBool withFBO = XFalse);	//简化版本，从资源中读取相关数据
 	XBool initFromTTF(const char *filenameIn,int fontSize,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,bool withOutLine = false,XBool withFBO = XFalse);	//从TTF中初始化（尚未实现）
+		XResPos resPos = RES_SYS_DEF,
+		bool withOutLine = false,XBool withFBO = XFalse,bool withOpr = true);	//从TTF中初始化（尚未实现）
 
 	int getStringLengthPix();	//获取字符串的像素宽度(为了向下兼容，任然保留这个接口，实际上已经有新的接口来替代)
 private:
@@ -63,15 +63,23 @@ private:
 	bool loadInfoFromPacker(const char *filename,char *target);	//从压缩包中载入资源
 	bool loadInfoFromWeb(const char *filename,char *target);		//从网页中读取资源
 	//char m_isAcopy;				//是否为一个备份
-	int getTextIndex(const char p[UNICODE_BYTES_WIDTH]);	//找到指定的字符所在的位置
+	int getTextIndex(const char p[UNICODE_BYTES_WIDTH])const;	//找到指定的字符所在的位置
 public:
+	bool getIsSupport(const std::string& str)const
+	{
+		char tmp[UNICODE_BYTES_WIDTH] = {' ',' '};
+		int size = str.size() < UNICODE_BYTES_WIDTH ? str.size() : UNICODE_BYTES_WIDTH;
+		memcpy(tmp, str.c_str(), size);
+		return getTextIndex(tmp) >= 0;
+	}
 	//建立temp的一个副本，自身没有资源，是用到的资源依赖于temp，temp的资源释放之后，就会出错
 	XFontUnicode& operator = (const XFontUnicode& temp);
-	XBool setACopy(const XFontUnicode & temp);
-	XFontUnicode(const XFontUnicode & temp);	//拷贝构造函数
+	XBool setACopy(const XFontUnicode& temp);
+	XFontUnicode(const XFontUnicode& temp);	//拷贝构造函数
 
 	void release(){}	//保持向下兼容，其实什么也不干
-	void setRotateBasePoint(float x,float y);
+	void setRotateBasePoint(const XVec2& r);
+	using XFontBasic::draw;		//避免覆盖的问题
 	void draw();
 	XFontUnicode();
 	XFontUnicode(int maxStrLen);

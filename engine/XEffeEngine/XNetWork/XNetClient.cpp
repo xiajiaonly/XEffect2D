@@ -58,8 +58,11 @@ XBool XNetClient::sendBoardcast()
     memset(&addrUDP,0,sizeof(addrUDP)); 
 	addrUDP.sin_family = AF_INET;
 	addrUDP.sin_port = htons(BOARDCAST_PORT);
+#ifdef WITH_LOCAL_BOARDCAST_IP
+	addrUDP.sin_addr.s_addr = inet_addr(BOARDCASR_IP); 
+#else
 	addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);       
-	//addrUDP.sin_addr.s_addr = inet_addr("192.168.1.255"); 
+#endif
 
 	//下面准备需要发送的数据
 	unsigned char needSendData[BOARDCAST_DATA_LEN];
@@ -272,8 +275,16 @@ XBool XNetClient::getDataPacket(unsigned char *buff,int len)
 				offset = PACKET_HEAD_LEN + m_recvPacket->dataLen;
 				m_mutexRecv.Lock();
 				m_recvDataBuff.push_back(m_recvPacket);
-				m_recvPacketSize = 0;
+				if(m_recvDataBuff.size() > MAX_RECV_DATA_BUFF)
+				{
+					XNetData *tmp = m_recvDataBuff[0];
+					m_recvDataBuff.pop_front();
+					LogStr("XNetServer接收队列数据发生拥堵,丢弃较老的数据!");
+					XMem::XDELETE_ARRAY(tmp->data);
+					XMem::XDELETE(tmp);
+				}
 				m_mutexRecv.Unlock();
+				m_recvPacketSize = 0;
 				//继续迭代
 				return getDataPacket(buff + offset,len - offset);
 			}else
@@ -370,7 +381,6 @@ DWORD WINAPI XNetClient::recvThread(void * pParam)
 	pPar.m_recvPacketSize = 0;
 	fd_set readfds;
 	timeval timeout;
-	int test_error;
 	while(true)
 	{
 		//if(pPar.m_isExit) break;
@@ -391,8 +401,8 @@ DWORD WINAPI XNetClient::recvThread(void * pParam)
 		timeout.tv_usec = 0;
 		FD_ZERO(&readfds);
 		FD_SET(pPar.m_netSocket,&readfds);
-		test_error = select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
-		if(test_error > 0 && FD_ISSET(pPar.m_netSocket,&readfds))
+		ret = select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
+		if(ret > 0 && FD_ISSET(pPar.m_netSocket,&readfds))
 		{//可以接受数据
 			FD_CLR(pPar.m_netSocket, &readfds);
 			ret = recv(pPar.m_netSocket,recvBuff,buffLen,0);

@@ -9,9 +9,9 @@ namespace XE{
 class XMaterial
 {
 private:
-	float m_amblient[4];	//材质的环境颜色
-	float m_diffuse[4];		//材质的散射颜色
-	float m_specular[4];	//材质的镜面反射颜色
+	float m_amblient[4];	//材质的环境颜色RGBA
+	float m_diffuse[4];		//材质的散射颜色RGBA
+	float m_specular[4];	//材质的镜面反射颜色RGBA
 	float m_shininess;		//镜面反射指数
 	float m_emission[4];	//材质的发射光颜色
 	int m_colorIndex[3];	//环境颜色索引、散射颜色索引和镜面反射颜色索引
@@ -46,7 +46,7 @@ public:
 		m_amblient[2] = z;
 		m_amblient[3] = w;
 	}
-	void setAmblient(const XVector4 &a) {setAmblient(a.x,a.y,a.z,a.w);}
+	void setAmblient(const XVec4& a) {setAmblient(a.x,a.y,a.z,a.w);}
 	void setDiffuse(float x,float y,float z,float w)
 	{
 		m_diffuse[0] = x;
@@ -54,7 +54,7 @@ public:
 		m_diffuse[2] = z;
 		m_diffuse[3] = w;
 	}
-	void setDiffuse(const XVector4 &d) {setDiffuse(d.z,d.y,d.z,d.w);}
+	void setDiffuse(const XVec4& d) {setDiffuse(d.z,d.y,d.z,d.w);}
 	void setSpecular(float x,float y,float z,float w)
 	{
 		m_specular[0] = x;
@@ -62,7 +62,7 @@ public:
 		m_specular[2] = z;
 		m_specular[3] = w;
 	}
-	void setSpecular(const XVector4 &s) {setSpecular(s.x,s.y,s.z,s.w);}
+	void setSpecular(const XVec4& s) {setSpecular(s.x,s.y,s.z,s.w);}
 	void setEmission(float x,float y,float z,float w)
 	{
 		m_emission[0] = x;
@@ -70,15 +70,21 @@ public:
 		m_emission[2] = z;
 		m_emission[3] = w;
 	}
-	void setEmission(const XVector4 &e) {setEmission(e.x,e.y,e.z,e.w);}
+	void setEmission(const XVec4& e) {setEmission(e.x,e.y,e.z,e.w);}
 	void setShininess(float shininess) {m_shininess = shininess;}
-	void usetMaterial()
+	void bindMaterial()
 	{//材质正面属性的设置
-		glMaterialfv(GL_FRONT,GL_AMBIENT,m_amblient);
-		glMaterialfv(GL_FRONT,GL_DIFFUSE,m_diffuse);
-		glMaterialfv(GL_FRONT,GL_SPECULAR,m_specular);
-		glMaterialfv(GL_FRONT,GL_EMISSION,m_emission);
-		glMaterialfv(GL_FRONT,GL_SHININESS,&m_shininess);
+		glEnable(GL_COLOR_MATERIAL);
+		glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);//使材质色跟踪当前颜色
+		glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,m_amblient);
+		glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,m_diffuse);
+		glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,m_specular);
+		glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,m_shininess);
+		glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,m_emission);
+	}
+	void unbindMaterial()
+	{
+		glDisable(GL_COLOR_MATERIAL);
 	}
 };
 }

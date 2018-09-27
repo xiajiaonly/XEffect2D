@@ -16,8 +16,8 @@ private:
 	AVCodecContext *m_videoCodec;
 	AVFrame *m_pFrameRGB;
 	AVFrame *m_pFrameYUV;
-	int m_videoOutbufSize;
-    uint8_t *m_videoOutbuf;
+//	int m_videoOutbufSize;
+//	uint8_t *m_videoOutbuf;
 
 	SwsContext *m_pSwsContext;	//用于进行图像格式转换
 	int imgConvert(AVPicture *dst,const AVPicture *src,int src_height)
@@ -39,7 +39,7 @@ public:
 		,m_videoCodec(NULL)
 		,m_pFrameRGB(NULL)
 		,m_pFrameYUV(NULL)
-		,m_videoOutbuf(NULL)
+		//,m_videoOutbuf(NULL)
 	{}
 	~XVideoEncode(){release();}
 };

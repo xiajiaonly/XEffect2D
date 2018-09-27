@@ -17,7 +17,7 @@ class XReductionFace
 private:
 	XBool m_isInited;
 public:
-//	void reductionFace(std::vector<XVector3> &v,	//顶点的数据
+//	void reductionFace(std::vector<XVec3> &v,	//顶点的数据
 //		std::vector<XFaceInfo> &f,
 //		std::vector<int> &map,
 //		std::vector<int> &permutation);

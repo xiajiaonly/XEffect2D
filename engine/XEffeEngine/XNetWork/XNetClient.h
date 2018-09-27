@@ -67,7 +67,7 @@ public:
 	{
 		if(str == NULL ||
 			strlen(str) >= PROJECT_STRING_LEN) return XFalse;
-		strcpy(m_projectStr,str);
+		strcpy_s(m_projectStr,PROJECT_STRING_LEN,str);
 		return XTrue;
 	}
 	XBool sendData(XNetData *data)
@@ -75,7 +75,17 @@ public:
 		if(data == NULL) return XFalse;
 		m_mutexSend.Lock();
 		m_sendDataBuff.push_back(data);
-		m_mutexSend.Unlock();
+		if(m_sendDataBuff.size() > MAX_SEND_DATA_BUFF)	//为了防止数据拥堵，这里永远只保留最新的32帧数据
+		{
+			data = m_sendDataBuff[0];
+			m_sendDataBuff.pop_front();
+			m_mutexSend.Unlock();
+			LogStr("XNetServer接收队列数据发生拥堵,丢弃较老的数据!");
+			XMem::XDELETE_ARRAY(data->data);
+			XMem::XDELETE(data);
+		}else
+			m_mutexSend.Unlock();
+
 		return XTrue;
 	}
 	void clearSendData(XNetDataType type)	//从发送序列中取消所有的发送数据

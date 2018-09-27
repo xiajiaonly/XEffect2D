@@ -38,20 +38,22 @@ class X3DWorld
 public:
 	X3DWorld()
 		:m_isInited(XFalse)
-		,m_drawFun(NULL)
+		, m_drawFun(NULL)
 		//,m_withShadow(XFalse)
-		,m_curShader(NULL)
-		,m_withDumpMap(XFalse)
-		,m_isMouseBtnDown(XFalse)
-		,m_targetObj(NULL)
-		,m_withSkyBox(XTrue)
-		,m_withLight(XTrue)
-		,m_withFog(XTrue)
-		,m_3dDrawMode(DRAW_MODE_POINT)
+		, m_curShader(NULL)
+		, m_withDumpMap(XFalse)
+		, m_isMouseBtnDown(XFalse)
+		, m_targetObj(NULL)
+		, m_withSkyBox(XTrue)
+		, m_withLight(XTrue)
+		, m_withFog(XTrue)
+		, m_3dDrawMode(DRAW_MODE_POINT)
 		, m_withShadow(XFalse)
 		, m_drawWithTexture(0)
+		, m_isArcBallAuto(true)
+		, m_withKeyCtrlCam(true)
 	{}
-	virtual ~X3DWorld(){} 
+	virtual ~X3DWorld() {}
 protected:
 	X3DWorld(const X3DWorld&);
 	X3DWorld &operator= (const X3DWorld&);
@@ -69,7 +71,7 @@ private:
 	XBasic3DObject * m_targetObj;
 
 	XShadowMap m_shadowMap;
-	XMatrix4x4 m_shadowMatrix;		//产生阴影的矩阵
+	XMat4 m_shadowMatrix;		//产生阴影的矩阵
 	//下面是关于shadow的shader的变量
 	XBool m_withShadow;				//是否使用阴影
 	unsigned int m_shadowMapTexture;
@@ -84,13 +86,13 @@ private:
 
 	XShaderGLSL m_DMapAndSMapGLSL;
 
-	void (*m_drawFun)(XBool withTexture);	//绘图函数
+	void(*m_drawFun)(XBool withTexture);	//绘图函数
 
-	XMatrix3x3 m_mouseRotateMatrixO;		//鼠标的旋转矩阵
-	XMatrix3x3 m_mouseRotateMatrixN;
-//	XVector3 m_mouseRotateAngle;			//鼠标控制旋转的角度
+	XMat3 m_mouseRotateMatrixO;		//鼠标的旋转矩阵
+	XMat3 m_mouseRotateMatrixN;
+	//	XVec3 m_mouseRotateAngle;			//鼠标控制旋转的角度
 	XArcBall m_mouseArcBall;
-//	XVector4 m_mouseRotate;
+	//	XVec4 m_mouseRotate;
 
 	XBool m_withSkyBox;	//是否描绘天空
 	XBool m_withLight;		//是否启用灯光
@@ -98,23 +100,23 @@ private:
 
 	X3DDrawMode m_3dDrawMode;
 public:
-	void setUseSkyBox(XBool flag){m_withSkyBox = flag;}
+	void setUseSkyBox(XBool flag) { m_withSkyBox = flag; }
 	void setUseLight(XBool flag)
 	{
 		m_withLight = flag;
-		if(m_withLight) m_worldLight.useLight();
+		if (m_withLight) m_worldLight.useLight();
 		else m_worldLight.disAllLight();
 	}
 	void setUseFog(XBool flag)
 	{
 		m_withFog = flag;
-		if(m_withFog) m_worldLineFog.useFog();
+		if (m_withFog) m_worldLineFog.useFog();
 		else m_worldLineFog.disFog();
 	}
-	void set3DDrawMode(X3DDrawMode mode) 
+	void set3DDrawMode(X3DDrawMode mode)
 	{//这个目前还有问题，尚未实际生效
 		m_3dDrawMode = mode;
-		switch(m_3dDrawMode)
+		switch (m_3dDrawMode)
 		{
 		case DRAW_MODE_FILL:
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -139,18 +141,55 @@ public: //3D世界中的一些属性
 	XLight m_worldLight;			//世界灯光
 	XMaterial m_worldMaterial;		//世界的通用材质
 	XLineFog m_worldLineFog;		//世界雾
-	void useShadow(XBool withTexture,XWorldShaderType type = SHADER_SHADOW,unsigned int dumpTex = 0);
+	void useShadow(XBool withTexture, XWorldShaderType type = SHADER_SHADOW, unsigned int dumpTex = 0);
 	void removeShadow();
 	//下面用于做映射
-	XVector3 worldToScreen(const XVector3 &point,const XRect &view);	//目前这个函数存在问题
-	void setTargetObj(XBasic3DObject * obj){m_targetObj = obj;}
-
-	XBool init(void (* drawFun)(XBool),XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);
+	XVec3 worldToScreen(const XVec3& point, const XRect& view) { return m_worldCam.worldToScreen(point, view); }	//目前这个函数存在问题
+	void setTargetObj(XBasic3DObject * obj) { m_targetObj = obj; }
+private:
+	bool m_isArcBallAuto;	//是否自动使用arcBall
+	bool m_withKeyCtrlCam;	//是否可以使用键盘控制摄像机
+public:
+	void setWithKeyCtrlCam(bool flag) { m_withKeyCtrlCam = flag; }
+	bool getWithKeyCtrlCam()const { return m_withKeyCtrlCam; }
+	void setIsArcBallAuto(bool flag) { m_isArcBallAuto = flag; }
+	bool getIsArcBallAuto()const { return m_isArcBallAuto; }
+	void updateArcBall(const XVec2& pos, bool isClick = false)
+	{
+		if (m_isArcBallAuto || m_targetObj == NULL) return;
+		if (isClick)
+		{
+			m_mouseRotateMatrixO = m_mouseRotateMatrixN;
+			m_mouseArcBall.click(pos);
+		}
+		else
+		{
+			XVec4 mouseRotate;
+			m_mouseArcBall.drag(pos, mouseRotate);
+			m_mouseRotateMatrixN = m_mouseRotateMatrixO * XMath::toMatrix3x3(mouseRotate).anti();
+			m_targetObj->setMultRotate(XMat4().getRotate(m_mouseRotateMatrixN));
+		}
+	}
+	void updateArcBallEx(const XVec2& pos, const XVec3& angle)
+	{
+		if (m_isArcBallAuto || m_targetObj == NULL) return;
+		m_mouseRotateMatrixO = m_mouseRotateMatrixN * XMath::getRotate3D(angle).anti();
+		m_mouseArcBall.click(pos);
+		m_mouseRotateMatrixN = m_mouseRotateMatrixO;
+		m_targetObj->setMultRotate(XMat4().getRotate(m_mouseRotateMatrixN));
+	}
+	void resetArcBall()
+	{
+		if (m_isArcBallAuto || m_targetObj == NULL) return;
+		m_mouseRotateMatrixN.loadIdentity();
+		m_mouseRotateMatrixO.loadIdentity();
+	}
+	XBool init(void(*drawFun)(XBool), XResPos resourcePosition = RES_SYS_DEF);
 	void draw();
 	void move(float stepTime);
-	void setWithShadow(XBool flag){m_withShadow = flag;}
-	void setWithDumpMap(XBool flag){m_withDumpMap = flag;}
-	XBool getWithShadow()const{return m_withShadow;}
+	void setWithShadow(XBool flag) { m_withShadow = flag; }
+	void setWithDumpMap(XBool flag) { m_withDumpMap = flag; }
+	XBool getWithShadow()const { return m_withShadow; }
 	void keyEvent(const XInputEvent& inputEvent);	//按键事件
 };
 namespace X3D

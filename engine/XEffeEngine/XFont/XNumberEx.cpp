@@ -27,11 +27,11 @@ XNumberTexture::XNumberTexture()
 ,m_texture0f(NULL)
 {}
 //fileName:pic/number_00/number_00.png
-XBool XNumberTexture::init(const char *fileName,XResourcePosition resoursePosition)
+XBool XNumberTexture::init(const char *fileName,XResPos resPos)
 {
 	if(m_isInited ||
 		fileName == NULL) return XFalse;
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 	//下面开始分配内存空间
 	m_texture00 = XMem::createMem<XTextureData>();
 	m_texture01 = XMem::createMem<XTextureData>();
@@ -64,7 +64,7 @@ XBool XNumberTexture::init(const char *fileName,XResourcePosition resoursePositi
 	int len = strlen(fileName);
 	if(len <= 5 || len >= MAX_NUMBER_LENGTH) return XFalse;
 	char tempFileName[MAX_NUMBER_LENGTH];
-	strcpy(tempFileName,fileName);
+	strcpy_s(tempFileName,MAX_NUMBER_LENGTH,fileName);
 /*	fileName[len - 5] = '0';
 	if(!m_texture00->load(fileName,1,m_resoursePosition)) return XFalse;
 	fileName[len - 5] = '1';
@@ -98,37 +98,38 @@ XBool XNumberTexture::init(const char *fileName,XResourcePosition resoursePositi
 	fileName[len - 5] = 'f';
 	if(!m_texture0f->load(fileName,1,m_resoursePosition)) return XFalse;
 */
-	tempFileName[len - 5] = '0';
+	char& ref = tempFileName[len - 5];
+	ref = '0';
 	m_texture00->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '1';
+	ref = '1';
 	m_texture01->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '2';
+	ref = '2';
 	m_texture02->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '3';
+	ref = '3';
 	m_texture03->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '4';
+	ref = '4';
 	m_texture04->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '5';
+	ref = '5';
 	m_texture05->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '6';
+	ref = '6';
 	m_texture06->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '7';
+	ref = '7';
 	m_texture07->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '8';
+	ref = '8';
 	m_texture08->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = '9';
+	ref = '9';
 	m_texture09->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'a';
+	ref = 'a';
 	m_texture0a->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'b';
+	ref = 'b';
 	m_texture0b->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'c';
+	ref = 'c';
 	m_texture0c->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'd';
+	ref = 'd';
 	m_texture0d->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'e';
+	ref = 'e';
 	m_texture0e->load(tempFileName,m_resoursePosition);
-	tempFileName[len - 5] = 'f';
+	ref = 'f';
 	m_texture0f->load(tempFileName,m_resoursePosition);
 
 	m_isInited = XTrue;
@@ -137,22 +138,22 @@ XBool XNumberTexture::init(const char *fileName,XResourcePosition resoursePositi
 void XNumberTexture::release()
 {
 	if(!m_isInited) return;
-	m_texture00->release();
-	m_texture01->release();
-	m_texture02->release();
-	m_texture03->release();
-	m_texture04->release();
-	m_texture05->release();
-	m_texture06->release();
-	m_texture07->release();
-	m_texture08->release();
-	m_texture09->release();
-	m_texture0a->release();
-	m_texture0b->release();
-	m_texture0c->release();
-	m_texture0d->release();
-	m_texture0e->release();
-	m_texture0f->release();
+	//m_texture00->release();
+	//m_texture01->release();
+	//m_texture02->release();
+	//m_texture03->release();
+	//m_texture04->release();
+	//m_texture05->release();
+	//m_texture06->release();
+	//m_texture07->release();
+	//m_texture08->release();
+	//m_texture09->release();
+	//m_texture0a->release();
+	//m_texture0b->release();
+	//m_texture0c->release();
+	//m_texture0d->release();
+	//m_texture0e->release();
+	//m_texture0f->release();
 	XMem::XDELETE(m_texture00);
 	XMem::XDELETE(m_texture01);
 	XMem::XDELETE(m_texture02);
@@ -174,9 +175,9 @@ void XNumberTexture::release()
 }
 XNumberEx::XNumberEx()
 :m_isInited(XFalse)
-,m_rotateBasicPoint(0.0f,0.0f)
-,m_blendTypeScr(4)
-,m_blendTypeDst(5)
+,m_rotateBasicPoint(0.0f)
+//,m_blendTypeScr(4)
+//,m_blendTypeDst(5)
 ,m_angleSin(0.0f)
 ,m_angleCos(1.0f)
 {//字符串保存的时候使用倒序保存，但是符号使用正常的顺序例如：-12.5%，将会保存为-5.12%
@@ -189,19 +190,19 @@ XNumberEx::XNumberEx()
 	m_number = XMem::createArrayMem<char>(MAX_NUMBER_LENGTH);
 	m_number[0] = '\0';
 }
-XBool XNumberEx::init(const XNumberTexture *numberTexture,const XVector2 &size)
+XBool XNumberEx::init(const XNumberTexture *numberTexture,const XVec2& size)
 {
 	if(m_isInited ||
 		numberTexture == NULL) return XFalse;
 	m_numberTexture = numberTexture;
 
 	m_number[0] = '\0';
-	m_position.set(0.0f,0.0f);
-	m_setPosition.set(0.0f,0.0f);
+	m_position.reset();
+	m_setPosition.reset();
 	setAngle(0);
 	m_distance = 0;
 	m_size = size;
-	m_showSize.set(1.0,1.0);
+	m_showSize.set(1.0);
 //	if(!m_sprite.init(1,m_size.x,m_size.y,0,POINT_LEFT_TOP)) return XFalse;
 	if(!m_sprite.init(m_numberTexture->m_texture00->texture.m_w,m_numberTexture->m_texture00->texture.m_h,
 		0,POINT_LEFT_TOP)) return XFalse;
@@ -297,7 +298,7 @@ XBool XNumberEx::setNumber(int temp)
 		if(curCharPoint >= MAX_NUMBER_LENGTH) return XFalse;
 		if(temp == 0) break;
 	}
-	int i = 0;;
+	int i = 0;
 	if(tempNumber[0] < '0' || tempNumber[0] > '9')
 	{//如果是符号位则不变
 		m_number[0] = tempNumber[0];
@@ -390,10 +391,10 @@ XBool XNumberEx::setACopy(const XNumberEx &temp)
 	m_angleSin = temp.m_angleSin;
 	m_angleCos = temp.m_angleCos;
 
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
 	m_numberTexture = temp.m_numberTexture;
-	strcpy(m_number,temp.m_number);
+	strcpy_s(m_number,MAX_NUMBER_LENGTH,temp.m_number);
 	m_position = temp.m_position;	//字体的位置
 	m_setPosition = temp.m_setPosition;
 	m_angle = temp.m_angle;			//字体的角度
@@ -413,10 +414,10 @@ XNumberEx& XNumberEx::operator = (const XNumberEx& temp)
 	m_angleSin = temp.m_angleSin;
 	m_angleCos = temp.m_angleCos;
 
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
 	m_numberTexture = temp.m_numberTexture;
-	strcpy(m_number,temp.m_number);
+	strcpy_s(m_number,MAX_NUMBER_LENGTH,temp.m_number);
 	m_position = temp.m_position;	//字体的位置
 	m_setPosition = temp.m_setPosition;
 	m_angle = temp.m_angle;			//字体的角度

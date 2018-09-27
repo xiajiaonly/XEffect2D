@@ -5,28 +5,29 @@
 //Date:		See the header file
 //--------------------------------
 #include "XSkyBox.h"
+#include "XLight.h"
 namespace XE{
-XBool XSkyBox::init(const char *filename,XResourcePosition resourcePosition)
+XBool XSkyBox::init(const char *filename,XResPos resourcePosition)
 {
 	if(m_isInited) return XTrue;
 	if(filename == NULL) return XFalse;
 	char tempFilename[256];
-	strcpy(tempFilename,filename);
+	strcpy_s(tempFilename,256,filename);
 	char fileType[10];
-	strcpy(fileType,filename + strlen(filename) - 4);
+	strcpy_s(fileType,10,filename + strlen(filename) - 4);
 	//œ¬√Ê‘ÿ»ÎÕº∆¨◊ ‘¥
-	sprintf(tempFilename + strlen(filename) - 7,"top%s",fileType);
-	if(!m_texture[0].load(tempFilename,resourcePosition)) return 0;
-	sprintf(tempFilename + strlen(filename) - 7,"bottom%s",fileType);
-	if(!m_texture[1].load(tempFilename,resourcePosition)) return 0;
-	sprintf(tempFilename + strlen(filename) - 7,"left%s",fileType);
-	if(!m_texture[2].load(tempFilename,resourcePosition)) return 0;
-	sprintf(tempFilename + strlen(filename) - 7,"right%s",fileType);
-	if(!m_texture[3].load(tempFilename,resourcePosition)) return 0;
-	sprintf(tempFilename + strlen(filename) - 7,"front%s",fileType);
-	if(!m_texture[4].load(tempFilename,resourcePosition)) return 0;
-	sprintf(tempFilename + strlen(filename) - 7,"back%s",fileType);
-	if(!m_texture[5].load(tempFilename,resourcePosition)) return 0;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"top%s",fileType);
+	if(!m_texture[0].load(tempFilename,resourcePosition)) return XFalse;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"bottom%s",fileType);
+	if(!m_texture[1].load(tempFilename,resourcePosition)) return XFalse;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"left%s",fileType);
+	if(!m_texture[2].load(tempFilename,resourcePosition)) return XFalse;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"right%s",fileType);
+	if(!m_texture[3].load(tempFilename,resourcePosition)) return XFalse;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"front%s",fileType);
+	if(!m_texture[4].load(tempFilename,resourcePosition)) return XFalse;
+	sprintf_s(tempFilename + strlen(filename) - 7,256 - (strlen(filename) - 7),"back%s",fileType);
+	if(!m_texture[5].load(tempFilename,resourcePosition)) return XFalse;
 	m_isInited = XTrue;
 	return XTrue;
 }
@@ -40,13 +41,14 @@ void XSkyBox::draw()
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 //	glLoadIdentity();
-	XGL::EnableTexture2D();
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(XFalse);
 	XGL::DisableBlend();
-	glDisable(GL_LIGHTING);
+	XLight::disAllLight();
 	//bottom
-	glColor4f(1.0f,1.0f,1.0f,1.0f);
+	glColor4fv(XFColor::white);
+	glActiveTexture(GL_TEXTURE0);
+	XGL::EnableTexture2D();
 	XGL::BindTexture2D(m_texture[1].texture.m_texture);
 	glBegin(GL_QUADS);	
 		glNormal3f(0.0f,1.0f,0.0f);
@@ -108,6 +110,10 @@ void XSkyBox::draw()
 	glDepthMask(XTrue);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	if(lp) glEnable(GL_LIGHTING);	//ª÷∏¥π‚’’◊¥Ã¨  
+	if(lp)
+	{
+		glEnable(GL_LIGHTING);	//ª÷∏¥π‚’’◊¥Ã¨  
+		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL_EXT, GL_SEPARATE_SPECULAR_COLOR_EXT);
+	}
 }
 }

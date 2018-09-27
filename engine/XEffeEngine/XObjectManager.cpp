@@ -106,7 +106,7 @@ int XObjectManager::addAObject(XObjectBasic * object)
 
 	tmp.m_pObject = object;		//初始化指针无效
 //	tmp.m_objectType = object->m_objType;	//无效的物件类型
-	tmp.m_objectMousePoint.set(0.0f,0.0f);
+	tmp.m_objectMousePoint.set(0.0f);
 	tmp.m_objectKeyOption = OBJ_OPTION_NULL;
 	tmp.m_objectSetState = OBJ_OPTION_STATE_NULL;
 	
@@ -319,8 +319,7 @@ void XObjectManager::keyProc(int keyID,XKeyState keyState)
 					if(m_objInfo[i].m_objectEditParm >= 0 && m_objInfo[i].m_objectEditParm < temp->getNodeSum() && 
 						temp->getScale().x != 0.0f && temp->getScale().y != 0.0f) //必须要大于2个点才能删除点
 					{
-						temp->addOneNode((m_curMousePosition.x - temp->getPosition().x) / temp->getScale().x,
-							(m_curMousePosition.y - temp->getPosition().y) / temp->getScale().y,
+						temp->addOneNode((m_curMousePosition - temp->getPosition()) / temp->getScale(),
 							m_objInfo[i].m_objectEditParm);
 					}
 				}
@@ -413,10 +412,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 size = temp->getScale();
+				XVec2 size = temp->getScale();
 				if(size.x - 0.01f >= 0) size.x -= 0.01f;
 				else size.x = 0.0f;
 				if(size.y - 0.01f >= 0) size.y -= 0.01f;
@@ -435,10 +435,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 size = temp->getScale();
+				XVec2 size = temp->getScale();
 				size += 0.01f;
 				temp->setScale(size);
 			}
@@ -453,6 +454,7 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_NUMBER:
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
+		case OBJ_TURNBOARD:
 		case OBJ_NODELINE:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
@@ -472,6 +474,7 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_NUMBER:
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
+		case OBJ_TURNBOARD:
 		case OBJ_NODELINE:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
@@ -536,10 +539,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 position = temp->getPosition();
+				XVec2 position = temp->getPosition();
 				position.x += 1.0f;
 				temp->setPosition(position);
 			}
@@ -555,10 +559,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 position = temp->getPosition();
+				XVec2 position = temp->getPosition();
 				position.x -= 1.0f;
 				temp->setPosition(position);
 			}
@@ -574,10 +579,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 position = temp->getPosition();
+				XVec2 position = temp->getPosition();
 				position.y += 1.0f;
 				temp->setPosition(position);
 			}
@@ -593,10 +599,11 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		case OBJ_FONTUNICODE:
 		case OBJ_FONTX:
 		case OBJ_NODELINE:
+		case OBJ_TURNBOARD:
 		case OBJ_CONTROL:
 			{
 				XObjectBasic * temp = (XObjectBasic *)m_objInfo[order].m_pObject;
-				XVector2 position = temp->getPosition();
+				XVec2 position = temp->getPosition();
 				position.y -= 1.0f;
 				temp->setPosition(position);
 			}
@@ -605,13 +612,13 @@ void XObjectManager::objectKeyOption(unsigned int order,XObjectOptionType option
 		break;
 	}
 }
-void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
+void XObjectManager::mouseProc(const XVec2& p,XMouseState eventType)
 {//鼠标响应函数
 	if(!m_isInited ||
 		!m_isOption) return;
 	m_curMouseOnObjectSum = 0;
 	XBool stateChangeFlag = XFalse;	//选择的状态是否发生了改变
-	if(m_isShowUI && m_mutiList->isInRect(x,y)) return;	//显示空间的时候消息不能向下传递
+	if(m_isShowUI && m_mutiList->isInRect(p)) return;	//显示空间的时候消息不能向下传递
 
 	switch(eventType)
 	{
@@ -628,23 +635,22 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 			case OBJ_NUMBER:
 			case OBJ_FONTUNICODE:
 			case OBJ_FONTX:
+			case OBJ_TURNBOARD:
 			case OBJ_CONTROL:
 				{
 					XObjectBasic * temp = (XObjectBasic *)m_objInfo[i].m_pObject;
-					if(temp->isInRect(x,y))
+					if(temp->isInRect(p))
 					{//标记鼠标按下
 						m_objInfo[i].m_objectMouseState = OBJ_STATE_MOUSE_DOWN;	//物体处于按下状态
 
-						m_objInfo[i].m_objectMousePoint = temp->getPosition();
-						m_objInfo[i].m_objectMousePoint.x -= x;
-						m_objInfo[i].m_objectMousePoint.y -= y;
+						m_objInfo[i].m_objectMousePoint = temp->getPosition() - p;
 					}
 				}
 				break;
 			case OBJ_NODELINE:
 				{
 					XObjectBasic * temp = (XObjectBasic *)m_objInfo[i].m_pObject;
-					if(temp->isInRect(x,y))
+					if(temp->isInRect(p))
 					{//如果在物件上被点击则做出反应
 						if(m_objInfo[i].m_objectKeyOption == OBJ_OPTION_EDIT)
 						{//处于编辑状态
@@ -652,24 +658,19 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 							int tempOrder = -1;
 							if(tempNodeLine->getScale().x != 0 && tempNodeLine->getScale().y != 0)
 							{//防止除零操作
-								tempOrder = tempNodeLine->getNodeOrder((x - tempNodeLine->getPosition().x) / tempNodeLine->getScale().x,
-									(y - tempNodeLine->getPosition().y) / tempNodeLine->getScale().y,5);
+								tempOrder = tempNodeLine->getNodeOrder((p - tempNodeLine->getPosition()) / tempNodeLine->getScale(),5);
 								if(tempOrder >= 0)// && tempOrder != m_objectEditParm[i])
 								{
 									m_objInfo[i].m_objectEditParm = tempOrder;
 
 									m_objInfo[i].m_objectMouseState = OBJ_STATE_MOUSE_DOWN;
-									m_objInfo[i].m_objectMousePoint = tempNodeLine->getNode(tempOrder);
-									m_objInfo[i].m_objectMousePoint.x -= x / tempNodeLine->getScale().x;
-									m_objInfo[i].m_objectMousePoint.y -= y / tempNodeLine->getScale().y;
+									m_objInfo[i].m_objectMousePoint = tempNodeLine->getNode(tempOrder) - p / tempNodeLine->getScale();
 								}
 							}
 						}else
 						{//非编辑状态
 							m_objInfo[i].m_objectMouseState = OBJ_STATE_MOUSE_DOWN;
-							m_objInfo[i].m_objectMousePoint = temp->getPosition();
-							m_objInfo[i].m_objectMousePoint.x -= x;
-							m_objInfo[i].m_objectMousePoint.y -= y;
+							m_objInfo[i].m_objectMousePoint = temp->getPosition() - p;
 						}
 					}
 				}
@@ -693,6 +694,7 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 			case OBJ_FONTUNICODE:
 			case OBJ_FONTX:
 			case OBJ_NODELINE:
+			case OBJ_TURNBOARD:
 			case OBJ_CONTROL:
 				{
 					if(m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_DOWN)	//只要鼠标弹起，不管是否发生在物件位置都做响应判断
@@ -743,7 +745,7 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 		}
 		break;
 	case MOUSE_MOVE:		//鼠标移动事件
-		m_curMousePosition.set(x,y);
+		m_curMousePosition.set(p);
 		for(unsigned int i = 0;i < m_objInfo.size();++ i)
 		{//下面依次对每个物件进行鼠标响应
 			switch(m_objInfo[i].m_pObject->m_objType)
@@ -756,12 +758,13 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 			case OBJ_FONTUNICODE:
 			case OBJ_FONTX:
 			case OBJ_NODELINE:
+			case OBJ_TURNBOARD:
 			case OBJ_CONTROL:
 			{
 				if(m_objInfo[i].m_objectMouseState == OBJ_STATE_NULL)	//悬浮事件的判断
 				{//如果之前是无鼠标状态
 					XObjectBasic * temp = m_objInfo[i].m_pObject;
-					if(temp->isInRect(x,y))
+					if(temp->isInRect(p))
 					{//则现在为鼠标悬浮状态
 						m_objInfo[i].m_objectMouseState = OBJ_STATE_MOUSE_ON;	//设置悬浮事件
 						m_curMouseOnObjectSum ++;
@@ -770,7 +773,7 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 				if(m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_ON)	//如果已经进入悬浮状态，则这里判断是都悬浮状态结束
 				{//如果已经处于悬浮状态，则这里判断是否退出悬浮状态
 					XObjectBasic * temp = m_objInfo[i].m_pObject;
-					if(!temp->isInRect(x,y)) m_objInfo[i].m_objectMouseState = OBJ_STATE_NULL;	//设置悬浮状态结束
+					if(!temp->isInRect(p)) m_objInfo[i].m_objectMouseState = OBJ_STATE_NULL;	//设置悬浮状态结束
 				}else
 				if((m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_DOWN || 
 					m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_MOVE) && m_objInfo[i].m_objCanEdit)	//点击状态的话，这里设置跟随鼠标移动
@@ -778,17 +781,17 @@ void XObjectManager::mouseProc(int x,int y,XMouseState eventType)
 					if(m_objInfo[i].m_pObject->m_objType != OBJ_NODELINE)
 					{//改变物件的位置
 						XObjectBasic * temp = m_objInfo[i].m_pObject;
-						temp->setPosition(m_objInfo[i].m_objectMousePoint.x + x,m_objInfo[i].m_objectMousePoint.y + y);
+						temp->setPosition(m_objInfo[i].m_objectMousePoint + p);
 					}else
 					{//对于引导线可能是改变引导线的位置或者是改变引导线中某个点的位置
 						if(m_objInfo[i].m_objectKeyOption == OBJ_OPTION_EDIT)
 						{//改变NodeLine中的点的位置
-							((XNodeLine *)m_objInfo[i].m_pObject)->setOneNode(m_objInfo[i].m_objectMousePoint.x + x / ((XNodeLine *)m_objInfo[i].m_pObject)->getScale().x,
-								m_objInfo[i].m_objectMousePoint.y + y / ((XNodeLine *)m_objInfo[i].m_pObject)->getScale().y,m_objInfo[i].m_objectEditParm);
+							((XNodeLine *)m_objInfo[i].m_pObject)->setOneNode(m_objInfo[i].m_objectMousePoint + p / ((XNodeLine *)m_objInfo[i].m_pObject)->getScale(),
+								m_objInfo[i].m_objectEditParm);
 						}else
 						{
 							XObjectBasic * temp = m_objInfo[i].m_pObject;
-							temp->setPosition(m_objInfo[i].m_objectMousePoint.x + x,m_objInfo[i].m_objectMousePoint.y + y);
+							temp->setPosition(m_objInfo[i].m_objectMousePoint + p);
 						}
 					}
 					m_objInfo[i].m_objectMouseState = OBJ_STATE_MOUSE_MOVE;	//鼠标拖动状态
@@ -816,13 +819,13 @@ void XObjectManager::upDateMultiListData()
 		if(m_objInfo[i].m_objBeSelect)
 		{
 			m_mutiList->addALine();
-			sprintf(tempStr,"%d",i);
+			sprintf_s(tempStr,256,"%d",i);
 			m_mutiList->setBoxStr(tempStr,lineOrder,0);
-			sprintf(tempStr,"%.0f,%.0f",m_objInfo[i].m_position.x,m_objInfo[i].m_position.y);
+			sprintf_s(tempStr,256,"%.0f,%.0f",m_objInfo[i].m_position.x,m_objInfo[i].m_position.y);
 			m_mutiList->setBoxStr(tempStr,lineOrder,3);
-			sprintf(tempStr,"%.2f,%.2f",m_objInfo[i].m_scale.x,m_objInfo[i].m_scale.y);
+			sprintf_s(tempStr,256,"%.2f,%.2f",m_objInfo[i].m_scale.x,m_objInfo[i].m_scale.y);
 			m_mutiList->setBoxStr(tempStr,lineOrder,4);
-			sprintf(tempStr,"%.2f",m_objInfo[i].m_angle);
+			sprintf_s(tempStr,256,"%.2f",m_objInfo[i].m_angle);
 			m_mutiList->setBoxStr(tempStr,lineOrder,5);
 			m_objInfo[i].m_objLineOrder = lineOrder;
 			m_objInfo[lineOrder].m_lineObjOrder = i;
@@ -861,6 +864,7 @@ void XObjectManager::updateObjStateInfo(int order)
 	case OBJ_FONTUNICODE:m_mutiList->setBoxStr("FontUnicode",m_objInfo[order].m_objLineOrder,1);break;
 	case OBJ_FONTX:m_mutiList->setBoxStr("Fontx",m_objInfo[order].m_objLineOrder,1);break;
 	case OBJ_NODELINE:m_mutiList->setBoxStr("NodeLine",m_objInfo[order].m_objLineOrder,1);break;
+	case OBJ_TURNBOARD:m_mutiList->setBoxStr("TurnBoard",m_objInfo[order].m_objLineOrder,1);break;
 	case OBJ_CONTROL:m_mutiList->setBoxStr("Control",m_objInfo[order].m_objLineOrder,1);break;
 	}
 	switch(m_objInfo[order].m_objectKeyOption)
@@ -884,9 +888,9 @@ void XObjectManager::updateObjInfo(int order)
 
 	char tempStr[256] = "";
 #if OBJ_MANAGER_WITH_ID
-	sprintf(tempStr,"%d",order);
+	sprintf_s(tempStr,256,"%d",order);
 	m_objInfo[order].m_fontID->setString(tempStr);
-	XVector2 fontPosition = m_objInfo[order].m_position;
+	XVec2 fontPosition = m_objInfo[order].m_position;
 	if(fontPosition.x < 0.0f) fontPosition.x = 0.0f;	//防止文字显示超出屏幕范围，不过这里没有判断上限，只判断了下线
 	if(fontPosition.x >= getSceneWidth() - m_objInfo[order].m_fontID->getMaxPixelWidth()) 
 		fontPosition.x = getSceneWidth() - m_objInfo[order].m_fontID->getMaxPixelWidth();
@@ -896,14 +900,14 @@ void XObjectManager::updateObjInfo(int order)
 	m_objInfo[order].m_fontID->setPosition(fontPosition);
 #endif
 	if(m_objInfo[order].m_objLineOrder < 0) return;
-	sprintf(tempStr,"%d",order);
+	sprintf_s(tempStr,256,"%d",order);
 	m_mutiList->setBoxStr(tempStr,m_objInfo[order].m_objLineOrder,0);
 	updateObjStateInfo(order);
-	sprintf(tempStr,"%.0f,%.0f",m_objInfo[order].m_position.x,m_objInfo[order].m_position.y);
+	sprintf_s(tempStr,256,"%.0f,%.0f",m_objInfo[order].m_position.x,m_objInfo[order].m_position.y);
 	m_mutiList->setBoxStr(tempStr,m_objInfo[order].m_objLineOrder,3);
-	sprintf(tempStr,"%.2f,%.2f",m_objInfo[order].m_scale.x,m_objInfo[order].m_scale.y);
+	sprintf_s(tempStr,256,"%.2f,%.2f",m_objInfo[order].m_scale.x,m_objInfo[order].m_scale.y);
 	m_mutiList->setBoxStr(tempStr,m_objInfo[order].m_objLineOrder,4);
-	sprintf(tempStr,"%.2f",m_objInfo[order].m_angle);
+	sprintf_s(tempStr,256,"%.2f",m_objInfo[order].m_angle);
 	m_mutiList->setBoxStr(tempStr,m_objInfo[order].m_objLineOrder,5);
 }
 XBool XObjectManager::checkNeedUpdate(int order)
@@ -945,35 +949,36 @@ void XObjectManager::draw()	//当物件的数量太多时，这个函数的执行效率较低
 			case OBJ_NUMBER:
 			case OBJ_FONTUNICODE:
 			case OBJ_FONTX:
+			case OBJ_TURNBOARD:
 			case OBJ_CONTROL:
 				{
 					if(checkNeedUpdate(i)) updateObjInfo(i);
 					XObjectBasic * temp = m_objInfo[i].m_pObject;
 					//在物件的位置描绘上十字
-					XRender::drawLine(m_objInfo[i].m_position.x - 5,m_objInfo[i].m_position.y,m_objInfo[i].m_position.x + 5,m_objInfo[i].m_position.y,
-						0.5f,1.0f,0.0f,0.0f,1.0f);
-					XRender::drawLine(m_objInfo[i].m_position.x,m_objInfo[i].m_position.y - 5,m_objInfo[i].m_position.x,m_objInfo[i].m_position.y + 5,
-						0.5f,1.0f,0.0f,0.0f,1.0f);
+					XRender::drawLine(m_objInfo[i].m_position - XVec2(5.0f, 0.0f),
+						m_objInfo[i].m_position + XVec2(5.0f, 0.0f), 0.5f, XFColor::red);
+					XRender::drawLine(m_objInfo[i].m_position - XVec2(0.0f, 5.0f), m_objInfo[i].m_position + XVec2(0.0f, 5.0f),
+						0.5f,XFColor::red);
 					//使用线条包围物件
 					if(m_objInfo[i].m_objBeSelect)
 					{//处于选中状态
 						if(m_objInfo[i].m_objCanEdit)
 						{//可编辑为白色
-							if(m_mutiList->getHaveSelectState(m_objInfo[i].m_objLineOrder))
-								XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,0.0f,0.0f,1.0f);	//被选中的物件用蓝色
-							else XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3));
+							if (m_mutiList->getHaveSelectState(m_objInfo[i].m_objLineOrder))
+								XRender::drawQuad(temp->getBox(0), temp->getBox(1), temp->getBox(2), temp->getBox(3), 1.0f, 0.0f, 0.0f, 1.0f);	//被选中的物件用蓝色
+							else XRender::drawQuad(temp->getBox(0), temp->getBox(1), temp->getBox(2), temp->getBox(3), 1.0f, 1.0f, 1.0f, 1.0f);
 						}else
 						{//不可编辑为黑色
-							XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,0.0f,0.0f,0.0f);
+							XRender::drawQuad(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,0.0f,0.0f,0.0f);
 						}
 					}else
 					if(m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_DOWN)
 					{//鼠标按下状态
-						XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,1.0f,0.0f,0.0f);
+						XRender::drawQuad(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,1.0f,0.0f,0.0f);
 					}else
 					if(m_objInfo[i].m_objectMouseState == OBJ_STATE_MOUSE_ON)
 					{//鼠标悬浮状态
-						XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,1.0f,1.0f,0.0f);
+						XRender::drawQuad(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3),1.0f,1.0f,1.0f,0.0f);
 					}
 #if OBJ_MANAGER_WITH_ID
 					if(m_showObjID != 0) m_objInfo[i].m_fontID->draw();
@@ -985,10 +990,10 @@ void XObjectManager::draw()	//当物件的数量太多时，这个函数的执行效率较低
 					if(checkNeedUpdate(i)) updateObjInfo(i);
 					XObjectBasic * temp = m_objInfo[i].m_pObject;
 					//在物件的位置描绘上十字
-					XRender::drawLine(m_objInfo[i].m_position.x - 5,m_objInfo[i].m_position.y,m_objInfo[i].m_position.x + 5,m_objInfo[i].m_position.y,
-						2,1.0f,0.0f,0.0f,1.0f);
-					XRender::drawLine(m_objInfo[i].m_position.x,m_objInfo[i].m_position.y - 5,m_objInfo[i].m_position.x,m_objInfo[i].m_position.y + 5,
-						2,1.0f,0.0f,0.0f,1.0f);
+					XRender::drawLine(m_objInfo[i].m_position - XVec2(5.0f, 0.0f),m_objInfo[i].m_position + XVec2(5.0f, 0.0f),
+						2,XFColor::red);
+					XRender::drawLine(m_objInfo[i].m_position - XVec2(0.0f, 5.0f),m_objInfo[i].m_position + XVec2(0.0f, 5.0f),
+						2,XFColor::red);
 					if(m_objInfo[i].m_pObject->m_objType == OBJ_NODELINE)
 					{//这里需要显示节点的相关信息
 						XNodeLine * tempNodeLine = (XNodeLine *)m_objInfo[i].m_pObject;
@@ -997,33 +1002,25 @@ void XObjectManager::draw()	//当物件的数量太多时，这个函数的执行效率较低
 							//描绘这个点
 							if(j == 0)
 							{//第一个点用绿色
-								XRender::drawLine(tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y - 2,
-									tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y + 2,
-									4,0.0f,1.0f,0.0f);
+								XRender::drawLine(tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() - XVec2(0.0f,2.0f),
+									tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() + XVec2(0.0f, 2.0f),
+									4,XFColor::green);
 							}else
 							if(j == m_objInfo[i].m_objectEditParm)
 							{//被选中的点使用白色
-								XRender::drawLine(tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y - 2,
-									tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y + 2,
+								XRender::drawLine(tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() - XVec2(0.0f, 2.0f),
+									tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() + XVec2(0.0f, 2.0f),
 									4);
 							}else
 							{//其他点用红色
-								XRender::drawLine(tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y - 2,
-									tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y + 2,
-									4,1.0f,0.0f,0.0f);
+								XRender::drawLine(tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() - XVec2(0.0f, 2.0f),
+									tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition() + XVec2(0.0f, 2.0f),
+									4,XFColor::red);
 							}
 							if(j < tempNodeLine->getNodeSum() - 1)
 							{
-								XRender::drawLine(tempNodeLine->getNode(j).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y ,
-									tempNodeLine->getNode(j + 1).x * tempNodeLine->getScale().x + tempNodeLine->getPosition().x,
-									tempNodeLine->getNode(j + 1).y * tempNodeLine->getScale().y + tempNodeLine->getPosition().y);
+								XRender::drawLine(tempNodeLine->getNode(j) * tempNodeLine->getScale() + tempNodeLine->getPosition(),
+									tempNodeLine->getNode(j + 1) * tempNodeLine->getScale() + tempNodeLine->getPosition());
 							}
 						}
 						XRender::drawLine(tempNodeLine->getSpecialPointPosition().x,tempNodeLine->getSpecialPointPosition().y - 2,
@@ -1034,7 +1031,7 @@ void XObjectManager::draw()	//当物件的数量太多时，这个函数的执行效率较低
 					{//编辑状态
 						if(m_objInfo[i].m_objectKeyOption == OBJ_OPTION_EDIT)
 						{
-							XRender::drawBox(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3));
+							XRender::drawQuad(temp->getBox(0),temp->getBox(1),temp->getBox(2),temp->getBox(3));
 						}
 #if OBJ_MANAGER_WITH_ID
 						if(m_showObjID != 0) m_objInfo[i].m_fontID->draw();
@@ -1153,12 +1150,12 @@ void XObjectManager::move(float delay)
 		}
 	}
 }
-XBool XObjectManager::init(XResourcePosition resoursePosition)
+XBool XObjectManager::init(XResPos resPos)
 {
 	if(m_isInited) return XTrue;
 	//初始化字体
 	if(!m_font->initEx((getCommonResPos() + "ResourcePack/pic/ObjectManager/Font").c_str(),
-		resoursePosition)) return XFalse;
+		resPos)) return XFalse;
 	decreaseAObject(m_font);
 	m_mousePosFont->setACopy(*m_font);
 	m_mousePosFont->setColor(XFColor::blue);
@@ -1174,23 +1171,23 @@ XBool XObjectManager::init(XResourcePosition resoursePosition)
 //#endif
 
 	//初始化一个列表框
-	//if(!m_sliderTextureH.initEx("ResourcePack/pic/ObjectManager/MutiList/SliderH",resoursePosition)) return 0;
-	//if(!m_sliderH.initEx(XVector2(200.0f,200.0f),m_sliderTextureH,SLIDER_TYPE_HORIZONTAL,100.0f,0.0f)) return 0;
+	//if(!m_sliderTextureH.initEx("ResourcePack/pic/ObjectManager/MutiList/SliderH",resPos)) return 0;
+	//if(!m_sliderH.initEx(XVec2(200.0f,200.0f),m_sliderTextureH,SLIDER_TYPE_HORIZONTAL,100.0f,0.0f)) return 0;
 	//XCtrlManager.decreaseAObject(&m_sliderH);
 	//decreaseAObject(&m_sliderH);
 
-	//if(!m_sliderTextureV.initEx("ResourcePack/pic/ObjectManager/MutiList/SliderV",resoursePosition)) return 0;
-	//if(!m_sliderV.initEx(XVector2(200.0f,200.0f),m_sliderTextureV,SLIDER_TYPE_VERTICAL,100.0f,0.0f)) return 0;
+	//if(!m_sliderTextureV.initEx("ResourcePack/pic/ObjectManager/MutiList/SliderV",resPos)) return 0;
+	//if(!m_sliderV.initEx(XVec2(200.0f,200.0f),m_sliderTextureV,SLIDER_TYPE_VERTICAL,100.0f,0.0f)) return 0;
 	//XCtrlManager.decreaseAObject(&m_sliderV);
 	//decreaseAObject(&m_sliderV);
 
-	//if(!m_checkTex0.initEx("ResourcePack/pic/ObjectManager/MutiList/checkC",resoursePosition)) return 0;
-	//if(!m_checkTex1.initEx("ResourcePack/pic/ObjectManager/MutiList/checkE",resoursePosition)) return 0;
-	//if(!m_mutiListTexture.initEx("ResourcePack/pic/ObjectManager/MutiList",resoursePosition)) return 0;
+	//if(!m_checkTex0.initEx("ResourcePack/pic/ObjectManager/MutiList/checkC",resPos)) return 0;
+	//if(!m_checkTex1.initEx("ResourcePack/pic/ObjectManager/MutiList/checkE",resPos)) return 0;
+	//if(!m_mutiListTexture.initEx("ResourcePack/pic/ObjectManager/MutiList",resPos)) return 0;
 
-	//if(!m_mutiList->initEx(XVector2(XEE::sceneX + XEE::sceneWidth - 289.0f,XEE::sceneY),m_mutiListTexture,m_checkTex0,m_checkTex1,m_font,1.0f,5,0,m_sliderV,m_sliderH)) return 0;
+	//if(!m_mutiList->initEx(XVec2(XEE::sceneX + XEE::sceneWidth - 289.0f,XEE::sceneY),m_mutiListTexture,m_checkTex0,m_checkTex1,m_font,1.0f,5,0,m_sliderV,m_sliderH)) return 0;
 	if(!m_mutiList->initPlus((getCommonResPos() + "ResourcePack/pic/ObjectManager/MutiList").c_str(),
-		*m_font,1.0f,5,0,resoursePosition)) return XFalse;
+		*m_font,1.0f,5,0,resPos)) return XFalse;
 	//if(!m_mutiList->initWithoutSkin(XRect(64,0,500,500),*m_font,1.0f,5,0)) return 0;
 	//m_mutiList->setPosition(XEE::sceneX + XEE::sceneWidth - 289.0f,XEE::sceneY);
 	setEditWidowsPos();
@@ -1255,13 +1252,13 @@ void XObjectManager::setEditWidowsPos()					//	2	3
 	switch(m_editWindowsPos)
 	{
 	case 0:
-		if(XEG.m_windowData.withFrame == 0 && XEG.m_windowData.withCustomTitle)
+		if(!XEG.m_windowData.withFrame && XEG.m_windowData.withCustomTitle)
 			m_mutiList->setPosition(XEG.getScenePosX() + XEG.getSceneW() - 289.0f,XEG.getScenePosY() + MIN_FONT_CTRL_SIZE);
 		else
 			m_mutiList->setPosition(XEG.getScenePosX() + XEG.getSceneW() - 289.0f,XEG.getScenePosY());
 		break;
 	case 1:
-		if(XEG.m_windowData.withFrame == 0 && XEG.m_windowData.withCustomTitle)
+		if(!XEG.m_windowData.withFrame && XEG.m_windowData.withCustomTitle)
 			m_mutiList->setPosition(XEG.getScenePosX(), XEG.getScenePosY() + MIN_FONT_CTRL_SIZE);
 		else
 			m_mutiList->setPosition(XEG.getScenePosX(),XEG.getScenePosY());
@@ -1269,7 +1266,7 @@ void XObjectManager::setEditWidowsPos()					//	2	3
 	case 2:m_mutiList->setPosition(XEG.getScenePosX(),XEG.getScenePosY() + XEG.getSceneH() - 257.0f);break;
 	case 3:m_mutiList->setPosition(XEG.getScenePosX() + XEG.getSceneW() - 289.0f,XEG.getScenePosY() + XEG.getSceneH() - 257.0f);break;
 	}
-	m_mousePosFont->setPosition(m_mutiList->getPosition() + XVector2(0.0f,240.0f));
+	m_mousePosFont->setPosition(m_mutiList->getPosition() + XVec2(0.0f,240.0f));
 }
 #if !WITH_INLINE_FILE
 #include "XObjectManager.inl"

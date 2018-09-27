@@ -15,12 +15,14 @@ public:
 	virtual void setQ(double q){m_fx.setQ(q);m_fy.setQ(q);}
 	virtual double getR() const{return m_fx.getR();}
 	virtual void setR(double r){m_fx.setR(r);m_fy.setR(r);}
-	XVector2 filter(XVector2 data){return XVector2(m_fx.filter(data.x),m_fy.filter(data.y));}
-	virtual void init(double Q,double R)	//£¬double p
+	XVec2 filter(XVec2 data){return XVec2(m_fx.filter(data.x),m_fy.filter(data.y));}
+	XVec2 reset(XVec2 data){return XVec2(m_fx.reset(data.x),m_fy.reset(data.y));}
+	virtual void init(double Q = 0.03f,double R = 1.0f)	//£¬double p
 	{
 		m_fx.init(Q,R);
 		m_fy.init(Q,R);
 	}
+	virtual ~XFilterVec2(){}
 private:
 	XKalmanFilter m_fx;
 	XKalmanFilter m_fy;

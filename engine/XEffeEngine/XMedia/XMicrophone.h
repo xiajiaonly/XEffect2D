@@ -10,14 +10,14 @@
 //Date:		2013.3.15
 //--------------------------------
 //下面是一个关于录音设备的类 基于OpenAL
-#pragma comment(lib, "../../engine/lib/Alut/alut.lib")
-#pragma comment(lib, "../../engine/lib/OpenAL/Win32/OpenAL32.lib")
+#pragma comment(lib, "Alut/alut.lib")
+#pragma comment(lib, "OpenAL/Win32/OpenAL32.lib")
 
 namespace XE{
 enum XCaptureState
 {
 	CAPTURE_STATE_STOP,		//录音设备停止
-	CAPTURE_STATE_START,		//录音设备开始工作
+	CAPTURE_STATE_START,	//录音设备开始工作
 };
 class XMicrophone
 {
@@ -27,7 +27,7 @@ private:
 	ALCuint m_frequency;			//音频的频率
 	ALCenum m_format;				//音频的格式
 	ALCsizei m_buffersize;			//音频的缓存空间大小
-	XCaptureState m_captureState;			//录音设备的状态
+	XCaptureState m_captureState;	//录音设备的状态
 
 	unsigned char *m_captureData;	//麦克风录音的内容
 	int m_dataBuffMaxSize;			//缓存的最大尺寸

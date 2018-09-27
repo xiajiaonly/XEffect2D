@@ -59,11 +59,11 @@ XBool XLogbook::init(const char *fileName)
     }
 	if(m_workMode == LOGBOOK_MODE_SIMPLE)
 	{//建立文件夹，并建立日志文件
-		std::string tmp = XFile::getWorkPath() + "\\Log";
+		std::string tmp = XFile::getWorkPath() + "\\Logs";
 		//if(mkdir(tmp.c_str()) < 0) return XFalse;
 		mkdir(tmp.c_str());
 		if(!XFile::isAbsolutePath(m_filename.c_str()))
-			m_filename = "Log\\" + m_filename;
+			m_filename = "Logs\\" + m_filename;
 		if((m_logBookFile = fopen(m_filename.c_str(),"a")) == NULL
 			&& (m_logBookFile = fopen(m_filename.c_str(),"w")) == NULL)
 		{
@@ -89,6 +89,7 @@ XBool XLogbook::init(const char *fileName)
     m_isInited = XTrue;    //标记初始化已经完成
 	m_isReleased = STATE_BEFORE_START;
 	//日志初始化之后输出一些日志的基本信息
+	LogNull("运行时间：%s",XTime::sysTime2String(XTime::getTimeMs()).c_str());
 	LogNull("执行文件：%s",XFile::getCurrentExeFileFullPath().c_str());
 	LogNull("编译时间：%s %s",__DATE__,__TIME__);
 	if(gFrameworkData.pFrameWork != NULL)
@@ -279,7 +280,7 @@ void XLogbook::popAllLogMessage()
 //                {
 //                    int data = va_arg(arg_ptr,int);
 //                    char buf[16];
-//                    sprintf(buf,"%d",data);
+//                    sprintf_s(buf,16,"%d",data);
 //                    if(charPoint < (int)(tempMessageSize - 1 - strlen(buf)))
 //                    {
 //                        memcpy(&(tempMessage[charPoint]),buf,strlen(buf));
@@ -300,7 +301,7 @@ void XLogbook::popAllLogMessage()
 //                {
 //                    double data = va_arg(arg_ptr,double);    //注意这里的double 如果使用float 是会出错的
 //                    char buf[16];
-//                    sprintf(buf,"%f",data);
+//                    sprintf_s(buf,16,"%f",data);
 //                    if(charPoint < (int)(tempMessageSize - 1 - strlen(buf)))
 //                    {
 //                        memcpy(&(tempMessage[charPoint]),buf,strlen(buf));
@@ -382,10 +383,11 @@ void XLogbook::addLogInfoNull(const char *p,...)
 	if(!m_isEnable ||
 		(!m_isInited && !init(DEFAULT_LOG_FILE_NAME))) return;
 
+	if (m_tmpBuff == NULL) return;
 	m_locker.Lock();
 	va_list args;
 	va_start(args,p);
-	vsprintf(m_tmpBuff,p,args);
+	vsnprintf(m_tmpBuff,m_maxRecordLength,p,args);
 	va_end(args);
 
 	pushAMessage(m_tmpBuff);
@@ -463,7 +465,7 @@ void XLogbook::addLogInfoNull(const char *p,...)
 //                {
 //                    int data = va_arg(arg_ptr,int);
 //                    char buf[16];
-//                    sprintf(buf,"%d",data);
+//                    sprintf_s(buf,16,"%d",data);
 //                    if(charPoint < (int)(tempMessageSize - 1 - strlen(buf)))
 //                    {
 //                        memcpy(&(tempMessage[charPoint]),buf,strlen(buf));
@@ -484,7 +486,7 @@ void XLogbook::addLogInfoNull(const char *p,...)
 //                {
 //                    double data = va_arg(arg_ptr,double);    //注意这里的double 如果使用float 是会出错的
 //                    char buf[16];
-//                    sprintf(buf,"%f",data);
+//                    sprintf_s(buf,16,"%f",data);
 //                    if(charPoint < (int)(tempMessageSize - 1 - strlen(buf)))
 //                    {
 //                        memcpy(&(tempMessage[charPoint]),buf,strlen(buf));
@@ -570,7 +572,7 @@ void XLogbook::addLogInfoExp(XBool exp,const char *p,...)
 	m_locker.Lock();
 	va_list args;
     va_start(args,p);
-    vsprintf(m_tmpBuff,p,args);
+    vsnprintf(m_tmpBuff,m_maxRecordLength,p,args);
 	va_end(args);
 
     pushAMessage(m_tmpBuff);
@@ -589,9 +591,9 @@ XBool XLogbook::pushAMessage(const char * message)    //向队列中推入一条信息
     char *tempMessage = XMem::createArrayMem<char>(len + m_recordHeadLength);
     if(tempMessage == NULL) return XFalse;
 
-    sprintf(tempMessage,"%04d%02d%02d-%02d%02d%02d-%03d:",tempTime.year,tempTime.month,tempTime.day,
-        tempTime.hour,tempTime.minute,tempTime.second,tempTime.millisecond);
-    strcat(tempMessage,message);
+    sprintf_s(tempMessage,len + m_recordHeadLength,"%02d%02d%02d-%03d:",tempTime.hour,
+		tempTime.minute,tempTime.second,tempTime.millisecond);
+    strcat_s(tempMessage,len + m_recordHeadLength,message);
     len += m_recordHeadLength;
     //----------------------------------------
     //push message
@@ -602,11 +604,21 @@ XBool XLogbook::pushAMessage(const char * message)    //向队列中推入一条信息
     }else
     {//full
 		//delete now message
+		m_locker.Lock();	//不加锁会不安全
+		if(m_logInfoPushPoint == m_logInfoPopPoint)
+		{
+			++ m_logInfoPopPoint;
+			 if(m_logInfoPopPoint >= m_maxRecordSum) m_logInfoPopPoint = 0;
+		}
+		m_locker.Unlock();
         m_LogInfo[m_logInfoPushPoint].isEnable = XFalse;
 		XMem::XDELETE_ARRAY(m_LogInfo[m_logInfoPushPoint].logMessage);
 		m_LogInfo[m_logInfoPushPoint].logMessage = tempMessage;
         m_LogInfo[m_logInfoPushPoint].isEnable = XTrue;
     }
+	//static int sum = 0;
+	//++sum;
+	//printf("+%d\n",sum);
     //move point
     ++ m_logInfoPushPoint;
     if(m_logInfoPushPoint >= m_maxRecordSum)  m_logInfoPushPoint = 0;
@@ -619,6 +631,9 @@ XBool XLogbook::popAMessage(char ** message)    //从队列中取出一条信息
 	m_locker.Lock();	//不加锁会不安全
 	if(m_LogInfo[m_logInfoPopPoint].isEnable)
     {//have message
+		//static int sum = 0;
+		//++sum;
+		//printf("-%d\n",sum);
         //pop message
 		XMem::XDELETE_ARRAY((* message));	//删除原有的内容
         (* message) = m_LogInfo[m_logInfoPopPoint].logMessage;
@@ -655,7 +670,7 @@ void *XLogbook::outputLogMessageThread(void * pParam)
 	XLogServerDataType dataType = LOG_DATA_TYPE_MESSAGE;
 	pPar.m_isReleased = STATE_START;
 	bool isSendInfo = false;
-    while(true)
+    while(pPar.m_isReleased != STATE_SET_TO_END)
     {
         //++++++++++++++++++++++++++++++++++++++++++++
         //处理从服务器接收到的信息
@@ -752,7 +767,6 @@ void *XLogbook::outputLogMessageThread(void * pParam)
 			}
 			break;
 		}
-		if(pPar.m_isReleased == STATE_SET_TO_END) break;
         XEE::sleep(1);
 	}
 	XMem::XDELETE_ARRAY(sendMessage);
@@ -763,24 +777,25 @@ void *XLogbook::outputLogMessageThread(void * pParam)
 }
 XLogbook::XLogbook()
 	:m_isInited(XFalse)
-	,m_isReleased(STATE_BEFORE_START)
-	,m_workMode(LOGBOOK_MODE_SIMPLE)
-	,m_logBookFile(NULL)
-	,m_LogInfo(NULL)
-	,m_logInfoPoint(0)
-	,m_logInfoPushPoint(0)
-	,m_logInfoPopPoint(0)
-	,m_needFlushFile(XFalse)
-	,m_isEnable(XTrue)
-	,m_logServerFilename("../LogServer/LogServer.exe")
-	,m_clientID(0)
-	,m_logLevel(LB_LEVEL_ALL)
+	, m_isReleased(STATE_BEFORE_START)
+	, m_workMode(LOGBOOK_MODE_SIMPLE)
+	, m_logBookFile(NULL)
+	, m_LogInfo(NULL)
+	, m_logInfoPoint(0)
+	, m_logInfoPushPoint(0)
+	, m_logInfoPopPoint(0)
+	, m_needFlushFile(XFalse)
+	, m_isEnable(XTrue)
+	, m_logServerFilename("../LogServer/LogServer.exe")
+	, m_clientID(0)
+	, m_logLevel(LB_LEVEL_ALL)
 {
 	m_socket = XMem::createMem<XSocketEx>();
 }
 XLogbook::~XLogbook()
 {
-	XMem::XDELETE(m_socket);
 	release();
+	waitThreadEnd(m_isReleased);
+	XMem::XDELETE(m_socket);
 }
 }

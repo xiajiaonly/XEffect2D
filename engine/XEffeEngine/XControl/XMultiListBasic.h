@@ -113,7 +113,7 @@ private:
 	void initANewBoxData(XMultiListOneBox * curBox,XMultiListOneRow * curRow,int i,int j);	//初始化一个列表元素的数据
 
 	XFontUnicode m_caption;
-	XVector2 m_fontSize;
+	XVec2 m_fontSize;
 	XFColor m_textColor;			//文字的颜色
 	float m_curTextWidth;			//当前的字体宽度
 	float m_curTextHeight;			//当前的字体高度
@@ -126,23 +126,23 @@ public:
 	XBool getCheckState(int order,int lineOrder);
 	void setCheckState(int order,int lineOrder,XBool state);
 
-	XBool init(const XVector2& position,		//空间所在的位置
+	XBool init(const XVec2& position,		//空间所在的位置
 		const XRect& Area,					//控件的实际显示区域
 		const XMultiListSkin &tex,		//控件的贴图
 		const XCheckSkin &checktex0,		//单选框的贴图
 		const XCheckSkin &checktex1,		//单选框的贴图
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum,				//控件中的行数
 		//const XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
 		const XSlider &vSlider,	//垂直滑动条
 		const XSlider &hSlider);	//水平滑动条
-	XBool initEx(const XVector2& position,		//上面接口的简化版本
+	XBool initEx(const XVec2& position,		//上面接口的简化版本
 		const XMultiListSkin &tex,		
 		const XCheckSkin &checktex0,		
 		const XCheckSkin &checktex1,		
-		const XFontUnicode &font,			
+		const XFontUnicode& font,			
 		float strSize,						
 		int rowSum,				
 		int lineSum,			
@@ -150,14 +150,14 @@ public:
 		const XSlider &vSlider,	
 		const XSlider &hSlider);
 	XBool initPlus(const char *path,		//单选框的贴图
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum,				//控件中的行数
 		//const XMouseRightButtonMenu& mouseMenu,	//控件中使用的右键菜单(目前无效)
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	
+		XResPos resPos = RES_SYS_DEF);	
 	XBool initWithoutSkin(const XRect& area,
-		const XFontUnicode &font,			//控件中使用的字体
+		const XFontUnicode& font,			//控件中使用的字体
 		float strSize,						//字体的缩放大小
 		int rowSum,					//控件中的列数
 		int lineSum);
@@ -167,22 +167,22 @@ public:
 	{
 		return initWithoutSkin(area,getDefaultFont(),1.0f,rowSum,lineSum);
 	}
-	XBool initWithoutSkin(const XVector2& pixelSize,
+	XBool initWithoutSkin(const XVec2& pixelSize,
 		int rowSum,					//控件中的列数
 		int lineSum)
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return initWithoutSkin(XRect(XVec2::zero,pixelSize),
 			getDefaultFont(),1.0f,rowSum,lineSum);
 	}
 protected:
 	void draw();					//描绘函数
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);					//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);					//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float x,float y);
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2& p);
 	void setLostFocus();
 public:
 	XBool exportData(const char *fileName = NULL);			//数据导出
@@ -197,16 +197,16 @@ public:
 	XBool moveRightRow(int order);	//将order列右移
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);			//设置尺寸
+	void setScale(const XVec2& s);			//设置尺寸
 
 	void setTextColor(const XFColor& color);	//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);	//设置按钮的颜色
+	void setColor(const XFColor& c);	//设置按钮的颜色
 	void setAlpha(float a);	//设置按钮的颜色
 
 	XMultiListBasic();
@@ -223,8 +223,8 @@ public:
 	XBool moveUpLine(int order);		//将order行上移
 	XBool moveLeftRow(int order);		//将order列左移
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	//virtual void justForTest() {;}
 private://为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	XMultiListBasic(const XMultiListBasic &temp);

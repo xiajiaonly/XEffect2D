@@ -163,10 +163,9 @@ private:
 	bool getDataPacket(XSocketRecvPacket &packet,unsigned char *buff,int len);	//将数据解析成完整的数据包
 
 	XThreadState m_connectThreadState;	//连接线程的状态
-	XThreadState m_recvThreadState;	//连接线程的状态
-	XThreadState m_sendThreadState;	//连接线程的状态
+	XThreadState m_recvThreadState;		//连接线程的状态
+	XThreadState m_sendThreadState;		//连接线程的状态
 	XThreadState m_acceptThreadState;	//连接线程的状态
-	HANDLE m_acceptThreadHandle;
 	XThreadState m_boardcastThreadState;	//广播线程的状态
 #ifdef XEE_OS_WINDOWS
     static DWORD WINAPI connectThread(void * pParam);	//连接线程 
@@ -194,7 +193,7 @@ public:
 	bool createNetWorkByName(const char *serverName,int port);	//通过服务器名称建立网络
 	bool createNetWorkByIP(const char *serverIP,int port);		//通过服务器IP建立网络
 	//发送
-	bool sendAData(int toID,const unsigned char * data,int len);	//向指定用户发送信息,toID = 0是向服务器发送数据
+	bool sendAData(int toID,const void * data,int len);	//向指定用户发送信息,toID = 0是向服务器发送数据
 	bool sendToAll(unsigned char * data,int len);			//向当前在线的所有用户发送信息(尚未实现)
 	//接收
 	XSocketDataPack *popAData();	//从接收队列中弹出一个消息
@@ -220,7 +219,6 @@ public:
 		,m_sendThreadState(STATE_BEFORE_START)	//连接线程的状态
 		,m_acceptThreadState(STATE_BEFORE_START)	//连接线程的状态
 		,m_boardcastThreadState(STATE_BEFORE_START)	//广播线程的状态
-		,m_acceptThreadHandle(0)
 	{}
 	~XSocketEx() {release();}
 
@@ -232,8 +230,8 @@ public:
 	XSocketNetRole getRole() const {return m_socketRole;}
 	int getMyID() const {return m_myID;}
 	int getMySocket() const {return m_netSocket;}
-	bool setMyName(const std::string &myName);
-	std::string getMyName()const {return m_myName;}
+	bool setMyName(const std::string& myName);
+	const std::string& getMyName()const {return m_myName;}
 	XSocketConnectState getConState() const {return m_conState;}
 	int getSendBuffSize()	//获取发送队列中待发送数据的数量
 	{

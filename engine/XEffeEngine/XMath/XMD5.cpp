@@ -97,7 +97,10 @@ XMD5::XMD5(const unsigned char *data,int len)
 void XMD5::init()
 {
 	finalized = XFalse;
-
+	reset();
+}
+void XMD5::reset()
+{
 	count[0] = 0;
 	count[1] = 0;
 
@@ -106,8 +109,8 @@ void XMD5::init()
 	state[1] = 0xefcdab89;
 	state[2] = 0x98badcfe;
 	state[3] = 0x10325476;
+	memset(buffer,0,blocksize * sizeof(uint1));
 }
-
 //////////////////////////////
 
 // decodes input (unsigned char) into output (uint4). Assumes len is a multiple of 4.
@@ -128,10 +131,10 @@ void XMD5::encode(uint1 output[], const uint4 input[], size_type len)
 {
 	for (size_type i = 0, j = 0; j < len; ++i, j += 4) 
 	{
-		output[j] = input[i] & 0xff;
-		output[j+1] = (input[i] >> 8) & 0xff;
-		output[j+2] = (input[i] >> 16) & 0xff;
-		output[j+3] = (input[i] >> 24) & 0xff;
+		output[j]   = (unsigned char)(input[i] & 0xff);
+		output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
+		output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
+		output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
 	}
 }
 
@@ -221,7 +224,7 @@ void XMD5::transform(const uint1 block[blocksize])
 	state[3] += d;
 
 	// Zeroize sensitive information.
-	memset(x, 0, sizeof x);
+	memset(x, 0, sizeof(x));
 }
 
 //////////////////////////////
@@ -231,7 +234,7 @@ void XMD5::transform(const uint1 block[blocksize])
 void XMD5::update(const unsigned char input[], size_type length)
 {
 	// compute number of bytes mod 64
-	size_type index = count[0] / 8 % blocksize;
+	size_type index = (unsigned int)((count[0] >> 3) & 0x3F);
 
 	// Update number of bits
 	if((count[0] += (length << 3)) < (length << 3))
@@ -286,7 +289,7 @@ XMD5& XMD5::finalize()
 		encode(bits, count, 8);
 
 		// pad out to 56 mod 64.
-		size_type index = count[0] / 8 % 64;
+		size_type index = (unsigned int)((count[0] >> 3) & 0x3f);
 		size_type padLen = (index < 56) ? (56 - index) : (120 - index);
 		update(padding, padLen);
 
@@ -297,9 +300,10 @@ XMD5& XMD5::finalize()
 		encode(digest, state, 16);
 
 		// Zeroize sensitive information.
-		memset(buffer, 0, sizeof buffer);
-		memset(count, 0, sizeof count);
+		memset(buffer, 0, sizeof(buffer));
+		memset(count, 0, sizeof(count));
 
+		reset();
 		finalized = XTrue;
 	}
 	return *this;

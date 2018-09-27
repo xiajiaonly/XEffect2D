@@ -45,22 +45,22 @@ INLINE float XSliderEx::getMinValue() const
 //	m_funMouseMove = funMouseMove;
 //	m_pClass = pClass;
 //}
-INLINE void XSliderEx::setCurValue(float temp)
+INLINE void XSliderEx::setCurValue(float temp, bool withEvent)
 {
-	m_mainSld.setCurValue(temp);
+	m_mainSld.setCurValue(temp, withEvent);
 }
 INLINE void XSliderEx::setRange(float max,float min)
 {
 	m_mainSld.setRange(max,min);
 }
-INLINE XBool XSliderEx::isInRect(float x,float y) //点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XSliderEx::isInRect(const XVec2& p) //点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(p,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-INLINE XVector2 XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	if(m_mainSld.m_typeVorH == SLIDER_TYPE_HORIZONTAL)
 	{
 		if(m_chooseBtn.getVisible() && m_secondarySld.getVisible())
@@ -69,7 +69,7 @@ INLINE XVector2 XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑
 			{
 			case 0:return m_mainSld.getBox(0);
 			case 1:return m_chooseBtn.getBox(1);
-			case 2:return XVector2(m_chooseBtn.getBox(2).x,m_secondarySld.getBox(2).y);
+			case 2:return XVec2(m_chooseBtn.getBox(2).x,m_secondarySld.getBox(2).y);
 			case 3:return m_secondarySld.getBox(3);
 			}
 		}else
@@ -105,7 +105,7 @@ INLINE XVector2 XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑
 			case 0:return m_secondarySld.getBox(0);
 			case 1:return m_mainSld.getBox(1);
 			case 2:return m_chooseBtn.getBox(2);
-			case 3:return XVector2(m_secondarySld.getBox(3).x,m_chooseBtn.getBox(3).y);
+			case 3:return XVec2(m_secondarySld.getBox(3).x,m_chooseBtn.getBox(3).y);
 			}
 		}else
 		if(m_chooseBtn.getVisible())
@@ -132,12 +132,12 @@ INLINE XVector2 XSliderEx::getBox(int order)		//获取四个顶点的坐标，目前先不考虑
 			return m_mainSld.getBox(order);
 		}
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE void XSliderEx::setColor(float r,float g,float b,float a)
+INLINE void XSliderEx::setColor(const XFColor& c)
 {
 	if(!m_isInited) return;
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_mainSld.setColor(m_color);
 	m_secondarySld.setColor(m_color);
 	m_chooseBtn.setColor(m_color);
@@ -153,12 +153,13 @@ INLINE void XSliderEx::setAlpha(float a)
 	updateChildAlpha();
 }
 //下面是一些公共方法
-INLINE XBool XSliderEx::setFont(const char *caption,const XFontUnicode &font,float captionSize,const XVector2 &fontPosition)
+INLINE XBool XSliderEx::setFont(const char *caption,const XFontUnicode& font,float captionSize,const XVec2& fontPosition)
 {
 	return m_mainSld.setFont(caption,font,captionSize,fontPosition);
 }
 INLINE XBool XSliderEx::keyboardProc(int keyOrder,XKeyState keyState)
 {
+	if(m_isSilent) return XFalse;
 	return m_mainSld.keyboardProc(keyOrder,keyState);
 }
 //INLINE void XSliderEx::setLostFocus() 
@@ -207,28 +208,49 @@ INLINE void XSliderEx::drawUp()
 	m_mainSld.drawUp();
 	m_secondarySld.drawUp();
 	m_chooseBtn.drawUp();
+
+	m_comment.draw();
 }
-INLINE XBool XSliderEx::mouseProc(float x,float y,XMouseState mouseState)	//对于鼠标动作的响应函数
+INLINE XBool XSliderEx::mouseProc(const XVec2& p,XMouseState mouseState)	//对于鼠标动作的响应函数
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 
-	m_mainSld.mouseProc(x,y,mouseState);
-	m_secondarySld.mouseProc(x,y,mouseState);
-	m_chooseBtn.mouseProc(x,y,mouseState);
-	if(mouseState == MOUSE_LEFT_BUTTON_UP && m_mainSld.isInRect(x,y))
-		m_isBeChoose = XTrue;
+	m_mainSld.mouseProc(p,mouseState);
+	m_secondarySld.mouseProc(p,mouseState);
+	m_chooseBtn.mouseProc(p,mouseState);
+	if (m_mainSld.isInRect(p))
+	{
+		if (mouseState == MOUSE_LEFT_BUTTON_UP) m_isBeChoose = true;
+		if (!m_isMouseInRect)
+		{
+			m_isMouseInRect = XTrue;
+			m_comment.setShow();
+			setCommentPos(p + XVec2(0.0f, 16.0f));
+		}
+		if (mouseState != MOUSE_MOVE && m_comment.getIsShow())
+			m_comment.disShow();	//鼠标的任意操作都会让说明框消失
+	}
+	else
+	{
+		if (m_isMouseInRect)
+		{
+			m_isMouseInRect = XFalse;
+			m_comment.disShow();
+		}
+	}
 	return XTrue;
 }
-INLINE XBool XSliderEx::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XSliderEx::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
 INLINE void XSliderEx::setOprateState(void * data)
 {

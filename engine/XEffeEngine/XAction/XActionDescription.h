@@ -35,10 +35,10 @@ extern std::string actionTypeStr[];
 struct XActionState
 {//物件保持的状态
 	XBool isEnable;
-	XVector2 position;
+	XVec2 position;
 	XFColor color;
 	float angle;	//[0-360]
-	XVector2 size;
+	XVec2 size;
 	XActionState()
 		:angle(0.0f)
 		,isEnable(XFalse)
@@ -71,10 +71,10 @@ struct XActionStateDescription
 	XBool isValidSizeX;
 	XBool isValidSizeY;
 
-	XVector2 position;
+	XVec2 position;
 	XFColor color;
 	float angle;	//[0-360]
-	XVector2 size;
+	XVec2 size;
 	XActionStateDescription()
 		:angle(0.0f)
 	{}
@@ -143,7 +143,7 @@ private:
 	//+++++++++++++++++++++++++++++++++++++++++++++
 	//下面是对AD_TYPE_STATE_LINE模式的描述（尚未实现）
 	//说明这个模式下，AD中存放state的列表，时间帧检测当前处于那两个state之间，
-	//然后通过线性插值(可扩展为贝塞尔差值)的方式计算当前的状态
+	//然后通过线性插值(可扩展为贝塞尔插值)的方式计算当前的状态
 private:
 	std::vector<XActionStateDes *> m_stateTable;	//状态列表,按时间排序
 	int m_minTime;
@@ -194,7 +194,7 @@ public:
 		if(strcmp(name,m_actionName) == 0) return XTrue;	//名字相同不再重复命名
 		//if(XActionMananger::GetInstance().getActionDes(name) != NULL) return XFalse; //重名
 		//这里需要检查重名(尚未实现)
-		strcpy(m_actionName,name);
+		strcpy_s(m_actionName,MAX_FILE_NAME_LENGTH,name);
 		return XTrue;
 	}
 	void move(float delay);
@@ -216,7 +216,7 @@ public:
 	}
 	int getADChildIndex(XActionDescription * p);	//检查制定的AD在当前AD子列表中的编号
 	void setObject(XObjectBasic *obj);
-	XBool loadAction(const char * filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//保存动作到文件,后缀".acd"
+	XBool loadAction(const char * filename,XResPos resPos = RES_SYS_DEF);	//保存动作到文件,后缀".acd"
 	XBool saveAction(const char *filename = NULL);	//从文件读取动作,后缀".acd"
 	XBool pushAActionCore(XActionCore * p);
 	XBool popAActionCore(XActionCore * p);	//从序列中删除一个元素

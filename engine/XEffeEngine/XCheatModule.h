@@ -13,27 +13,29 @@
 namespace XE{
 struct XCheatProc
 {
-	bool (* eventProc)(void *,const char *,std::string&);
+	bool(*eventProc)(void *, const char *, std::string&);
 	void *pClass;
 	XCheatProc()
 		:pClass(NULL)
-		,eventProc(NULL)
+		, eventProc(NULL)
 	{}
 };
 class XCheatModule
 {
 private:
 	bool m_isInited;
-	XEdit m_cheatEdt;
-	XMultiText m_cheatMltTxt;
+	XEdit* m_cheatEdt;
+	XMultiText* m_cheatMltTxt;
 	bool m_visible;
 	bool m_ctrlBtnDown;	//是否ctrl按键按下
 	bool m_altBtnDown;	//是否alt按键按下
 
 	std::vector<XCheatProc> m_cmdProcs;	//用于处理命令的回调函数
+	void release();
 public:
 	bool init();
-	bool addCmdProc(bool (* eventProc)(void *,const char *,std::string&),void *pClass)
+	bool addCmdProc(bool(*eventProc)(void*, const char*, std::string&),
+		void *pClass)
 	{
 		XCheatProc tmp;
 		tmp.eventProc = eventProc;
@@ -41,18 +43,20 @@ public:
 		m_cmdProcs.push_back(tmp);
 		return true;
 	}
-	static void ctrlProc(void*,int,int);
+	static void ctrlProc(void*, int, int);
 	void commandProc(const char *command);	//下面是命令的处理函数
-	XBool keyboardProc(int keyOrder,XKeyState keyState);	//这里响应一些特殊的按键信息
+	XBool keyboardProc(int keyOrder, XKeyState keyState);	//这里响应一些特殊的按键信息
 
 	//下面使用注册回调函数的方式来支持进行功能扩展
-
 	XCheatModule()
 		:m_isInited(false)
-		,m_visible(false)
-		,m_ctrlBtnDown(false)
-		,m_altBtnDown(false)
+		, m_visible(false)
+		, m_ctrlBtnDown(false)
+		, m_altBtnDown(false)
+		, m_cheatEdt(nullptr)
+		, m_cheatMltTxt(nullptr)
 	{}
+	~XCheatModule() { release(); }
 };
 }
 #endif

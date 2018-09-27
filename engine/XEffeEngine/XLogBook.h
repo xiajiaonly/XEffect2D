@@ -84,15 +84,16 @@ class XSocketEx;
 class XLogbook
 {
 public:
-    XLogbook();
+	XLogbook();
 	virtual ~XLogbook();
 protected:
-    XLogbook(const XLogbook&);
+	XLogbook(const XLogbook&);
 	XLogbook &operator= (const XLogbook&);
+public:
+	static const int m_logServerPort = 20086;
 private:
 #define LOG_SERVER_NAME "XLogBook_Server"	//使用这个可以在局域网内自动连接服务器
 #define LOG_SERVER_IP "127.0.0.1"			//使用这个只能在本机连接服务器
-	static const int m_logServerPort = 20086;
 	static const int m_maxRecordSum = 256;		//这个日志文件的最大信息数量会造成有些数据丢失
 	static const int m_maxRecordLength = 512;	//初始log信息的长度，目前长度会根据实际的需要来变化
 	//YYYYMMDD-hhmmss-xxx:
@@ -101,14 +102,14 @@ private:
 
 	XLogBookLevel m_logLevel;
 	XBool m_isEnable;				//是否使能日志输出
-    XLogbookInfo *m_LogInfo;		//日志的内容
-    int m_logInfoPoint;
-    FILE *m_logBookFile;			//日志文件的文件指针
-    XBool m_isInited;				//是否初始化
-    XThreadState m_isReleased;            //标记日志文件中是否已经释放过
-    //下面是使用log服务器的一些定义
-    XLogBookMode m_workMode;		//日志的工作模式
-    XSocketEx *m_socket;				//网络连接的套接字	
+	XLogbookInfo *m_LogInfo;		//日志的内容
+	int m_logInfoPoint;
+	FILE *m_logBookFile;			//日志文件的文件指针
+	XBool m_isInited;				//是否初始化
+	XThreadState m_isReleased;            //标记日志文件中是否已经释放过
+	//下面是使用log服务器的一些定义
+	XLogBookMode m_workMode;		//日志的工作模式
+	XSocketEx *m_socket;				//网络连接的套接字	
 	char *m_tmpBuff;				//用于临时存储数据
 	XCritical m_locker;
 	//新加入的属性
@@ -116,49 +117,48 @@ private:
 	int m_clientID;						//当前日志客户端的唯一ID
 	std::string m_filename;
 
-    //+++++++++++++++++++++++++++++++++++++++
-    //下面是A方法中建议实现
-    int m_logInfoPushPoint;
-    int m_logInfoPopPoint;
-    XBool pushAMessage(const char * message);    //向队列中推入一条信息，返回数据推入是否成功
-    XBool popAMessage(char ** message);    //从队列中取出一条信息 return is there a message.
-    //线程句柄
-    pthread_t m_outputLogMessageThreadP;
+	//+++++++++++++++++++++++++++++++++++++++
+	//下面是A方法中建议实现
+	int m_logInfoPushPoint;
+	int m_logInfoPopPoint;
+	XBool pushAMessage(const char * message);    //向队列中推入一条信息，返回数据推入是否成功
+	XBool popAMessage(char ** message);    //从队列中取出一条信息 return is there a message.
+	//线程句柄
+	pthread_t m_outputLogMessageThreadP;
 #ifdef XEE_OS_WINDOWS
-    static DWORD WINAPI outputLogMessageThread(void * pParam);    //输出日志信息到文件或者log服务器的线程
+	static DWORD WINAPI outputLogMessageThread(void * pParam);    //输出日志信息到文件或者log服务器的线程
 #endif
 
 #ifdef XEE_OS_LINUX
-    static void *outputLogMessageThread(void * pParam);    //输出日志信息到文件或者log服务器的线程
+	static void *outputLogMessageThread(void * pParam);    //输出日志信息到文件或者log服务器的线程
 #endif
-    //---------------------------------------
+	//---------------------------------------
 
-    void popAllLogMessage();    //从队列中的信息输出到日志文件中
-    //XBool doubleStringLength(char ** message,int messageSize);    //扩大内存的宽度一倍
+	void popAllLogMessage();    //从队列中的信息输出到日志文件中
+	//XBool doubleStringLength(char ** message,int messageSize);    //扩大内存的宽度一倍
 	XBool m_needFlushFile;
 public:
-    XBool init(const char *fileName);
-    void release();
-    void addLogInfoStr(const char *p);
-    void addLogInfoNull(const char *p,...);    //目前只能支持到简单的%s %d %c几种输出格式，没做复杂的处理
-	void setLogLevel(XLogBookLevel level){m_logLevel = level;}
-     
-    void addLogInfoExp(XBool exp,const char *p,...);    //目前只能支持到简单的%s %d %c几种输出格式，没做复杂的处理
-    //内联函数的形式
-    void setWorkMode(XLogBookMode temp)
-    {
-        if(m_isInited) return;
-        m_workMode = temp;
-    }
-	void setServerFilename(const std::string &filename)
+	XBool init(const char *fileName);
+	void release();
+	void addLogInfoStr(const char *p);
+	void addLogInfoNull(const char *p, ...);    //目前只能支持到简单的%s %d %c几种输出格式，没做复杂的处理
+	void setLogLevel(XLogBookLevel level) { m_logLevel = level; }
+
+	void addLogInfoExp(XBool exp, const char *p, ...);    //目前只能支持到简单的%s %d %c几种输出格式，没做复杂的处理
+	//内联函数的形式
+	void setWorkMode(XLogBookMode temp)
 	{
-        if(m_isInited) return;
+		if (m_isInited) return;
+		m_workMode = temp;
+	}
+	void setServerFilename(const std::string& filename)
+	{
+		if (m_isInited) return;
 		m_logServerFilename = filename;
 	}
-	void enable(){m_isEnable = XTrue;}		//使能日志输出
-	void disable(){m_isEnable = XFalse;}		//暂时关闭日志输出
+	void enable() { m_isEnable = XTrue; }		//使能日志输出
+	void disable() { m_isEnable = XFalse; }		//暂时关闭日志输出
 };
-
 inline void XLogbook::addLogInfoStr(const char *p)
 {
 	if(!m_isEnable) return;

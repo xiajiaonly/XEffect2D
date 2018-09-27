@@ -22,7 +22,9 @@
 #include "XTextureInformation.h"
 #include "XObjectBasic.h"
 #include "XStringFun.h"
-namespace XE{
+#include "XThread.h"
+
+namespace XE {
 class XShaderGLSL;
 enum XTransformMode
 {
@@ -37,36 +39,37 @@ enum XTurnOverMode	//精灵的翻转模式
 	TURN_OVER_MODE_L2R_AND_U2D,	//上下左右翻转
 };
 #if WITHXSPRITE_EX
-class XSprite:public XObjectBasic
+class XSprite :public XObjectBasic
 {
 private:
-	XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
+	XResPos m_resoursePosition;	//资源位置 0:外部 1:内部
 
 	XTurnOverMode m_turnOverMode;	//翻转模式
-	XVector2 m_position;			//位置
-	XVector2 m_scale;				//缩放尺寸
-	XVector2 m_pixelSize;			//像素尺寸
+	XVec2 m_position;			//位置
+	XVec2 m_scale;				//缩放尺寸
+	XVec2 m_pixelSize;			//像素尺寸
 	float m_angle;					//角度
-	XVector2 m_changeCenter;		//旋转或者缩放的中心
+	XVec2 m_changeCenter;		//旋转或者缩放的中心
 	//下面是为了便于计算的零时数据
 	float m_sinAngle;				//角度的零时变量
 	float m_cosAngle;
 	XTextureData m_textureData;	//贴图Texture的信息
 	XFColor m_color;				//物件的颜色
 
-	void updateData();
+	void updateData(const XTextureData *tex = NULL);
 	void drawInside();
 	//下面是关于alpha混合方式的处理
-	XGL::XBlendType m_blendType;	//混合方式：0：简单混合2因子混合、1：复杂的4因子混合
-	char m_blendRGBScr;
-	char m_blendRGBDst;
-	char m_blendAScr;
-	char m_blendADst;
+//	XGL::XBlendType m_blendType;	//混合方式：0：简单混合2因子混合、1：复杂的4因子混合
+	XGL::XBlendModel m_blendModel;
+//	char m_blendRGBScr;
+//	char m_blendRGBDst;
+//	char m_blendAScr;
+//	char m_blendADst;
 
 	XBool m_isInited;				//是否完成初始化
 	XBool m_needAngleClip;			//是否需要进行角度裁剪
-	char m_blendTypeScr;
-	char m_blendTypeDst;
+//	char m_blendTypeScr;
+//	char m_blendTypeDst;
 	XBool m_isVisible;				//物件是否可见
 	XBool m_needUpdateData;		//是否需要更新内部数据
 	XBool m_needClip;				//是否需要裁剪
@@ -74,7 +77,7 @@ private:
 	//下面是shader的指针
 	XShaderGLSL *m_pShader;
 	//下面是对于角度裁剪的定义：角度裁剪的中心为中点，暂时不考虑任一点的角度裁剪
-	XVector2 m_rectPoint[4];	//包围盒
+	XVec2 m_rectPoint[4];	//包围盒
 	int m_pointSum;			//顶点的数量
 	int m_upTexDataID;		//上一次描绘的贴图的ID，这里可以防止重复的刷新数据
 
@@ -82,78 +85,100 @@ private:
 	float m_uPointer[14];	//贴图数据
 	float m_clipAngle;		//裁剪的角度[0 - 360]
 private:
-	XSprite(const XSprite& temp);	
+	XSprite(const XSprite& temp);
 public:
 	void setAngle(float angle);		//[0-360]
 	float getAngle() const;
 	using XObjectBasic::setScale;
-	void setScale(float x,float y);	//设置精灵的缩放比例
-	XVector2 getScale() const;
+	void setScale(const XVec2& s);	//设置精灵的缩放比例
+	const XVec2& getScale() const;
+	void fitScale(float x, float y, bool deformation = true);	//自动适应制定的像素尺寸
+	void fitScale(const XVec2& s, bool deformation = true);	//自动适应制定的像素尺寸
 	using XObjectBasic::setPosition;
-	void setPosition(float x,float y);			//设置精灵的坐标
+	void setPosition(const XVec2& p);			//设置精灵的坐标
 	void setPositionX(float x);
 	void setPositionY(float y);
-	XVector2 getPosition() const;
+	const XVec2& getPosition() const;
 	void setTurnOverMode(XTurnOverMode mode);
 	void setClipRect(const XRect& clipRect);	//使用像素数据
-	void setClipRect(float left,float top,float right,float bottom);
+	void setClipRect(float left, float top, float right, float bottom);
 	void disClip();
-	void setChangeCenter(const XVector2& center);
+	void setChangeCenter(const XVec2& center);
 	XBool init(const char * filename,										//文件名
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,	//资源的位置 0外部 1内部
-		const XVector2 &changePoint = XVector2(0.5f,0.5f));					//变形的据准点
-	XBool init(int tempW = 0,int tempH = 0,int needSizeCheck = 1,const XVector2 &changePoint = XVector2(0.5f,0.5f));
-	XBool init(XTextureData& texData,const XVector2 &changePoint = XVector2(0.5f,0.5f));	
-	XBool init(int w,int h,XColorMode colorMode,unsigned int tex,const XVector2 &changePoint = XVector2(0.5f,0.5f));	//从一张贴图建立一个精灵
+		XResPos resPos = RES_SYS_DEF,	//资源的位置 0外部 1内部
+		const XVec2& changePoint = XVec2(0.5f));					//变形的据准点
+	XBool init(int tempW = 0, int tempH = 0, int needSizeCheck = 1, const XVec2& changePoint = XVec2(0.5f));
+	XBool init(XTextureData& texData, const XVec2& changePoint = XVec2(0.5f));
+	XBool init(int w, int h, XColorMode colorMode, unsigned int tex, const XVec2& changePoint = XVec2(0.5f));	//从一张贴图建立一个精灵
 	void draw();
 	void draw(GLuint tex);	//对于内部资源由于内部裁剪所以会存在问题
 	void draw(const XTextureData& texData);	//这里尚未考虑内部裁剪，所以目前会存在问题
-	void draw(const XVector2 *u,const XVector2 *v,int w,int h);	//这个是为了变形而定义的接口
-
+	void draw(const XVec2 *u, const XVec2 *v, int w, int h);	//这个是为了变形而定义的接口
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++															//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	bool m_isThreadLoading;		//是否正在多线程载入
+	XThreadState m_loadThread;
+	std::string m_threadFilename;
+	XResPos m_threadResPos;
+public:
+	//使用多线程的方式从后台载入资源
+	bool initThread(const char *filename,			//图片的名称
+		XResPos resPos = RES_SYS_DEF,
+		const XVec2& changePoint = XVec2(0.5f));
+	static DWORD WINAPI loadThread(void *);
+	//数据是否加载完成
+	bool getIsLoaded()const { return !m_isThreadLoading; }
+	bool updateTex(const char *filename);	//从文件中更新数据到贴图，要求尺寸和像素格式一致
+	bool updateThread(const char *filename);	//从文件中更新数据到贴图，要求尺寸和像素格式一致
+	static DWORD WINAPI updateThread(void *);
+	//------------------------------------------------------------
 	XSprite()
 		:m_isInited(XFalse)
-		,m_turnOverMode(TURN_OVER_MODE_NULL)
-		,m_needClip(XFalse)
-		,m_color(1.0f,1.0f,1.0f,1.0f)
-		,m_isVisible(XTrue)
-		,m_pShader(NULL)
+		, m_turnOverMode(TURN_OVER_MODE_NULL)
+		, m_needClip(XFalse)
+		, m_color(1.0f, 1.0f)
+		, m_isVisible(XTrue)
+		, m_pShader(NULL)
 		//,m_pShaderProc(NULL)	//为了向下兼容而定义的
-		,m_blendType(XGL::BLEND_TWO_DATA)
-		,m_blendTypeScr(4)
-		,m_blendTypeDst(5)
-		,m_needAngleClip(XFalse)
-		,m_clipAngle(0.0f)
-		,m_upTexDataID(-1)
+//		, m_blendType(XGL::BLEND_TWO_DATA)
+//		, m_blendTypeScr(4)
+//		, m_blendTypeDst(5)
+		, m_blendModel(XGL::BLEND_ALPHA)
+		, m_needAngleClip(XFalse)
+		, m_clipAngle(0.0f)
+		, m_upTexDataID(-1)
+		, m_isThreadLoading(false)
 	{
 		m_objType = OBJ_SPRITE;
-	//	for(int i = 0;i < 14;++ i)
-	//	{
-	//		m_vPointer[i] = 0.0f;	//顶点数据
-	//		m_uPointer[i] = 0.0f;	//贴图数据
-	//	}
-		memset(m_vPointer,0,14 * sizeof(float));
-		memset(m_uPointer,0,14 * sizeof(float));
+		//	for(int i = 0;i < 14;++ i)
+		//	{
+		//		m_vPointer[i] = 0.0f;	//顶点数据
+		//		m_uPointer[i] = 0.0f;	//贴图数据
+		//	}
+		memset(m_vPointer, 0, 14 * sizeof(float));
+		memset(m_uPointer, 0, 14 * sizeof(float));
 	}
-	~XSprite(){release();}
+	~XSprite() { release(); }
 	void release();
+	bool getIsInited()const { return m_isInited; }
 
 	//下面是一些尚未实现的接口
-	XBool isInRect(float x,float y);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);
+	XBool isInRect(const XVec2& p);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);
 
 	void setAlpha(float temp);
 	float getAlpha() const;
 	using XObjectBasic::setColor;
-	void setColor(float r,float g,float b,float a);		//小于0不会改变这一元素
-	XFColor getColor() const {return m_color;}
+	void setColor(const XFColor&c);		//小于0不会改变这一元素
+	const XFColor& getColor() const { return m_color; }
 
 	void setVisible();			//设置物件可见
 	void disVisible();			//设置物件不可见
 	XBool getVisible() const;
 	//alpha混合的接口
-	void setBlendType(int typeScr,int typeDst);
-	void setBlendType(int rgbScr,int rgbDst,int aScr,int aDst);
-	void setBlendMode(XGL::XBlendType mode);
+//	void setBlendType(int typeScr, int typeDst);
+//	void setBlendType(int rgbScr, int rgbDst, int aScr, int aDst);
+//	void setBlendMode(XGL::XBlendType mode);
+	void setBlendModel(XGL::XBlendModel model);
 	//shader的接口
 	void setShaderClass(XShaderGLSL * shader);
 	//下面是尚未实现的接口
@@ -168,68 +193,70 @@ public:
 	//下面实现一些向下兼容的接口
 	void setIsTransformCenter(XTransformMode temp)
 	{
-		if(temp == POINT_LEFT_TOP) setChangeCenter(XVector2::zero);
-		else setChangeCenter(XVector2(0.5f,0.5f));
+		if (temp == POINT_LEFT_TOP) setChangeCenter(XVec2::zero);
+		else setChangeCenter(XVec2(0.5f));
 	}
-	void draw(GLuint *tex) {draw(*tex);}	//对于内部资源由于内部裁剪所以会存在问题
-	void draw(const XTextureData* texData) {draw(*texData);}	//这里尚未考虑内部裁剪，所以目前会存在问题
-	void drawWithoutBlend() {draw();}
+	void draw(GLuint *tex) { draw(*tex); }	//对于内部资源由于内部裁剪所以会存在问题
+	void draw(const XTextureData* texData) { draw(*texData); }	//这里尚未考虑内部裁剪，所以目前会存在问题
+	void drawWithoutBlend() { draw(); }
 	XBool init(const char * filename,					//文件名
-		XResourcePosition resoursePosition,					//资源的位置 0外部 1内部
+		XResPos resPos,					//资源的位置 0外部 1内部
 		XTransformMode isTransformCenter)	//变形的据准点
 	{
-		if(isTransformCenter == POINT_CENTER) return init(filename,resoursePosition,XVector2(0.5f,0.5f));
-		else return init(filename,resoursePosition,XVector2::zero);
+		if (isTransformCenter == POINT_CENTER) return init(filename, resPos, XVec2(0.5f));
+		else return init(filename, resPos, XVec2::zero);
 	}
-	XBool init(int tempW,int tempH,int needSizeCheck,XTransformMode isTransformCenter)
+	XBool init(int tempW, int tempH, int needSizeCheck, XTransformMode isTransformCenter)
 	{
-		if(isTransformCenter == POINT_CENTER) return init(tempW,tempH,needSizeCheck,XVector2(0.5f,0.5f));
-		else return init(tempW,tempH,needSizeCheck,XVector2::zero);
+		if (isTransformCenter == POINT_CENTER) return init(tempW, tempH, needSizeCheck, XVec2(0.5f));
+		else return init(tempW, tempH, needSizeCheck, XVec2::zero);
 	}
-	XBool init(XTextureData& texData,XTransformMode isTransformCenter)
+	XBool init(XTextureData& texData, XTransformMode isTransformCenter)
 	{
-		if(isTransformCenter == POINT_CENTER) return init(texData,XVector2(0.5f,0.5f));
-		else return init(texData,XVector2::zero);
+		if (isTransformCenter == POINT_CENTER) return init(texData, XVec2(0.5f));
+		else return init(texData, XVec2::zero);
 	}
-	XBool init(int w,int h,XColorMode colorMode,unsigned int tex,XTransformMode isTransformCenter)
+	XBool init(int w, int h, XColorMode colorMode, unsigned int tex, XTransformMode isTransformCenter)
 	{
-		if(isTransformCenter == POINT_CENTER) return init(w,h,colorMode,tex,XVector2(0.5f,0.5f));
-		else return init(w,h,colorMode,tex,XVector2::zero);
+		if (isTransformCenter == POINT_CENTER) return init(w, h, colorMode, tex, XVec2(0.5f));
+		else return init(w, h, colorMode, tex, XVec2::zero);
 	}
-//	void (*m_pShaderProc)(void);
+	//	void (*m_pShaderProc)(void);
 	void setOverturn(char temp)	//设置左右翻转(为了保持向旧版本的兼容保留这个接口)
 	{
-		if(temp == 0) resetLeftRightUpDown();
+		if (temp == 0) resetLeftRightUpDown();
 		else setLeft2Right();
 	}
-	void setLeft2Right(){setTurnOverMode(TURN_OVER_MODE_LEFT_TO_RIGHT);}//设置左右翻转
-	void setUp2Down() {setTurnOverMode(TURN_OVER_MODE_UP_TO_DOWN);}		//设置上下翻转
-	void resetLeftRightUpDown()	{setTurnOverMode(TURN_OVER_MODE_NULL);}//回复上下左右的正确位置
-	XTurnOverMode getTurnOverMode() const {return m_turnOverMode;}
+	void setLeft2Right() { setTurnOverMode(TURN_OVER_MODE_LEFT_TO_RIGHT); }//设置左右翻转
+	void setUp2Down() { setTurnOverMode(TURN_OVER_MODE_UP_TO_DOWN); }		//设置上下翻转
+	void resetLeftRightUpDown() { setTurnOverMode(TURN_OVER_MODE_NULL); }//回复上下左右的正确位置
+	XTurnOverMode getTurnOverMode() const { return m_turnOverMode; }
 	XTransformMode getTransformMode() const
 	{
-		if(m_changeCenter.x == 0.0f && m_changeCenter.y == 0.0f) return POINT_LEFT_TOP;
+		if (m_changeCenter.x == 0.0f && m_changeCenter.y == 0.0f) return POINT_LEFT_TOP;
 		else return POINT_CENTER;
 	}
-	int XSprite::getW() const {return m_textureData.texture.m_w;}
-	int XSprite::getH() const {return m_textureData.texture.m_h;}
+	int XSprite::getTW() const { return m_textureData.texture.m_w; }	//获取贴图的宽度，如果经过优化，则为优化之后的宽度
+	int XSprite::getTH() const { return m_textureData.texture.m_h; }
+	int XSprite::getW() const { return m_textureData.getOpWidth(); }	//获取贴图中有效部分的宽度，如果没有经过优化则为整个贴图大小
+	int XSprite::getH() const { return m_textureData.getOpHeight(); }
 
-//	void justForTest() {;}
+	//	void justForTest() {;}
 };
 #else
 //新功能的实现建议：实现多边形裁剪
 //#define MAX_SPRITE_FILENAME_LENGTH (256)
 #define IS_USE_SOLIDIFY (0)
 
-class XSprite:public XObjectBasic	//精灵的结构体
+class XSprite :public XObjectBasic	//精灵的结构体
 {
 private:
-	XResourcePosition m_resoursePosition;				//资源位置 0:外部 1:内部
+	XResPos m_resoursePosition;				//资源位置 0:外部 1:内部
 
 	XTextureData m_textureData;
 
-	XVector2 m_setPosition;			//精灵被设置的位置，内部使用的位置，与设置的位置是有区别的
-	XVector2 m_setTransformCenter;		//用户设置的形状变换的位置，实际使用的变形的位置与设置的位置是有区别的
+	XVec2 m_setPosition;			//精灵被设置的位置，内部使用的位置，与设置的位置是有区别的
+	XVec2 m_setTransformCenter;		//用户设置的形状变换的位置，实际使用的变形的位置与设置的位置是有区别的
 
 	XRect m_clipOutsideRect;			//用户设置的外部裁剪尺寸
 	XRect m_clipRect;					//最终的裁剪尺寸，这个尺寸由内部裁剪尺寸与外部裁剪尺寸组成
@@ -241,14 +268,14 @@ private:
 	void updateInsideData();			//由于精灵物件的属性变化而需要更新精灵的一些内部数据
 public:
 	void disClip();						//取消2D精灵裁减，默认为不裁减
-	void setClipRect(const XRect &temp);		//设置2D精灵裁减范围
+	void setClipRect(const XRect& temp);		//设置2D精灵裁减范围
 	//注意这里存在问题，如果图片小坐标方向有空余，裁剪之后拼合，然后调用这个函数，需要保证left和top为0，否则会出现问题。
-	void setClipRect(float left,float top,float right,float bottom);	//设置2D精灵裁减范围
+	void setClipRect(float left, float top, float right, float bottom);	//设置2D精灵裁减范围
 
-	int isInRect(float x,float y);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getPosition() const{return m_setPosition;}
+	int isInRect(float x, float y);	//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getPosition() const { return m_setPosition; }
 	//获取四个顶点的坐标，目前先不考虑旋转和缩放
-	XVector2 getBox(int order);
+	XVec2 getBox(int order);
 private:
 	// 下面添加一些变量来保存变形的处理
 	XTurnOverMode m_turnOverMode;	//是否启动特殊形状的标签
@@ -258,42 +285,40 @@ private:
 	XTransformMode m_isTransformCenter;
 
 	//注意默认的旋转和缩放的中心点是统一的为图片的中心，如果图片存在裁剪，则为裁剪区域的左上角
-	XVector2 m_transformCenter;		//变形或旋转的真实位置
+	XVec2 m_transformCenter;		//变形或旋转的真实位置
 	char m_changeTransformCenterManual;	//用户是否手动设置过旋转中心的位置，中心旋转或者左上角旋转不属于用户设置
 public:
 	void setIsTransformCenter(XTransformMode temp);	//设置缩放的基准点
-	XTransformMode getTransformMode() const
-	{
-		return m_isTransformCenter;
-	}
+	XTransformMode getTransformMode() const { return m_isTransformCenter; }
 
-	void setTransformCenter(float x,float y)	//这个是否经过测试
+	void setTransformCenter(float x, float y)	//这个是否经过测试
 	{
 		m_changeTransformCenterManual = 1;
-		if(m_textureData.isEnableInsideClip != 0)
+		if (m_textureData.isEnableInsideClip != 0)
 		{
-			m_setTransformCenter.set(x,y);
-			if(m_clipOutsideRect.left < m_textureData.textureMove.x) m_transformCenter.x = m_clipOutsideRect.left - m_textureData.textureMove.x + m_setTransformCenter.x;
+			m_setTransformCenter.set(x, y);
+			if (m_clipOutsideRect.left < m_textureData.textureMove.x) m_transformCenter.x = m_clipOutsideRect.left - m_textureData.textureMove.x + m_setTransformCenter.x;
 			else m_transformCenter.x = m_setTransformCenter.x;
-			if(m_clipOutsideRect.top < m_textureData.textureMove.y) m_transformCenter.y = m_clipOutsideRect.top - m_textureData.textureMove.y + m_setTransformCenter.y;
-			else m_transformCenter.y = m_setTransformCenter.y; 
+			if (m_clipOutsideRect.top < m_textureData.textureMove.y) m_transformCenter.y = m_clipOutsideRect.top - m_textureData.textureMove.y + m_setTransformCenter.y;
+			else m_transformCenter.y = m_setTransformCenter.y;
 
 			//m_transformCenter.set(x - m_textureData.textureMove.x,y - m_textureData.textureMove.y);
-		}else
+		}
+		else
 		{
-			m_transformCenter.set(x,y);
+			m_transformCenter.set(x, y);
 		}
 	}
 public:
 	void setAlpha(float temp);
-	float getAlpha() const; 
-	float getAngle() const{return angle;}
+	float getAlpha() const;
+	float getAngle() const { return angle; }
 	void setAngle(float temp);
 	int getW() const;
 	int getH() const;
-	void setVisible() {m_isVisible = 1;}					//设置物件可见
-	void disVisible() {m_isVisible = 0;}						//设置物件不可见
-	char getVisible() const {return m_isVisible;}					//获取物件是否可见的状态 
+	void setVisible() { m_isVisible = 1; }					//设置物件可见
+	void disVisible() { m_isVisible = 0; }						//设置物件不可见
+	char getVisible() const { return m_isVisible; }					//获取物件是否可见的状态 
 
 private:
 	GLfloat angle;			//精灵的角度
@@ -309,28 +334,28 @@ private:
 	GLfloat colorBlue;		//蓝色
 //	char m_isOverturn;		//是否x方向左右翻转
 	//为了提升处理速度，下面定义一些中间变量
-	int wr,hr,xp,yp;
-//	char *m_frameName;				//序列帧文件名
-public:	
-	void setPosition(const XVector2& position);			//设置精灵的坐标
-	void setPosition(float a,float b);			//设置精灵的坐标
+	int wr, hr, xp, yp;
+	//	char *m_frameName;				//序列帧文件名
+public:
+	void setPosition(const XVec2& position);			//设置精灵的坐标
+	void setPosition(float a, float b);			//设置精灵的坐标
 	void setPositionX(float x);
 	void setPositionY(float y);
 
-	void setSize(const XVector2& size);		//设置精灵的缩放比例
-	void setSize(float a,float b);	//设置精灵的缩放比例
+	void setSize(const XVec2& size);		//设置精灵的缩放比例
+	void setSize(float a, float b);	//设置精灵的缩放比例
 	void setSize(float s);
-	XVector2 getScale() const
+	XVec2 getScale() const
 	{
-		return XVector2(xsize,ysize);
+		return XVec2(xsize, ysize);
 	}
 
 	XTexture * getTexture();	//返回当前帧的贴图指针
 	XTextureData * getTextureData();	//返回当前帧的贴图数据
 #if IS_USE_SOLIDIFY
-	//++++++++++++++++++++++++++++++++++++++++++++
-	//下面为了提升速度而定义的变量
-	//“固化”及将显示信息固化到显示列表中，在显示过程中不再变化显示细节，如果遇到固定的没有细节变化的元件可以使用这个特性
+//++++++++++++++++++++++++++++++++++++++++++++
+//下面为了提升速度而定义的变量
+//“固化”及将显示信息固化到显示列表中，在显示过程中不再变化显示细节，如果遇到固定的没有细节变化的元件可以使用这个特性
 	void setIsUseSolidify(int temp);
 private:
 	int m_glListOrder;		//显示列表编号
@@ -342,12 +367,12 @@ private:
 	char m_blendTypeScr;
 	char m_blendTypeDst;
 public:
-	void setBlendType(int typeScr,int typeDst)
+	void setBlendType(int typeScr, int typeDst)
 	{
-		if(typeScr < 0) typeScr = 0;
-		if(typeDst < 0) typeDst = 0;
-		if(typeScr >= 9 ) typeScr = 8;
-		if(typeDst >= 8 ) typeDst = 7;
+		if (typeScr < 0) typeScr = 0;
+		if (typeDst < 0) typeDst = 0;
+		if (typeScr >= 9) typeScr = 8;
+		if (typeDst >= 8) typeDst = 7;
 		m_blendTypeScr = typeScr;
 		m_blendTypeDst = typeDst;
 	}
@@ -359,33 +384,33 @@ private:
 	char m_blendAScr;
 	char m_blendADst;
 public:
-	void setBlendType(int rgbScr,int rgbDst,int aScr,int aDst)
+	void setBlendType(int rgbScr, int rgbDst, int aScr, int aDst)
 	{
-		if(rgbScr < 0) rgbScr = 0;
-		if(rgbScr >= 9 ) rgbScr = 8;
-		if(aScr < 0) aScr = 0;
-		if(aScr >= 9 ) aScr = 8;
+		if (rgbScr < 0) rgbScr = 0;
+		if (rgbScr >= 9) rgbScr = 8;
+		if (aScr < 0) aScr = 0;
+		if (aScr >= 9) aScr = 8;
 
-		if(rgbDst < 0) rgbDst = 0;
-		if(rgbDst >= 8 ) rgbDst = 7;
-		if(aDst < 0) aDst = 0;
-		if(aDst >= 8 ) aDst = 7;
+		if (rgbDst < 0) rgbDst = 0;
+		if (rgbDst >= 8) rgbDst = 7;
+		if (aDst < 0) aDst = 0;
+		if (aDst >= 8) aDst = 7;
 		m_blendRGBScr = rgbScr;
 		m_blendRGBDst = rgbDst;
 		m_blendAScr = aScr;
 		m_blendADst = aDst;
 	}
-	void setBlendMode(XBlendType mode) {m_blendType = mode;}
+	void setBlendMode(XBlendType mode) { m_blendType = mode; }
 	XShaderGLSL *m_pShader;
-	void (*m_pShaderProc)(void);	//定义一个shader的函数指针
+	void(*m_pShaderProc)(void);	//定义一个shader的函数指针
 public:
 	int init(const char *filename,						//图片的名称
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE,					//资源的位置 0外部 1内部
+		XResPos resPos = RES_SYS_DEF,					//资源的位置 0外部 1内部
 		XTransformMode isTransformCenter = POINT_CENTER);	//是否使用中心旋转	
 
-	int init(int tempW = 0,int tempH = 0,int needSizeCheck = 1,XTransformMode isTransformCenter = POINT_CENTER);	//是否为序列帧动画
-	int init(XTextureData& texData,XTransformMode isTransformCenter = POINT_CENTER);
-	int init(int w,int h,int colorMode,unsigned int tex,XTransformMode isTransformCenter = POINT_CENTER);
+	int init(int tempW = 0, int tempH = 0, int needSizeCheck = 1, XTransformMode isTransformCenter = POINT_CENTER);	//是否为序列帧动画
+	int init(XTextureData& texData, XTransformMode isTransformCenter = POINT_CENTER);
+	int init(int w, int h, int colorMode, unsigned int tex, XTransformMode isTransformCenter = POINT_CENTER);
 
 	int release();									//释放资源
 
@@ -408,7 +433,7 @@ public:
 private:
 	void drawInside();	//内部调用的绘图函数
 public:
-	void setColor(float r,float g,float b,float a);		//小于0不会改变这一元素
+	void setColor(float r, float g, float b, float a);		//小于0不会改变这一元素
 	void setColor(const XFColor& color);		//小于0不会改变这一元素
 	//复制精灵
 private:
@@ -418,10 +443,10 @@ private:
 	//下面是关于角度裁剪的属性
 	char m_needAngleClip;	//是否需要角度裁剪
 	float m_clipAngle;		//角度裁剪的角度 0 - 360度
-	XVector2 m_pointArray[14];	//在需要的时候刷新这些数据
+	XVec2 m_pointArray[14];	//在需要的时候刷新这些数据
 	float m_uPoint[14];	//绘图数据
 	float m_vPoint[14];
-	int m_pointArraySize;	
+	int m_pointArraySize;
 #ifdef GET_ALL_PIXEL
 	float m_thisDrawArea;	//这次描绘的面积
 #endif
@@ -459,40 +484,40 @@ public:
 
 struct XSpriteParamData
 {//精灵物件的参数
-	XResourcePosition resourcePosition;	//读取资源的位置
-	XVector2 changePoint;					//旋转动作的中心点位置
+	XResPos resourcePosition;	//读取资源的位置
+	XVec2 changePoint;					//旋转动作的中心点位置
 	char * getStrFromData()
 	{
 		char *tempStr = XMem::createArrayMem<char>(256);
-		if(tempStr == NULL) return NULL;
+		if (tempStr == NULL) return NULL;
 		int offset = 0;
-		sprintf(tempStr + offset,"ResPos:%d,\n",resourcePosition);
+		sprintf_s(tempStr + offset, 256 - offset, "ResPos:%d,\n", resourcePosition);
 		offset = strlen(tempStr);
-		sprintf(tempStr + offset,"ChaCnt:%f|%f,\n",changePoint.x,changePoint.y);
+		sprintf_s(tempStr + offset, 256 - offset, "ChaCnt:%f|%f,\n", changePoint.x, changePoint.y);
 		offset = strlen(tempStr);
 		return tempStr;
 	}
 	int getDataFromStr(const char * str)
 	{
-		if(str == NULL) return 0;
+		if (str == NULL) return 0;
 		int offset = 0;
-		if(sscanf(str + offset,"ResPos:%d,\n",&resourcePosition) != 1) return offset;	//数据错误
-		offset += XString::getCharPosition(str + offset,',') + 1;
-		if(sscanf(str + offset,"ChaCnt:%f|%f,\n",&changePoint.x,&changePoint.y) != 1) return offset;
-		offset += XString::getCharPosition(str + offset,',') + 1;
+		if (sscanf(str + offset, "ResPos:%d,\n", &resourcePosition) != 1) return offset;	//数据错误
+		offset += XString::getCharPosition(str + offset, ',') + 1;
+		if (sscanf(str + offset, "ChaCnt:%f|%f,\n", &changePoint.x, &changePoint.y) != 1) return offset;
+		offset += XString::getCharPosition(str + offset, ',') + 1;
 		return offset;
 	}
 	XBool getDataFromFile(FILE *fp)
 	{
-		if(fp == NULL) return XFalse;
-		if(fscanf(fp,"ResPos:%d,\n",&resourcePosition) != 1) return XFalse;
-		if(fscanf(fp,"ChaCnt:%f|%f,\n",&changePoint.x,&changePoint.y) != 2) return XFalse;
+		if (fp == NULL) return XFalse;
+		if (fscanf(fp, "ResPos:%d,\n", &resourcePosition) != 1) return XFalse;
+		if (fscanf(fp, "ChaCnt:%f|%f,\n", &changePoint.x, &changePoint.y) != 2) return XFalse;
 		return XTrue;
 	}
 	//默认数据
 	XSpriteParamData()
-		:resourcePosition(RESOURCE_SYSTEM_DEFINE)
-		,changePoint(0.5f,0.5f)
+		:resourcePosition(RES_SYS_DEF)
+		, changePoint(0.5f, 0.5f)
 	{}
 };
 #if WITH_INLINE_FILE

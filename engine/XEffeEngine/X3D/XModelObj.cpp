@@ -7,6 +7,7 @@
 #include "XModelObj.h"
 #include "X3DWorld.h"
 #include "XFile.h"
+#include "XString.h"
 namespace XE{
 void removeRedundantSpace(char *p)	//删除连续的或者行尾的空格符
 {
@@ -131,7 +132,7 @@ XBool XModelObj::save(const char *filename)
 }
 std::string getObjInfo0FromStr(const char * p)
 {
-	if(p == NULL) return "";
+	if(p == NULL) return XString::gNullStr;
 	char tempLineData[1024];	//注意这里的1024的最大限制
 	std::string tmp;
 	int len = strlen(p);
@@ -155,24 +156,24 @@ XBool XModelObj::load(const char *filename)	//从文件中载入数据
 		filename == NULL) return XFalse;
 	FILE *fp = NULL;
 	if((fp = fopen(filename,"r")) == NULL) return XFalse;	//文件打开失败
-	char lineData[256];
-	char tempLineData[256];
+	char lineData[512];
+	char tempLineData[512];
 	//下面开始解析文件
-	XVector3 tempData;
-	XVector2 tempData2;
+	XVec3 tempData;
+	XVec2 tempData2;
 	XFaceInfo tempFaceInfo;
 	XGroupInfo *tempGroupInfo = NULL;
 	int len = 0;
 	while(true)
 	{
-		if(fgets(lineData,256,fp) == NULL) break;
+		if(fgets(lineData,512,fp) == NULL) break;
 		while(true)
 		{
 			len = strlen(lineData);
 			if(len > 2 && lineData[len - 2] == '\\' && lineData[len - 1] == '\n')
 			{//判断如果行尾是换行符号，则继续读一行
-				if(fgets(tempLineData,256,fp) == NULL) break;
-				strcat(lineData,tempLineData);
+				if(fgets(tempLineData,512,fp) == NULL) break;
+				strcat_s(lineData,512,tempLineData);
 			}else
 				break;
 		}
@@ -305,7 +306,7 @@ XBool XModelObj::load(const char *filename)	//从文件中载入数据
 	//下面计算物体的碰撞盒子(尚未完成)
 	bool first = true;
 	float xMin = 0.0f,xMax = 0.0f,yMin = 0.0f,yMax = 0.0f,zMin = 0.0f,zMax = 0.0f;
-	XVector3 tmpV;
+	XVec3 tmpV;
 	for(unsigned int i = 0;i < m_group.size();++ i)
 	{
 		for(unsigned int j = 0;j < m_group[i]->face.size();++ j)
@@ -375,102 +376,115 @@ XBool XModelObj::readFaceInfo(XGroupInfo *group,char *lineData)
 	int sumSpace = XString::getCharSum(lineData,' ');	//数据的数量
 	if(sumSpace < 3) return XFalse;
 	XFaceInfo tempFaceInfo;
-	std::vector<XVectorIndex3> tempData;
+	//std::vector<XVectorIndex3> tempData;
 	int offset = XString::getCharPosition(lineData,' ') + 1;
-	XVectorIndex3 tempIndex;
+	//XVectorIndex3 tempIndex;
 	if(sumSlash == 0)
 	{//v
-		if(group->withTexInfo == 1) return XFalse;
-		if(group->withNormalInfo == 1) return XFalse;
+		if(group->withTexInfo == 1 ||
+			group->withNormalInfo == 1) return XFalse;
 		group->withTexInfo = 0;
 		group->withNormalInfo = 0;
 
+		group->originalFaces.push_back(XFaceInfoEx());
+		XFaceInfoEx &ref = group->originalFaces[group->originalFaces.size() - 1];
+		ref.vsIndex.resize(sumSpace);
 		for(int i = 0;i < sumSpace;++ i)
 		{
-			if(sscanf(lineData + offset,"%d ",&tempIndex.x) != 1) return XFalse;
+			if(sscanf(lineData + offset,"%d ",&ref.vsIndex[i]) != 1) return XFalse;
 			offset += XString::getCharPosition(lineData + offset,' ') + 1;
-			tempData.push_back(tempIndex);
 		}
 		for(int i = 0;i < sumSpace - 2;++ i)
 		{
-			tempFaceInfo.vIndex.x = tempData[0].x;
-			tempFaceInfo.vIndex.y = tempData[i + 1].x;
-			tempFaceInfo.vIndex.z = tempData[i + 2].x;
+			tempFaceInfo.vIndex.x = ref.vsIndex[0];
+			tempFaceInfo.vIndex.y = ref.vsIndex[i + 1];
+			tempFaceInfo.vIndex.z = ref.vsIndex[i + 2];
 			group->face.push_back(tempFaceInfo);
 		}
 	}else
 	if(sumSlash == sumSpace)
 	{//v/t
-		if(group->withTexInfo == 0) return XFalse;
-		if(group->withNormalInfo == 1) return XFalse;
+		if(group->withTexInfo == 0 ||
+			group->withNormalInfo == 1) return XFalse;
 		group->withTexInfo = 1;
 		group->withNormalInfo = 0;
 
+		group->originalFaces.push_back(XFaceInfoEx());
+		XFaceInfoEx &ref = group->originalFaces[group->originalFaces.size() - 1];
+		ref.vsIndex.resize(sumSpace);
+		ref.tsIndex.resize(sumSpace);
 		for(int i = 0;i < sumSpace;++ i)
 		{
-			if(sscanf(lineData + offset,"%d/%d ",&tempIndex.x,&tempIndex.y) != 2) return XFalse;
+			if(sscanf(lineData + offset,"%d/%d ",&ref.vsIndex[i],&ref.tsIndex[i]) != 2) return XFalse;
 			offset += XString::getCharPosition(lineData + offset,' ') + 1;
-			tempData.push_back(tempIndex);
 		}
 		for(int i = 0;i < sumSpace - 2;++ i)
 		{
-			tempFaceInfo.vIndex.x = tempData[0].x;
-			tempFaceInfo.vIndex.y = tempData[i + 1].x;
-			tempFaceInfo.vIndex.z = tempData[i + 2].x;
+			tempFaceInfo.vIndex.x = ref.vsIndex[0];
+			tempFaceInfo.vIndex.y = ref.vsIndex[i + 1];
+			tempFaceInfo.vIndex.z = ref.vsIndex[i + 2];
 
-			tempFaceInfo.tIndex.x = tempData[0].y;
-			tempFaceInfo.tIndex.y = tempData[i + 1].y;
-			tempFaceInfo.tIndex.z = tempData[i + 2].y;
+			tempFaceInfo.tIndex.x = ref.tsIndex[0];
+			tempFaceInfo.tIndex.y = ref.tsIndex[i + 1];
+			tempFaceInfo.tIndex.z = ref.tsIndex[i + 2];
 			group->face.push_back(tempFaceInfo);
 		}
 	}else
 	{// 
-		tempIndex.x = XString::getCharPosition(lineData,'/');
-		if(lineData[tempIndex.x + 1] == '/')
+		if(lineData[XString::getCharPosition(lineData, '/') + 1] == '/')
 		{//v//n
-			if(group->withTexInfo == 1) return XFalse;
-			if(group->withNormalInfo == 0) return XFalse;
+			if(group->withTexInfo == 1 ||
+				group->withNormalInfo == 0) return XFalse;
 			group->withTexInfo = 0;
 			group->withNormalInfo = 1;
+
+			group->originalFaces.push_back(XFaceInfoEx());
+			XFaceInfoEx &ref = group->originalFaces[group->originalFaces.size() - 1];
+			ref.vsIndex.resize(sumSpace);
+			ref.nsIndex.resize(sumSpace);
 			for(int i = 0;i < sumSpace;++ i)
 			{
-				if(sscanf(lineData + offset,"%d//%d ",&tempIndex.x,&tempIndex.z) != 2) return XFalse;
+				if (sscanf(lineData + offset, "%d//%d ", &ref.vsIndex[i], &ref.nsIndex[i]) != 2) return XFalse;
 				offset += XString::getCharPosition(lineData + offset,' ') + 1;
-				tempData.push_back(tempIndex);
 			}
 			for(int i = 0;i < sumSpace - 2;++ i)
 			{
-				tempFaceInfo.vIndex.x = tempData[0].x;
-				tempFaceInfo.vIndex.y = tempData[i + 1].x;
-				tempFaceInfo.vIndex.z = tempData[i + 2].x;
-				tempFaceInfo.nIndex.x = tempData[0].z;
-				tempFaceInfo.nIndex.y = tempData[i + 1].z;
-				tempFaceInfo.nIndex.z = tempData[i + 2].z;
+				tempFaceInfo.vIndex.x = ref.vsIndex[0];
+				tempFaceInfo.vIndex.y = ref.vsIndex[i + 1];
+				tempFaceInfo.vIndex.z = ref.vsIndex[i + 2];
+				tempFaceInfo.nIndex.x = ref.nsIndex[0];
+				tempFaceInfo.nIndex.y = ref.nsIndex[i + 1];
+				tempFaceInfo.nIndex.z = ref.nsIndex[i + 2];
 				group->face.push_back(tempFaceInfo);
 			}
 		}else
 		{//v/t/n 
-			if(group->withTexInfo == 0) return XFalse;
-			if(group->withNormalInfo == 0) return XFalse;
+			if(group->withTexInfo == 0 ||
+				group->withNormalInfo == 0) return XFalse;
 			group->withTexInfo = 1;
 			group->withNormalInfo = 1;
+
+			group->originalFaces.push_back(XFaceInfoEx());
+			XFaceInfoEx &ref = group->originalFaces[group->originalFaces.size() - 1];
+			ref.vsIndex.resize(sumSpace);
+			ref.tsIndex.resize(sumSpace);
+			ref.nsIndex.resize(sumSpace);
 			for(int i = 0;i < sumSpace;++ i)
 			{
-				if(sscanf(lineData + offset,"%d/%d/%d ",&tempIndex.x,&tempIndex.y,&tempIndex.z) != 3) return XFalse;
+				if(sscanf(lineData + offset,"%d/%d/%d ",&ref.vsIndex[i],&ref.tsIndex[i],&ref.nsIndex[i]) != 3) return XFalse;
 				offset += XString::getCharPosition(lineData + offset,' ') + 1;
-				tempData.push_back(tempIndex);
 			}
 			for(int i = 0;i < sumSpace - 2;++ i)
 			{
-				tempFaceInfo.vIndex.x = tempData[0].x;
-				tempFaceInfo.vIndex.y = tempData[i + 1].x;
-				tempFaceInfo.vIndex.z = tempData[i + 2].x;
-				tempFaceInfo.tIndex.x = tempData[0].y;
-				tempFaceInfo.tIndex.y = tempData[i + 1].y;
-				tempFaceInfo.tIndex.z = tempData[i + 2].y;
-				tempFaceInfo.nIndex.x = tempData[0].z;
-				tempFaceInfo.nIndex.y = tempData[i + 1].z;
-				tempFaceInfo.nIndex.z = tempData[i + 2].z;
+				tempFaceInfo.vIndex.x = ref.vsIndex[0];
+				tempFaceInfo.vIndex.y = ref.vsIndex[i + 1];
+				tempFaceInfo.vIndex.z = ref.vsIndex[i + 2];
+				tempFaceInfo.tIndex.x = ref.tsIndex[0];
+				tempFaceInfo.tIndex.y = ref.tsIndex[i + 1];
+				tempFaceInfo.tIndex.z = ref.tsIndex[i + 2];
+				tempFaceInfo.nIndex.x = ref.nsIndex[0];
+				tempFaceInfo.nIndex.y = ref.nsIndex[i + 1];
+				tempFaceInfo.nIndex.z = ref.nsIndex[i + 2];
 				group->face.push_back(tempFaceInfo);
 			}
 		}
@@ -483,14 +497,14 @@ XBool XModelObj::loadMaterial(const char *filename)
 	//下面打开贴图文件并读取相关信息
 	FILE *fp = NULL;
 	if((fp = fopen(filename,"r")) == NULL) return XFalse;
-	char lineData[256];
-	char tempLineData[256];
+	char lineData[512];
+	char tempLineData[512];
 	int startIndex = 0;
 	int endIndex = 0;
 	XMaterialInfo * tempMaterialInfo = NULL;
 	while(true)
 	{
-		if(fgets(lineData,256,fp) == NULL) break;
+		if(fgets(lineData,512,fp) == NULL) break;
 		if(lineData[0] == '#') continue;	//注释
 		if(!XString::getFirstWord(lineData,startIndex,endIndex)) continue;
 		memcpy(tempLineData,lineData + startIndex,endIndex - startIndex + 1);
@@ -792,7 +806,7 @@ XBool XModelObj::checkData()
 	}
 	return XTrue;
 }
-int XModelObj::getMaterialIndex(const std::string &str)
+int XModelObj::getMaterialIndex(const std::string& str)
 {
 	for(unsigned int i = 0;i < m_material.size();++ i)
 	{
@@ -800,24 +814,18 @@ int XModelObj::getMaterialIndex(const std::string &str)
 	}
 	return -1;
 }
-void XModelObj::draw(XBool withTex,const XBasic3DObject *base)
+void XModelObj::draw(XBool withTex,const XBasic3DObject *base,bool withBandbox)
 {
 	if(!m_isInited) return;
 	if(gFrameworkData.p3DWorld == NULL) return;
-	updateMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-//	glLoadIdentity();
-
-	if(base != NULL) glMultMatrixf(base->getMatrix());
-	glMultMatrixf(m_matrix);
+	useMatrix(base);
 	//glTranslatef(m_position.x,m_position.y,m_position.z);
 	//glRotatef(m_angle.x,1,0,0);
 	//glRotatef(m_angle.y,0,1,0);
 	//glRotatef(m_angle.z,0,0,1);
 	//glScalef(m_scale.x,m_scale.y,m_scale.z);
 	//drawOrigin();
-	glColor4f(1.0f,1.0f,1.0f,1.0f);
+	glColor4fv(XFColor::white);
 
 	XGroupInfo * tempGroup = NULL;
 	for(unsigned int i = 0;i < m_group.size();++ i)
@@ -827,17 +835,18 @@ void XModelObj::draw(XBool withTex,const XBasic3DObject *base)
 		glPushAttrib(GL_ALL_ATTRIB_BITS);
 		if(tempGroup->withTexInfo == 1 && withTex) 
 		{//如果存在贴图
-			m_material[tempGroup->materialIndex]->material.usetMaterial();
+			m_material[tempGroup->materialIndex]->material.bindMaterial();
 			if(m_material[tempGroup->materialIndex]->withTexture)
 			{
 				glActiveTexture(GL_TEXTURE0);
 				XGL::EnableTexture2D();
 				XGL::BindTexture2D(m_material[tempGroup->materialIndex]->textureData.texture.m_texture);
+				//glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE); 
 				if(m_material[tempGroup->materialIndex]->withDumpTex)
 					gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_DUMP_AND_SHADOW,m_material[tempGroup->materialIndex]->dumpTexData.texture.m_texture);	//使用dumpshader并传递dump贴图
 				else
 					gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_SHADOW);
-				//glColor4f(m_color.fR,m_color.fG,m_color.fB,m_color.fA * m_material[tempGroup->materialIndex]->alpha);
+				//glColor4f(m_color.r,m_color.g,m_color.b,m_color.a * m_material[tempGroup->materialIndex]->alpha);
 			}else
 			{//有材质无贴图
 				glColor4fv(m_color);
@@ -845,7 +854,7 @@ void XModelObj::draw(XBool withTex,const XBasic3DObject *base)
 			}
 		}else
 		{//如果不存在贴图
-			gFrameworkData.p3DWorld->m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
+			gFrameworkData.p3DWorld->m_worldMaterial.bindMaterial();	//如果没有材质信息则使用默认的材质
 			glColor4fv(m_color);
 			gFrameworkData.p3DWorld->useShadow(needTexture,SHADER_SHADOW);
 		}
@@ -853,17 +862,44 @@ void XModelObj::draw(XBool withTex,const XBasic3DObject *base)
 		tempGroup->vbo.drawByArray(GL_TRIANGLES,withTex);
 
 		gFrameworkData.p3DWorld->removeShadow();
+		if(tempGroup->withTexInfo == 1 && withTex) 
+			m_material[tempGroup->materialIndex]->material.unbindMaterial();
+		else
+			gFrameworkData.p3DWorld->m_worldMaterial.unbindMaterial();
 		
 		glPopAttrib();
+	}
+	if(withBandbox)
+	{
+		XGL::setBlendAlpha();
+		glColor4fv(XFColor::white);
+		glLineWidth(1.0f);
+		glBegin(GL_LINES);
+		glVertex3fv(m_bandBox[0]); glVertex3fv(m_bandBox[1]);
+		glVertex3fv(m_bandBox[1]); glVertex3fv(m_bandBox[2]);
+		glVertex3fv(m_bandBox[2]); glVertex3fv(m_bandBox[3]);
+		glVertex3fv(m_bandBox[3]); glVertex3fv(m_bandBox[0]);
+
+		glVertex3fv(m_bandBox[4]); glVertex3fv(m_bandBox[5]);
+		glVertex3fv(m_bandBox[5]); glVertex3fv(m_bandBox[6]);
+		glVertex3fv(m_bandBox[6]); glVertex3fv(m_bandBox[7]);
+		glVertex3fv(m_bandBox[7]); glVertex3fv(m_bandBox[4]);
+
+		glVertex3fv(m_bandBox[0]); glVertex3fv(m_bandBox[4]);
+		glVertex3fv(m_bandBox[1]); glVertex3fv(m_bandBox[5]);
+		glVertex3fv(m_bandBox[2]); glVertex3fv(m_bandBox[6]);
+		glVertex3fv(m_bandBox[3]); glVertex3fv(m_bandBox[7]);
+		glEnd();
+		XGL::DisableBlend();
 	}
 
 	//XGL::EnableBlend();
 	//XGL::DisableTexture2D();
 
-	glPopMatrix();
+	endMatrix();
 }
 
-XMaterialInfo * XModelObj::getMaterialInfo(const std::string &MatName)
+XMaterialInfo * XModelObj::getMaterialInfo(const std::string& MatName)
 {
 	for(unsigned int i = 0;i < m_material.size();++ i)
 	{
@@ -923,4 +959,54 @@ void XModelObj::release()
 	m_group.clear();
 	m_isInited = XFalse;
 }
+namespace XRender {
+void drawModel(const std::vector<XVec3> &v, const std::vector<XVec2> &t,
+	const std::vector<XFaceInfo> &f, const XVec3& offset, const XVec3& scale, 
+	unsigned int tex)
+{
+	glActiveTexture(GL_TEXTURE0);
+	XGL::EnableTexture2D();
+	XGL::BindTexture2D(tex);
+	glBegin(GL_TRIANGLES);
+	for (int i = 0; i < f.size(); ++i)
+	{
+		glTexCoord2fv(t[f[i].tIndex.x - 1]);
+		glVertex3fv(v[f[i].vIndex.x - 1].multi(scale) + offset);
+
+		glTexCoord2fv(t[f[i].tIndex.y - 1]);
+		glVertex3fv(v[f[i].vIndex.y - 1].multi(scale) + offset);
+
+		glTexCoord2fv(t[f[i].tIndex.z - 1]);
+		glVertex3fv(v[f[i].vIndex.z - 1].multi(scale) + offset);
+	}
+	glEnd();
+}
+void drawModel(const std::vector<XVec3> &v, const std::vector<XVec2> &t,
+	const std::vector<XFaceInfoEx> &f, const XVec3& offset, const XVec3& scale,
+	unsigned int tex)
+{
+	glActiveTexture(GL_TEXTURE0);
+	XGL::EnableTexture2D();
+	XGL::BindTexture2D(tex);
+	glBegin(GL_TRIANGLES);
+	for (int i = 0; i < f.size(); ++i)
+	{
+		for (int j = 0; j < (int)(f[i].vsIndex.size()) - 2; ++j)
+		{
+			glTexCoord2fv(t[f[i].tsIndex[0] - 1]);
+			glVertex3fv(v[f[i].vsIndex[0] - 1].multi(scale) + offset);
+
+			glTexCoord2fv(t[f[i].tsIndex[j + 1] - 1]);
+			glVertex3fv(v[f[i].vsIndex[j + 1] - 1].multi(scale) + offset);
+
+			glTexCoord2fv(t[f[i].tsIndex[j + 2] - 1]);
+			glVertex3fv(v[f[i].vsIndex[j + 2] - 1].multi(scale) + offset);
+		}
+	}
+	glEnd();
+}
+}
+#if !WITH_INLINE_FILE
+#include "XModelObj.inl" 
+#endif
 }

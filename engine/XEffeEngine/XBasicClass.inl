@@ -8,7 +8,7 @@
 //{
 //    set(p0.x,p0.y,p1.x,p1.y);
 //}
-//inline void XIRect::set(const XVector2& p0,const XVector2& p1)
+//inline void XIRect::set(const XVec2& p0,const XVec2& p1)
 //{
 //    set((int)p0.x,(int)p0.y,(int)p1.x,(int)p1.y);
 //}
@@ -24,12 +24,12 @@
 //    if(area < 0) return -area;
 //    else return area;
 //}
-//inline XVector2 XIRect::getCenter() const
+//inline XVec2 XIRect::getCenter() const
 //{
-//    //XVector2 temp;
+//    //XVec2 temp;
 //    //temp.set((float)((left + right)/ 2.0f), (float)((top + bottom)/ 2.0f));
 //    //return temp;
-//    return XVector2((float)((left + right)/ 2.0f), (float)((top + bottom)/ 2.0f));
+//    return XVec2((float)((left + right)/ 2.0f), (float)((top + bottom)/ 2.0f));
 //}
 //inline int XIRect::getWidth() const
 //{
@@ -45,7 +45,7 @@
 //}
 //inline void XIRect::setCenter(int x,int y)
 //{
-//    XVector2 temp = getCenter();
+//    XVec2 temp = getCenter();
 //    temp.set(x - temp.x,y - temp.y);
 //    set((int)(left + temp.y),(int)(top + temp.y),(int)(right + temp.x),(int)(bottom + temp.y));
 //}

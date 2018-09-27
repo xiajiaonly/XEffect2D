@@ -21,10 +21,10 @@ class XEdit;
 class XErrorReporter
 {
 public:
-    XErrorReporter();
-    virtual ~XErrorReporter();
+	XErrorReporter();
+	virtual ~XErrorReporter();
 protected:
-    XErrorReporter(const XErrorReporter&);
+	XErrorReporter(const XErrorReporter&);
 	XErrorReporter &operator= (const XErrorReporter&);
 private:
 	bool m_isInited;	//图形化界面是否初始化
@@ -38,9 +38,10 @@ private:
 	XFontUnicode *m_font;
 	XFontUnicode *m_fontDescrip;
 	XEdit *m_edit;
-	bool reportFile(const std::string &errorDescription,const std::string &filename,int line,const std::string &funName);
+	bool reportFile(const std::string& errorDescription, const std::string& filename,
+		int line, const std::string& funName);
 	int inputEvent();
-	static void ctrlProc(void *,int,int);
+	static void ctrlProc(void *, int, int);
 
 	//下面是为了多线程安全而定义的
 	std::string m_errDescription;	//错误描述
@@ -48,14 +49,15 @@ private:
 	std::string m_errFunname;		//错误发生的函数名
 	int m_errLine;					//错误发生的行号
 public:
-	bool init(XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);	//初始化
+	bool init(XResPos resPos = RES_SYS_DEF);	//初始化
 	void draw();
 	//__DATE__ __TIME__ __FUNCDNAME__ __TIMESTAMP__
-	void reportError(const std::string & errorDescription,const std::string &filename,int line,const std::string &funName);
+	void reportError(const std::string& errorDescription, const std::string& filename, 
+		int line, const std::string& funName);
 	void errorProc();
-	bool isErrored()const{return m_needShow;}
-	void setMainProc(){m_isMainThreadProc = true;}
-	bool getIsMainProc()const{return m_isMainThreadProc;}
+	bool isErrored()const { return m_needShow; }
+	void setMainProc() { m_isMainThreadProc = true; }
+	bool getIsMainProc()const { return m_isMainThreadProc; }
 };
 }
 #endif

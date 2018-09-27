@@ -53,20 +53,20 @@ private:
 public:
 	bool loadFromFile(const char * filename = NULL);	//从文件中读取列表
 	bool saveToFile(const char * filename = NULL);		//将列表写入到文件中
-	bool checkList(){return true;}		//检查列表数据是否正确
-	void addAItem2List(const XMediaListItem & c){m_playList.push_back(c);}
-	XMediaListPlayerMode getPlayMode()const{return m_playMode;}
-	int getLoopTimes()const{return m_loopTimes;}
-	unsigned int getItemSum(){return m_playList.size();}
-	const XMediaListItem * getItem(int index) 
+	bool checkList() { return true; }		//检查列表数据是否正确
+	void addAItem2List(const XMediaListItem & c) { m_playList.push_back(c); }
+	XMediaListPlayerMode getPlayMode()const { return m_playMode; }
+	int getLoopTimes()const { return m_loopTimes; }
+	unsigned int getItemSum() { return m_playList.size(); }
+	const XMediaListItem * getItem(int index)
 	{
-		if(index < 0 || index >= m_playList.size()) return NULL;
+		if (index < 0 || index >= m_playList.size()) return NULL;
 		return &m_playList[index];
 	}
 
 	XMediaList()
 		:m_loopTimes(0)
-		,m_playMode(PLAY_MODE_SERIAL)
+		, m_playMode(PLAY_MODE_SERIAL)
 	{}
 };
 }

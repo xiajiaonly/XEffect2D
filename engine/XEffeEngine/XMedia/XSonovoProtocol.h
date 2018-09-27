@@ -101,14 +101,14 @@ public:
 		if(!m_isInited) return;
 		waitThreadEnd(m_sendThreadState);
 		//清除所有的数据
-		for(unsigned int i = 0;i < m_sendData.size();++ i)
+		for (auto it = m_sendData.begin(); it != m_sendData.end(); ++it)
 		{
-			XMem::XDELETE_ARRAY(m_sendData[i].data);
+			XMem::XDELETE_ARRAY(it->data);
 		}
 		m_sendData.clear();
-		for(unsigned int i = 0;i < m_sendData.size();++ i)
+		for(auto it = m_recvData.begin();it != m_recvData.end();++ it)
 		{
-			XMem::XDELETE_ARRAY(m_recvData[i].data);
+			XMem::XDELETE_ARRAY(it->data);
 		}
 		m_recvData.clear();
 
@@ -137,7 +137,7 @@ public:
 		return XFalse;
 	}
 
-	void showData(const XSPData &data,const std::string &title);
+	void showData(const XSPData &data,const std::string& title);
 private:
 	//下面是统计信息
 	bool m_withStatistics;	//是否启用统计
@@ -180,13 +180,13 @@ public:
 	void readRegisters(int startAddr,int sum);	//读取多个保持寄存器
 };
 
-inline void XSonovoProtocol::showData(const XSPData &data,const std::string &title)
+inline void XSonovoProtocol::showData(const XSPData &data,const std::string& title)
 {
 	std::string tmp = title + "data:";
 	char tmpStr[32];
 	for(int i = 0;i < data.dataLen;++ i)
 	{
-		sprintf(tmpStr,"0x%02x ",data.data[i]);
+		sprintf_s(tmpStr,32,"0x%02x ",data.data[i]);
 		tmp += tmpStr;
 	}
 	LogStr(tmp.c_str());

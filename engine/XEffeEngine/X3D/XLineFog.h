@@ -34,7 +34,7 @@ public:
 		m_color[2] = b;
 		m_color[3] = a;
 	}
-	void setColor(const XFColor &color) {setColor(color.fR,color.fG,color.fB,color.fA);}
+	void setColor(const XFColor& color) {setColor(color.r,color.g,color.b,color.a);}
 	void setDensity(float density){m_density = density;}
 	void setArea(float start,float end){m_start = start;m_end = end;}
 	void useFog()

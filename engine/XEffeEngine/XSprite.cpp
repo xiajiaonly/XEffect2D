@@ -13,17 +13,17 @@
 namespace XE{
 #if WITHXSPRITE_EX
 XBool XSprite::init(const char * filename,					//ÎÄ¼şÃû
-		XResourcePosition resoursePosition,					//×ÊÔ´µÄÎ»ÖÃ 0Íâ²¿ 1ÄÚ²¿
-		const XVector2 &changePoint)
+		XResPos resPos,					//×ÊÔ´µÄÎ»ÖÃ 0Íâ²¿ 1ÄÚ²¿
+		const XVec2& changePoint)
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse; 
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 	if(!m_textureData.load(filename,m_resoursePosition)) return XFalse;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//·­×ªÄ£Ê½
-	m_position.set(0.0f,0.0f);			//Î»ÖÃ
-	m_scale.set(1.0f,1.0f);				//Ëõ·Å³ß´ç
+	m_position.reset();			//Î»ÖÃ
+	m_scale.set(1.0f);				//Ëõ·Å³ß´ç
 	m_pixelSize = m_textureData.textureSize;			//ÏñËØ³ß´ç
 	m_angle = 0.0f;					//½Ç¶È
 	m_changeCenter = changePoint;		//Ğı×ª»òÕßËõ·ÅµÄÖĞĞÄ
@@ -36,7 +36,7 @@ XBool XSprite::init(const char * filename,					//ÎÄ¼şÃû
 //		m_clipRect.set(0.0f,0.0f,1.0f,1.0f);				//²Ã¼ôµÄÊı¾İ
 //	}
 	m_needClip = XFalse;				//ÊÇ·ñĞèÒª²Ã¼ô
-	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
+	m_clipRect.set(0.0f,1.0f);
 
 	//ÏÂÃæÊÇÎªÁË±ãÓÚ¼ÆËãµÄÁãÊ±Êı¾İ
 	m_sinAngle = 0.0f;	//sin(m_angle * DEGREE2RADIAN);				//½Ç¶ÈµÄÁãÊ±±äÁ¿
@@ -45,7 +45,7 @@ XBool XSprite::init(const char * filename,					//ÎÄ¼şÃû
 	m_needUpdateData = XTrue;			//ÊÇ·ñĞèÒª¸üĞÂÄÚ²¿Êı¾İ
 	updateData();
 	m_isVisible = XTrue;
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_color.set(1.0f);
 
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
@@ -54,13 +54,145 @@ XBool XSprite::init(const char * filename,					//ÎÄ¼şÃû
 	m_isInited = XTrue;
 	return XTrue;
 }
-XBool XSprite::init(int tempW,int tempH,int needSizeCheck,const XVector2 &changePoint)
+bool XSprite::updateTex(const char *filename)	//´ÓÎÄ¼şÖĞ¸üĞÂÊı¾İµ½ÌùÍ¼£¬ÒªÇó³ß´çºÍÏñËØ¸ñÊ½Ò»ÖÂ
+{
+	if (!m_isInited || m_isThreadLoading) return false;	//ÒÑ¾­³õÊ¼»¯
+	if (!m_textureData.load(filename, m_resoursePosition)) return XFalse;
+	return true;
+}
+bool XSprite::updateThread(const char *filename)
+{
+	if (!m_isInited || m_isThreadLoading)
+		return false;	//ÒÑ¾­³õÊ¼»¯
+	m_loadThread = STATE_BEFORE_START;
+	m_isThreadLoading = true;
+	m_threadFilename = filename;
+	return  (CreateThread(0, 0, updateThread, this, 0, 0) != 0);
+}
+bool XSprite::initThread(const char *filename,			//Í¼Æ¬µÄÃû³Æ
+	XResPos resPos, const XVec2& changePoint)
+{//ÕâÀï¿ªÆôÒ»¸öÏß³ÌÔØÈë×ÊÔ´
+	if (m_isInited) return true;	//ÒÑ¾­³õÊ¼»¯
+
+	if (filename == NULL) return false;
+	m_resoursePosition = resPos;
+	if (resPos == RES_SYS_DEF) resPos = getDefResPos();
+	//Ã²ËÆ¿ÉÒÔ²»ÓÃÏÂÃæÕâ¸öÅĞ¶Ï(×¢Òâ)
+	if (resPos == RES_LOCAL_PACK)
+		return init(filename, resPos, changePoint);	//Èç¹ûÊÇ´Ó×ÊÔ´°üÖĞÔØÈë×ÊÔ´£¬Ôò²»ÄÜ½øĞĞ¶àÏß³ÌÔØÈë£¬Ö±½ÓÊ¹ÓÃÆÕÍ¨·½Ê½¡£
+
+	//ÏÂÃæ¿ªÆôÒ»¸öÔØÈëÏß³Ì½øĞĞÔØÈë²Ù×÷
+	m_threadFilename = filename;
+	m_threadResPos = resPos;
+
+	//ÏÂÃæ½¨Á¢Ïß³Ì²¢ÔØÈë
+	m_loadThread = STATE_BEFORE_START;
+	m_isThreadLoading = true;
+	if (CreateThread(0, 0, loadThread, this, 0, 0) == 0)
+	{
+		m_isInited = false;
+		return false;
+	}
+
+	m_turnOverMode = TURN_OVER_MODE_NULL;	//·­×ªÄ£Ê½
+	m_position.reset();			//Î»ÖÃ
+	m_scale.set(1.0f);				//Ëõ·Å³ß´ç
+	m_angle = 0.0f;					//½Ç¶È
+	m_changeCenter = changePoint;		//Ğı×ª»òÕßËõ·ÅµÄÖĞĞÄ
+
+	m_needClip = XFalse;				//ÊÇ·ñĞèÒª²Ã¼ô
+	m_clipRect.set(0.0f, 1.0f);
+
+	//ÏÂÃæÊÇÎªÁË±ãÓÚ¼ÆËãµÄÁãÊ±Êı¾İ
+	m_sinAngle = 0.0f;	//sin(m_angle * DEGREE2RADIAN);				//½Ç¶ÈµÄÁãÊ±±äÁ¿
+	m_cosAngle = 1.0f;	//cos(m_angle * DEGREE2RADIAN);
+
+	m_isVisible = XTrue;
+	m_color.set(1.0f);
+
+#if WITH_OBJECT_MANAGER
+	XObjManager.addAObject(this);
+#endif
+
+	m_isInited = XTrue;
+	return XTrue;
+}
+DWORD WINAPI XSprite::loadThread(void *p)
+{
+	XSprite &ref = *(XSprite *)p;
+	ref.m_loadThread = STATE_START;
+	//ÏÂÃæÊÇÊı¾İÔØÈë
+//	printf("¿ªÊ¼ÔØÈë!\n");
+	if (gFrameworkData.pFrameWork == NULL)
+	{
+		printf("ÒıÇæÉĞÎ´³õÊ¼»¯!");
+		ref.m_loadThread = STATE_END;
+		ref.m_isThreadLoading = false;
+		ref.m_isInited = false;
+		return 1;
+	}
+	//·½°¸1£º
+	XEG.hdcLock();
+	wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	if (!ref.m_textureData.load(ref.m_threadFilename.c_str(), ref.m_threadResPos))
+	{
+		ref.m_isInited = false;
+		LogStr("Sprite load error!");
+	}
+	wglMakeCurrent(NULL, NULL);//nullptr
+	XEG.hdcUnlock();
+	//·½°¸2
+	//ref.m_textureData.setIsThreadEvn(true);
+	//if (!ref.m_textureData.load(ref.m_threadFilename.c_str(), ref.m_threadResPos))
+	//{
+	//	ref.m_isInited = false;
+	//	LogStr("Sprite load error!");
+	//}
+	//ref.m_textureData.setIsThreadEvn(false);
+
+	if (ref.m_isInited)
+	{
+		ref.m_pixelSize = ref.m_textureData.textureSize;			//ÏñËØ³ß´ç
+		ref.m_needUpdateData = XTrue;			//ÊÇ·ñĞèÒª¸üĞÂÄÚ²¿Êı¾İ
+		//ref.updateData();
+	}
+
+//	printf("ÔØÈëÍê³É!\n");
+	ref.m_loadThread = STATE_END;
+	ref.m_isThreadLoading = false;
+	return 1;
+}
+DWORD WINAPI XSprite::updateThread(void *p)
+{
+	XSprite &ref = *(XSprite *)p;
+	ref.m_loadThread = STATE_START;
+	//ÏÂÃæÊÇÊı¾İÔØÈë
+//	printf("¿ªÊ¼ÔØÈë!\n");
+	//·½°¸1£º
+	//XEG.hdcLock();
+	//wglMakeCurrent(XEG.getHDC(), XEG.getCopyHGLRC());
+	//if (!ref.m_textureData.load(ref.m_threadFilename.c_str(), ref.m_threadResPos))
+	//	LogStr("Sprite load error!");
+	//wglMakeCurrent(NULL, NULL);//nullptr
+	//XEG.hdcUnlock();
+	//·½°¸2
+	ref.m_textureData.setIsThreadEvn(true);
+	if (!ref.m_textureData.reload(ref.m_threadFilename.c_str(), ref.m_threadResPos))
+		LogStr("Sprite reload error!");
+	ref.m_textureData.setIsThreadEvn(false);
+
+//	printf("ÔØÈëÍê³É!\n");
+	ref.m_loadThread = STATE_END;
+	ref.m_isThreadLoading = false;
+	return 1;
+}
+XBool XSprite::init(int tempW,int tempH,int needSizeCheck,const XVec2& changePoint)
 {
 	if(m_isInited) return XTrue;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//·­×ªÄ£Ê½
-	m_position.set(0.0f,0.0f);			//Î»ÖÃ
-	m_scale.set(1.0f,1.0f);				//Ëõ·Å³ß´ç
+	m_position.reset();			//Î»ÖÃ
+	m_scale.set(1.0f);				//Ëõ·Å³ß´ç
 
 	//ÏÂÃæĞèÒªĞé¹¹ÌùÍ¼Êı¾İ
 	if(!m_textureData.loadEmpty()) return XFalse;
@@ -73,26 +205,28 @@ XBool XSprite::init(int tempW,int tempH,int needSizeCheck,const XVector2 &change
 		m_textureData.textureSize = m_pixelSize;
 		m_textureData.texture.m_w = w;
 		m_textureData.texture.m_h = h;
+		m_textureData.textureSize.set(tempW,tempH);
 
 		m_textureData.isEnableInsideClip = 1;
 		m_textureData.clipInsideRect.left = (w - tempW) * 0.5f;
 		m_textureData.clipInsideRect.right = m_textureData.clipInsideRect.left + tempW;
 		m_textureData.clipInsideRect.top = (h - tempH) * 0.5f;
 		m_textureData.clipInsideRect.bottom = m_textureData.clipInsideRect.top + tempH;
-		m_textureData.textureMove.set(0.0f,0.0f);
+		m_textureData.textureMove.set(0.0f);
 		m_textureData.textureMove2 = m_textureData.textureMove;
-		//m_textureData.textureMove.set(m_textureData.clipInsideRect.left,m_textureData.clipInsideRect.top);
+		//m_textureData.textureMove.set(m_textureData.clipInsideRect.getLT());
 		//m_textureData.textureMove2 = m_textureData.textureMove;
 	}else
 	{
 		m_textureData.texture.m_w = tempW;
 		m_textureData.texture.m_h = tempH;
+		m_textureData.textureSize.set(tempW,tempH);
 	}
 
 	m_angle = 0.0f;					//½Ç¶È
 	m_changeCenter = changePoint;		//Ğı×ª»òÕßËõ·ÅµÄÖĞĞÄ
 	m_needClip = XFalse;				//ÊÇ·ñĞèÒª²Ã¼ô
-	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);				//²Ã¼ôµÄÊı¾İ
+	m_clipRect.set(0.0f, 1.0f);				//²Ã¼ôµÄÊı¾İ
 	//ÏÂÃæÊÇÎªÁË±ãÓÚ¼ÆËãµÄÁãÊ±Êı¾İ
 	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//½Ç¶ÈµÄÁãÊ±±äÁ¿
 	m_cosAngle = 1.0f;//cos(m_angle * DEGREE2RADIAN);
@@ -100,7 +234,7 @@ XBool XSprite::init(int tempW,int tempH,int needSizeCheck,const XVector2 &change
 	m_needUpdateData = XTrue;			//ÊÇ·ñĞèÒª¸üĞÂÄÚ²¿Êı¾İ
 	updateData();
 	m_isVisible = XTrue;
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_color.set(1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
@@ -109,15 +243,15 @@ XBool XSprite::init(int tempW,int tempH,int needSizeCheck,const XVector2 &change
 	m_isInited = XTrue;
 	return XTrue;
 }
-XBool XSprite::init(XTextureData & texData,const XVector2 &changePoint)
+XBool XSprite::init(XTextureData & texData,const XVec2& changePoint)
 {
 	if(m_isInited) return XTrue;
-	//m_resoursePosition = resoursePosition;
+	//m_resoursePosition = resPos;
 	m_textureData = texData;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//·­×ªÄ£Ê½
-	m_position.set(0.0f,0.0f);			//Î»ÖÃ
-	m_scale.set(1.0f,1.0f);				//Ëõ·Å³ß´ç
+	m_position.reset();			//Î»ÖÃ
+	m_scale.set(1.0f);				//Ëõ·Å³ß´ç
 	m_pixelSize = m_textureData.textureSize;			//ÏñËØ³ß´ç
 	m_angle = 0.0f;					//½Ç¶È
 	m_changeCenter = changePoint;		//Ğı×ª»òÕßËõ·ÅµÄÖĞĞÄ
@@ -130,7 +264,7 @@ XBool XSprite::init(XTextureData & texData,const XVector2 &changePoint)
 //		m_clipRect.set(0.0f,0.0f,1.0f,1.0f);				//²Ã¼ôµÄÊı¾İ
 //	}
 	m_needClip = XFalse;				//ÊÇ·ñĞèÒª²Ã¼ô
-	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
+	m_clipRect.set(0.0f, 1.0f);
 
 	//ÏÂÃæÊÇÎªÁË±ãÓÚ¼ÆËãµÄÁãÊ±Êı¾İ
 	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//½Ç¶ÈµÄÁãÊ±±äÁ¿
@@ -139,7 +273,7 @@ XBool XSprite::init(XTextureData & texData,const XVector2 &changePoint)
 	m_needUpdateData = XTrue;			//ÊÇ·ñĞèÒª¸üĞÂÄÚ²¿Êı¾İ
 	updateData();
 	m_isVisible = XTrue;
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_color.set(1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
@@ -148,15 +282,15 @@ XBool XSprite::init(XTextureData & texData,const XVector2 &changePoint)
 	m_isInited = XTrue;
 	return XTrue;
 }
-XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVector2 &changePoint)
+XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec2& changePoint)
 {
 	if(m_isInited) return XTrue;
-	//m_resoursePosition = resoursePosition;
+	//m_resoursePosition = resPos;
 	if(!m_textureData.createWithTexture(w,h,colorMode,tex)) return XFalse;
 
 	m_turnOverMode = TURN_OVER_MODE_NULL;	//·­×ªÄ£Ê½
-	m_position.set(0.0f,0.0f);			//Î»ÖÃ
-	m_scale.set(1.0f,1.0f);				//Ëõ·Å³ß´ç
+	m_position.reset();			//Î»ÖÃ
+	m_scale.set(1.0f);				//Ëõ·Å³ß´ç
 	m_pixelSize = m_textureData.textureSize;			//ÏñËØ³ß´ç
 	m_angle = 0.0f;					//½Ç¶È
 	m_changeCenter = changePoint;		//Ğı×ª»òÕßËõ·ÅµÄÖĞĞÄ
@@ -169,7 +303,7 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		m_clipRect.set(0.0f,0.0f,1.0f,1.0f);				//²Ã¼ôµÄÊı¾İ
 //	}
 	m_needClip = XFalse;				//ÊÇ·ñĞèÒª²Ã¼ô
-	m_clipRect.set(0.0f,0.0f,1.0f,1.0f);
+	m_clipRect.set(0.0f, 1.0f);
 
 	//ÏÂÃæÊÇÎªÁË±ãÓÚ¼ÆËãµÄÁãÊ±Êı¾İ
 	m_sinAngle = 0.0f;//sin(m_angle * DEGREE2RADIAN);				//½Ç¶ÈµÄÁãÊ±±äÁ¿
@@ -178,7 +312,7 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 	m_needUpdateData = XTrue;			//ÊÇ·ñĞèÒª¸üĞÂÄÚ²¿Êı¾İ
 	updateData();
 	m_isVisible = XTrue;
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_color.set(1.0f,1.0f);
 
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this);
@@ -199,7 +333,7 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		float uw = 1.0f;
 //		float uh = 1.0f;
 //		XRect tempClipRect;
-//		tempClipRect.set(0.0f,0.0f,1.0f,1.0f);
+//		tempClipRect.set(0.0f,1.0f);
 //		if(m_needClip)
 //		{//Èç¹ûĞèÒªÍâ²¿²Ã¼ô
 //			tempClipRect.set(m_clipRect.left / m_pixelSize.x,m_clipRect.top / m_pixelSize.y,m_clipRect.right / m_pixelSize.x,m_clipRect.bottom / m_pixelSize.y);
@@ -222,9 +356,9 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		{
 //			XRect uRect(0.0f,0.0f,uw,uh);
 //			XRect vRect(0.0f,0.0f,vw,vh);
-//			XVector2 cPoint = vRect.getCenter();
-//		//	XVector2 uPoint[7];
-//		//	XVector2 vPoint[7];
+//			XVec2 cPoint = vRect.getCenter();
+//		//	XVec2 uPoint[7];
+//		//	XVec2 vPoint[7];
 //		//	m_pointSum = getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,vPoint,uPoint);
 //		//	for(int i = 0;i < m_pointSum;++ i)
 //		//	{
@@ -247,8 +381,8 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //			m_vPointer[6] = 0.0f;	m_vPointer[7] = vh;
 //			m_uPointer[6] = 0.0f;	m_uPointer[7] = uh;
 //		}
-//		XVector2 center(m_position.x + m_changeCenter.x * vw,m_position.y + m_changeCenter.y * vh);
-//		XVector2 dp;
+//		XVec2 center(m_position.x + m_changeCenter.x * vw,m_position.y + m_changeCenter.y * vh);
+//		XVec2 dp;
 //		for(int i = 0;i < m_pointSum;++ i)
 //		{
 //			if(m_needClip)
@@ -263,7 +397,7 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		}
 //		//ÌùÍ¼×ø±êµÄ¼ÆËã
 //		//·­×ª
-//		XVector2 turnCenter;
+//		XVec2 turnCenter;
 //		if(m_needClip)
 //		{
 //			turnCenter.set(m_position.x + 0.5f * m_clipRect.getWidth(),
@@ -364,11 +498,11 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		vh = uh * m_textureData.texture.m_h;
 //		if(m_needAngleClip != 0)
 //		{
-//		//	XVector2 uPoint[7];
-//		//	XVector2 vPoint[7];
+//		//	XVec2 uPoint[7];
+//		//	XVec2 vPoint[7];
 //			XRect uRect;
 //			XRect vRect;
-//			XVector2 cPoint;
+//			XVec2 cPoint;
 //			if(m_needClip)
 //			{
 //				float left,top;
@@ -427,8 +561,8 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //				m_uPointer[6] = 0.0f;								m_uPointer[7] = uh;
 //			}
 //		}
-//		XVector2 center;
-//		XVector2 dp;
+//		XVec2 center;
+//		XVec2 dp;
 //		if(m_needClip)	//Ó¦¸ÃÊÇÕâÀïÓĞÎÊÌâ
 //		{
 //			center.set(m_position.x + m_changeCenter.x * m_clipRect.getWidth(),m_position.y + m_changeCenter.y * m_clipRect.getHeight());
@@ -448,7 +582,7 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //		}
 //		//ÌùÍ¼×ø±êµÄ¼ÆËã
 //		//·­×ª
-//		XVector2 turnCenter;
+//		XVec2 turnCenter;
 //		if(m_needClip)
 //		{
 //			turnCenter.set(m_position.x + 0.5f * m_clipRect.getWidth(),
@@ -512,23 +646,20 @@ XBool XSprite::init(int w,int h,XColorMode colorMode,unsigned int tex,const XVec
 //	}
 //}
 //ÏÂÃæÊÇ¶ÔÉÏÃæÕâ¸öº¯ÊıµÄÓÅ»¯
-void XSprite::updateData()
+void XSprite::updateData(const XTextureData *tex)
 {
 	if(!m_needUpdateData) return;
 	m_needUpdateData = XFalse;
-	m_upTexDataID = m_textureData.getID();
-	if(!m_textureData.isEnableInsideClip)
+	if(tex == NULL) tex = &m_textureData;
+	m_upTexDataID = tex->getID();
+	if(!tex->isEnableInsideClip)
 	{//²»Ê¹ÓÃÄÚ²¿×ÊÔ´¹ÜÀí
 		//ÏÂÃæÊÇ½Ç¶È²Ã¼ôµÄÊµÏÖ
-		float vw = 1.0f;
-		float vh = 1.0f;
-		float uw = 1.0f;
-		float uh = 1.0f;
-		XRect tempClipRect(0.0f,0.0f,1.0f,1.0f);
+		float vw, vh, uw, uh;
+		XRect tempClipRect(0.0f,1.0f);
 		if(m_needClip)
 		{//Èç¹ûĞèÒªÍâ²¿²Ã¼ô
-			tempClipRect.set(m_clipRect.left / m_pixelSize.x,m_clipRect.top / m_pixelSize.y,
-				m_clipRect.right / m_pixelSize.x,m_clipRect.bottom / m_pixelSize.y);
+			tempClipRect.set(m_clipRect.getLT() / m_pixelSize, m_clipRect.getRB() / m_pixelSize);
 		}
 		//v²Ã¼ôx
 		if(m_needClip)
@@ -541,21 +672,18 @@ void XSprite::updateData()
 		{
 			vw = m_pixelSize.x;
 			vh = m_pixelSize.y;
-			uw = 1.0f;
-			uh = 1.0f;
+			uw = uh = 1.0f;
 		}
 		if(m_needAngleClip)
 		{
-			XRect uRect(0.0f,0.0f,uw,uh);
-			XRect vRect(0.0f,0.0f,vw,vh);
-			XVector2 cPoint = vRect.getCenter();
-			m_pointSum = XMath::getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
+			m_pointSum = XMath::getEdgePointEx(XRect(0.0f, 0.0f, vw, vh), XRect(0.0f, 0.0f, uw, uh),
+				XVec2(vw, vh) * 0.5f, m_clipAngle * DEGREE2RADIAN, m_vPointer, m_uPointer);
 		}else
 		{
 			//ÏÂÃæµÄ²Ù×÷ÊÇÃ»ÓĞÎÊÌâµÄ£¬µ«ÊÇÉĞÎ´½áºÏ²Ã¼ôºÍ·´×ª£¬Ğı×ªµÈ
 			m_pointSum = 4;
-			m_vPointer[0] = 0.0f;	m_vPointer[1] = 0.0f;
-			m_uPointer[0] = 0.0f;	m_uPointer[1] = 0.0f;
+			m_vPointer[0] =			m_vPointer[1] = 0.0f;
+			m_uPointer[0] =			m_uPointer[1] = 0.0f;
 			m_vPointer[2] = vw;		m_vPointer[3] = 0.0f;
 			m_uPointer[2] = uw;		m_uPointer[3] = 0.0f;
 			m_vPointer[4] = vw;		m_vPointer[5] = vh;
@@ -565,61 +693,82 @@ void XSprite::updateData()
 		}
 		float centerx = m_position.x + m_changeCenter.x * vw;
 		float centery = m_position.y + m_changeCenter.y * vh;
-		float dpx;
-		float dpy;
+		float dpx, dpy;
 		int pointDataSum = m_pointSum << 1;
 		if(m_needClip)
 		{
-			for(int i = 0;i < pointDataSum;i += 2)
+			float* u = m_uPointer;
+			float* v = m_vPointer;
+			for (int i = 0; i < m_pointSum; ++i)
 			{
 				//²Ã¼ô
-				m_uPointer[i] += tempClipRect.left;
-				m_uPointer[i + 1] += tempClipRect.top;
+				*(u++) += tempClipRect.left;
+				*(u++) += tempClipRect.top;
 				//Î»ÒÆ
-				m_vPointer[i] += m_position.x;
-				m_vPointer[i + 1] += m_position.y;
+				*(v++) += m_position.x;
+				*(v++) += m_position.y;
 			}
-		}else
+			//for (int i = 0; i < pointDataSum; i += 2)
+			//{
+			//	//²Ã¼ô
+			//	m_uPointer[i] += tempClipRect.left;
+			//	m_uPointer[i + 1] += tempClipRect.top;
+			//	//Î»ÒÆ
+			//	m_vPointer[i] += m_position.x;
+			//	m_vPointer[i + 1] += m_position.y;
+			//}
+		}
+		else
 		{
-			for(int i = 0;i < pointDataSum;i += 2)
-			{
-				//Î»ÒÆ
-				m_vPointer[i] += m_position.x;
-				m_vPointer[i + 1] += m_position.y;
+			float* v = m_vPointer;
+			for (int i = 0; i < m_pointSum; ++ i)
+			{//Î»ÒÆ
+				*(v++) += m_position.x;
+				*(v++) += m_position.y;
 			}
+			//for (int i = 0; i < pointDataSum; i += 2)
+			//{
+			//	//Î»ÒÆ
+			//	m_vPointer[i] += m_position.x;
+			//	m_vPointer[i + 1] += m_position.y;
+			//}
 		}
 		//ÌùÍ¼×ø±êµÄ¼ÆËã
 		//·­×ª
-		float turnCenterx;
-		float turnCentery;
-		if(m_needClip)
-		{
-			turnCenterx = m_position.x + 0.5f * m_clipRect.getWidth();
-			turnCentery = m_position.y + 0.5f * m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
-		}else
-		{
-			turnCenterx = m_position.x + 0.5f * m_textureData.textureSize.x;
-			turnCentery = m_position.y + 0.5f * m_textureData.textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
-		}
+		float turnCenterx,turnCentery;
 		switch(m_turnOverMode)
 		{
 		case TURN_OVER_MODE_LEFT_TO_RIGHT:
+			if (m_needClip) turnCenterx = m_position.x * 2.0f + m_clipRect.getWidth();
+			else turnCenterx = m_position.x * 2.0f + tex->textureSize.x;
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
+				m_vPointer[i] = turnCenterx - m_vPointer[i];
 			}
 			break;
 		case TURN_OVER_MODE_UP_TO_DOWN:
+			if (m_needClip) turnCentery = m_position.y * 2.0f + m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			else turnCentery = m_position.y * 2.0f + tex->textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
+				m_vPointer[i + 1] = turnCentery - m_vPointer[i + 1];
 			}
 			break;
 		case TURN_OVER_MODE_L2R_AND_U2D:
+			if (m_needClip)
+			{
+				turnCenterx = m_position.x * 2.0f + m_clipRect.getWidth();
+				turnCentery = m_position.y * 2.0f + m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			}
+			else
+			{
+				turnCenterx = m_position.x * 2.0f + tex->textureSize.x;
+				turnCentery = m_position.y * 2.0f + tex->textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			}
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
-				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
+				m_vPointer[i] = turnCenterx - m_vPointer[i];
+				m_vPointer[i + 1] = turnCentery - m_vPointer[i + 1];
 			}
 			break;
 		}
@@ -632,90 +781,83 @@ void XSprite::updateData()
 		}
 
 		//ÏÂÃæÊÇ¼ÆËã°üÎ§ºĞ(¿ÉÄÜ»á´æÔÚÎÊÌâ£¬Ã»ÓĞ¾­¹ı²âÊÔ)
-		m_rectPoint[0].set(0.0f,0.0f);
+		m_rectPoint[0].set(0.0f);
 		m_rectPoint[1].set(vw,0.0f);
 		m_rectPoint[2].set(vw,vh);
 		m_rectPoint[3].set(0.0f,vh);
 		turnCenterx = m_changeCenter.x * vw;
 		turnCentery = m_changeCenter.y * vh;
+		float tmpX = turnCenterx + m_position.x - centerx;
+		float tmpY = turnCentery + m_position.y - centery;
 		for(int i = 0;i < 4;++ i)
 		{
-			dpx = turnCenterx + (m_rectPoint[i].x - turnCenterx) * m_scale.x + m_position.x - centerx;
-			dpy = turnCentery + (m_rectPoint[i].y - turnCentery) * m_scale.y + m_position.y - centery;
+			dpx = tmpX + (m_rectPoint[i].x - turnCenterx) * m_scale.x;
+			dpy = tmpY + (m_rectPoint[i].y - turnCentery) * m_scale.y;
 			m_rectPoint[i].x = centerx + dpx * m_cosAngle + dpy * m_sinAngle;
 			m_rectPoint[i].y = centery - dpx * m_sinAngle + dpy * m_cosAngle;
 		}
 	}else
 	{//ÕâÀïÊÇĞèÒªÄÚ²¿²Ã¼ôµÄ
 		//ÏÂÃæÊÇ½Ç¶È²Ã¼ôµÄÊµÏÖ
-		float vw = 1.0f / m_textureData.texture.m_w;
-		float vh = 1.0f / m_textureData.texture.m_h;
+		float vw = 1.0f / tex->texture.m_w;
+		float vh = 1.0f / tex->texture.m_h;
 		float uw = 1.0f;
 		float uh = 1.0f;
-		XRect tempClipRect(0.0f,0.0f,1.0f,1.0f);
+		XRect tempClipRect(0.0f, 1.0f);
 		//½«²Ã¼ô¹éÒ»»¯
 		if(m_needClip)
 		{//ÕâÀï¼ÆËãÊµ¼ÊµÄ²Ã¼ô¾ØĞÎ£¬ÄÚÍâ²¿½áºÏºóµÄÇé¿ö
 			float left,top,right,bottom;
-			if(m_clipRect.left < m_textureData.textureMove.x) left = m_textureData.clipInsideRect.left;
-			else left = m_textureData.clipInsideRect.left + m_clipRect.left - m_textureData.textureMove.x;
-			if(m_clipRect.top < m_textureData.textureMove.y) top = m_textureData.clipInsideRect.top;
-			else top = m_textureData.clipInsideRect.top + m_clipRect.top - m_textureData.textureMove.y;
-			if(m_clipRect.right > m_textureData.textureSize.x - m_textureData.textureMove2.x) right = m_textureData.clipInsideRect.right;
-			else right = m_textureData.clipInsideRect.right - (m_textureData.textureSize.x - m_textureData.textureMove2.x - m_clipRect.right);
-			if(m_clipRect.bottom > m_textureData.textureSize.y - m_textureData.textureMove2.y) bottom = m_textureData.clipInsideRect.bottom;
-			else bottom = m_textureData.clipInsideRect.bottom - (m_textureData.textureSize.y - m_textureData.textureMove2.y - m_clipRect.bottom);
+			if(m_clipRect.left < tex->textureMove.x) left = tex->clipInsideRect.left;
+			else left = tex->clipInsideRect.left + m_clipRect.left - tex->textureMove.x;
+			if(m_clipRect.top < tex->textureMove.y) top = tex->clipInsideRect.top;
+			else top = tex->clipInsideRect.top + m_clipRect.top - tex->textureMove.y;
+			if(m_clipRect.right > tex->textureSize.x - tex->textureMove2.x) right = tex->clipInsideRect.right;
+			else right = tex->clipInsideRect.right - (tex->textureSize.x - tex->textureMove2.x - m_clipRect.right);
+			if(m_clipRect.bottom > tex->textureSize.y - tex->textureMove2.y) bottom = tex->clipInsideRect.bottom;
+			else bottom = tex->clipInsideRect.bottom - (tex->textureSize.y - tex->textureMove2.y - m_clipRect.bottom);
 
 			tempClipRect.set(left * vw,top * vh,right * vw,bottom * vh);
 		}else
 		{
-			tempClipRect.set(m_textureData.clipInsideRect.left * vw,
-				m_textureData.clipInsideRect.top * vh,
-				m_textureData.clipInsideRect.right * vw,
-				m_textureData.clipInsideRect.bottom * vh);
+			tempClipRect.set(tex->clipInsideRect.left * vw,
+				tex->clipInsideRect.top * vh,
+				tex->clipInsideRect.right * vw,
+				tex->clipInsideRect.bottom * vh);
 		}
 
 		uw = tempClipRect.getWidth();			//ÌùÍ¼³ß´ç[0-1]
 		uh = tempClipRect.getHeight();
-		vw = uw * m_textureData.texture.m_w;	//×ø±ê³ß´çpixel
-		vh = uh * m_textureData.texture.m_h;
+		vw = uw * tex->texture.m_w;	//×ø±ê³ß´çpixel
+		vh = uh * tex->texture.m_h;
 		if(m_needAngleClip)
 		{
-		//	XVector2 uPoint[7];
-		//	XVector2 vPoint[7];
-			XRect uRect;
-			XRect vRect;
-			XVector2 cPoint;
+		//	XVec2 uPoint[7];
+		//	XVec2 vPoint[7];
 			if(m_needClip)
 			{
-				float left,top;
-				if(m_textureData.textureMove.x > m_clipRect.left) left = m_textureData.textureMove.x - m_clipRect.left;
-				else left = 0.0f;
-				if(m_textureData.textureMove.y > m_clipRect.top) top = m_textureData.textureMove.y - m_clipRect.top;
-				else top = 0.0f;
+				float left = 0.0f;
+				float top = 0.0f;
+				if(tex->textureMove.x > m_clipRect.left) left = tex->textureMove.x - m_clipRect.left;
+				if(tex->textureMove.y > m_clipRect.top) top = tex->textureMove.y - m_clipRect.top;
 
-				uRect.set(0.0f,0.0f,uw,uh);
-				vRect.set(left,top,left + vw,top + vh);
-				cPoint.set(m_clipRect.getWidth() * 0.5f,m_clipRect.getHeight() * 0.5f);	
+				m_pointSum = XMath::getEdgePointEx(XRect(left, top, left + vw, top + vh), XRect(0.0f, 0.0f, uw, uh),
+					m_clipRect.getCenter(), m_clipAngle * DEGREE2RADIAN, m_vPointer, m_uPointer);
 			}else
 			{//ok
-				uRect.set(0.0f,0.0f,uw,uh);
-				vRect.set(m_textureData.textureMove.x,m_textureData.textureMove.y,
-					m_textureData.textureSize.x - m_textureData.textureMove2.x,m_textureData.textureSize.y - m_textureData.textureMove2.y);
-				cPoint.set(m_textureData.textureSize.x * 0.5f,m_textureData.textureSize.y * 0.5f);
+				m_pointSum = XMath::getEdgePointEx(XRect(tex->textureMove, tex->textureSize - tex->textureMove2), 
+					XRect(0.0f, 0.0f, uw, uh), tex->textureSize * 0.5f,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 			}
-			m_pointSum = XMath::getEdgePointEx(vRect,uRect,cPoint,m_clipAngle * DEGREE2RADIAN,m_vPointer,m_uPointer);
 		}else
 		{
 			//ÏÂÃæµÄ²Ù×÷ÊÇÃ»ÓĞÎÊÌâµÄ£¬µ«ÊÇÉĞÎ´½áºÏ²Ã¼ôºÍ·´×ª£¬Ğı×ªµÈ
 			m_pointSum = 4;
 			if(m_needClip)
 			{
-				float left,top;
-				if(m_textureData.textureMove.x > m_clipRect.left) left = m_textureData.textureMove.x - m_clipRect.left;
-				else left = 0.0f;
-				if(m_textureData.textureMove.y > m_clipRect.top) top = m_textureData.textureMove.y - m_clipRect.top;
-				else top = 0.0f;
+				float left = 0.0f;
+				float top = 0.0f;
+				if(tex->textureMove.x > m_clipRect.left) left = tex->textureMove.x - m_clipRect.left;
+				if(tex->textureMove.y > m_clipRect.top) top = tex->textureMove.y - m_clipRect.top;
 				m_vPointer[0] = left;		m_vPointer[1] = top;
 				m_uPointer[0] = 0.0f;		m_uPointer[1] = 0.0f;
 				m_vPointer[2] = left + vw;	m_vPointer[3] = top;
@@ -726,20 +868,18 @@ void XSprite::updateData()
 				m_uPointer[6] = 0.0f;		m_uPointer[7] = uh;
 			}else
 			{
-				m_vPointer[0] = m_textureData.textureMove.x;		m_vPointer[1] = m_textureData.textureMove.y;
-				m_uPointer[0] = 0.0f;								m_uPointer[1] = 0.0f;
-				m_vPointer[2] = m_textureData.textureMove.x + vw;	m_vPointer[3] = m_textureData.textureMove.y;
-				m_uPointer[2] = uw;									m_uPointer[3] = 0.0f;
-				m_vPointer[4] = m_textureData.textureMove.x + vw;	m_vPointer[5] = m_textureData.textureMove.y + vh;
-				m_uPointer[4] = uw;									m_uPointer[5] = uh;
-				m_vPointer[6] = m_textureData.textureMove.x;		m_vPointer[7] = m_textureData.textureMove.y + vh;
-				m_uPointer[6] = 0.0f;								m_uPointer[7] = uh;
+				m_vPointer[0] = tex->textureMove.x;		m_vPointer[1] = tex->textureMove.y;
+				m_uPointer[0] = 0.0f;					m_uPointer[1] = 0.0f;
+				m_vPointer[2] = m_vPointer[0] + vw;		m_vPointer[3] = m_vPointer[1];
+				m_uPointer[2] = uw;						m_uPointer[3] = 0.0f;
+				m_vPointer[4] = m_vPointer[2];			m_vPointer[5] = m_vPointer[1] + vh;
+				m_uPointer[4] = uw;						m_uPointer[5] = uh;
+				m_vPointer[6] = m_vPointer[0];			m_vPointer[7] = m_vPointer[5];
+				m_uPointer[6] = 0.0f;					m_uPointer[7] = uh;
 			}
 		}
-		//XVector2 center;
 		float centerx;
 		float centery;
-		//XVector2 dp;
 		float dpx;
 		float dpy;
 		int pointDataSum = m_pointSum << 1;
@@ -749,8 +889,8 @@ void XSprite::updateData()
 			centery = m_position.y + m_changeCenter.y * m_clipRect.getHeight();
 		}else
 		{
-			centerx = m_position.x + m_changeCenter.x * m_textureData.textureSize.x;
-			centery = m_position.y + m_changeCenter.y * m_textureData.textureSize.y;
+			centerx = m_position.x + m_changeCenter.x * tex->textureSize.x;
+			centery = m_position.y + m_changeCenter.y * tex->textureSize.y;
 		}
 		for(int i = 0;i < pointDataSum;i += 2)
 		{
@@ -763,36 +903,39 @@ void XSprite::updateData()
 		}
 		//ÌùÍ¼×ø±êµÄ¼ÆËã
 		//·­×ª
-		float turnCenterx;
-		float turnCentery;
-		if(m_needClip)
-		{
-			turnCenterx = m_position.x + 0.5f * m_clipRect.getWidth();
-			turnCentery = m_position.y + 0.5f * m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
-		}else
-		{
-			turnCenterx = m_position.x + 0.5f * m_textureData.textureSize.x;
-			turnCentery = m_position.y + 0.5f * m_textureData.textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
-		}
+		float turnCenterx, turnCentery;
 		switch(m_turnOverMode)
 		{
 		case TURN_OVER_MODE_LEFT_TO_RIGHT:
+			if (m_needClip) turnCenterx = m_position.x * 2.0f + m_clipRect.getWidth();
+			else turnCenterx = m_position.x * 2.0f + tex->textureSize.x;
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
+				m_vPointer[i] = turnCenterx - m_vPointer[i];
 			}
 			break;
 		case TURN_OVER_MODE_UP_TO_DOWN:
+			if (m_needClip) turnCentery = m_position.y * 2.0f + m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			else turnCentery = m_position.y * 2.0f + tex->textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
+				m_vPointer[i + 1] = turnCentery - m_vPointer[i + 1];
 			}
 			break;
 		case TURN_OVER_MODE_L2R_AND_U2D:
+			if(m_needClip)
+			{
+				turnCenterx = m_position.x * 2.0f + m_clipRect.getWidth();
+				turnCentery = m_position.y * 2.0f + m_clipRect.getHeight(); //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			}else
+			{
+				turnCenterx = m_position.x * 2.0f + tex->textureSize.x;
+				turnCentery = m_position.y * 2.0f + tex->textureSize.y; //ËùÓĞµÄ·­×ª¶¼ÊÇÒÔÔ­Í¼µÄÖĞĞÄ½øĞĞµÄ
+			}
 			for(int i = 0;i < pointDataSum;i += 2)
 			{
-				m_vPointer[i] = turnCenterx + (turnCenterx - m_vPointer[i]);
-				m_vPointer[i + 1] = turnCentery + (turnCentery - m_vPointer[i + 1]);
+				m_vPointer[i] = turnCenterx - m_vPointer[i];
+				m_vPointer[i + 1] = turnCentery - m_vPointer[i + 1];
 			}
 			break;
 		}
@@ -805,16 +948,18 @@ void XSprite::updateData()
 		}
 
 		//ÏÂÃæÊÇ¼ÆËã°üÎ§ºĞ(¿ÉÄÜ»á´æÔÚÎÊÌâ£¬Ã»ÓĞ¾­¹ı²âÊÔ)
-		m_rectPoint[0].set(0.0f,0.0f);
+		m_rectPoint[0].set(0.0f);
 		m_rectPoint[1].set(vw,0.0f);
 		m_rectPoint[2].set(vw,vh);
 		m_rectPoint[3].set(0.0f,vh);
 		turnCenterx = m_changeCenter.x * vw;
 		turnCentery = m_changeCenter.y * vh;
+		float tmpX = turnCenterx + m_position.x - centerx;
+		float tmpY = turnCentery + m_position.y - centery;
 		for(int i = 0;i < 4;++ i)
 		{
-			dpx = turnCenterx + (m_rectPoint[i].x - turnCenterx) * m_scale.x + m_position.x - centerx;
-			dpy = turnCentery + (m_rectPoint[i].y - turnCentery) * m_scale.y + m_position.y - centery;
+			dpx = tmpX + (m_rectPoint[i].x - turnCenterx) * m_scale.x;
+			dpy = tmpY + (m_rectPoint[i].y - turnCentery) * m_scale.y;
 			m_rectPoint[i].x = centerx + dpx * m_cosAngle + dpy * m_sinAngle;
 			m_rectPoint[i].y = centery - dpx * m_sinAngle + dpy * m_cosAngle;
 		}
@@ -824,11 +969,14 @@ void XSprite::draw()
 {
 	if(!m_isInited ||
 		!m_isVisible) return;
+	if (m_isThreadLoading) return;	//ÕıÔÚÔØÈëµÄÊ±ºò²»ÄÜÃè»æ
+
 	updateData();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
-	XGL::EnableBlend();
-	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
-	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
+	XGL::setBlendModel(m_blendModel);
+//	XGL::EnableBlend();
+//	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
+//	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
 
 	//if(m_pShader == NULL && m_pShaderProc == NULL)
 	if(m_pShader == NULL)
@@ -856,15 +1004,17 @@ void XSprite::draw()
 	XGL::DisableBlend();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPopAttrib();
 }
-void XSprite::draw(const XVector2 *u,const XVector2 *v,int w,int h)
+void XSprite::draw(const XVec2 *u,const XVec2 *v,int w,int h)
 {
 	if(!m_isInited ||
 		!m_isVisible) return;
+	if (m_isThreadLoading) return;	//ÕıÔÚÔØÈëµÄÊ±ºò²»ÄÜÃè»æ
 	updateData();
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
-	XGL::EnableBlend();
-	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
-	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
+	XGL::setBlendModel(m_blendModel);
+//	XGL::EnableBlend();
+//	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
+//	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
 
 	//if(m_pShader == NULL && m_pShaderProc == NULL)
 	if(m_pShader == NULL)
@@ -912,12 +1062,12 @@ void XSprite::draw(GLuint tex)
 	if(!m_isInited ||
 		!m_isVisible) return;
 	updateData();
-	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
-	XGL::EnableBlend();
-	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
-	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
+	//if(m_pShader != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
+	XGL::setBlendModel(m_blendModel);
+//	XGL::EnableBlend();
+//	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
+//	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
 
-	//if(m_pShader == NULL && m_pShaderProc == NULL)
 	if(m_pShader == NULL)
 	{
 		XGL::EnableTexture2D();
@@ -937,10 +1087,10 @@ void XSprite::draw(GLuint tex)
 	glColor4fv(m_color);
 	drawInside();
 
-	//if(m_pShader != NULL || m_pShaderProc != NULL) glUseProgram(0);	
+	//if(m_pShader != NULL) glUseProgram(0);	
 	if(m_pShader != NULL) m_pShader->disShader();
 	XGL::DisableBlend();
-	//if(m_pShader != NULL || m_pShaderProc != NULL) glPopAttrib();
+	//if(m_pShader != NULL) glPopAttrib();
 }
 void XSprite::draw(const XTextureData& texData)
 {
@@ -948,18 +1098,19 @@ void XSprite::draw(const XTextureData& texData)
 		!m_isVisible) return;
 	//±¸·İÏÖ³¡Êı¾İ£¬²¢±ê¼ÇÄÚ²¿Êı¾İĞèÒª¸üĞÂ
 
-	XTextureData tempTexture;
-	tempTexture = m_textureData;
-	m_textureData = texData;
+//	XTextureData tempTexture;
+//	tempTexture = m_textureData;
+//	m_textureData = texData;
 	if(m_upTexDataID != texData.getID() || m_needUpdateData)
 	{//ÏàÍ¬µÄÊı¾İ¾Í²»ĞèÒªÖØĞÂË¢ĞÂ
 		m_needUpdateData = XTrue;
-		updateData();
+		updateData(&texData);
 	}
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPushAttrib(GL_ALL_ATTRIB_BITS);
-	XGL::EnableBlend();
-	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
-	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
+	XGL::setBlendModel(m_blendModel);
+//	XGL::EnableBlend();
+//	if(m_blendType == XGL::BLEND_TWO_DATA) XGL::SetBlendFunc(XGL::srcBlendMode[m_blendTypeScr],XGL::dstBlendMode[m_blendTypeDst]);
+//	else glBlendFuncSeparate(XGL::srcBlendMode[m_blendRGBScr],XGL::dstBlendMode[m_blendRGBDst],XGL::srcBlendMode[m_blendAScr],XGL::dstBlendMode[m_blendADst]);
 
 	//if(m_pShader == NULL && m_pShaderProc == NULL)
 	if(m_pShader == NULL)
@@ -986,11 +1137,13 @@ void XSprite::draw(const XTextureData& texData)
 	//if(m_pShader != NULL || m_pShaderProc != NULL) glPopAttrib();
 	if(m_pShader != NULL) m_pShader->disShader();
 
-	m_textureData = tempTexture;	//Íê³ÉÖ®ºó»¹Ô­ÄÚ²¿Êı¾İ
+//	m_textureData = tempTexture;	//Íê³ÉÖ®ºó»¹Ô­ÄÚ²¿Êı¾İ
 }
 void XSprite::release()
 {
 	if(!m_isInited) return;
+	if(m_isThreadLoading)
+		waitThreadEnd(m_loadThread);
 	//if(glIsTexture(m_tex))
 	//	glDeleteTextures(1,&m_tex);
 #if WITH_OBJECT_MANAGER
@@ -1017,15 +1170,11 @@ XSprite& XSprite::operator = (const XSprite& temp)	//¶ÔÄ¿±êµÄ×ÊÔ´½øĞĞ¹²ÓÃ£¬²»¿½±
 	m_pointSum = temp.m_pointSum;			//¶¥µãµÄÊıÁ¿
 	m_needAngleClip = temp.m_needAngleClip;	//ÊÇ·ñĞèÒª½øĞĞ½Ç¶È²Ã¼ô
 	m_clipAngle = temp.m_clipAngle;		//²Ã¼ôµÄ½Ç¶È[0 - 360]
-	for(int i = 0;i < 14;++ i)
-	{
-		m_vPointer[i] = temp.m_vPointer[i];	//¶¥µãÊı¾İ
-		m_uPointer[i] = temp.m_uPointer[i];	//ÌùÍ¼Êı¾İ
-	}
-	for(int i = 0;i < 4;++ i)
-	{
-		m_rectPoint[i] = temp.m_rectPoint[i];
-	}
+
+	memcpy(m_vPointer, temp.m_vPointer, 14 * sizeof(float));	//¶¥µãÊı¾İ
+	memcpy(m_uPointer, temp.m_uPointer, 14 * sizeof(float));	//ÌùÍ¼Êı¾İ
+	memcpy(m_rectPoint, temp.m_rectPoint, 4 * sizeof(XVec2));
+
 	m_sinAngle = temp.m_sinAngle;	
 	m_cosAngle = temp.m_cosAngle;
 	m_textureData = temp.m_textureData;	
@@ -1033,13 +1182,14 @@ XSprite& XSprite::operator = (const XSprite& temp)	//¶ÔÄ¿±êµÄ×ÊÔ´½øĞĞ¹²ÓÃ£¬²»¿½±
 	m_isVisible = temp.m_isVisible;
 
 	m_needUpdateData = temp.m_needUpdateData;
-	m_blendType = temp.m_blendType;
-	m_blendRGBScr = temp.m_blendRGBScr;
-	m_blendRGBDst = temp.m_blendRGBDst;
-	m_blendAScr = temp.m_blendAScr;
-	m_blendADst = temp.m_blendADst;
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
+	m_blendModel = temp.m_blendModel;
+//	m_blendType = temp.m_blendType;
+//	m_blendRGBScr = temp.m_blendRGBScr;
+//	m_blendRGBDst = temp.m_blendRGBDst;
+//	m_blendAScr = temp.m_blendAScr;
+//	m_blendADst = temp.m_blendADst;
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
 	m_pShader = temp.m_pShader;
 	//m_pShaderProc = temp.m_pShaderProc;
 
@@ -1051,6 +1201,7 @@ XSprite& XSprite::operator = (const XSprite& temp)	//¶ÔÄ¿±êµÄ×ÊÔ´½øĞĞ¹²ÓÃ£¬²»¿½±
 void XSprite::setACopy(const XSprite& temp)
 {
 	if(& temp == this) return;	//·ÀÖ¹×ÔÉí¸³Öµ
+	if (m_isThreadLoading || temp.m_isThreadLoading) return;	//ÕıÔÚ¶àÏß³ÌÔØÈëµÄÔªËØ²»ÄÜ¸´ÖÆ
 
 	m_isInited = temp.m_isInited;				//ÊÇ·ñÍê³É³õÊ¼»¯
 	m_resoursePosition = temp.m_resoursePosition;		//×ÊÔ´Î»ÖÃ 0:Íâ²¿ 1:ÄÚ²¿
@@ -1067,29 +1218,26 @@ void XSprite::setACopy(const XSprite& temp)
 	m_pointSum = temp.m_pointSum;			//¶¥µãµÄÊıÁ¿
 	m_needAngleClip = temp.m_needAngleClip;	//ÊÇ·ñĞèÒª½øĞĞ½Ç¶È²Ã¼ô
 	m_clipAngle = temp.m_clipAngle;		//²Ã¼ôµÄ½Ç¶È[0 - 360]
-	for(int i = 0;i < 14;++ i)
-	{
-		m_vPointer[i] = temp.m_vPointer[i];	//¶¥µãÊı¾İ
-		m_uPointer[i] = temp.m_uPointer[i];	//ÌùÍ¼Êı¾İ
-	}
-	for(int i = 0;i < 4;++ i)
-	{
-		m_rectPoint[i] = temp.m_rectPoint[i];
-	}
-	m_sinAngle = temp.m_sinAngle;	
+
+	memcpy(m_vPointer, temp.m_vPointer, 14 * sizeof(float));	//¶¥µãÊı¾İ
+	memcpy(m_uPointer, temp.m_uPointer, 14 * sizeof(float));	//ÌùÍ¼Êı¾İ
+	memcpy(m_rectPoint, temp.m_rectPoint, 4 * sizeof(XVec2));
+
+	m_sinAngle = temp.m_sinAngle;
 	m_cosAngle = temp.m_cosAngle;
 	m_textureData = temp.m_textureData;	
 	m_color = temp.m_color;			
 	m_isVisible = temp.m_isVisible;
 
 	m_needUpdateData = temp.m_needUpdateData;
-	m_blendType = temp.m_blendType;
-	m_blendRGBScr = temp.m_blendRGBScr;
-	m_blendRGBDst = temp.m_blendRGBDst;
-	m_blendAScr = temp.m_blendAScr;
-	m_blendADst = temp.m_blendADst;
-	m_blendTypeScr = temp.m_blendTypeScr;
-	m_blendTypeDst = temp.m_blendTypeDst;
+	m_blendModel = temp.m_blendModel;
+//	m_blendType = temp.m_blendType;
+//	m_blendRGBScr = temp.m_blendRGBScr;
+//	m_blendRGBDst = temp.m_blendRGBDst;
+//	m_blendAScr = temp.m_blendAScr;
+//	m_blendADst = temp.m_blendADst;
+//	m_blendTypeScr = temp.m_blendTypeScr;
+//	m_blendTypeDst = temp.m_blendTypeDst;
 	m_pShader = temp.m_pShader;
 	//m_pShaderProc = temp.m_pShaderProc;
 
@@ -1099,7 +1247,7 @@ void XSprite::setACopy(const XSprite& temp)
 }
 #else
 int XSprite::init(const char *filename,					//Í¼Æ¬µÄÃû³Æ
-		XResourcePosition resoursePosition,						//×ÊÔ´µÄÎ»ÖÃ
+		XResPos resPos,						//×ÊÔ´µÄÎ»ÖÃ
 		XTransformMode isTransformCenter)					//ÊÇ·ñÊ¹ÓÃÖĞĞÄĞı×ª	
 {
 	if(m_isInited != 0) 
@@ -1116,7 +1264,7 @@ int XSprite::init(const char *filename,					//Í¼Æ¬µÄÃû³Æ
 	xsize = 1.0f;		//¾«ÁéµÄËõ·Å±ÈÀı
 	ysize = 1.0f;
 	//ÉèÖÃ×ÊÔ´µÄÎ»ÖÃ
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 	setIsTransformCenter(isTransformCenter);
 
 	if(m_textureData.load(filename,m_resoursePosition) == 0) return 0;
@@ -1197,7 +1345,7 @@ int XSprite::init(XTextureData& texData,XTransformMode isTransformCenter)
 	xsize = 1.0f;		//¾«ÁéµÄËõ·Å±ÈÀı
 	ysize = 1.0f;
 	//ÉèÖÃ×ÊÔ´µÄÎ»ÖÃ
-	//m_resoursePosition = resoursePosition;
+	//m_resoursePosition = resPos;
 	setIsTransformCenter(isTransformCenter);
 
 	m_textureData = texData;
@@ -1244,7 +1392,7 @@ int XSprite::init(int w,int h,int colorMode,unsigned int tex,XTransformMode isTr
 	xsize = 1.0f;		//¾«ÁéµÄËõ·Å±ÈÀı
 	ysize = 1.0f;
 	//ÉèÖÃ×ÊÔ´µÄÎ»ÖÃ
-	//m_resoursePosition = resoursePosition;
+	//m_resoursePosition = resPos;
 	setIsTransformCenter(isTransformCenter);
 
 	if(m_textureData.createWithTexture(w,h,colorMode,tex) == 0) return 0;
@@ -1319,7 +1467,7 @@ int XSprite::init(int tempW,int tempH,int needSizeCheck,XTransformMode isTransfo
 		m_transformCenter.set(m_textureData.texture.m_w * 0.5f,m_textureData.texture.m_h * 0.5f);
 	}else
 	{
-		m_transformCenter.set(0.0f,0.0f);
+		m_transformCenter.set(0.0f);
 	}
 #if WITH_OBJECT_MANAGER
 	XObjManager.addAObject(this,OBJ_SPRITE);
@@ -1366,10 +1514,10 @@ void XSprite::drawBasic(const GLuint *pTexnum)
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0);
+	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0.0f);
 
-	if(angle != 0) glRotatef(angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
+	if(angle != 0) glRotatef(angle,0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
 	
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1478,8 +1626,8 @@ void XSprite::updatePointArray()
 	}
 	if(m_needAngleClip != 0)
 	{//ÕâÀïÏÈ²»¿¼ÂÇ·­×ªÒÔ¼°²Ã¼ôÔì³ÉµÄÓ°Ïì£¬Ò²¾ÍÊÇËµ·­×ªºÍ²Ã¼ô½«»áÔì³ÉÕâÀï³öÏÖÂß¼­µÄ²»Í³Ò»
-		XVector2 tempArrayV[4];
-		XVector2 tempArrayU[4];
+		XVec2 tempArrayV[4];
+		XVec2 tempArrayU[4];
 		for(int i = 0;i < 4;++ i)
 		{
 			tempArrayV[i] = m_pointArray[i << 1];
@@ -1540,10 +1688,10 @@ void XSprite::drawBasic(const XTextureData *pTexData)
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0);
+	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0.0f);
 
-	if(angle != 0.0f) glRotatef(angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
+	if(angle != 0.0f) glRotatef(angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
 
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1614,10 +1762,10 @@ void XSprite::drawWithoutBlend(const GLuint *pTexnum)
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0);
+	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0.0f);
 
-	if(angle != 0) glRotatef(angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
+	if(angle != 0) glRotatef(angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
 	
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1693,10 +1841,10 @@ void XSprite::drawWithoutBlend(const XTextureData *pTexData)
 	glPushMatrix();
 	glLoadIdentity();
 
-	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0);
+	glTranslatef(m_positionX + m_transformCenter.x,m_positionY + m_transformCenter.y, 0.0f);
 
-	if(angle != 0.0f) glRotatef(angle, 0, 0, 1);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
-	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
+	if(angle != 0.0f) glRotatef(angle, 0.0f, 0.0f, 1.0f);	//ÉèÖÃÎ´Ö¸¶¨µÄ½Ç¶È
+	if(xsize != 1.0f || ysize != 1.0f) glScalef(xsize, ysize, 0.0f);	//ÉèÖÃËõ·ÅµÄ±ÈÀı
 
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1812,10 +1960,10 @@ void XSprite::drawEx(const GLuint *pTexnum)
 	int halfH;
 	halfW = m_textureData.texture.m_w >> 1;
 	halfH = m_textureData.texture.m_h >> 1;
-	glTranslatef(m_positionX + halfW, m_positionY + halfH, 0);
+	glTranslatef(m_positionX + halfW, m_positionY + halfH, 0.0f);
 
-	glRotatef(angle, 0, 0, 1);
-	glScalef(xsize, ysize, 0);
+	glRotatef(angle, 0.0f, 0.0f, 1.0f);
+	glScalef(xsize, ysize, 0.0f);
 
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1902,10 +2050,10 @@ void XSprite::drawEx(const XTextureData *pTexData)
 	int halfH;
 	halfW = m_textureData.texture.m_w >> 1;
 	halfH = m_textureData.texture.m_h >> 1;
-	glTranslatef(m_positionX + halfW, m_positionY + halfH, 0);
+	glTranslatef(m_positionX + halfW, m_positionY + halfH, 0.0f);
 
-	glRotatef(angle, 0, 0, 1);
-	glScalef(xsize, ysize, 0);
+	glRotatef(angle, 0.0f, 0.0f, 1.0f);
+	glScalef(xsize, ysize, 0.0f);
 
 	if(m_pShaderProc == NULL && m_pShader == NULL)
 	{
@@ -1998,14 +2146,14 @@ XSprite::XSprite()
 ,colorRed(1.0f)
 ,colorGreen(1.0f)
 ,colorBlue(1.0f)
-,m_resoursePosition(RESOURCE_AUTO)
+,m_resoursePosition(RES_AUTO)
 #if IS_USE_SOLIDIFY
 ,m_glListOrder(-1)
 ,m_needSolidify(0)		//Ä¬ÈÏÇé¿ö²»ĞèÒª¹Ì»¯
 #endif
 ,m_isEnableOutsideChip(0)
 ,m_isACopy(0)
-,m_transformCenter(0.0f,0.0f)
+,m_transformCenter(0.0f)
 ,m_changeTransformCenterManual(0)
 ,m_clipOutsideRect(0,0,100,100)
 ,m_blendType(BLEND_TWO_DATA)
@@ -2045,7 +2193,7 @@ void XSprite::setIsTransformCenter(XTransformMode temp)	//ÉèÖÃÎªÖĞĞÄĞı×ª
 		m_isTransformCenter = POINT_LEFT_TOP;
 		if(m_textureData.isEnableInsideClip == 0)
 		{
-			m_transformCenter.set(0.0f,0.0f);
+			m_transformCenter.set(0.0f);
 		}else
 		{//ÕâÒ»¶ÎÓĞÎÊÌâ
 			m_transformCenter.set(-m_textureData.textureMove.x,-m_textureData.textureMove.y);
@@ -2057,7 +2205,7 @@ void XSprite::setIsTransformCenter(XTransformMode temp)	//ÉèÖÃÎªÖĞĞÄĞı×ª
 		{
 			if(m_textureData.texture.getIsEnable() == 0)
 			{
-				m_transformCenter.set(0.0f,0.0f);
+				m_transformCenter.set(0.0f);
 			}else
 			{
 				m_transformCenter.set(m_textureData.texture.m_w * 0.5f,m_textureData.texture.m_h * 0.5f);
@@ -2698,7 +2846,7 @@ void XSprite::setClipRect(float left,float top,float right,float bottom)
 		//		m_transformCenter.set(-m_textureData.textureMove.x,-m_textureData.textureMove.y);
 			}else
 			{
-				m_transformCenter.set(0.0f,0.0f);
+				m_transformCenter.set(0.0f);
 			}
 		}
 	}else
@@ -2737,9 +2885,9 @@ XSprite::~XSprite()
 //	XMem::XDELETE_ARRAY(m_frameName);
 	//m_isInited = 0;
 }
-XVector2 XSprite::getBox(int order)
+XVec2 XSprite::getBox(int order)
 {
-	XVector2 ret;
+	XVec2 ret;
 	ret.set(0.0f,0.0f);
 	if(order < 0 || order >= 4) return ret;
 	if(m_isTransformCenter == POINT_LEFT_TOP)

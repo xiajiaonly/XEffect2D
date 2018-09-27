@@ -17,13 +17,13 @@ INLINE void XBroadcastUdp::release()
 	m_dataLen = 0;
 	m_isInited = false;
 }
-INLINE XBool XSimpleVideoSynch::init(const std::string &filename)
+INLINE XBool XSimpleVideoSynch::init(const std::string& filename)
 {
 	if(m_isInited) return XFalse;
 	if(!m_udp.init(filename)) return XFalse;
 	m_udp.setCallbackFun(this,commandFun);
-	m_offset.set(0.0f,0.0f);
-	m_size.set(0.0f,0.0f);
+	m_offset.set(0.0f);
+	m_size.set(0.0f);
 	m_isInited = XTrue;
 	return XTrue;
 }
@@ -36,6 +36,7 @@ INLINE XBool XSimpleVideoSynch::load(const char *filename,XColorMode mode,bool w
 	if(!m_movie.load(filename,mode,withVoice))
 	{
 		m_udp.setCurFrame(STATE_CLOSE_CLIP);	//·¢ËÍÔ¤¼ÓÔØÃüÁî
+		return XFalse;
 	}
 	m_movie.m_movieSprite->setClipRect(m_offset.x,m_offset.y,m_offset.x + m_size.x,m_offset.y + m_size.y);
 	return XTrue;

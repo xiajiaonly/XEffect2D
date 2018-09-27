@@ -20,17 +20,18 @@ XFrameType XOneTimeLine::getFrameType(int index)
 			upKeyFrame = i;
 		}else
 		{//判断是否为补间帧
-			if(upKeyFrame >= 0 && m_keyFrames[upKeyFrame].interpolationMode != MOVE_DATA_MODE_NULL) return FRAME_TYPE_INTER;
+			if(upKeyFrame >= 0 && m_keyFrames[upKeyFrame].interpolationMode != MD_MODE_NULL) return FRAME_TYPE_INTER;
 			if(m_keyFrames[upKeyFrame].timeLen >= index * m_frameTimeWidth - m_keyFrames[upKeyFrame].time)
 			{
 				return FRAME_TYPE_LAST;
-			}else return FRAME_TYPE_BLANK;
+			}else 
+				return FRAME_TYPE_BLANK;
 		}
 	}
 	//如果处于两个不插值的关键帧之间则为空白帧
 	return FRAME_TYPE_INTER;
 }
-XBool XOneTimeLine::init(const std::string &name,int width,const XVector2 &position,const XVector2 &scale)
+XBool XOneTimeLine::init(const std::string& name,int width,const XVec2& position,const XVec2& scale)
 {
 	if(m_isInited) return XFalse;
 
@@ -105,26 +106,26 @@ void XOneTimeLine::draw()
 	if(!m_isInited) return;
 	//下面画格子
 	int sum = (m_width - TIMELINE_TITLE_LEN) / TIMELINE_FRAME_WIDTH;
-	XVector2 pos = XVector2(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y);
+	XVec2 pos(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y);
 	for(int i = 0;i < sum;++ i)
 	{
 		switch(getFrameType(m_startIndex + i))
 		{
 		case FRAME_TYPE_BLANK:	//空白帧
-			XRender::drawFillBox(XVector2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
-				XVector2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,1.0f,1.0f,1.0f,true);
+			XRender::drawFillRect(XVec2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
+				XVec2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,1.0f,1.0f,1.0f,true);
 			break;
 		case FRAME_TYPE_INTER:	//补间帧
-			XRender::drawFillBox(XVector2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
-				XVector2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,1.0f,true);
+			XRender::drawFillRect(XVec2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
+				XVec2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,1.0f,true);
 			break;
 		case FRAME_TYPE_KEY:	//关键帧
-			XRender::drawFillBox(XVector2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
-				XVector2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,1.0f,0.5f,0.5f,true);
+			XRender::drawFillRect(XVec2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
+				XVec2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,1.0f,0.5f,0.5f,true);
 			break;
 		case FRAME_TYPE_LAST:	//持续帧
-			XRender::drawFillBox(XVector2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
-				XVector2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,0.75f,0.75f,0.75f,true);
+			XRender::drawFillRect(XVec2(pos.x + i * TIMELINE_FRAME_WIDTH * m_scale.x,pos.y),
+				XVec2(TIMELINE_FRAME_WIDTH,TIMELINE_HEIGHT) * m_scale,0.75f,0.75f,0.75f,true);
 			break;
 		}
 	}
@@ -318,7 +319,7 @@ void XTimeLines::updateCtrlsPosition()
 void XTimeLines::updateRule()
 {
 	int startTime = m_curStartIndex * m_frameTime * 0.001f;
-	int endTime = (m_curStartIndex + m_canShowFrameSum) * m_frameTime * 0.001f;;
+	int endTime = (m_curStartIndex + m_canShowFrameSum) * m_frameTime * 0.001f;
 	XRuleInfo tmp;
 	m_ruleInfos.clear();
 	switch(endTime - startTime)
@@ -382,19 +383,19 @@ void XTimeLines::updateRule()
 		break;
 	}
 }
-XBool XTimeLines::addATimeLine(const std::string &name)
+XBool XTimeLines::addATimeLine(const std::string& name)
 {
 	if(getTimeLineIndexByName(name) >= 0) return XFalse;	//重复的时间帧
 	//下面添加时间帧
 	XOneTimeLine *tmp = XMem::createMem<XOneTimeLine>();
 	if(tmp == NULL) return XFalse;
-	tmp->init(name,m_width,XVector2(m_position.x,m_position.y + ((int)(m_timeLines.size()) + 1) * TIMELINE_HEIGHT),m_scale);
+	tmp->init(name,m_width,XVec2(m_position.x,m_position.y + ((int)(m_timeLines.size()) + 1) * TIMELINE_HEIGHT),m_scale);
 	tmp->setFps(m_fps);
 	tmp->setCurStartIndex(m_curStartIndex);
 	if((m_timeLines.size() >= m_curStartTimeLineIndex || m_curStartTimeLineIndex < 0) && 
 		(m_timeLines.size() < m_curStartTimeLineIndex + m_showTimeLineSum && m_curStartTimeLineIndex + m_showTimeLineSum >= 0))
 	{//需要显示的时间线
-		tmp->setPosition(m_position.x,m_position.y + ((int)(m_timeLines.size()) + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT);
+		tmp->setPosition(XVec2(m_position.x,m_position.y + ((int)(m_timeLines.size()) + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT));
 	}
 	m_timeLines.push_back(tmp);
 	if(m_timeLines.size() > m_showTimeLineSum || m_showTimeLineSum < 0) m_timeLineSld.setVisible();
@@ -402,7 +403,7 @@ XBool XTimeLines::addATimeLine(const std::string &name)
 	updateCtrlsPosition();
 	return XTrue;
 }
-int XTimeLines::getTimeLineIndexByName(const std::string &name)
+int XTimeLines::getTimeLineIndexByName(const std::string& name)
 {
 	for(unsigned int i = 0;i < m_timeLines.size();++ i)
 	{
@@ -437,7 +438,7 @@ void XTimeLines::setAllTime(int time)
 	{
 		m_curTimer = 0;
 		if(m_funTimeChange != NULL) m_funTimeChange(m_pClass,m_objectID);	//注意这里的ID，由于目前这个类没有给予控件的基类，所以这里使用的是一个不好的值
-		m_timeSld.setCurValue(0.0f);
+		m_timeSld.setCurValue(0.0f,true);
 	}
 	if(m_visible)
 	{
@@ -449,16 +450,16 @@ void XTimeLines::setAllTime(int time)
 }
 XBool XTimeLines::init(float width,int showLineSum,int fps)
 {
-	if(m_isInited) return XFalse;
-	if(width < 256.0f || fps <= 0 || showLineSum < 0) return XFalse;	//非法的数据
+	if(m_isInited ||
+		width < 256.0f || fps <= 0 || showLineSum < 0) return XFalse;	//非法的数据
 
 	m_width = width;
 	m_showTimeLineSum = showLineSum;
 	m_curStartTimeLineIndex = 0;
 	setFps(fps);
 
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
 
 	m_timeLines.clear();
 
@@ -478,10 +479,10 @@ XBool XTimeLines::init(float width,int showLineSum,int fps)
 	m_endBtn.initWithoutSkin(">>",64.0f);
 	m_endBtn.setEventProc(ctrlProc,this);
 
-	m_timeSld.initWithoutSkin(XVector2(m_width - TIMELINE_TITLE_LEN,TIMELINE_HEIGHT));
+	m_timeSld.initWithoutSkin(XVec2(m_width - TIMELINE_TITLE_LEN,TIMELINE_HEIGHT));
 	m_timeSld.setWithAction(XFalse);
 	m_timeSld.setEventProc(ctrlProc,this);
-	m_timeLineSld.initWithoutSkin(XVector2(TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT * m_showTimeLineSum),100.0f,0.0f,SLIDER_TYPE_VERTICAL);
+	m_timeLineSld.initWithoutSkin(XVec2(TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT * m_showTimeLineSum),100.0f,0.0f,SLIDER_TYPE_VERTICAL);
 	m_timeLineSld.setWithAction(XFalse);
 	m_timeLineSld.setEventProc(ctrlProc,this);
 	updateCtrlsPosition();
@@ -507,22 +508,22 @@ void XTimeLines::draw()
 {
 	if(!m_isInited) return;
 	if(!m_visible) return;
-	XRender::drawFillBoxEx(m_position,XVector2((m_width + TIMELINE_SLD_WIDTH) * m_scale.x,TIMELINE_HEIGHT * m_scale.y),0.5f,0.5f,0.5f,false,false,true);	//时间显示线
+	XRender::drawFillRectEx(m_position,XVec2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f,false,false,true);	//时间显示线
 	//下面描绘时间线的总底
 	for(int i = m_curStartTimeLineIndex;i < m_timeLines.size();++ i)
 	{
 		if(i >= m_curStartTimeLineIndex + m_showTimeLineSum) break;
 		if(m_curChooseIndex == i) 
-			XRender::drawFillBox(m_position + XVector2(0.0f,(i - m_curStartTimeLineIndex + 1) * TIMELINE_HEIGHT * m_scale.y),
-				XVector2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.3f,0.3f,0.3f,true);	//显示下面的工具条
+			XRender::drawFillRect(m_position + XVec2(0.0f,(i - m_curStartTimeLineIndex + 1) * TIMELINE_HEIGHT * m_scale.y),
+				XVec2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.3f,0.3f,0.3f,true);	//显示下面的工具条
 		else 
-			XRender::drawFillBox(m_position + XVector2(0.0f,(i - m_curStartTimeLineIndex + 1) * TIMELINE_HEIGHT * m_scale.y),
-				XVector2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f,true);	//显示下面的工具条
+			XRender::drawFillRect(m_position + XVec2(0.0f,(i - m_curStartTimeLineIndex + 1) * TIMELINE_HEIGHT * m_scale.y),
+				XVec2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f,true);	//显示下面的工具条
 	}
-	XRender::drawFillBox(m_position + XVector2(0.0f,(m_showTimeLineSum + 1) * TIMELINE_HEIGHT * m_scale.y),
-		XVector2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f,true);	//显示下面的工具条
-	XRender::drawFillBoxEx(m_position + XVector2(0.0f,(m_showTimeLineSum + 2) * TIMELINE_HEIGHT * m_scale.y),
-		XVector2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f);	//显示下面的工具条
+	XRender::drawFillRect(m_position + XVec2(0.0f,(m_showTimeLineSum + 1) * TIMELINE_HEIGHT * m_scale.y),
+		XVec2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f,true);	//显示下面的工具条
+	XRender::drawFillRectEx(m_position + XVec2(0.0f,(m_showTimeLineSum + 2) * TIMELINE_HEIGHT * m_scale.y),
+		XVec2(m_width + TIMELINE_SLD_WIDTH,TIMELINE_HEIGHT) * m_scale,0.5f,0.5f,0.5f);	//显示下面的工具条
 
 	//下面显示时间标尺(尚未完成)
 	//下面描绘时间线
@@ -537,7 +538,7 @@ void XTimeLines::draw()
 		float offset = (m_curTimer * 0.001f * m_fps - m_curStartIndex) * TIMELINE_FRAME_WIDTH * m_scale.x;
 		XRender::drawLine(m_position.x + TIMELINE_TITLE_LEN * m_scale.x + offset,m_position.y + TIMELINE_HEIGHT * m_scale.y,
 			m_position.x + TIMELINE_TITLE_LEN * m_scale.x + offset,m_position.y + (m_showTimeLineSum + 1) * TIMELINE_HEIGHT * m_scale.y,
-			3.0f,0.5f,0.5f,0.0f,1.0f);
+			3.0f,XFColor(0.5f,0.5f,0.0f,1.0f));
 	}
 	//描绘标尺
 	int tmpI = XMath::toIntCeil(m_curStartIndex * m_frameTime * 0.01f);
@@ -553,13 +554,13 @@ void XTimeLines::draw()
 	for(int i = 0;i < sum;++ i)
 	{
 		tmpOffset = offset + i * distance * m_fps * TIMELINE_FRAME_WIDTH * m_scale.x;
-		XRender::drawLine(m_position.x + tmpOffset,m_position.y + TIMELINE_HEIGHT * m_scale.y,
-			m_position.x + tmpOffset,m_position.y + (TIMELINE_HEIGHT - 4) * m_scale.y,1.0f,0.0f,0.0f,1.0f,1.0f);
+		XRender::drawLine(m_position + XVec2(tmpOffset,TIMELINE_HEIGHT * m_scale.y),
+			m_position + XVec2(tmpOffset,(TIMELINE_HEIGHT - 4) * m_scale.y),1.0f,XFColor::blue);
 	}
 	for(int i = 0;i < m_ruleInfos.size();++ i)
 	{
-		XRender::drawLine(m_position.x + m_ruleInfos[i].offset * m_scale.x,m_position.y + TIMELINE_HEIGHT * m_scale.y,
-			m_position.x + m_ruleInfos[i].offset * m_scale.x,m_position.y + (TIMELINE_HEIGHT - 5) * m_scale.y,1.0f,1.0f,0.0f,0.0f,1.0f);
+		XRender::drawLine(m_position + XVec2(m_ruleInfos[i].offset,TIMELINE_HEIGHT) * m_scale,
+			m_position + XVec2(m_ruleInfos[i].offset,TIMELINE_HEIGHT - 5) * m_scale,1.0f,XFColor::red);
 		m_ruleFont.setString(XString::toString(m_ruleInfos[i].ruleData).c_str());
 		m_ruleFont.setPosition(m_ruleInfos[i].rulePosition);
 		m_ruleFont.draw();
@@ -589,20 +590,19 @@ void XTimeLines::draw()
 }
 void XTimeLines::move(float stepTime)
 {
-	if(m_isPlaying)
+	if(!m_isPlaying) return;
+	m_curTimer += stepTime;
+	if(m_curTimer >= m_allTime)
 	{
-		m_curTimer += stepTime;
-		if(m_curTimer >= m_allTime)
-		{
-			m_curTimer = m_allTime;
-			stop();
-		}
-		if(m_funTimeChange != NULL) m_funTimeChange(m_pClass,m_objectID);	//注意这里的ID，由于目前这个类没有给予控件的基类，所以这里使用的是一个不好的值
-		//这里设置滑动条跟进//优化为超过半场再跟进
-		if(m_curTimer * 0.001f * m_fps - m_curStartIndex > (m_canShowFrameSum >> 1))
-			m_timeSld.setCurValue((float)(m_curTimer - m_canShowTime * 0.5f) / (float)(m_allTime - m_canShowTime) * 100.0f);// setCurTimeSlider((float)m_curTimer / (float)(m_allTime - m_canShowTime) * 100.0f);
-		m_curTimeTxt.setString(("当前时间:" + XString::toString(m_curTimer)).c_str());
+		m_curTimer = m_allTime;
+		stop();
 	}
+	if(m_funTimeChange != NULL) m_funTimeChange(m_pClass,m_objectID);	//注意这里的ID，由于目前这个类没有给予控件的基类，所以这里使用的是一个不好的值
+	//这里设置滑动条跟进//优化为超过半场再跟进
+	if(m_curTimer * 0.001f * m_fps - m_curStartIndex > (m_canShowFrameSum >> 1))
+		m_timeSld.setCurValue((float)(m_curTimer - m_canShowTime * 0.5f) / (float)(m_allTime - m_canShowTime) * 100.0f,
+			true);// setCurTimeSlider((float)m_curTimer / (float)(m_allTime - m_canShowTime) * 100.0f);
+	m_curTimeTxt.setString(("当前时间:" + XString::toString(m_curTimer)).c_str());
 }
 void XTimeLines::release()
 {
@@ -614,19 +614,18 @@ void XTimeLines::release()
 	m_timeLines.clear();
 	m_isInited = XFalse;
 }
-XBool XTimeLines::mouseProc(float x,float y,XMouseState mouseState)
+XBool XTimeLines::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_visible) return XFalse;
 	if((mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK)
 		&& !m_isPlaying)
 	{//如果在范围内则跳转到制定的帧
-		XRect tmp;
-		tmp.set(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y + TIMELINE_HEIGHT * m_scale.y,
+		XRect tmp(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y + TIMELINE_HEIGHT * m_scale.y,
 			m_position.x + m_width * m_scale.x,m_position.y + (m_showTimeLineSum + 1) * TIMELINE_HEIGHT * m_scale.y);
-		if(tmp.isInRect(x,y))
+		if(tmp.isInRect(p))
 		{//设置当前的时间
-			m_curTimer = (m_curStartIndex + (int)((x - tmp.left) / (TIMELINE_FRAME_WIDTH * m_scale.x)) + 0.5f) * m_frameTime;
-			m_curChooseIndex = (y - tmp.top) / (TIMELINE_HEIGHT * m_scale.y) + m_curStartTimeLineIndex;
+			m_curTimer = (m_curStartIndex + (int)((p.x - tmp.left) / (TIMELINE_FRAME_WIDTH * m_scale.x)) + 0.5f) * m_frameTime;
+			m_curChooseIndex = (p.y - tmp.top) / (TIMELINE_HEIGHT * m_scale.y) + m_curStartTimeLineIndex;
 			if(m_curTimer > m_allTime) m_curTimer = m_allTime;
 			if(m_funTimeChange != NULL) m_funTimeChange(m_pClass,m_objectID);	//注意这里的ID，由于目前这个类没有给予控件的基类，所以这里使用的是一个不好的值
 			m_curTimeTxt.setString(("当前时间:" + XString::toString(m_curTimer)).c_str());
@@ -655,12 +654,11 @@ XBool XTimeLines::mouseProc(float x,float y,XMouseState mouseState)
 		{//下面进行移动
 			if(m_isMouseMove)
 			{//需要拖动了才计算
-				XRect tmp;
-				tmp.set(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y + TIMELINE_HEIGHT * m_scale.y,
+				XRect tmp(m_position.x + TIMELINE_TITLE_LEN * m_scale.x,m_position.y + TIMELINE_HEIGHT * m_scale.y,
 					m_position.x + m_width * m_scale.x,m_position.y + (m_showTimeLineSum + 1) * TIMELINE_HEIGHT * m_scale.y);
-				if(tmp.isInRect(x,y))
+				if(tmp.isInRect(p))
 				{
-					int toTime = (m_curStartIndex + (int)((x - tmp.left) / (TIMELINE_FRAME_WIDTH * m_scale.x)) + 0.5f) * m_frameTime;
+					int toTime = (m_curStartIndex + (int)((p.x - tmp.left) / (TIMELINE_FRAME_WIDTH * m_scale.x)) + 0.5f) * m_frameTime;
 					m_timeLines[m_curChooseIndex]->moveKeyFrame(m_mouseDragKFTime,toTime);
 				}
 			}
@@ -684,7 +682,7 @@ void XTimeLines::play()
 }
 void XTimeLines::stop()
 {
-	if(!m_isPlaying) return;
+	if (!m_isPlaying) return;
 	m_isPlaying = false;
 	//回复各个控件的状态
 	m_fpsEdt.enable();
@@ -693,16 +691,16 @@ void XTimeLines::stop()
 	m_headBtn.enable();		//回到头的按钮
 	m_endBtn.enable();		//回到尾的按钮
 	m_timeSld.enable();		//时间帧的滑动条
-	if(m_funStop != NULL) m_funStop(m_pClass,m_objectID);
+	if (m_funStop != NULL) m_funStop(m_pClass, m_objectID);
 }
-void XTimeLines::setPosition(float x,float y)
+void XTimeLines::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	updateCtrlsPosition();
 	for(int i = m_curStartTimeLineIndex;i < m_timeLines.size();++ i)
 	{
 		if(i >= m_curStartTimeLineIndex + m_showTimeLineSum) break;
-		m_timeLines[i]->setPosition(x,y + (i + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT * m_scale.y);
+		m_timeLines[i]->setPosition(XVec2(p.x,p.y + (i + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT * m_scale.y));
 	}
 //	m_ruleHead.setPosition(m_position.x + m_ruleHeadOffset * m_scale.x,m_position.y);
 //	m_ruleMiddle.setPosition(m_position.x + m_ruleMiddleOffset * m_scale.x,m_position.y);
@@ -712,18 +710,18 @@ void XTimeLines::setPosition(float x,float y)
 		m_ruleInfos[i].rulePosition.set(m_position.x + m_ruleInfos[i].offset * m_scale.x,m_position.y);
 	}
 }
-void XTimeLines::setSize(float x,float y)
+void XTimeLines::setSize(const XVec2& s)
 {
-	if(x < 0.0f || y < 0.0f) return;	//非法的数据
-	m_scale.set(x,y);
-	m_ruleFont.setScale(x,y);
-//	m_ruleHead.setScale(x,y);
-//	m_ruleMiddle.setScale(x,y);
-//	m_ruleEnd.setScale(x,y);
-	setPosition(m_position.x,m_position.y);
+	if(s.x < 0.0f || s.y < 0.0f) return;	//非法的数据
+	m_scale = s;
+	m_ruleFont.setScale(m_scale);
+//	m_ruleHead.setScale(m_scale);
+//	m_ruleMiddle.setScale(m_scale);
+//	m_ruleEnd.setScale(m_scale);
+	setPosition(m_position);
 	for(unsigned int i = 0;i < m_timeLines.size();++ i)
 	{
-		m_timeLines[i]->setScale(x,y);
+		m_timeLines[i]->setScale(m_scale);
 	}
 }
 void XTimeLines::setCurTimeSlider(float p)	//设置当前的百分比位置
@@ -745,7 +743,8 @@ void XTimeLines::setCurTimeLineSlider(float p)	//设置当前的百分比位置
 	for(int i = m_curStartTimeLineIndex;i < m_timeLines.size();++ i)
 	{
 		if(i >= m_curStartTimeLineIndex + m_showTimeLineSum) break;
-		m_timeLines[i]->setPosition(m_position.x,m_position.y + (i + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT * m_scale.y);
+		m_timeLines[i]->setPosition(XVec2(m_position.x,
+			m_position.y + (i + 1 - m_curStartTimeLineIndex) * TIMELINE_HEIGHT * m_scale.y));
 	}
 }
 void XTimeLines::setToPrev()	//向前走一页
@@ -755,7 +754,8 @@ void XTimeLines::setToPrev()	//向前走一页
 		m_curStartIndex -= m_canShowFrameSum;
 		if(m_curStartIndex < 0) m_curStartIndex = 0;
 		int allFrame = m_allTime * 0.001f * m_fps;
-		m_timeSld.setCurValue((float)m_curStartIndex /(float)(allFrame - m_canShowFrameSum) * 100.0f);
+		m_timeSld.setCurValue((float)m_curStartIndex /(float)(allFrame - m_canShowFrameSum) * 100.0f,
+			true);
 		updateRule();
 	}else
 	{
@@ -769,7 +769,8 @@ void XTimeLines::setToNext()	//向后走一页
 		m_curStartIndex += m_canShowFrameSum;
 		int allFrame = m_allTime * 0.001f * m_fps;
 		if(m_curStartIndex > (allFrame - m_canShowFrameSum)) m_curStartIndex = allFrame - m_canShowFrameSum;
-		m_timeSld.setCurValue((float)m_curStartIndex /(float)(allFrame - m_canShowFrameSum) * 100.0f);
+		m_timeSld.setCurValue((float)m_curStartIndex /(float)(allFrame - m_canShowFrameSum) * 100.0f,
+			true);
 		updateRule();
 	}else
 	{

@@ -12,8 +12,8 @@ namespace XE{
 class XSamplingFilter
 {
 private:
-	int m_size;	//采样队列的深度
-	int m_threshold;	//最少的使能标准
+	int m_size;				//采样队列的深度
+	int m_threshold;		//最少的使能标准
 	std::deque<int> m_ids;	//所有识别的ID的队列
 	std::vector<int> m_sampleIDs;	//目前拥有的ID
 	std::vector<int> m_idSum;	//ID的统计数据
@@ -24,8 +24,8 @@ private:
 public:
 	XSamplingFilter()
 		:m_curID(-1)
-		,m_size(10)
-		,m_threshold(5)
+		, m_size(10)
+		, m_threshold(5)
 	{}
 	void clear()	//清空当前的统计数据
 	{
@@ -41,10 +41,9 @@ public:
 	const std::deque<int> &getIds()const{return m_ids;}
 	void pushAID(int id);	//推入一个采样数据
 	int getCurID()const{return m_curID;}	//获取当前的统计ID
-	bool init(int size,int threshold)
+	bool init(int size, int threshold)
 	{
-		if(size <= 0) return false;
-		if(threshold < 1) return false;
+		if (size <= 0 || threshold < 1) return false;
 		setSize(size);
 		setThreshold(threshold);
 		return true;

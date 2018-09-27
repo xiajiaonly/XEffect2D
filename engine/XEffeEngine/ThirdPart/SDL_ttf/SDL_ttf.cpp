@@ -1713,7 +1713,11 @@ SDL_Surface *TTF_RenderText_Blended(TTF_Font *font,
 }
 
 SDL_Surface *TTF_RenderUTF8_Blended(TTF_Font *font,
-                const char *text, SDL_Color fg)
+//+++++++ 原始版本 +++++++
+//	const char *text, SDL_Color fg)
+//+++++++ 经过优化 +++++++
+	const char *text, SDL_Color fg, SDL_Surface *dstSurface)
+//------------------------
 {
     SDL_bool first;
     int xstart;
@@ -1740,8 +1744,19 @@ SDL_Surface *TTF_RenderUTF8_Blended(TTF_Font *font,
     }
 
     /* Create the target surface */
-    textbuf = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32,
-                               0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+//+++++++ 原始版本 +++++++
+//	textbuf = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32,
+//			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+//+++++++ 经过优化 +++++++
+	if (dstSurface == NULL || dstSurface->w != width || dstSurface->h != height || dstSurface->format->BitsPerPixel != 32 || dstSurface->format->Rmask != 0x00FF0000 ||
+		dstSurface->format->Gmask != 0x0000FF00 || dstSurface->format->Bmask != 0x000000FF || dstSurface->format->Amask != 0xFF000000)
+	{
+		if (dstSurface != NULL) SDL_FreeSurface(dstSurface);
+		dstSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32,
+			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	}
+	textbuf = dstSurface;
+//------------------------
     if ( textbuf == NULL ) {
         return(NULL);
     }

@@ -4,7 +4,7 @@ INLINE void XWindLine::release()	//释放资源
 	XSmoothLine::release();
 	m_pointsLife.clear();
 }
-INLINE void XWindLine::pushAPoint(const XVector2 &p,float life)	//这个点是已经经过插值运算了的
+INLINE void XWindLine::pushAPoint(const XVec2& p,float life)	//这个点是已经经过插值运算了的
 {
 	XSmoothLine::pushAPoint(p);
 	m_pointsLife.push_back(life);
@@ -19,9 +19,9 @@ INLINE bool XWindLine::init(int insertSum,float insertLength,float life,float w,
 }
 INLINE void XWindLine::clear() 
 {
-	for(unsigned int i = 0;i < m_points.size();++ i)
+	for(auto it = m_points.begin();it != m_points.end();++ it)
 	{
-		XMem::XDELETE(m_points[i]);
+		XMem::XDELETE(*it);
 	}
 	m_points.clear();
 	m_pointsLife.clear();

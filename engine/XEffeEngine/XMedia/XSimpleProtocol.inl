@@ -59,10 +59,12 @@ INLINE int XSimpleProtocol::decodeData(unsigned char *data)				//½«Ô­Ê¼Êı¾İ½âÎöÎ
 {
 	if(m_isSigned && data[0] & 0x40)
 	{//¸ºÊı
-		return - (((data[0] << 7) + data[1]) & 0x1fff);
+		//return - (((data[0] << 7) + data[1]) & 0x1fff);
+		return - ((((data[0] & 0x7f) << 7) + (data[1] & 0x7f)) & 0x1fff);
 	}else
 	{
-		return (data[0] << 7) + data[1];
+		return ((data[0] & 0x7f) << 7) + (data[1] & 0x7f);
+		//return (data[0] << 7) + data[1];
 	}
 }
 INLINE void XSimpleProtocol::encodeData(int src,unsigned char *data)	//½«Ä¿±êÊı¾İ±àÂëÎªÔ´Êı¾İ

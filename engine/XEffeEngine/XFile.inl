@@ -2,20 +2,20 @@ inline std::string getWorkPath()
 {//获取大当前工作路径
 	static char path[512] = "";
 #ifdef UNICODE
-	if (GetCurrentDirectoryA(512, path) <= 0) return "";
+	if (GetCurrentDirectoryA(512, path) <= 0) return XString::gNullStr;
 #else
-	if (GetCurrentDirectory(512, path) <= 0) return "";
+	if (GetCurrentDirectory(512, path) <= 0) return XString::gNullStr;
 #endif
 	return path;
 }
 inline std::string getFileExtension(const char * filename)
 {//获取文件的扩展名
-	if (filename == NULL) return " ";
+	if (filename == NULL) return "";
 	int len = XString::getCharPosition(filename, '.', 1);
-	if (len < 0) return " ";
+	if (len < 0) return "";
 	return filename + len + 1;
 }
-inline XBool setWorkPath(const std::string &path)
+inline XBool setWorkPath(const std::string& path)
 {//设置当前工作路径
 #ifdef UNICODE
 	return SetCurrentDirectoryA(path.c_str());
@@ -27,13 +27,13 @@ inline std::string getCurrentExeFileFullPath()
 {//获取当前exe文件的全路径文件名
 	char lpFileName[MAX_PATH];
 #ifdef UNICODE
-	if (GetModuleFileNameA(NULL, lpFileName, MAX_PATH) <= 0) return "";
+	if (GetModuleFileNameA(NULL, lpFileName, MAX_PATH) <= 0) return XString::gNullStr;
 #else
-	if (GetModuleFileName(NULL, lpFileName, MAX_PATH) <= 0) return "";
+	if (GetModuleFileName(NULL, lpFileName, MAX_PATH) <= 0) return XString::gNullStr;
 #endif
 	return lpFileName;
 }
-inline std::string getFullPath(const std::string &filename)
+inline std::string getFullPath(const std::string& filename)
 {//相对路径转换成绝对路径
 	//方案1、自己分析，当相对路径不存在时这里会存在问题
 	//char currentPath[MAX_PATH + 1];
@@ -59,9 +59,9 @@ inline std::string getFullPath(const std::string &filename)
 	//方案2、直接调用系统API，妥妥的
 	char currentPath[MAX_PATH + 1];
 #ifdef UNICODE
-	if (!GetFullPathNameA(filename.c_str(), MAX_PATH + 1, currentPath, NULL)) return "";
+	if (!GetFullPathNameA(filename.c_str(), MAX_PATH + 1, currentPath, NULL)) return XString::gNullStr;
 #else
-	if (!GetFullPathName(filename.c_str(), MAX_PATH + 1, currentPath, NULL)) return "";
+	if (!GetFullPathName(filename.c_str(), MAX_PATH + 1, currentPath, NULL)) return XString::gNullStr;
 #endif
 	return currentPath;
 }
@@ -71,7 +71,7 @@ inline XBool isAbsolutePath(const char * path)	//是否为绝对路径
 	if (strlen(path) > 2 && path[1] == ':') return XTrue;
 	return XFalse;
 }
-inline std::string mergeFilename(const std::string &base, const std::string &offset)
+inline std::string mergeFilename(const std::string& base, const std::string& offset)
 {//这里假设base和offset都是合法的路径
 	if (isAbsolutePath(offset.c_str())) return offset;
 	int depth, lastPos;
@@ -83,15 +83,27 @@ inline std::string mergeFilename(const std::string &base, const std::string &off
 //title:窗口名称
 //isOpen:按钮是否为保存
 //defExt:默认扩展名
-inline std::string getChooseFilename(char * defName, char * title, bool isOpen, const std::string&defExt)
+//withFolder:是否可以选择文件夹
+//注意：这个函数调用之后会造成工作路径改变，可以影响到一些文件操作
+inline std::string getChooseFilename(char * defName, char * title, bool isOpen,
+	const std::string&defExt, bool withFolder)
 {
 	char OFN_Direct[MAX_PATH];	//全路径
-	char OFN_Name[MAX_PATH];	//文件名
-	memset(OFN_Direct,0,MAX_PATH);
-	memset(OFN_Name,0,MAX_PATH);
+	//char OFN_Name[MAX_PATH];	//文件名
+	memset(OFN_Direct, 0, MAX_PATH);
+	//memset(OFN_Name, 0, MAX_PATH);
 	//strcpy(OFN_Name,"c:config.xml");
-	if (defName != NULL) strcpy(OFN_Direct, defName);
-	if (!popFileOpenDlg(XEG.getHWND(), OFN_Direct, OFN_Name, title, isOpen, defExt) || strlen(OFN_Name) <= 0) return "";
+	if (defName != NULL) strcpy_s(OFN_Direct, MAX_PATH, defName);
+	//popFileOpenDlg(XEG.getHWND(), OFN_Direct, OFN_Name, title, isOpen, defExt);
+	//return OFN_Direct;
+	//if (withFolder)
+	//{
+		if (!popFileOpenDlg(XEG.getHWND(), OFN_Direct, nullptr, title, isOpen, defExt, withFolder)) return XString::gNullStr;
+	//}
+	//else
+	//{
+	//	if (!popFileOpenDlg(XEG.getHWND(), OFN_Direct, nullptr, title, isOpen, defExt, withFolder) || strlen(OFN_Name) <= 0) return XString::gNullStr;
+	//}
 	return OFN_Direct;
 }
 inline std::string getWindowsSysFontPath()
@@ -102,18 +114,18 @@ inline std::string getWindowsSysFontPath()
 }
 inline std::string getFilenameFormPath(const char *path)
 {
-	if (path == NULL) return "";
+	if (path == NULL) return XString::gNullStr;
 	int ret = getPathDeepByChar(path);
 	if (path[ret] == '/' || path[ret] == '\\') return path + ret + 1;
 	return path + ret;
 }
 inline std::string getFilePath(const char *filename)
 {
-	if(filename == NULL) return "";
+	if (filename == NULL) return XString::gNullStr;
 	char tmpFilename[MAX_PATH];
-	strcpy(tmpFilename,filename);
+	strcpy_s(tmpFilename, MAX_PATH, filename);
 	int index = getPathDeepByChar(tmpFilename);
-	if(index == 0) return "";	//路径不是绝对路径
+	if (index == 0) return XString::gNullStr;	//路径不是绝对路径
 	tmpFilename[index] = '\0';
 	return tmpFilename;
 }

@@ -29,12 +29,12 @@ private:
 	int m_width;					//地图的尺寸
 	int m_height;	
 
-	XVector3 m_position;	//地形的位置
-	XVector3 m_scale;		//地形的尺寸
-	XVector3 m_angle;		//地形的家都
+	XVec3 m_position;	//地形的位置
+	XVec3 m_scale;		//地形的尺寸
+	XVec3 m_angle;		//地形的家都
 	//float m_distance;
 	float getHeight(float x,float z) const;
-	XVector2 getTexturePosition(float x,float z) const;
+	XVec2 getTexturePosition(float x,float z) const;
 	int m_allPointSum;		//总的顶点数
 	int m_allFaceSum;		//总的面数
 	float m_coordOffsetX;	//贴图的步进
@@ -48,8 +48,8 @@ public:
 	float *m_t;
 	float *m_c;
 private:
-	XVector3 *m_faceN;		//面的法线
-	//XVector3 *m_pointN;	//点的法线
+	XVec3 *m_faceN;		//面的法线
+	//XVec3 *m_pointN;	//点的法线
 	unsigned int *m_index;	//索引
 
 	bool m_withTexGen;	//是否使用金属反射
@@ -65,16 +65,16 @@ public:
 public:
 	XBool init(const char *mapFilename,const char * texFilename,int w,int h,
 		XBool withColor = XFalse,	//是否使用颜色
-		XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);	//从文件中读取地形数据
+		XResPos resourcePosition = RES_SYS_DEF);	//从文件中读取地形数据
 	XBool init(const float *mapData,const char * texFilename,int w,int h,
 		XBool withColor = XFalse,	//是否使用颜色
-		XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);	//直接从数组中读取数据
+		XResPos resourcePosition = RES_SYS_DEF);	//直接从数组中读取数据
 	XBool initEx(const char *picFilename,const char * texFilename,	//从黑白的图片中载入高度图
 		XBool withColor = XFalse,	//是否使用颜色
-		XResourcePosition resourcePosition = RESOURCE_SYSTEM_DEFINE);	//从文件中读取地形数据
+		XResPos resourcePosition = RES_SYS_DEF);	//从文件中读取地形数据
 	void draw(XBool withTex = XTrue);
 	void drawNormal(int step = 1);	//描绘法线
-	void updateTexture(const unsigned char * data);
+	void updateTexture(const void * data);
 	void setTexture(unsigned int tex);	//这个函数用于测试
 	void setTexture(const XTextureData &tex);
 	bool saveToObj(const char * filename);	//将数据保存为obj格式的模型文件(尚未实现)
@@ -94,19 +94,19 @@ public:
 	XBool updateByStep(int step);	//使用步进step更新深度图的显示，默认情况下step = 1;
 
 	void setPosition(float x,float y,float z) {m_position.set(x,y,z);}
-	void setPosition(const XVector3 &pos) {m_position = pos;}
+	void setPosition(const XVec3& pos) {m_position = pos;}
 	void setScale(float x,float y,float z) {m_scale.set(x,y,z);}
-	void setScale(const XVector3 &scale) {m_scale = scale;}
+	void setScale(const XVec3& scale) {m_scale = scale;}
 	void setAngle(float x,float y,float z) {m_angle.set(x,y,z);}
-	void setAngle(const XVector3 &angle) {m_angle = angle;}
+	void setAngle(const XVec3& angle) {m_angle = angle;}
 
 	void setWithTexGen(bool flag){m_withTexGen = flag;}
 	void release();
 	void setReflectRate(float rate);
-	XVector3 myNormalize(float x,float z); //经过特定优化的归一化函数
-	bool getMousePoint(XVector2 &outPoint);	//[点拾取]根据当前鼠标的位置获取目前鼠标在3D地形中拾取的位置，如果没有拾取到地形则返回false
-	bool getMousePointEx(const XVector3 &n,const XVector3 &f,XVector2 &outPoint);	//[面拾取]
-	XVector3 getMyNormal(int x,bool flag);	//经过特定优化的求法线函数
+	XVec3 myNormalize(float x,float z); //经过特定优化的归一化函数
+	bool getMousePoint(XVec2& outPoint);	//[点拾取]根据当前鼠标的位置获取目前鼠标在3D地形中拾取的位置，如果没有拾取到地形则返回false
+	bool getMousePointEx(const XVec3& n,const XVec3& f,XVec2& outPoint);	//[面拾取]
+	XVec3 getMyNormal(int x,bool flag);	//经过特定优化的求法线函数
 private:
 	XTerrain *m_pSubject;	//从属目标
 	bool m_subjectV;		//从属的标志
@@ -157,7 +157,8 @@ public:
 //这个函数尚未经过测试
 namespace X3D
 {
-	extern void fitTerrain(const float *inData,int inX,int inY,float *outData,int outX,int outY);//地形适应,将任意尺寸的地形按照3次贝塞尔差值成需要的地形
+	//地形适应,将任意尺寸的地形按照3次贝塞尔插值成需要的地形
+	extern void fitTerrain(const float *inData,int inX,int inY,float *outData,int outX,int outY);
 }
 
 //这是一个纯算法的类用于对太多面的地形就行优化，减少不必要的面
@@ -165,7 +166,7 @@ struct XTerrainFaceInfo
 {
 	bool isEnable;		//是否有效
 	int index[3];		//三个顶点的索引
-	XVector3 normal;	//法线方向
+	XVec3 normal;	//法线方向
 	XTerrainFaceInfo()
 		:isEnable(false)
 	{}

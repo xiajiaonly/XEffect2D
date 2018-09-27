@@ -47,16 +47,16 @@
 #include "XPhysics/XPhysicsBasic.h"
 #include "XGameElement/XGameElement.h"
 #include "XXml.h"
-#include "XCommonDefine.h"
 #include "XConfigManager.h"
 #include "XTimer.h"
 #include "XErrorReporter.h"
 #include "XThread.h"
 #include "XPixelCommon.h"
-#include "XInputEventCommon.h"
 #include "XWindowCommon.h"
 #include "XMath/XPressDataMode.h"
 
+#include "XInputEventCommon.h"
+#include "XCommonDefine.h"
 #include "XMedia/XMovieFfmpeg.h"
 
 #include "XBmp.h"

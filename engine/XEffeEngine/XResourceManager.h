@@ -7,6 +7,7 @@
 //--------------------------------
 //这是一个资源管理器的类，是所有资源的最上层管理器
 #include <list>
+#include "XCritical.h"
 
 namespace XE{
 //资源的类型
@@ -57,75 +58,85 @@ private:
 	void release();			//资源的释放函数
 public:
 	int m_ID;				//资源的ID
-	char *m_name;			//资源的名字，不区分大小写的资源文件以及路径名
+	std::string m_resName;			//资源的名字，不区分大小写的资源文件以及路径名
 	XResourceType m_type;	//资源的类型
 	int m_counter;			//资源的引用计数器
 
 	void *m_pointer;		//资源实体的指针
 
-	XBool load(XResourcePosition resoursePosition);			//资源的载入函数
-	XBool isLoaded() const {return m_isInited;}
+	XBool load(XResPos resPos, bool isInThread = false);			//资源的载入函数
+	bool update(XResPos resPos, bool isInThread = false);	//更新资源
+	XBool isLoaded() const { return m_isInited; }
 	XResourceInfo()
 		:m_isInited(XFalse)
-		,m_name(NULL)
-		,m_pointer(NULL)
-		,m_counter(0)
-		,m_type(RESOURCE_TYPE_NULL)
+		, m_pointer(NULL)
+		, m_counter(0)
+		, m_type(RESOURCE_TYPE_NULL)
 	{
 		static int index = 0;
-		m_ID = index ++;
+		m_ID = index++;
 	}
 	//重载赋值操作符、拷贝构造函数和析构函数
 	XResourceInfo(XResourceInfo &temp)
 	{
 		m_isInited = temp.m_isInited;
 		m_ID = temp.m_ID;				//资源的ID
-		m_name = temp.m_name;			//资源的名字，不区分大小写的资源文件以及路径名
+		m_resName = temp.m_resName;			//资源的名字，不区分大小写的资源文件以及路径名
 		m_type = temp.m_type;	//资源的类型
-		++ m_counter;			//资源的引用计数器
+		++m_counter;			//资源的引用计数器
 		m_pointer = temp.m_pointer;		//资源实体的指针
 	}
 	~XResourceInfo()
 	{
-		if(m_counter <= 0) release();
+		if (m_counter <= 0) release();
 	}
 	XResourceInfo &operator= (const XResourceInfo & temp)
 	{
-		if(this == & temp) return * this;
+		if (this == &temp) return *this;
 		m_isInited = temp.m_isInited;
 		m_ID = temp.m_ID;				//资源的ID
-		m_name = temp.m_name;			//资源的名字，不区分大小写的资源文件以及路径名
+		m_resName = temp.m_resName;			//资源的名字，不区分大小写的资源文件以及路径名
 		m_type = temp.m_type;	//资源的类型
-		++ m_counter;			//资源的引用计数器
+		++m_counter;			//资源的引用计数器
 		m_pointer = temp.m_pointer;		//资源实体的指针
-		return * this;
+		return *this;
 	}
 };
 //主要是为了解决同样的资源重复载入的问题，目前只完成图项部分
-class XResourceManager	
+class XResourceManager
 {
 public:
 	XResourceManager()
 		:m_resourceSum(0)
+		, m_canReuse(true)
 	{}
-	virtual ~XResourceManager(){release();}
+	virtual ~XResourceManager() { release(); }
 protected:
 	XResourceManager(const XResourceManager&);
 	XResourceManager &operator= (const XResourceManager&);
 private:
+	XCritical m_mutex;	//确保多线程安全
 	//std::vector<XResourceInfo *> m_resourceBuff;	//资源的堆栈
 	std::list<XResourceInfo *> m_resourceBuff;
 	int m_resourceSum;			//目前资源的数量
 	void release();				//释放所有的资源
+	bool m_canReuse;		//是否允许资源复用
 private:
 	XBool isLoaded(const char * name);	//判断指定资源是否已经载入
 	XResourceInfo * isLoad(const char * name);
 public:
-	XResourceInfo *loadResource(const char * name,XResourceType type,XResourcePosition resoursePosition);	//载入指定资源
+	//是否允许资源复用，资源复用时，多线程资源更新必须要互斥，性能较低
+	//如果不需要资源复用，则资源更新效率较高
+	void setCanReuse(bool flag) { m_canReuse = flag; }
+	XResourceInfo *loadResource(const char* name, XResourceType type,
+		XResPos resPos, bool isInThread = false);	//载入指定资源
+	bool updateRes(XResourceInfo* &res, const char* name,
+		XResPos resPos, bool isInThread = false);
 	XBool releaseResource(const XResourceInfo *p);	//释放一个资源
 	XResourceInfo *copyResource(XResourceInfo *p)
 	{
-		if(p != NULL) ++ p->m_counter;
+		if (!m_canReuse || p == nullptr) return nullptr;
+		++p->m_counter;
 		return p;
 	}
 };

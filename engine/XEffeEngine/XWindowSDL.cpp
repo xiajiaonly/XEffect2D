@@ -1,9 +1,11 @@
 #include "XStdHead.h"
+#if CREATE_WINDOW_METHOD == 0
 #include "XWindowSDL.h"
+#include "XSDL.h"
 #include "XMouseAndKeyBoardDefine.h"
 namespace XE{
-//bool XWindowSDL::createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame)
-bool XWindowSDL::createWindow(int width,int height,const char *,int isFullScreen,int withFrame)
+//bool XWindowSDL::createWindow(int width,int height,const char *windowTitle,bool isFullScreen,bool withFrame)
+bool XWindowSDL::createWindow(int width,int height,const char *, bool isFullScreen, bool withFrame)
 {
 //	const SDL_VideoInfo* info = NULL;	//显示设备信息
 //	int bpp = 0;			//窗口色深
@@ -31,18 +33,23 @@ bool XWindowSDL::createWindow(int width,int height,const char *,int isFullScreen
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);		//设置蓝色位宽
 		SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);	//设置颜色位宽
+
+		SDL_GL_SetAttribute(SDL_GL_ACCUM_RED_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_ACCUM_GREEN_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_ACCUM_BLUE_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_ACCUM_ALPHA_SIZE, 8);
 		bpp = 32;
 	}
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);	//设置双缓存
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);	//使得STENCIL生效，能产生镜面效果。
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);	//设置双缓存
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,1);	//设置平滑处理,没有生效，多重采样要生效的话必须要SDL_GL_DOUBLEBUFFER为1
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,4);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,4);	//设置多重采样的采样率
 
 	//SDL_NOFRAME没有边框的 |SDL_RESIZABLE
-	if(isFullScreen != 0) flags = SDL_OPENGL | SDL_FULLSCREEN | SDL_DOUBLEBUF;			//设置为全屏
+	if(isFullScreen) flags = SDL_OPENGL | SDL_FULLSCREEN | SDL_DOUBLEBUF;			//设置为全屏
 	else flags = SDL_OPENGL | SDL_DOUBLEBUF;	//SDL_RESIZABLE
-	if(withFrame == 0) flags |= SDL_NOFRAME;
+	if(!withFrame) flags |= SDL_NOFRAME;
 	//窗口标志符
 	if((m_screen = SDL_SetVideoMode(width, height, bpp, flags)) == NULL) 
 	{//初始化窗口信息
@@ -358,4 +365,25 @@ int XWindowSDL::mapKey(int key)
 		return XKEY_UNKNOWN;
 	}
 }
+void XWindowSDL::setWindowTitle(const std::string& title) { SDL_WM_SetCaption(XString::ANSI2UTF8(title.c_str()).c_str(), NULL); }
+unsigned char *XWindowSDL::getWindowBuff()
+{
+	if (m_screen == NULL) return NULL;
+	return (unsigned char *)m_screen->pixels;
 }
+bool XWindowSDL::getCurcor()
+{
+	return SDL_ShowCursor(-1) == 1;
+}
+void XWindowSDL::release()
+{
+	SDL_FreeSurface(m_screen);
+	SDL_Quit();
+}
+void XWindowSDL::update()
+{
+	//glFlush();
+	SDL_GL_SwapBuffers();
+}
+}
+#endif

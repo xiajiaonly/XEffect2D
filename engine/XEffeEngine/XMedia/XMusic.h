@@ -19,11 +19,7 @@ public:
 	{
 		m_music.clear();
 	}
-	virtual ~XMusic()
-	{
-		XCurSndCore.haltMusic();
-		clearUp();
-	}
+	virtual ~XMusic();
 protected:
 	XMusic(const XMusic&);
 	XMusic &operator= (const XMusic&);
@@ -43,39 +39,12 @@ public:
 	void fadeOutMusic(int ms);
 	XBool fadeInMusic(XMusicHandle musicHandle,int loop = 0,int ms = 0);
 
-	XBool isEnd() {return !XCurSndCore.isMusicPlaying();}
-	void pause(){XCurSndCore.pauseMusic();}
-	void resume(){XCurSndCore.resumeMusic();}
-	void rewind(){XCurSndCore.rewindMusic();}
-	XBool isPause() {return XCurSndCore.isMusicPause();}
+	XBool isEnd();
+	void pause();
+	void resume();
+	void rewind();
+	XBool isPause();
+	static bool getIsInvalid(XMusicHandle hangle){return hangle < 0;} 
 };
-inline XBool XMusic::fadeInMusic(XMusicHandle musicHandle,int loop,int ms)
-{
-	if(musicHandle < 0 || musicHandle >= m_music.size()
-		|| m_music[musicHandle] == NULL) return XFalse;
-	if(XCurSndCore.musicFadeIn(m_music[musicHandle],loop,ms) == -1) return XFalse;
-	return XTrue;
-}
-inline void XMusic::fadeOutMusic(int ms)
-{
-	XCurSndCore.musicFadeOut(ms);
-}
-inline void XMusic::clearOneMusic(XMusicHandle musicHandle)
-{
-	if(musicHandle < 0 || musicHandle >= m_music.size()
-		|| m_music[musicHandle] == NULL) return;
-	if(m_music[musicHandle] != NULL)
-	{
-		XCurSndCore.clearMusic(m_music[musicHandle]);
-		m_music[musicHandle] = NULL;
-	}
-}
-inline void XMusic::setMusicVolume(int volume)
-{
-	if(volume < 0) volume = 0;
-	if(volume > 128) volume = 128;
-	m_musicVolume = volume;
-	XCurSndCore.setMusicVolume(m_musicVolume);
-}
 }
 #endif

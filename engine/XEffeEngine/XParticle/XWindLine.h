@@ -17,12 +17,12 @@ private:
 	XFColor m_color;
 
 	virtual void release();	//释放资源
-	virtual void pushAPoint(const XVector2 &p,float life);	//这个点是已经经过插值运算了的
+	virtual void pushAPoint(const XVec2& p,float life);	//这个点是已经经过插值运算了的
 public:
 	//life:点的生命，决定线的长度，w:线的宽度系数，a:线的透明系数
 	bool init(int insertSum,float insertLength,float life,float w,float a);
 	virtual void draw();
-	virtual void addAPoint(const XVector2 & p);	//插入一个点
+	virtual void addAPoint(const XVec2& p);	//插入一个点
 	virtual void move(float stepTime);	//生命衰减
 	virtual void clear();
 	XWindLine()

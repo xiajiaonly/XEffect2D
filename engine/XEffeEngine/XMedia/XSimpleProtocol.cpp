@@ -47,7 +47,7 @@ void XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 					m_callBackFun(tmp,m_pClass);
 				}
 
-				m_recvedDataLen = 0;;
+				m_recvedDataLen = 0;
 				recvDataProc(data + 1,len - 1);
 			}
 			break;
@@ -86,7 +86,7 @@ void XSimpleProtocol::recvDataProc(unsigned char *data,int len)
 					return;
 				}else
 				{//´íÎóµÄÊý¾Ý
-					sprintf(tmpStr,"0x%02x ",data[i]);
+					sprintf_s(tmpStr,16,"0x%02x ",data[i]);
 					tmp += tmpStr;
 				}
 			}

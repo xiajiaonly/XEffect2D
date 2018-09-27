@@ -24,9 +24,9 @@ XFontUnicode::XFontUnicode()
 	,m_layout(0,0)
 	,m_cp(NULL)
 {
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
-	m_textPageOrder = XMem::createArrayMem<int>(m_maxStringLen);
+	m_textPosition.resize(m_maxStringLen);
+	m_textRect.resize(m_maxStringLen);
+	m_textPageOrder.resize(m_maxStringLen);
 	m_objType = OBJ_FONTUNICODE;
 //	++ testE;
 //	printf("%d\n",testE);
@@ -43,9 +43,10 @@ XFontUnicode::XFontUnicode(int maxStrLen)
 	,m_layout(0,0)
 	,m_cp(NULL)
 {
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
-	m_textPageOrder = XMem::createArrayMem<int>(m_maxStringLen);
+	m_textPosition.resize(m_maxStringLen);
+	m_textRect.resize(m_maxStringLen);
+	m_textPageOrder.resize(m_maxStringLen);
+	m_objType = OBJ_FONTUNICODE;
 
 //	++ testE;
 //	printf("%d\n",testE);
@@ -54,10 +55,10 @@ XFontUnicode::~XFontUnicode()
 {
 	if(m_cp != NULL && -- m_cp->m_counter <= 0)
 	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		for(int i = 0;i < m_pageSum;++ i)
-		{
-			m_texture[i].release();
-		}
+		//for(int i = 0;i < m_pageSum;++ i)
+		//{
+		//	m_texture[i].release();
+		//}
 		XMem::XDELETE_ARRAY(m_texture);
 		XMem::XDELETE_ARRAY(m_fontPageText);
 
@@ -65,9 +66,6 @@ XFontUnicode::~XFontUnicode()
 	}
 //	testE --;
 //	printf("%d\n",testE);
-	XMem::XDELETE_ARRAY(m_textPosition);
-	XMem::XDELETE_ARRAY(m_textRect);
-	XMem::XDELETE_ARRAY(m_textPageOrder);
 
 #if WITH_OBJECT_MANAGER	//ÔÚÎï¼þ¹ÜÀíµÄÀàÖÐ×¢ÏúÕâÐ©Îï¼þ
 	XObjManager.decreaseAObject(this);
@@ -82,6 +80,7 @@ bool XFontUnicode::loadFromFolder(const char *filename)	//´ÓÎÄ¼þ¼ÐÖÐÔØÈë×ÊÔ´
 
 	unsigned char fileReadChar;
 	m_libFontSum = 0;
+	int index = 0;
 	for(int i = 0;i < MAX_UNICODE_TEXT_SUM;++ i)
 	{
 		if(fread(&fileReadChar,1,1,fp) == 0) break;
@@ -89,15 +88,17 @@ bool XFontUnicode::loadFromFolder(const char *filename)	//´ÓÎÄ¼þ¼ÐÖÐÔØÈë×ÊÔ´
 		if(fileReadChar == '\n') continue;
 		if(fileReadChar <128)
 		{//ASCII
-			m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum + 1] = ' ';
-			m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum] = fileReadChar;
+			m_fontPageText[index] = fileReadChar;
+			m_fontPageText[index + 1] = ' ';
 			++ m_libFontSum;
+			index += UNICODE_BYTES_WIDTH;
 		}else
 		{//·ÇASCII
-			m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum] = fileReadChar;
+			m_fontPageText[index] = fileReadChar;
 			if(fread(&fileReadChar,1,1,fp) == 0) return XFalse;
-			m_fontPageText[UNICODE_BYTES_WIDTH * m_libFontSum + 1] = fileReadChar;
+			m_fontPageText[index + 1] = fileReadChar;
 			++ m_libFontSum;
+			index += UNICODE_BYTES_WIDTH;
 		}
 	}
 	fclose(fp);
@@ -157,8 +158,8 @@ bool XFontUnicode::loadFromWeb(const char *filename)	//´ÓÍøÒ³ÖÐ¶ÁÈ¡×ÊÔ´
 {
 	return false;
 }
-XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVector2 &layout,int pageSum,
-						   XResourcePosition resoursePosition,XBool withFBO)
+XBool XFontUnicode::init(const char *filenameIn,const XVec2& size,const XVec2& layout,int pageSum,
+						   XResPos resPos,XBool withFBO)
 {
 	if(m_isInited) 
 	{
@@ -189,14 +190,14 @@ XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVect
 		return XFalse;
 	}
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 
 	m_string[0] = '\0';
 	//ÔØÈëÍ¼Æ¬
 	char filename[MAX_FONT_UNICODE_FILE_NAME_LENGTH];
 
-	strcpy(filename,filenameIn);
+	strcpy_s(filename,MAX_FONT_UNICODE_FILE_NAME_LENGTH,filenameIn);
 	int fileNameLength = strlen(filename);
 	for(int i = 0;i < m_pageSum;++ i)
 	{
@@ -239,24 +240,24 @@ XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVect
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
-	m_sprite.setBlendMode(XGL::BLEND_FOUR_DATA);
-	m_sprite.setBlendType(4,5,1,5);
+	m_sprite.setBlendModel(XGL::BLEND_MODEL0);
 	m_fboSprite.setACopy(m_sprite);
-	m_fboSprite.setBlendType(1,5);
+	m_fboSprite.setBlendModel(XGL::BLEND_MODEL1);
 #if WITH_OBJECT_MANAGER	//ÔÚÎï¼þ¹ÜÀíµÄÀàÖÐ×¢ÏúÕâÐ©Îï¼þ
 	XObjManager.decreaseAObject(&m_sprite);
 	XObjManager.decreaseAObject(&m_fboSprite);
 	XObjManager.addAObject(this);
 #endif
 	//¶ÁÈ¡×ÖÌå¿â¶ÔÓ¦µÄÎÄ±¾
-	filename[fileNameLength - 5] = '0';
-	filename[fileNameLength - 6] = '0';
-	filename[fileNameLength - 3] = 't';
-	filename[fileNameLength - 2] = 'x';
-	filename[fileNameLength - 1] = 't';
-	switch(resoursePosition)
+	memcpy(filename + fileNameLength - 6, &"00.txt", 6);
+	//filename[fileNameLength - 5] = '0';
+	//filename[fileNameLength - 6] = '0';
+	//filename[fileNameLength - 3] = 't';
+	//filename[fileNameLength - 2] = 'x';
+	//filename[fileNameLength - 1] = 't';
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(filename))
 		{
 			XMem::XDELETE_ARRAY(m_texture);
@@ -265,7 +266,7 @@ XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVect
 			return false;
 		}
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(filename))
 		{
 			XMem::XDELETE_ARRAY(m_texture);
@@ -274,14 +275,14 @@ XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVect
 			return false;
 		}
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filename))
 		{
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(filename) && !loadFromFolder(filename) &&
 			!loadFromWeb(filename))
 		{
@@ -292,14 +293,12 @@ XBool XFontUnicode::init(const char *filenameIn,const XVector2 &size,const XVect
 		}
 		break;
 	}
-	m_position.set(0,0);	
-	m_setPosition.set(0,0);	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
-	m_angle = 0;			
-	m_distance = 0;;		
+	m_position.reset();	
+	m_setPosition.reset();	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
+	m_angle = m_distance = 0.0f;		
 	m_size = size;			
 	m_layout = layout;
-	m_scale.x = 1.0f;
-	m_scale.y = 1.0f;
+	m_scale.set(1.0f);
 	m_sprite.setScale(m_scale);
 	m_isPassword = XFalse;
 
@@ -347,7 +346,7 @@ bool XFontUnicode::loadInfoFromWeb(const char *filename,char *target)		//´ÓÍøÒ³Ö
 	return false;
 }
 
-XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosition,XBool withFBO)
+XBool XFontUnicode::initEx(const char *filenameIn,XResPos resPos,XBool withFBO)
 {
 	if(m_isInited) 
 	{
@@ -364,37 +363,37 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 	}
 	m_withFBO = withFBO;
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 	//ÏÂÃæ¶ÁÈ¡Ïà¹Ø¸ñÊ½Êý¾Ý
 	char filename[MAX_FONT_UNICODE_FILE_NAME_LENGTH];
-	sprintf(filename,"%s/%s",filenameIn,FONT_UNICODE_CONFIG_FILENAME);
+	sprintf_s(filename,MAX_FONT_UNICODE_FILE_NAME_LENGTH,"%s/%s",filenameIn,FONT_UNICODE_CONFIG_FILENAME);
 	char txtureFilename[MAX_FILE_NAME_LENGTH] = "";
 
-	switch(resoursePosition)
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadInfoFromPacker(filename,txtureFilename))
 		{
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadInfoFromFolder(filename,txtureFilename))
 		{
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadInfoFromWeb(filename,txtureFilename))
 		{
 			XMem::XDELETE(m_cp);
 			return false;
 		}
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadInfoFromPacker(filename,txtureFilename) && !loadInfoFromFolder(filename,txtureFilename) &&
 			!loadInfoFromWeb(filename,txtureFilename))
 		{
@@ -409,7 +408,7 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 		XMem::XDELETE(m_cp);
 		return XFalse;
 	}
-	sprintf(filename,"%s/%s",filenameIn,txtureFilename);
+	sprintf_s(filename,MAX_FONT_UNICODE_FILE_NAME_LENGTH,"%s/%s",filenameIn,txtureFilename);
 	int fileNameLength = strlen(filename);
 
 	if((m_texture = XMem::createArrayMem<XTextureData>(m_pageSum)) == NULL)
@@ -466,24 +465,24 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
-	m_sprite.setBlendMode(XGL::BLEND_FOUR_DATA);
-	m_sprite.setBlendType(4,5,1,5);
+	m_sprite.setBlendModel(XGL::BLEND_MODEL0);
 	m_fboSprite.setACopy(m_sprite);
-	m_fboSprite.setBlendType(1,5);
+	m_fboSprite.setBlendModel(XGL::BLEND_MODEL1);
 #if WITH_OBJECT_MANAGER	//ÔÚÎï¼þ¹ÜÀíµÄÀàÖÐ×¢ÏúÕâÐ©Îï¼þ
 	XObjManager.decreaseAObject(&m_sprite);
 	XObjManager.decreaseAObject(&m_fboSprite);
 	XObjManager.addAObject(this);
 #endif
 	//¶ÁÈ¡×ÖÌå¿â¶ÔÓ¦µÄÎÄ±¾
-	filename[fileNameLength - 5] = '0';
-	filename[fileNameLength - 6] = '0';
-	filename[fileNameLength - 3] = 't';
-	filename[fileNameLength - 2] = 'x';
-	filename[fileNameLength - 1] = 't';
-	switch(resoursePosition)
+	memcpy(filename + fileNameLength - 6, &"00.txt", 6);
+	//filename[fileNameLength - 5] = '0';
+	//filename[fileNameLength - 6] = '0';
+	//filename[fileNameLength - 3] = 't';
+	//filename[fileNameLength - 2] = 'x';
+	//filename[fileNameLength - 1] = 't';
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(filename))
 		{
 			XMem::XDELETE_ARRAY(m_texture);
@@ -492,7 +491,7 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 			return false;
 		}
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(filename))
 		{
 			XMem::XDELETE_ARRAY(m_texture);
@@ -501,7 +500,7 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 			return false;
 		}
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filename))
 		{
 			XMem::XDELETE_ARRAY(m_texture);
@@ -510,7 +509,7 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 			return false;
 		}
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(filename) && !loadFromFolder(filename) &&
 			!loadFromWeb(filename))
 		{
@@ -522,12 +521,10 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 		break;
 	}
 
-	m_position.set(0,0);	
-	m_setPosition.set(0,0);	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
-	m_angle = 0;			
-	m_distance = 0;
-	m_scale.x = 1.0f;
-	m_scale.y = 1.0f;
+	m_position.reset();	
+	m_setPosition.reset();	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
+	m_angle = m_distance = 0.0f;
+	m_scale.set(1.0f);
 	m_sprite.setScale(m_scale);
 	m_isPassword = XFalse;
 
@@ -536,8 +533,8 @@ XBool XFontUnicode::initEx(const char *filenameIn,XResourcePosition resoursePosi
 	m_isCliped = XFalse;
 	return XTrue;
 }
-XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePosition resoursePosition,
-								  bool withOutLine,XBool withFBO)
+XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResPos resPos,
+								  bool withOutLine,XBool withFBO,bool withOpr)
 {
 	if(m_isInited) 
 	{
@@ -553,35 +550,36 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 		return XFalse;
 	}
 	m_withFBO = withFBO;
-	m_resoursePosition = resoursePosition;
+	m_resoursePosition = resPos;
 	//ÏÂÃæ¶ÁÈ¡Ïà¹Ø¸ñÊ½Êý¾Ý
 	char filename[MAX_FONT_UNICODE_FILE_NAME_LENGTH];
-	strcpy(filename,filenameIn);
+	strcpy_s(filename,MAX_FONT_UNICODE_FILE_NAME_LENGTH,filenameIn);
 	int fileNameLength = strlen(filename);
 
-	int fontOrder = XTTFFont.loadTTFFile(filename,fontSize,m_resoursePosition);
+	int fontOrder = -1;
+	if (m_fontPtSize >= 0) fontOrder = XTTFFont.loadTTFFile(filename, m_fontPtSize, fontSize, m_resoursePosition);
+	else fontOrder = XTTFFont.loadTTFFile(filename, fontSize, fontSize, m_resoursePosition);
 	if(fontOrder < 0)
 	{
 		XMem::XDELETE(m_cp);
 		return XFalse;
 	}
 	//XTTFFont.setOutline(fontOrder,1);	//Ð§¹û·Ç³£²»ÀíÏë
-	unsigned int tex[128];
-	int pageSum = 0;
-	XVector2 layout;
-	if(!XTTFFont.getTextureFontUnicode(fontOrder,tex,pageSum,layout,withOutLine)) return XFalse;
+	std::vector<unsigned int> texs;
+	XVec2 layout;
+	if(!XTTFFont.getTextureFontUnicode(fontOrder,texs,layout,withOutLine, withOpr)) return XFalse;
 	//ÊÍ·Å×ÊÔ´
 	XTTFFont.releaseTTFFile(fontOrder);
-	XVector2 size(fontSize,fontSize);
+	XVec2 size(fontSize,fontSize);
 	int w = XMath::getMinWellSize2n(layout.x * fontSize);
 	int h = XMath::getMinWellSize2n(layout.y * fontSize);
 
-	if(pageSum <= 0 || pageSum >= UNICODE_FONT_PAGE_SUM || pageSum >= 100) 
+	if(texs.size() <= 0 || texs.size() >= UNICODE_FONT_PAGE_SUM) 
 	{
 		XMem::XDELETE(m_cp);
 		return XFalse;
 	}
-	m_pageSum = pageSum;
+	m_pageSum = texs.size();
 
 	if((m_texture = XMem::createArrayMem<XTextureData>(m_pageSum)) == NULL)
 	{
@@ -602,7 +600,7 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 	//ÔØÈëÍ¼Æ¬
 	for(int i = 0;i < m_pageSum;++ i)
 	{
-		m_texture[i].createWithTexture(w,h,COLOR_RGBA,tex[i]);
+		m_texture[i].createWithTexture(w,h,COLOR_RGBA,texs[i]);
 	}
 
 	m_pageW = m_texture[0].texture.m_w;
@@ -617,10 +615,9 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 		return XFalse;
 	}
 	m_sprite.setIsTransformCenter(POINT_LEFT_TOP);
-	m_sprite.setBlendMode(XGL::BLEND_FOUR_DATA);
-	m_sprite.setBlendType(4,5,1,5);
+	m_sprite.setBlendModel(XGL::BLEND_MODEL0);
 	m_fboSprite.setACopy(m_sprite);
-	m_fboSprite.setBlendType(1,5);
+	m_fboSprite.setBlendModel(XGL::BLEND_MODEL1);
 #if WITH_OBJECT_MANAGER	//ÔÚÎï¼þ¹ÜÀíµÄÀàÖÐ×¢ÏúÕâÐ©Îï¼þ
 	XObjManager.decreaseAObject(&m_sprite);
 	XObjManager.decreaseAObject(&m_fboSprite);
@@ -628,7 +625,7 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 #endif
 	//ÕâÀïÐèÒª×ª×Ö·û
 #if WITH_FULL_ALL_CHINESE == 0
-	char tempStr[] = TEXT_FONT_UNICODE_MODE;
+	const char tempStr[] = TEXT_FONT_UNICODE_MODE;
 	int length = strlen(TEXT_FONT_UNICODE_MODE);
 #endif
 #if WITH_FULL_ALL_CHINESE == 2
@@ -647,32 +644,27 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 	m_libFontSum = 0;
 	for(int i = 0;i < length;)
 	{
+		m_fontPageText[j] = tempStr[i];
 		if(tempStr[i] < 0)
 		{
-			m_fontPageText[j] = tempStr[i];
 			m_fontPageText[j + 1] = tempStr[i + 1];
-			j += 2;
 			i += 2;
-			++ m_libFontSum;
 		}else
 		{
 			m_fontPageText[j + 1] = ' ';
-			m_fontPageText[j] = tempStr[i];
-			j += 2;
 			++ i;
-			++ m_libFontSum;
 		}
+		j += 2;
+		++ m_libFontSum;
 	}
 	m_fontPageText[j] = '\0';
 	m_fontPageText[j + 1] = '\0';
-	m_position.set(0,0);	
-	m_setPosition.set(0,0);	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
-	m_angle = 0;			
-	m_distance = 0;;		
-	m_size = size;			
+	m_position.reset();
+	m_setPosition.reset();	//×ÖÌå±»ÉèÖÃµÄÎ»ÖÃ£¬Õâ¸öÎ»ÖÃ¿ÉÄÜÓÉÓÚÐý×ªµÈ¶¯×÷ÔÚ×îÖÕ±»¸Ä±ä
+	m_angle = m_distance = 0.0f;
+	m_size = size;
 	m_layout = layout;
-	m_scale.x = 1.0f;
-	m_scale.y = 1.0f;
+	m_scale.set(1.0f);
 	m_sprite.setScale(m_scale);
 	m_isPassword = XFalse;
 
@@ -683,6 +675,7 @@ XBool XFontUnicode::initFromTTF(const char *filenameIn,int fontSize,XResourcePos
 }
 void XFontUnicode::draw()
 {
+	if(!m_isInited) return;
 //	if((m_isCliped != 0 && m_clipRect.top >= m_size.y)
 //		|| (m_isCliped != 0 && m_clipRect.bottom <= 0))
 	if((m_isCliped && m_clipRect.bottom <= 0) ||//ÕâÖÖÇé¿öÊ²Ã´Ò²²»ÓÃ»­
@@ -697,18 +690,18 @@ void XFontUnicode::draw()
 		if(m_needUpdateFBO)
 		{//¸üÐÂFBO£¨ÉÐÎ´¾­¹ýÍêÕû²âÊÔ£©
 			int minX,minY,maxX,maxY;
-			XVector2 tmp = getBox(0);
+			XVec2 tmp = getBox(0);
 			minX = maxX = tmp.x;
 			minY = maxY = tmp.y;
 			for(int i = 1;i < 4;++ i)
 			{
 				tmp = getBox(i);
-				if(minX > tmp.x) minX = tmp.x;
+				if(minX > tmp.x) minX = tmp.x;else
 				if(maxX < tmp.x) maxX = tmp.x;
-				if(minY > tmp.y) minY = tmp.y;
+				if(minY > tmp.y) minY = tmp.y;else
 				if(maxY < tmp.y) maxY = tmp.y;
 			}
-			XVector2 pos(minX,minY);
+			XVec2 pos(minX,minY);
 			int w = m_pageW;
 			int h = m_pageH;
 			if(m_pFbo == NULL || w > m_pFbo->getWidth(0) || h > m_pFbo->getHeight(0))
@@ -720,7 +713,7 @@ void XFontUnicode::draw()
 			}
 			m_pFbo->useFBO();
 			m_pFbo->attachTex();
-			XEG.clearScreen(XFColor(0.0f,0.0f,0.0f,0.0f));
+			XEG.clearScreen(XFColor::zero);
 			for(int i = 0;i < m_needShowTextSum;++ i)
 			{
 				//if(m_textRect[i].getWidth() <= 0 || m_textRect[i].getHeight() <= 0) continue;
@@ -730,7 +723,7 @@ void XFontUnicode::draw()
 				m_sprite.draw(&(m_texture[m_textPageOrder[i]]));
 			}
 			m_pFbo->removeFBO();
-			m_fboSprite.setClipRect(XRect(minX - pos.x,minY - pos.y,maxX - pos.x,maxY - pos.y));
+			m_fboSprite.setClipRect(XRect(0.0f, 0.0f, maxX - minX, maxY - minY));
 			m_fboSprite.setPosition(pos);
 			m_needUpdateFBO = XFalse;	//¸úÐÂÍê³É
 		}
@@ -750,10 +743,9 @@ void XFontUnicode::draw()
 }
 void XFontUnicode::updateData()
 {
+	if(!m_isInited) return;
 	if(m_withFBO) m_needUpdateFBO = XTrue;
-	m_needShowTextSum = 0;
-	m_maxPixelWidth = 0;
-	m_maxPixelHeight = 0;
+	m_needShowTextSum = m_maxPixelWidth = m_maxPixelHeight = 0;
 	int cur_x = 0;
 	int cur_y = 0;
 	char tempChar[2];
@@ -793,25 +785,20 @@ void XFontUnicode::updateData()
 		if(m_string[i] == '\0') break;	//×Ö·û´®½áÊø
 		if((unsigned char)m_string[i] < 128)
 		{//ASCII
-			if(!m_isPassword)
-			{//·ÇÃÜÂëÄ£Ê½
+			if(!m_isPassword)//·ÇÃÜÂëÄ£Ê½
 				tempChar[0] = m_string[i];
-				tempChar[1] = ' ';
-			}else
-			{//ÃÜÂëÄ£Ê½
+			else//ÃÜÂëÄ£Ê½
 				tempChar[0] = '*';
-				tempChar[1] = ' ';
-			}
+
+			tempChar[1] = ' ';
 			//++ wordsSumS;
 			curIsD = XFalse;
 			if(m_string[i] == '\n')
 			{//Èç¹ûÊÇ»»ÐÐ·ûÔò¿ªÊ¼»»ÐÐ
 				++ m_lineSum;
-				wordsSumS = 0;
-				wordsSumD = 0;
+				wordsSumS = wordsSumD = 0;
 				//Óöµ½»»ÐÐÊ±Í³¼Æµ±Ç°ÐÐµÄ×Ö·û´®³¤¶È
-				curLineWidthD = 0;	//µ±Ç°ÐÐÖÐµÄÖÐÎÄ×Ö·ûÊýÁ¿
-				curLineWidthS = 0;	//µ±Ç°ÐÐÖÐµÄASCII×Ö·ûÊýÁ¿
+				curLineWidthD = curLineWidthS = 0;
 				for(int j = i + 1;j < m_maxStringLen;++ j)
 				{
 					if((unsigned char)m_string[j] < 128) 
@@ -832,17 +819,16 @@ void XFontUnicode::updateData()
 			{//·ÇÃÜÂëÄ£Ê½
 				tempChar[0] = m_string[i];
 				tempChar[1] = m_string[i + 1];
-				++ i;
 				//++ wordsSumD;
 				curIsD = XTrue;
 			}else
 			{//ÃÜÂëÄ£Ê½
 				tempChar[0] = '*';
 				tempChar[1] = ' ';
-				++ i;
 				//++ wordsSumS;
 				curIsD = XFalse;
 			}
+			++ i;
 		}
 		//²éÕÒ×Ö·û
 		charPoint = getTextIndex(tempChar);
@@ -1026,46 +1012,26 @@ void XFontUnicode::updateData()
 			}
 			if(tempY >= m_clipRect.top && tempY + (m_size.y + m_distanceY) <= m_clipRect.bottom)
 			{//ÐèÒªÈ«²¿Ãè»­
-				top = 0;
-				bottom = 0;
+				top = bottom = 0;
 			}else
 			{
-				if(tempY < m_clipRect.top)
-				{
-					top = m_clipRect.top - tempY;
-				}else
-				{
-					top = 0;
-				}
-				if(tempY + (m_size.y + m_distanceY) > m_clipRect.bottom)
-				{
+				if(tempY < m_clipRect.top) top = m_clipRect.top - tempY;
+				else top = 0;
+ 				if(tempY + (m_size.y + m_distanceY) > m_clipRect.bottom)
 					bottom = tempY + (m_size.y + m_distanceY) - m_clipRect.bottom;
-				}else
-				{
-					bottom = 0;
-				}
+				else bottom = 0;
 			}
 			//µ±Ó¢ÎÄ×Ö·û²Ã¼ôµÄÊ±ºò»á´æÔÚÎÊÌâ£¬Èç¹ûÊÇÖÐÎÄ×Ö·ûÕâÀï²»»áÓÐÎÊÌâ
 			if(tempX >= m_clipRect.left && tempX + (m_size.x + m_distance) <= m_clipRect.right)
 			{//ÐèÒªÈ«²¿Ãè»­
-				left = 0;
-				right = 0;
+				left = right = 0;
 			}else
 			{
-				if(tempX < m_clipRect.left)
-				{
-					left = m_clipRect.left - tempX;
-				}else
-				{
-					left = 0;
-				}
+				if(tempX < m_clipRect.left) left = m_clipRect.left - tempX;
+				else left = 0;
 				if(tempX + (m_size.x + m_distance) > m_clipRect.right)
-				{
 					right = tempX + (m_size.x + m_distance) - m_clipRect.right;
-				}else
-				{
-					right = 0;
-				}
+				else right = 0;
 			}
 			m_textRect[m_needShowTextSum].set(cur_x + left,cur_y + top,cur_x + m_size.x - right,cur_y + m_size.y - bottom);
 			switch(m_alignmentModeX)
@@ -1170,13 +1136,9 @@ void XFontUnicode::updateData()
 			if(curIsD) ++ wordsSumD;
 			else ++wordsSumS;
 			if(textPixelDX * wordsSumD + textPixelSX * wordsSumS > m_maxPixelWidth)
-			{
 				m_maxPixelWidth = textPixelDX * wordsSumD + textPixelSX * wordsSumS;
-			}
 			if(textPixelY * (m_lineSum + 1) > m_maxPixelHeight)
-			{
 				m_maxPixelHeight = textPixelY * (m_lineSum + 1);
-			}
 		}
 	}
 }
@@ -1188,10 +1150,10 @@ XFontUnicode& XFontUnicode::operator = (const XFontUnicode& temp)
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	if(m_cp != NULL && -- m_cp->m_counter <= 0)
 	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		for(int i = 0;i < m_pageSum;++ i)
-		{
-			m_texture[i].release();
-		}
+		//for(int i = 0;i < m_pageSum;++ i)
+		//{
+		//	m_texture[i].release();
+		//}
 		XMem::XDELETE_ARRAY(m_texture);
 		XMem::XDELETE_ARRAY(m_fontPageText);
 
@@ -1219,17 +1181,14 @@ XFontUnicode& XFontUnicode::operator = (const XFontUnicode& temp)
 		
 	m_pageSum = temp.m_pageSum;
 
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-		m_textPageOrder[i] =temp.m_textPageOrder[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
+	m_textPageOrder =temp.m_textPageOrder;
 
 	m_layout = temp.m_layout;		
 	return *this;
 }
-XBool XFontUnicode::setACopy(const XFontUnicode & temp)
+XBool XFontUnicode::setACopy(const XFontUnicode& temp)
 {
 	if(this == &temp) return XFalse;		//·ÀÖ¹×ÔÉú¿½±´
 	if(!temp.m_isInited) return XFalse;	//Èç¹ûÄ¿±êÃ»ÓÐ³õÊ¼»¯ÔòÖ±½ÓÍË³ö
@@ -1237,10 +1196,10 @@ XBool XFontUnicode::setACopy(const XFontUnicode & temp)
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
 	if(m_cp != NULL && -- m_cp->m_counter <= 0)
 	{//×ÔÉíÃ»ÓÐÒýÓÃÐèÒªÊÍ·Å
-		for(int i = 0;i < m_pageSum;++ i)
-		{
-			m_texture[i].release();
-		}
+		//for(int i = 0;i < m_pageSum;++ i)
+		//{
+		//	m_texture[i].release();
+		//}
 		XMem::XDELETE_ARRAY(m_texture);
 		XMem::XDELETE_ARRAY(m_fontPageText);
 
@@ -1268,17 +1227,14 @@ XBool XFontUnicode::setACopy(const XFontUnicode & temp)
 		
 	m_pageSum = temp.m_pageSum;
 
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-		m_textPageOrder[i] =temp.m_textPageOrder[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
+	m_textPageOrder =temp.m_textPageOrder;
 
 	m_layout = temp.m_layout;		
 	return XTrue;
 }
-XFontUnicode::XFontUnicode(const XFontUnicode & temp)
+XFontUnicode::XFontUnicode(const XFontUnicode& temp)
 :XFontBasic(temp)
 {
 	//if(this == &temp) return;		//·ÀÖ¹×ÔÉú¿½±´
@@ -1288,10 +1244,6 @@ XFontUnicode::XFontUnicode(const XFontUnicode & temp)
 	XObjManager.addAObject(this);
 #endif
 	if(temp.m_cp != NULL) ++temp.m_cp->m_counter;
-
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
-	m_textPageOrder = XMem::createArrayMem<int>(m_maxStringLen);
 	
 //	m_isAcopy = 1;
 
@@ -1304,12 +1256,9 @@ XFontUnicode::XFontUnicode(const XFontUnicode & temp)
 	
 	m_pageSum = temp.m_pageSum;
 
-	for(int i = 0;i < m_maxStringLen;++ i)
-	{
-		m_textPosition[i] = temp.m_textPosition[i];
-		m_textRect[i] = temp.m_textRect[i];
-		m_textPageOrder[i] =temp.m_textPageOrder[i];
-	}
+	m_textPosition = temp.m_textPosition;
+	m_textRect = temp.m_textRect;
+	m_textPageOrder =temp.m_textPageOrder;
 
 	m_layout = temp.m_layout;		
 }
@@ -1317,17 +1266,14 @@ void XFontUnicode::setMaxStrLen(int maxStrLen)
 {
 	char *tempXtr = m_string;	//±£´æ¾ÉµÄÊý¾Ý
 //	XMem::XDELETE_ARRAY(m_string);
-	XMem::XDELETE_ARRAY(m_textPosition);
-	XMem::XDELETE_ARRAY(m_textRect);
-	XMem::XDELETE_ARRAY(m_textPageOrder);
 
 	if(maxStrLen < 2) m_maxStringLen = 2;
 	else m_maxStringLen = maxStrLen;
 	m_string = XMem::createArrayMem<char>(m_maxStringLen);
 	m_string[0] = '\0';
-	m_textPosition = XMem::createArrayMem<XVector2>(m_maxStringLen);
-	m_textRect = XMem::createArrayMem<XRect>(m_maxStringLen);
-	m_textPageOrder = XMem::createArrayMem<int>(m_maxStringLen);
+	m_textPosition.resize(m_maxStringLen);
+	m_textRect.resize(m_maxStringLen);
+	m_textPageOrder.resize(m_maxStringLen);
 
 	this->setString(tempXtr);
 	XMem::XDELETE_ARRAY(tempXtr);

@@ -53,6 +53,17 @@ float getAverageValue(const std::deque<float> &data)
 	}
 	return ret / (float)(data.size());
 }
+XVec2 getAverageValue(const std::deque<XVec2> &data)
+{
+	if(data.size() == 0) return XVec2::zero;
+	XVec2 ret;
+	std::deque<XVec2>::const_iterator it = data.begin();
+	for(;it != data.end();++ it)
+	{
+		ret += *it;
+	}
+	return ret / (float)(data.size());
+}
 double getStandardDeviation(const double *v,int sum)
 {
 	if(v == NULL || sum == 0) return 0.0;
@@ -86,7 +97,18 @@ float getStandardDeviation(const std::deque<float> &data)
 		ret += (*it - av)*(*it - av);
 	}
 	return sqrt(ret / (float)(data.size()));
-
+}
+float getStandardDeviation(const std::deque<XVec2> &data)
+{
+	if(data.size() == 0) return 0.0f;
+	XVec2 av = getAverageValue(data);
+	float ret = 0.0f;
+	std::deque<XVec2>::const_iterator it = data.begin();
+	for(;it != data.end();++ it)
+	{
+		ret += (*it).getLengthSqure(av);
+	}
+	return sqrt(ret / (float)(data.size()));
 }
 }
 }

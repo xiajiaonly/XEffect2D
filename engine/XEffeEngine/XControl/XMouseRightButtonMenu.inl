@@ -1,18 +1,18 @@
 INLINE XBool XMouseRightButtonMenu::initEx(int menuSum,	//对上面接口的简化
-	const XVector2& position,	
+	const XVec2& position,	
 	const XMouseRightButtonMenuSkin &tex,	
-	const XFontUnicode &font,float captionSize)
+	const XFontUnicode& font,float captionSize)
 {
 	return init(menuSum,position,tex.m_mouseRect,tex,font,captionSize,tex.m_fontPosition);
 }
 INLINE XBool XMouseRightButtonMenu::initPlus(const char * path,int menuSum,	//菜单中的物件数量
-	const XFontUnicode &font,float captionSize,
-	XResourcePosition resoursePosition)
+	const XFontUnicode& font,float captionSize,
+	XResPos resPos)
 {
 	if(m_isInited || path == NULL) return XFalse;
-	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXBUTTON_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXBUTTON_TEX,resPos);
 	if(m_resInfo == NULL) return XFalse;
-	return initEx(menuSum,XVector2::zero,*(XButtonSkin *)m_resInfo->m_pointer,font,captionSize);
+	return initEx(menuSum,XVec2::zero,*(XButtonSkin *)m_resInfo->m_pointer,font,captionSize);
 }
 INLINE void XMouseRightButtonMenu::draw()
 {
@@ -48,7 +48,7 @@ INLINE void XMouseRightButtonMenu::update(float stepTime)
 		{
 			for(int i = 0;i < m_menuSum;++ i)
 			{
-				m_menu[i].setAlpha(action * m_color.fA);
+				m_menu[i].setAlpha(action * m_color.a);
 				m_menu[i].setPosition(m_position.x + (100.0f + i * 50.0f) * m_scale.y * (1.0f - action),
 					m_position.y + m_mouseRect.getHeight() * i * m_scale.y);
 			}
@@ -56,7 +56,7 @@ INLINE void XMouseRightButtonMenu::update(float stepTime)
 		{
 			for(int i = 0;i < m_menuSum;++ i)
 			{
-				m_menu[i].setAlpha((1.0f - action) * m_color.fA);
+				m_menu[i].setAlpha((1.0f - action) * m_color.a);
 				m_menu[i].setPosition(m_position.x - (100.0f + i * 50.0f) * m_scale.y * action,
 					m_position.y + m_mouseRect.getHeight() * i * m_scale.y);
 			}
@@ -72,30 +72,30 @@ INLINE void XMouseRightButtonMenu::drawUp()
 		m_menu[i].drawUp();
 	}
 }
-INLINE XBool XMouseRightButtonMenu::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XMouseRightButtonMenu::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
-INLINE XBool XMouseRightButtonMenu::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XMouseRightButtonMenu::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_allArea.isInRect(x,y);
+	return m_allArea.isInRect(p);
 }
-INLINE XVector2 XMouseRightButtonMenu::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XMouseRightButtonMenu::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0:return XVector2(m_allArea.left,m_allArea.top);
-	case 1:return XVector2(m_allArea.right,m_allArea.top);
-	case 2:return XVector2(m_allArea.right,m_allArea.bottom);
-	case 3:return XVector2(m_allArea.left,m_allArea.bottom);
+	case 0:return m_allArea.getLT();
+	case 1:return m_allArea.getRT();
+	case 2:return m_allArea.getRB();
+	case 3:return m_allArea.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 INLINE int XMouseRightButtonMenu::getLastChoose() const										//返回最终选择的值
 {
@@ -126,12 +126,12 @@ INLINE void XMouseRightButtonMenu::setTexture(const XMouseRightButtonMenuSkin &t
 	if(order < 0 || order >= m_menuSum) return;
 	m_menu[order].setTexture(tex);
 }
-INLINE void XMouseRightButtonMenu::setColor(float r,float g,float b,float a)
+INLINE void XMouseRightButtonMenu::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	for(int i = 0;i < m_menuSum;++ i)
 	{
-		m_menu[i].setColor(r,g,b,a);
+		m_menu[i].setColor(m_color);
 	}
 	updateChildColor();
 }

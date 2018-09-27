@@ -57,7 +57,7 @@ void XOperateManager::addAOperate(XBasicOprate *obj)
 		for(int i = 0;i < size;++ i)
 			m_operateIndex.pop_back();
 		//if(size > 0)
-		//	m_operateIndex.erase(m_operateIndex.begin() + m_operateIndex.size() - size,m_operateIndex.end());
+		//	m_operateIndex.erase(m_operateIndex.begin() + int(m_operateIndex.size()) - size,m_operateIndex.end());
 		if(m_operateIndex[m_curStateIndex] != (int)(m_operateDes.size()) - 1)
 		{
 			size = (int)(m_operateDes.size()) - 1 - m_operateIndex[m_curStateIndex];
@@ -159,11 +159,11 @@ void XOperateManager::decreaseObj(XBasicOprate *obj)
 			//丢弃这个值
 			m_operateDes[i].release();
 			//XMem::XDELETE(m_operateDes[i].pData);
-		//	for(int j = i;j < (int)(m_operateDes.size()) - 1;++ j)
-		//	{
-		//		m_operateDes[j] = m_operateDes[j + 1];
-		//	}
-		//	m_operateDes.pop_back();
+			//for(int j = i;j < (int)(m_operateDes.size()) - 1;++ j)
+			//{
+			//	m_operateDes[j] = m_operateDes[j + 1];
+			//}
+			//m_operateDes.pop_back();
 			m_operateDes.erase(m_operateDes.begin() + i);
 			//整理后面的数据
 			for(unsigned int j = 0;j < m_operateIndex.size();++ j)
@@ -171,18 +171,21 @@ void XOperateManager::decreaseObj(XBasicOprate *obj)
 				if(m_operateIndex[j] >= i) --m_operateIndex[j];
 			}
 			//这里剔除重复
-			for(unsigned int j = 0;j < m_operateIndex.size();++ j)
+			if(m_operateIndex.size() > 1)
 			{
-				if((j < (int)(m_operateIndex.size()) - 1 && m_operateIndex[j] == m_operateIndex[j + 1]) || 
-					m_operateIndex[j] < 0)
-				{//发现重复，则丢弃后面一个数据
-					if(m_curStateIndex > j) -- m_curStateIndex;
-				//	for(int k = j + 1;k < (int)(m_operateIndex.size()) - 1;++ k)
-				//	{
-				//		m_operateIndex[k] = m_operateIndex[k + 1];
-				//	}
-				//	m_operateIndex.pop_back();
-					m_operateIndex.erase(m_operateIndex.begin() + j + 1);
+				for(unsigned int j = 0;j < m_operateIndex.size();++ j)
+				{
+					if((j < (int)(m_operateIndex.size()) - 1 && m_operateIndex[j] == m_operateIndex[j + 1]) || 
+						m_operateIndex[j] < 0)
+					{//发现重复，则丢弃后面一个数据
+						if(m_curStateIndex > j) -- m_curStateIndex;
+					//	for(int k = j + 1;k < (int)(m_operateIndex.size()) - 1;++ k)
+					//	{
+					//		m_operateIndex[k] = m_operateIndex[k + 1];
+					//	}
+					//	m_operateIndex.pop_back();
+						m_operateIndex.erase(m_operateIndex.begin() + j + 1);
+					}
 				}
 			}
 			if(m_operateIndex.size() <= 0) m_curStateIndex = -1;

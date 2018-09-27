@@ -323,7 +323,7 @@ XBool XSerialPort::close()
 //	return XTrue;
 //}
 // 向串口发送数据
-int XSerialPort::sendData(const unsigned char *buffer,int size)
+int XSerialPort::sendData(const void *buffer,int size)
 {
 	if(!m_bOpened || m_hIDComDev == NULL) return 0;
 	if(buffer == NULL || size <= 0)
@@ -495,7 +495,7 @@ bool XSerialPortInfo::checkData() const		//检查数据的合法性
 	if(nBaud != 110 && nBaud != 300 && nBaud != 600 &&
 		nBaud != 1200 && nBaud != 2400 && nBaud != 4800 &&
 		nBaud != 9600 && nBaud != 14400 && nBaud != 19200 &&
-		nBaud != 38400 && nBaud != 56000 && nBaud != 57600 &&
+		nBaud != 38400 && nBaud != 56000 && nBaud != 57600 && nBaud != 460800 &&
 		nBaud != 115200 && nBaud != 128000 && nBaud != 256000) return false;
 	if(nParity < 0 || nParity > 4) return false;
 	if(dtr < 0 || dtr > 2) return false;

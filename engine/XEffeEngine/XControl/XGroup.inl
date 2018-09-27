@@ -5,8 +5,7 @@ INLINE void XGroup::updateData()		//¸üÐÂÄÚ²¿Êý¾Ý
 		m_caption.setPosition(m_position.x + (m_rect.left + m_groupStateBtnSize + 5.0f) * m_scale.x,m_position.y + m_rect.top * m_scale.y);
 	//	m_stateBotton.setPosition(m_position.x + (m_rect.right - m_groupStateBtnSize) * m_scale.x,m_position.y + m_rect.top * m_scale.y);
 		m_stateBotton.setPosition(m_position.x,m_position.y + m_rect.top * m_scale.y);
-		m_drawRect.set(m_rect.left * m_scale.x + m_position.x,m_rect.top * m_scale.y + m_position.y,
-			m_rect.right * m_scale.x + m_position.x,m_rect.bottom * m_scale.y + m_position.y);
+		m_drawRect.set(m_rect.getLT() * m_scale + m_position, m_rect.getRB() * m_scale + m_position);
 	}else
 	{
 		m_caption.setPosition(m_position.x + (m_groupStateBtnSize + 3.0f) * m_scale.x,m_position.y + 3.0f * m_scale.y);
@@ -24,21 +23,21 @@ INLINE void XGroup::updateData()		//¸üÐÂÄÚ²¿Êý¾Ý
 //	m_funStateChange = funStateChange;
 //	m_pClass = pClass;
 //}
-INLINE void XGroup::resetSize(const XVector2 &size)
+INLINE void XGroup::resetSize(const XVec2& size)
 {
 	m_rect.right = size.x;
 	m_rect.bottom = size.y;
 	updateData();
 }
-INLINE void XGroup::setPosition(float x,float y)
+INLINE void XGroup::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	updateData();
 	updateChildPos();
 }
-INLINE void XGroup::setScale(float x,float y) 
+INLINE void XGroup::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	m_caption.setScale(m_textSize * m_scale);
 	m_stateBotton.setScale(m_scale);
 	updateData();
@@ -49,7 +48,7 @@ INLINE void XGroup::setCaptionText(const char *caption)						//ÉèÖÃ°´Å¥µÄ±êÌâµÄÎ
 	if(caption == NULL) return;
 	m_caption.setString(caption);
 }
-INLINE XBool XGroup::mouseProc(float,float,XMouseState)
+INLINE XBool XGroup::mouseProc(const XVec2&,XMouseState)
 {
 //	if(!m_isInited) return XTrue;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 //	if(!m_isVisible) return XTrue;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
@@ -63,10 +62,10 @@ INLINE XBool XGroup::keyboardProc(int,XKeyState)
 //	m_stateBotton.keyboardProc(keyOrder,keyState);
 	return XTrue;
 }
-INLINE XBool XGroup::isInRect(float x,float y)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
+INLINE XBool XGroup::isInRect(const XVec2& p)		//µãx£¬yÊÇ·ñÔÚÎï¼þÉíÉÏ£¬Õâ¸öx£¬yÊÇÆÁÄ»µÄ¾ø¶Ô×ø±ê
 {
 	if(!m_isInited) return XFalse;
-	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(p,getBox(0),getBox(1),getBox(2),getBox(3));
 }
 INLINE void XGroup::setVisible()
 {
@@ -90,24 +89,26 @@ INLINE void XGroup::setVisible()
 INLINE void XGroup::disVisible()
 {
 	m_isVisible = XFalse;
+	m_isBeChoose = XFalse;
+	m_comment.disVisible();
 	m_stateBotton.disVisible();
 	updateChildVisible();
 }
-INLINE XVector2 XGroup::getBox(int order)
+INLINE XVec2 XGroup::getBox(int order)
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0: return XVector2(m_drawRect.left,m_drawRect.top);
-	case 1: return XVector2(m_drawRect.right,m_drawRect.top);
-	case 2: return XVector2(m_drawRect.right,m_drawRect.bottom);
-	case 3: return XVector2(m_drawRect.left,m_drawRect.bottom);
+	case 0: return m_drawRect.getLT();
+	case 1: return m_drawRect.getRT();
+	case 2: return m_drawRect.getRB();
+	case 3: return m_drawRect.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE void XGroup::setColor(float r,float g,float b,float a)
+INLINE void XGroup::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_caption.setColor(m_color);
 	m_stateBotton.setColor(m_color);
 	updateChildColor();

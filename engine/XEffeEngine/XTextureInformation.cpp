@@ -21,14 +21,14 @@ XTextureResourceManager::XTextureResourceManager()
 	:m_isInited(XFalse)
 	,m_isEnable(XFalse)
 {}
-XBool XTextureResourceManager::init(XResourcePosition resoursePosition)	//这里读取经过压缩的资源文件
+XBool XTextureResourceManager::init(XResPos resPos)	//这里读取经过压缩的资源文件
 {
 	if(m_isInited) return XTrue;
 
 	m_isEnable = XTrue;
 	m_isInited = XTrue;
 	//默认载入资源包
-	if(!addATexResPack(PNG_INFORMATION_FILE_NAME,resoursePosition))
+	if(!addATexResPack(PNG_INFORMATION_FILE_NAME,resPos))
 		LogStr("默认资源包载入失败!");
 	return XTrue;
 }
@@ -37,13 +37,13 @@ XBool XTextureResourceManager::getTexture(const char *temp,XTextureInfo &texInfo
 	if(!m_isInited ||
 		!m_isEnable ||
 		temp == NULL) return XFalse;
-	for(int i = 0;i < m_texResInfos.size();++ i)
+	for(auto it = m_texResInfos.begin();it != m_texResInfos.end();++ it)
 	{
-		for(int j = 0;j < m_texResInfos[i].m_srcTexInfo.size();++ j)
+		for(auto jt = it->m_srcTexInfo.begin();jt != it->m_srcTexInfo.end();++ jt)
 		{
-			if(XFile::fileNameCompare(temp, m_texResInfos[i].m_srcTexInfo[j].textureName))
+			if(XFile::fileNameCompare(temp, jt->textureName))
 			{
-				texInfo = m_texResInfos[i].m_srcTexInfo[j];
+				texInfo = *jt;
 				return true;
 			}
 		}
@@ -53,33 +53,32 @@ XBool XTextureResourceManager::getTexture(const char *temp,XTextureInfo &texInfo
 XBool XTextureResourceManager::isLoaded(const char *filename)
 {
 	if(filename == NULL) return false;
-	for(int i = 0;i < m_texResInfos.size();++ i)
+	for(auto it = m_texResInfos.begin();it != m_texResInfos.end();++ it)
 	{
-		if(m_texResInfos[i].m_resName == filename) return true;
+		if(it->m_resName == filename) return true;
 	}
 	return false;
 }
 XBool XTextureResourceManager::releaseATexResPack(const char *filename)	//释放一个资源包
 {
 	if(filename == NULL) return true;
-	for(int i = 0;i < m_texResInfos.size();++ i)
+	for(auto it = m_texResInfos.begin();it < m_texResInfos.end();++ it)
 	{
-		if(m_texResInfos[i].m_resName == filename)
-		{
-			//这里需要对资源进行释放
-			m_texResInfos.erase(m_texResInfos.begin() + i);
+		if(it->m_resName == filename)
+		{//这里需要对资源进行释放
+			m_texResInfos.erase(it);
 			return true;
 		}
 	}
 	return false;
 }
-bool XTextureResourceManager::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+bool XTextureResourceManager::loadFromFolder(const char *filename,XResPos resPos)	//从文件夹中载入资源
 {
 	FILE *fp;
 	//打开文件
 	if((fp = fopen(filename,"r")) == NULL)//PNG_INFORMATION_FILE_NAME
 	{
-//			m_isEnable = XFalse;
+//		m_isEnable = XFalse;
 		return XFalse;
 	}
 	//读取文件内容
@@ -137,7 +136,7 @@ bool XTextureResourceManager::loadFromFolder(const char *filename,XResourcePosit
 			XMem::XDELETE_ARRAY(targetTextureFlag);
 			return XFalse;
 		}
-		sprintf(tmp.m_srcTexInfo[i].textureName,"%s%s",tmpPath.c_str(),targetFileName);
+		sprintf_s(tmp.m_srcTexInfo[i].textureName,MAX_FILE_NAME_LENGTH,"%s%s",tmpPath.c_str(),targetFileName);
 		tempFlag = 0;
 		for(int j = 0;j < MAX_FILE_NAME_LENGTH;++ j)
 		{
@@ -196,11 +195,11 @@ bool XTextureResourceManager::loadFromFolder(const char *filename,XResourcePosit
 	m_texResInfos.push_back(tmp);
 	return true;
 }
-bool XTextureResourceManager::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+bool XTextureResourceManager::loadFromPacker(const char *filename,XResPos resPos)	//从压缩包中载入资源
 {
 	//从资源包中提取出资源文件的内容
 	char tempFilename[MAX_FILE_NAME_LENGTH] = "";
-	sprintf(tempFilename,"%s%s",BASE_RESOURCE_PATH,filename);//PNG_INFORMATION_FILE_NAME
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s%s",BASE_RESOURCE_PATH,filename);//PNG_INFORMATION_FILE_NAME
 	unsigned char *p = XResPack.getFileData(tempFilename);
 	if(p == NULL) 
 	{//没有优化的资源文件,直接返回
@@ -254,7 +253,7 @@ bool XTextureResourceManager::loadFromPacker(const char *filename,XResourcePosit
 			if(tempChar == ':')
 			{
 				tempFilename[j] = '\0';
-				sprintf(tmp.m_srcTexInfo[i].textureName,"%s%s",BASE_RESOURCE_PATH,tempFilename);	//为了封装前后的路径统一这里修改相对路径
+				sprintf_s(tmp.m_srcTexInfo[i].textureName,MAX_FILE_NAME_LENGTH,"%s%s",BASE_RESOURCE_PATH,tempFilename);	//为了封装前后的路径统一这里修改相对路径
 				//m_texInfo[i].textureName[j] = '\0';
 				tempFlag = 1;
 				break;
@@ -304,7 +303,7 @@ bool XTextureResourceManager::loadFromPacker(const char *filename,XResourcePosit
 		}
 		if(targetTextureFlag[tempFlag] == 0)
 		{//如果发现当前资源尚未载入，则下面载入资源
-			sprintf(tempFilename,"%s%s",BASE_RESOURCE_PATH,targetFileName);
+			sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s%s",BASE_RESOURCE_PATH,targetFileName);
 			if(!tmp.m_dstTexInfo[tempFlag].load(tempFilename,resPos))
 			{
 //					m_isEnable = XFalse;
@@ -340,42 +339,37 @@ bool XTextureResourceManager::loadFromPacker(const char *filename,XResourcePosit
 	m_texResInfos.push_back(tmp);
 	return true;
 }
-bool XTextureResourceManager::loadFromWeb(const char *filename)		//从网页中读取资源
-{
-	return false;
-}
-
-XBool XTextureResourceManager::addATexResPack(const char *filename,XResourcePosition resPos)
+XBool XTextureResourceManager::addATexResPack(const char *filename,XResPos resPos)
 {
 	if(!m_isInited || !m_isEnable) return false;
 	if(filename == NULL) return false;
 	if(isLoaded(filename)) return false;	//防止资源重复载入
 	//设置资源的位置
-	if(resPos == RESOURCE_SYSTEM_DEFINE) resPos = getDefResPos();
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
 	
 	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(filename,resPos)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filename)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(filename,resPos) && !loadFromFolder(filename,resPos) &&
 			!loadFromWeb(filename)) return false;
 		break;
 	}
 	return true;
 }
-bool XTextureData::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+bool XTextureData::loadFromFolder(const char *filename,XResPos resPos)	//从文件夹中载入资源
 {
 	if(!texture.load(filename,resPos)) return XFalse;
 	//由于程序内部会对数据进行2的n次方扩展所以这里需要衔接数据。
-	if(!XMath::isNPOT(texture.m_w,texture.m_h))
+	if(XEG.getTexNeedFit2N() && !XMath::isNPOT(texture.m_w,texture.m_h))
 	{//符合2的n次方没有进行扩展
 		textureSize.set(texture.m_w,texture.m_h);
 		isEnableInsideClip = 0;
@@ -383,8 +377,8 @@ bool XTextureData::loadFromFolder(const char *filename,XResourcePosition resPos)
 	{//由于进行了可扩展所以需要进行裁剪
 		int w = XMath::getMinWellSize2n(texture.m_w);
 		int h = XMath::getMinWellSize2n(texture.m_h);
-		textureMove.set(0.0f,0.0f);
-		textureMove2.set(0.0f,0.0f);
+		textureMove.set(0.0f);
+		textureMove2.set(0.0f);
 		clipInsideRect.left = (w - texture.m_w) * 0.5f;
 		clipInsideRect.top = (h - texture.m_h) * 0.5f;
 		clipInsideRect.right = clipInsideRect.left + texture.m_w;
@@ -404,40 +398,33 @@ bool XTextureData::loadFromPacker(const char *filename)	//从压缩包中载入资源
 	texture = texInfo.texture;
 	textureMove = texInfo.textureMove;
 	textureMove2 = texInfo.textureMove2;
-	clipInsideRect.set(texInfo.textureOffset.x,texInfo.textureOffset.y,
-		texInfo.textureOffset.x + texInfo.textureSize.x,texInfo.textureOffset.y + texInfo.textureSize.y);
-	textureSize.set(clipInsideRect.getWidth() + textureMove.x + textureMove2.x,clipInsideRect.getHeight() + textureMove.y + textureMove2.y);
+	clipInsideRect.set(texInfo.textureOffset,
+		texInfo.textureOffset + texInfo.textureSize);
+	textureSize = clipInsideRect.getSize() + textureMove + textureMove2;
 	isEnableInsideClip = 1;
 	return true;
 }
-bool XTextureData::loadFromWeb(const char *filename)		//从网页中读取资源
+XBool XTextureData::reload(const char * filename, XResPos resPos)
 {
-	return loadFromFolder(filename,RESOURCE_WEB);
-}
-XBool XTextureData::load(const char * filename,XResourcePosition resoursePosition)
-{
-	if(m_isInited) return XTrue;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
 
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-
-	switch(resoursePosition)
+ 	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK://从优化包中读取数据，读取失败之后从资源包中读取
-		if(!loadFromPacker(filename) && !loadFromFolder(filename,resoursePosition)) return false;
+	case RES_LOCAL_PACK://从优化包中读取数据，读取失败之后从资源包中读取
+		if(!loadFromPacker(filename) && !loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
-		if(!loadFromFolder(filename,resoursePosition)) return false;
+	case RES_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filename)) return false;
 		break;
-	case RESOURCE_AUTO:
-		if(!loadFromPacker(filename) && !loadFromFolder(filename,resoursePosition) &&
+	case RES_AUTO:
+		if(!loadFromPacker(filename) && !loadFromFolder(filename,resPos) &&
 			!loadFromWeb(filename)) return false;
 		break;
 	}
-	m_isInited = XTrue;
-	return XTrue;
+	return true;
 }
 XBool XTextureData::setACopy(const XTextureData& temp)
 {
@@ -470,7 +457,7 @@ XTextureData& XTextureData::operator = (const XTextureData& temp)
 	return * this;
 }
 //将资源还原
-XBool reductionTexture(const unsigned char *p,int length,const XTextureInfo &texInfo)
+XBool reductionTexture(const void *p,int length,const XTextureInfo &texInfo)
 {
 	if(p == NULL ||
 		length <= 0) return XFalse;

@@ -49,15 +49,16 @@ public:
 	{
 		if(str == NULL ||
 			strlen(str) >= PROJECT_STRING_LEN) return XFalse;
-		strcpy(m_projectStr,str);
+		strcpy_s(m_projectStr,PROJECT_STRING_LEN,str);
 		return XTrue;
 	}
+	int getSenderBuffSize()const{return m_sendDataBuff.size();}
 	XBool sendData(XNetData *data)
 	{
 		if(data == NULL) return XFalse;
 		m_mutex.Lock();
 		m_sendDataBuff.push_back(data);
-		if(m_sendDataBuff.size() > 32)	//为了防止数据拥堵，这里永远只保留最新的32帧数据
+		if(m_sendDataBuff.size() > MAX_SEND_DATA_BUFF)	//为了防止数据拥堵，这里永远只保留最新的32帧数据
 		{
 			data = m_sendDataBuff[0];
 			m_sendDataBuff.pop_front();

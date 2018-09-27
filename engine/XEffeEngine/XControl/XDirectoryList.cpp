@@ -10,17 +10,17 @@
 #include "XResourcePack.h"
 namespace XE{
 XDirListSkin::XDirListSkin()
-:m_isInited(XFalse)
-,dirListNormal(NULL)
-,dirListDisable(NULL)
+	:m_isInited(XFalse)
+	, dirListNormal(NULL)
+	, dirListDisable(NULL)
 {}
-XBool XDirListSkin::init(const char *normal,const char *disable,XResourcePosition resoursePosition)
+XBool XDirListSkin::init(const char *normal,const char *disable,XResPos resPos)
 {
 	if(m_isInited ||
 		normal == NULL || disable == NULL) return XFalse;
 	
-	if((dirListNormal = createATextureData(normal,resoursePosition)) == NULL) return XFalse;
-	if((dirListDisable = createATextureData(disable,resoursePosition)) == NULL)
+	if((dirListNormal = createATextureData(normal,resPos)) == NULL) return XFalse;
+	if((dirListDisable = createATextureData(disable,resPos)) == NULL)
 	{
 		XMem::XDELETE(dirListNormal);
 		return XFalse;
@@ -30,11 +30,11 @@ XBool XDirListSkin::init(const char *normal,const char *disable,XResourcePositio
 	return XTrue;
 }
 #define DIRLIST_CONFIG_FILENAME "DirevtoryList.txt"
-bool XDirListSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+bool XDirListSkin::loadFromFolder(const char *filename,XResPos resPos)	//从文件夹中载入资源
 {
 	//下面从配置文件中读取数据
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,DIRLIST_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,DIRLIST_CONFIG_FILENAME);
 	FILE *fp = NULL;
 	if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
 	//下面开始依次读取数据
@@ -48,7 +48,7 @@ bool XDirListSkin::loadFromFolder(const char *filename,XResourcePosition resPos)
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((dirListNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		fclose(fp);
@@ -62,7 +62,7 @@ bool XDirListSkin::loadFromFolder(const char *filename,XResourcePosition resPos)
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((dirListDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		fclose(fp);
@@ -76,10 +76,10 @@ bool XDirListSkin::loadFromFolder(const char *filename,XResourcePosition resPos)
 	fclose(fp);
 	return true;
 }
-bool XDirListSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+bool XDirListSkin::loadFromPacker(const char *filename,XResPos resPos)	//从压缩包中载入资源
 {
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,DIRLIST_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,DIRLIST_CONFIG_FILENAME);
 	unsigned char *p = XResPack.getFileData(tempFilename);
 	if(p == NULL) return XFalse;
 
@@ -97,7 +97,7 @@ bool XDirListSkin::loadFromPacker(const char *filename,XResourcePosition resPos)
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((dirListNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		XMem::XDELETE_ARRAY(p);
@@ -112,7 +112,7 @@ bool XDirListSkin::loadFromPacker(const char *filename,XResourcePosition resPos)
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((dirListDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		XMem::XDELETE_ARRAY(p);
@@ -127,30 +127,30 @@ bool XDirListSkin::loadFromPacker(const char *filename,XResourcePosition resPos)
 	XMem::XDELETE_ARRAY(p);
 	return true;
 }
-bool XDirListSkin::loadFromWeb(const char *filename,XResourcePosition resPos)		//从网页中读取资源
+bool XDirListSkin::loadFromWeb(const char *filename,XResPos resPos)		//从网页中读取资源
 {
 	return false;
 }
-XBool XDirListSkin::initEx(const char *filename,XResourcePosition resoursePosition)
+XBool XDirListSkin::initEx(const char *filename,XResPos resPos)
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse;
 	//下面从配置文件中读取数据
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
-		if(!loadFromPacker(filename,resoursePosition)) return false;
+	case RES_LOCAL_PACK:
+		if(!loadFromPacker(filename,resPos)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
-		if(!loadFromFolder(filename,resoursePosition)) return false;
+	case RES_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_WEB:
-		if(!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_WEB:
+		if(!loadFromWeb(filename,resPos)) return false;
 		break;
-	case RESOURCE_AUTO:
-		if(!loadFromPacker(filename,resoursePosition) && !loadFromFolder(filename,resoursePosition) &&
-			!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_AUTO:
+		if(!loadFromPacker(filename,resPos) && !loadFromFolder(filename,resPos) &&
+			!loadFromWeb(filename,resPos)) return false;
 		break;
 	}
 	m_isInited = XTrue;
@@ -205,7 +205,7 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 				tempLine->m_check->setACopy(pPar.m_check);
 				tempLine->m_check->setColor(pPar.m_color);
 				tempLine->m_needCheck = XTrue;
-		//		tempLine->m_check->setPosition(pPar.m_position + XVector2(0.0f,42.0f + pPar.m_curTextHeight * i));
+		//		tempLine->m_check->setPosition(pPar.m_position + XVec2(0.0f,42.0f + pPar.m_curTextHeight * i));
 				XCtrlManager.decreaseAObject(tempLine->m_check);
 				tempLine->m_check->setEventProc(ctrlProc,&pPar);
 	#if WITH_OBJECT_MANAGER
@@ -215,11 +215,11 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 			{
 				tempLine->m_needCheck = XFalse;
 			}
-		//	tempLine->m_pos.set(pPar.m_position + XVector2(0.0f,42.0f + pPar.m_curTextHeight * i));
+		//	tempLine->m_pos.set(pPar.m_position + XVec2(0.0f,42.0f + pPar.m_curTextHeight * i));
 		//	tempLine->m_font.setPosition(tempLine->m_pos);
 			tempLine->m_font.setScale(pPar.m_fontSize * pPar.m_scale);
 			tempLine->m_string = XMem::createArrayMem<char>(MAX_FILE_NAME_LENGTH);
-			sprintf(tempLine->m_string,"|-%s",pPar.m_dir.m_curDirectory.files[i]->filename.c_str());
+			sprintf_s(tempLine->m_string,MAX_FILE_NAME_LENGTH,"|-%s",pPar.m_dir.m_curDirectory.files[i]->filename.c_str());
 			tempLine->m_font.setString(tempLine->m_string);
 			tempLine->m_isEnable = XTrue;
 			tempLine->m_file = pPar.m_dir.m_curDirectory.files[i];
@@ -228,13 +228,13 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 		if(pPar.m_curLineSum > pPar.m_canShowLineSum) 
 		{
 			pPar.m_needShowVSlider = XTrue;
-			pPar.m_verticalSlider.setCurValue(0.0f);
+			pPar.m_verticalSlider.setCurValue(0.0f, true);
 			pPar.m_verticalSlider.setRange(pPar.m_curLineSum - pPar.m_canShowLineSum,0.0f);
 		}else 
 		{
 			pPar.m_needShowVSlider = XFalse;
 			pPar.m_showStartLine = 0;	//初始化数据
-			pPar.m_verticalSlider.setCurValue(0.0f);
+			pPar.m_verticalSlider.setCurValue(0.0f, true);
 		}
 		pPar.updateHSliderState();
 		//更新内容之后取消选择设置
@@ -283,7 +283,7 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 					}	
 					//插入新数据
 					XDirListOneLine * tempLine = NULL;
-					//XVector2 pos = tempLineData->m_pos;
+					//XVec2 pos = tempLineData->m_pos;
 					for(int j = 0;j < insertSum;++ j)
 					{
 						tempLine = XMem::createMem<XDirListOneLine>();
@@ -316,11 +316,12 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 						char tempStr[MAX_FILE_NAME_LENGTH] = "";
 						for(int k = 0;k < tempLineData->m_file->directory->level;++ k)
 						{
-							tempStr[2 * k] = '|';
-							tempStr[2 * k + 1] = ' ';
-							tempStr[2 * k + 2] = '\0';
+							memcpy(tempStr + (k << 1), &"|,", 3);
+							//tempStr[2 * k] = '|';
+							//tempStr[2 * k + 1] = ' ';
+							//tempStr[2 * k + 2] = '\0';
 						}
-						sprintf(tempLine->m_string,"%s|-%s",tempStr,tempLineData->m_file->directory->files[j]->filename.c_str());
+						sprintf_s(tempLine->m_string,MAX_FILE_NAME_LENGTH,"%s|-%s",tempStr,tempLineData->m_file->directory->files[j]->filename.c_str());
 						tempLine->m_font.setString(tempLine->m_string);
 						tempLine->m_isEnable = XTrue;
 						tempLine->m_file = tempLineData->m_file->directory->files[j];
@@ -343,7 +344,7 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 					{
 						pPar.m_needShowVSlider = XFalse;
 						pPar.m_showStartLine = 0;	//初始化数据
-						pPar.m_verticalSlider.setCurValue(0.0f);
+						pPar.m_verticalSlider.setCurValue(0.0f, true);
 					}
 					pPar.updateHSliderState();
 				}else
@@ -355,10 +356,10 @@ void XDirectoryList::ctrlProc(void *pClass,int id,int eventID)
 		}
 	}
 }
-XBool XDirectoryList::init(const XVector2& position,
+XBool XDirectoryList::init(const XVec2& position,
 	const XRect& Area,
 	XDirListSkin &tex,
-	const XFontUnicode &font,
+	const XFontUnicode& font,
 	float fontSize,
 	const XCheck &check,
 	const XButton &button,
@@ -391,14 +392,14 @@ XBool XDirectoryList::init(const XVector2& position,
 	if(!m_caption.setACopy(font)) return XFalse;
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //设置字体上对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f);
 	m_caption.setColor(m_textColor);
-	m_fontSize.set(fontSize,fontSize);
+	m_fontSize.set(fontSize);
 	m_caption.setScale(m_fontSize);
 	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
 	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
 
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	//m_mouseRect.set(1.0f,1.0f,351.0f,361.0f);
 	m_mouseRect = Area;
 	m_showPixWidth = m_mouseRect.getWidth() * m_scale.x;
@@ -427,19 +428,17 @@ XBool XDirectoryList::init(const XVector2& position,
 	XObjManager.decreaseAObject(&m_edit);
 	XObjManager.decreaseAObject(&m_caption);
 #endif
-	m_spriteBackGround.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight()));
+	m_spriteBackGround.setPosition(m_position + XVec2(0.0f,m_edit.getMouseRect().getHeight()));
 	m_edit.setPosition(m_position);
 	char tempDirectoryName[MAX_FILE_NAME_LENGTH];
 	GetCurrentDirectory(MAX_FILE_NAME_LENGTH,tempDirectoryName);	//获取当前路径
 	m_edit.setString(tempDirectoryName);//初始化为当前路径
 
-	m_button.setPosition(m_position + XVector2(m_mouseRect.getWidth(),0.0f) * m_scale);
-	m_verticalSlider.setPosition(m_position + XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
-	m_horizontalSlider.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
+	m_button.setPosition(m_position + XVec2(m_mouseRect.getWidth(),0.0f) * m_scale);
+	m_verticalSlider.setPosition(m_position + XVec2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
+	m_horizontalSlider.setPosition(m_position + XVec2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 	setPosition(position);
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
@@ -450,18 +449,18 @@ XBool XDirectoryList::init(const XVector2& position,
 	return XTrue;
 }
 XBool XDirectoryList::initPlus(const char * path,
-		const XFontUnicode &font,
+		const XFontUnicode& font,
 		float fontSize,
-		XResourcePosition resoursePosition)
+		XResPos resPos)
 {
 	if(m_isInited ||
 		path == NULL) return XFalse;
-	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXDIRLIST_TEX,resoursePosition);
+	m_resInfo = XResManager.loadResource(path,RESOURCE_TYPEXDIRLIST_TEX,resPos);
 	if(m_resInfo == NULL) return XFalse;
 	XDirListSkin * tex = (XDirListSkin *)m_resInfo->m_pointer;
 	if(tex->dirListNormal == NULL || tex->dirListDisable == NULL) return XFalse;
 	if(fontSize <= 0) return XFalse;
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	m_dirListNormal = tex->dirListNormal;
 	m_dirListDisable = tex->dirListDisable;
 	m_spriteBackGround.init(m_dirListNormal->texture.m_w,m_dirListNormal->texture.m_h,1);
@@ -469,17 +468,17 @@ XBool XDirectoryList::initPlus(const char * path,
 
 	m_needShowVSlider = XFalse;			
 	char tempPath[MAX_FILE_NAME_LENGTH];
-	sprintf(tempPath,"%s/SliderV",path);
-	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resoursePosition);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/SliderV",path);
+	m_verticalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_VERTICAL,resPos);
 	m_needShowHSlider = XFalse;		
-	sprintf(tempPath,"%s/SliderH",path);
-	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resoursePosition);
-	sprintf(tempPath,"%s/Check",path);
-	m_check.initPlus(tempPath," ",font,1.0f,resoursePosition);
-	sprintf(tempPath,"%s/Button",path);
-	m_button.initPlus(tempPath," ",font,1.0f,resoursePosition);
-	sprintf(tempPath,"%s/Edit",path);
-	m_edit.initPlus(tempPath," ",font,1.0f,NULL,resoursePosition);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/SliderH",path);
+	m_horizontalSlider.initPlus(tempPath,100.0f,0.0f,SLIDER_TYPE_HORIZONTAL,resPos);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/Check",path);
+	m_check.initPlus(tempPath," ",font,1.0f,resPos);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/Button",path);
+	m_button.initPlus(tempPath," ",font,1.0f,resPos);
+	sprintf_s(tempPath,MAX_FILE_NAME_LENGTH,"%s/Edit",path);
+	m_edit.initPlus(tempPath," ",font,1.0f,NULL,resPos);
 	m_withoutTex = XFalse;
 	//设置回调函数
 	m_button.setEventProc(ctrlProc,this);
@@ -489,14 +488,14 @@ XBool XDirectoryList::initPlus(const char * path,
 	if(!m_caption.setACopy(font)) return XFalse;
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //设置字体上对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);
-	m_fontSize.set(fontSize,fontSize);
+	m_fontSize.set(fontSize);
 	m_caption.setScale(m_fontSize);
 	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
 	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
 
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	m_mouseRect = tex->m_mouseRect;
 	m_showPixWidth = m_mouseRect.getWidth() * m_scale.x;
 	m_showPixHight = m_mouseRect.getHeight() * m_scale.y;
@@ -524,20 +523,18 @@ XBool XDirectoryList::initPlus(const char * path,
 	XObjManager.decreaseAObject(&m_edit);
 	XObjManager.decreaseAObject(&m_caption);
 #endif
-	m_spriteBackGround.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight()));
+	m_spriteBackGround.setPosition(m_position + XVec2(0.0f,m_edit.getMouseRect().getHeight()));
 	m_edit.setPosition(m_position);
 	char tempDirectoryName[MAX_FILE_NAME_LENGTH];
 	GetCurrentDirectory(MAX_FILE_NAME_LENGTH,tempDirectoryName);	//获取当前路径
 	m_edit.setString(tempDirectoryName);//初始化为当前路径
 
-	m_button.setPosition(m_position + XVector2(m_mouseRect.getWidth(),0.0f) * m_scale);
-	m_verticalSlider.setPosition(m_position + XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
-	m_horizontalSlider.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
+	m_button.setPosition(m_position + XVec2(m_mouseRect.getWidth(),0.0f) * m_scale);
+	m_verticalSlider.setPosition(m_position + XVec2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
+	m_horizontalSlider.setPosition(m_position + XVec2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	setPosition(0.0f,0.0f);
+	m_isVisible = m_isEnable = m_isActive = XTrue;
+	setPosition(XVec2::zero);
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -547,45 +544,47 @@ XBool XDirectoryList::initPlus(const char * path,
 	return XTrue;
 }
 XBool XDirectoryList::initWithoutSkin(const XRect& area,	
-	const XFontUnicode &font,
+	const XFontUnicode& font,
 	float fontSize)
 {
 	if(m_isInited) return XTrue;
 	if(fontSize <= 0) return XFalse;
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 
 	m_mouseRect = area;
 
 	m_needShowVSlider = XFalse;			
 //	m_verticalSlider.initWithoutSkin(XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight()),
-//		XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,XVector2::zero);
+//		XRect(0,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_VERTICAL,100.0f,0.0f,XVec2::zero);
 	m_verticalSlider.initWithoutSkin(XRect(0,0,DEFAULT_SLIDER_WIDTH,m_mouseRect.getHeight()),100.0f,0.0f,SLIDER_TYPE_VERTICAL);
 	m_needShowHSlider = XFalse;		
 //	m_horizontalSlider.initWithoutSkin(XRect(0,0,m_mouseRect.getWidth(),DEFAULT_SLIDER_WIDTH),
-//		XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,XVector2::zero);
+//		XRect(0,DEFAULT_SLIDER_WIDTH),SLIDER_TYPE_HORIZONTAL,100.0f,0.0f,XVec2::zero);
 	m_horizontalSlider.initWithoutSkin(XRect(0,0,m_mouseRect.getWidth(),DEFAULT_SLIDER_WIDTH));
-	m_check.initWithoutSkin(" ",font,0.5f,XRect(0,0,DEFAULT_DIRLIST_CK_SIZE,DEFAULT_DIRLIST_CK_SIZE),
-		XVector2(DEFAULT_DIRLIST_CK_SIZE,DEFAULT_DIRLIST_CK_SIZE));
+	m_check.initWithoutSkin(" ",font,0.5f,XRect(0,DEFAULT_DIRLIST_CK_SIZE),
+		XVec2(DEFAULT_DIRLIST_CK_SIZE));
 	m_button.initWithoutSkin(" ",font,1.0f,XRect(0,0,DEFAULT_SLIDER_WIDTH,DEFAULT_DIRLIST_BT_SIZE),
-		XVector2((int)(DEFAULT_SLIDER_WIDTH) >> 1,(int)(DEFAULT_DIRLIST_BT_SIZE) >> 1));
+		XVec2((int)(DEFAULT_SLIDER_WIDTH) >> 1,(int)(DEFAULT_DIRLIST_BT_SIZE) >> 1));
 	m_edit.initWithoutSkin(XRect(0,0,m_mouseRect.getWidth(),DEFAULT_DIRLIST_BT_SIZE)," ",font,1.0f,NULL);
 	m_withoutTex = XTrue;
 	//设置回调函数
 	m_button.setEventProc(ctrlProc,this);
 	m_verticalSlider.setEventProc(ctrlProc,this);
 	m_horizontalSlider.setEventProc(ctrlProc,this);
+	m_verticalSlider.setWithAction(false);
+	m_horizontalSlider.setWithAction(false);
 
 	if(!m_caption.setACopy(font)) return XFalse;
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);	 //设置字体上对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);
-	m_fontSize.set(fontSize,fontSize);
+	m_fontSize.set(fontSize);
 	m_caption.setScale(m_fontSize);
 	m_curTextWidth = m_caption.getTextSize().x * m_caption.getScale().x * 0.5f;
 	m_curTextHeight = m_caption.getTextSize().y * m_caption.getScale().y;
 
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	m_showPixWidth = m_mouseRect.getWidth() * m_scale.x;
 	m_showPixHight = m_mouseRect.getHeight() * m_scale.y;
 
@@ -617,14 +616,12 @@ XBool XDirectoryList::initWithoutSkin(const XRect& area,
 	GetCurrentDirectory(MAX_FILE_NAME_LENGTH,tempDirectoryName);	//获取当前路径
 	m_edit.setString(tempDirectoryName);//初始化为当前路径
 
-	m_button.setPosition(m_position + XVector2(m_mouseRect.getWidth(),0.0f) * m_scale);
-	m_verticalSlider.setPosition(m_position + XVector2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
-	m_horizontalSlider.setPosition(m_position + XVector2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
+	m_button.setPosition(m_position + XVec2(m_mouseRect.getWidth(),0.0f) * m_scale);
+	m_verticalSlider.setPosition(m_position + XVec2(m_mouseRect.getWidth(),m_edit.getMouseRect().getHeight()));
+	m_horizontalSlider.setPosition(m_position + XVec2(0.0f,m_edit.getMouseRect().getHeight() + m_mouseRect.getHeight()));
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	setPosition(0.0f,0.0f);
+	m_isVisible = m_isEnable = m_isActive = XTrue;
+	setPosition(XVec2::zero);
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -635,80 +632,65 @@ XBool XDirectoryList::initWithoutSkin(const XRect& area,
 }
 void XDirectoryList::draw()
 {
-	if(!m_isInited ||	//如果没有初始化直接退出
+	if (!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
 
-	if(m_withoutTex)
+	if (m_withoutTex)
 	{
-		if(!m_isEnable) 
+		if (!m_isEnable)
 		{
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,(m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_mouseRect.getWidth() * m_scale.x,
-				m_mouseRect.getHeight() * m_scale.y),XCCS::blackOnColor * m_color); 
-
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.right * m_scale.x,
-				(m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_verticalSlider.getMouseRectHeight() * m_scale.y),XCCS::downColor * m_color);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,
-				(m_mouseRect.bottom + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_horizontalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::downColor * m_color);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.right * m_scale.x,
-				(m_mouseRect.bottom + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightBlackColor * m_color);
-		}else
-		{
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,(m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_mouseRect.getWidth() * m_scale.x,
-				m_mouseRect.getHeight() * m_scale.y),XCCS::specialColor * m_color); 
-
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.right * m_scale.x,
-				(m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_verticalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightSpecialColor * m_color);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.left * m_scale.x,
-				(m_mouseRect.bottom + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_horizontalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightSpecialColor * m_color);
-			XRender::drawFillBoxExA(m_position + XVector2(m_mouseRect.right * m_scale.x,
-				(m_mouseRect.bottom + m_edit.getMouseRect().getHeight()) * m_scale.y),
-				XVector2(m_verticalSlider.getMouseRectWidth() * m_scale.x,
-				m_horizontalSlider.getMouseRectHeight() * m_scale.y),XCCS::lightMouseColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.top + m_edit.getMouseRectHeight()) * m_scale,
+				m_mouseRect.getSize() * m_scale, XCCS::blackOnColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right, m_mouseRect.top + m_edit.getMouseRectHeight()) * m_scale,
+				m_verticalSlider.getMouseRect().getSize() * m_scale, XCCS::downColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom + m_edit.getMouseRectHeight()) * m_scale,
+				m_horizontalSlider.getMouseRect().getSize() * m_scale, XCCS::downColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right, m_mouseRect.bottom + m_edit.getMouseRectHeight()) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(),
+					m_horizontalSlider.getMouseRectHeight()) * m_scale, XCCS::lightBlackColor * m_color);
 		}
-	}else
+		else
+		{
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.top + m_edit.getMouseRectHeight()) * m_scale,
+				m_mouseRect.getSize() * m_scale, XCCS::specialColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right, m_mouseRect.top + m_edit.getMouseRectHeight()) * m_scale,
+				m_verticalSlider.getMouseRect().getSize() * m_scale, XCCS::lightSpecialColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.left, m_mouseRect.bottom + m_edit.getMouseRectHeight()) * m_scale,
+				m_horizontalSlider.getMouseRect().getSize() * m_scale, XCCS::lightSpecialColor * m_color);
+			XRender::drawFillRectExA(m_position + XVec2(m_mouseRect.right, m_mouseRect.bottom + m_edit.getMouseRectHeight()) * m_scale,
+				XVec2(m_verticalSlider.getMouseRectWidth(),
+					m_horizontalSlider.getMouseRectHeight()) * m_scale, XCCS::lightMouseColor * m_color);
+		}
+	}
+	else
 	{
-		if(!m_isEnable) m_spriteBackGround.draw(m_dirListDisable);
+		if (!m_isEnable) m_spriteBackGround.draw(m_dirListDisable);
 		else m_spriteBackGround.draw(m_dirListNormal);
 	}
 	//显示选择的状态
-	if(m_haveSelect)
-	{
-		if(m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
-		{//需要显示
-			XRender::drawBox(m_position.x + m_mouseRect.left * m_scale.x + m_mouseRect.getWidth() * m_scale.x * 0.5f,
-				m_position.y + (m_mouseRect.top + m_edit.getMouseRect().getHeight() + (m_selectLineOrder - m_showStartLine + 0.5f) * m_curTextHeight) * m_scale.y,	//42.0f为输入框的高
-				m_mouseRect.getWidth() * m_scale.x * 0.5f,
-				m_curTextHeight * m_scale.y * 0.5f,0.5f,XCCS::darkColor * m_color);
-		}
+	if (m_haveSelect &&
+		m_selectLineOrder >= m_showStartLine && m_selectLineOrder < m_showStartLine + m_canShowLineSum)
+	{//需要显示
+		XRender::drawRect(m_position + XVec2(m_mouseRect.getXCenter(),
+			m_mouseRect.top + m_edit.getMouseRect().getHeight() + (m_selectLineOrder - m_showStartLine + 0.5f) * m_curTextHeight) * m_scale,	//42.0f为输入框的高
+			XVec2(m_mouseRect.getWidth(), m_curTextHeight) * m_scale * 0.5f, 0.5f, XCCS::darkColor * m_color);
 	}
-	if(m_needShowVSlider) m_verticalSlider.draw();
-	if(m_needShowHSlider) m_horizontalSlider.draw();
+	if (m_needShowVSlider) m_verticalSlider.draw();
+	if (m_needShowHSlider) m_horizontalSlider.draw();
 	m_button.draw();
 	m_edit.draw();
 	//显示所有行的信息
 	int lineSum = 0;
-	if(m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
+	if (m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
 	else lineSum = m_curLineSum - m_showStartLine;
 	XDirListOneLine * tempLine = NULL;
-	for(int i = 0;i < lineSum;++ i)
+	for (int i = 0; i < lineSum; ++i)
 	{
 		tempLine = m_lineData[i + m_showStartLine];
 		tempLine->m_font.draw();
-		if(tempLine->m_needCheck && tempLine->m_check != NULL) 
+		if (tempLine->m_needCheck && tempLine->m_check != NULL)
 		{
-			if(tempLine->m_check->getPosition().x >= m_position.x
+			if (tempLine->m_check->getPosition().x >= m_position.x
 				&& tempLine->m_check->getPosition().x < m_position.x + m_canShowMaxLineWidth - tempLine->m_check->getMouseRect().getWidth())
 				tempLine->m_check->draw();
 		}
@@ -716,23 +698,23 @@ void XDirectoryList::draw()
 }
 void XDirectoryList::drawUp()
 {
-	if(!m_isInited ||	//如果没有初始化直接退出
+	if (!m_isInited ||	//如果没有初始化直接退出
 		!m_isVisible) return;	//如果不可见直接退出
-	if(m_needShowVSlider) m_verticalSlider.drawUp();
-	if(m_needShowHSlider) m_horizontalSlider.drawUp();
+	if (m_needShowVSlider) m_verticalSlider.drawUp();
+	if (m_needShowHSlider) m_horizontalSlider.drawUp();
 	m_button.drawUp();
 	m_edit.drawUp();
 	//显示所有行的信息
 	int lineSum = 0;
-	if(m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
+	if (m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
 	else lineSum = m_curLineSum - m_showStartLine;
 	XDirListOneLine * tempLine = NULL;
-	for(int i = 0;i < lineSum;++ i)
+	for (int i = 0; i < lineSum; ++i)
 	{
 		tempLine = m_lineData[i + m_showStartLine];
-		if(tempLine->m_needCheck && tempLine->m_check != NULL) 
+		if (tempLine->m_needCheck && tempLine->m_check != NULL)
 		{
-			if(tempLine->m_check->getPosition().x >= m_position.x
+			if (tempLine->m_check->getPosition().x >= m_position.x
 				&& tempLine->m_check->getPosition().x < m_position.x + m_canShowMaxLineWidth - tempLine->m_check->getMouseRect().getWidth())
 				tempLine->m_check->drawUp();
 		}
@@ -740,21 +722,21 @@ void XDirectoryList::drawUp()
 }
 void XDirectoryList::update(float stepTime)
 {
-	if(m_needShowVSlider) m_verticalSlider.update(stepTime);
-	if(m_needShowHSlider) m_horizontalSlider.update(stepTime);
+	if (m_needShowVSlider) m_verticalSlider.update(stepTime);
+	if (m_needShowHSlider) m_horizontalSlider.update(stepTime);
 	m_button.update(stepTime);
 	m_edit.update(stepTime);
 	//显示所有行的信息
 	int lineSum = 0;
-	if(m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
+	if (m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
 	else lineSum = m_curLineSum - m_showStartLine;
 	XDirListOneLine * tempLine = NULL;
-	for(int i = 0;i < lineSum;++ i)
+	for (int i = 0; i < lineSum; ++i)
 	{
 		tempLine = m_lineData[i + m_showStartLine];
-		if(tempLine->m_needCheck && tempLine->m_check != NULL) 
+		if (tempLine->m_needCheck && tempLine->m_check != NULL)
 		{
-			if(tempLine->m_check->getPosition().x >= m_position.x
+			if (tempLine->m_check->getPosition().x >= m_position.x
 				&& tempLine->m_check->getPosition().x < m_position.x + m_canShowMaxLineWidth - tempLine->m_check->getMouseRect().getWidth())
 				tempLine->m_check->update(stepTime);
 		}
@@ -763,14 +745,15 @@ void XDirectoryList::update(float stepTime)
 	m_mouseTime += stepTime;
 }
 #pragma comment(lib, "shell32.lib")	//for ShellExecute()!
-XBool XDirectoryList::mouseProc(float x,float y,XMouseState mouseState)
+XBool XDirectoryList::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited || 	//如果没有初始化直接退出
 		!m_isVisible) return XTrue;	//如果不可见直接退出
-	if(m_needShowVSlider) m_verticalSlider.mouseProc(x,y,mouseState);
-	if(m_needShowHSlider) m_horizontalSlider.mouseProc(x,y,mouseState);
-	m_edit.mouseProc(x,y,mouseState);
-	m_button.mouseProc(x,y,mouseState);
+	if(m_isSilent) return XFalse;
+	if(m_needShowVSlider) m_verticalSlider.mouseProc(p,mouseState);
+	if(m_needShowHSlider) m_horizontalSlider.mouseProc(p,mouseState);
+	m_edit.mouseProc(p,mouseState);
+	m_button.mouseProc(p,mouseState);
 	//所有文件夹的点接受鼠标控制
 	int lineSum = 0;
 	if(m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
@@ -783,7 +766,7 @@ XBool XDirectoryList::mouseProc(float x,float y,XMouseState mouseState)
 			&& tempLine->m_check->getPosition().x >= m_position.x
 			&& tempLine->m_check->getPosition().x < m_position.x + m_canShowMaxLineWidth - tempLine->m_check->getMouseRect().getWidth()) 
 		{
-			if(tempLine->m_check->mouseProc(x,y,mouseState))
+			if(tempLine->m_check->mouseProc(p,mouseState))
 			{//如果鼠标动作产生了变化，则在这里更新状态信息
 				if(m_curLineSum - m_showStartLine >= m_canShowLineSum) lineSum = m_canShowLineSum;
 				else lineSum = m_curLineSum - m_showStartLine;
@@ -798,9 +781,9 @@ XBool XDirectoryList::mouseProc(float x,float y,XMouseState mouseState)
 			(m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y + m_position.y,
 			m_mouseRect.right * m_scale.x + m_position.x,
 			(m_mouseRect.bottom + m_edit.getMouseRect().getHeight()) * m_scale.y + m_position.y);
-		if(tempRect.isInRect(x,y))
+		if(tempRect.isInRect(p))
 		{//处于点击范围之内
-			int lineOrder = (y - (m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y - m_position.y) / (m_curTextHeight * m_scale.y);
+			int lineOrder = (p.y - (m_mouseRect.top + m_edit.getMouseRect().getHeight()) * m_scale.y - m_position.y) / (m_curTextHeight * m_scale.y);
 			if(lineOrder >= 0 && lineOrder < m_canShowLineSum)
 			{
 				if(lineOrder + m_showStartLine < m_curLineSum)
@@ -815,7 +798,7 @@ XBool XDirectoryList::mouseProc(float x,float y,XMouseState mouseState)
 		{//双击打开指定文件
 			//printf("双击事件\n");
 			//char tempStr[MAX_FILE_NAME_LENGTH];
-			//sprintf(tempStr,"explorer %s",getSelectFileName());
+			//sprintf_s(tempStr,MAX_FILE_NAME_LENGTH,"explorer %s",getSelectFileName());
 			//system(tempStr);
 			if(m_haveSelect)
 			{
@@ -863,7 +846,7 @@ void XDirectoryList::furlFolder(int index,XBool flag)
 		m_lineData[j + index + 1]->release();
 	}
 	//移动
-	//XVector2 pos = tempLineData->m_pos;
+	//XVec2 pos = tempLineData->m_pos;
 	int tmpIndex = index + 1;
 	for(int j = 0;j < sum;++ j,++tmpIndex)
 	{
@@ -889,7 +872,7 @@ void XDirectoryList::furlFolder(int index,XBool flag)
 	{
 		m_needShowVSlider = XFalse;
 		m_showStartLine = 0;	//初始化数据
-		m_verticalSlider.setCurValue(0.0f);
+		m_verticalSlider.setCurValue(0.0f, true);
 	}
 	updateHSliderState();
 }
@@ -913,13 +896,13 @@ void XDirectoryList::updateHSliderState()
 			m_needShowHSlider = XTrue;
 			m_curLineLeft = 0;
 			m_horizontalSlider.setRange((m_maxLineWidth - m_canShowMaxLineWidth * m_scale.x)/(m_curTextWidth * m_scale.x * 2.0f) + 1.0f,0.0f);
-			m_horizontalSlider.setCurValue(0.0f);
+			m_horizontalSlider.setCurValue(0.0f, true);
 		}else
 		{//已经进行各裁剪
 			float tempValue = (m_maxLineWidth - m_canShowMaxLineWidth * m_scale.x)/(m_curTextWidth * m_scale.x * 2.0f) + 1.0f;
 			if(m_horizontalSlider.getCurValue() >= tempValue)
 			{
-				m_horizontalSlider.setCurValue(tempValue);
+				m_horizontalSlider.setCurValue(tempValue, true);
 			}
 			m_horizontalSlider.setRange(tempValue,0.0f);
 		}
@@ -929,7 +912,7 @@ void XDirectoryList::updateHSliderState()
 		{//取消所有裁剪设置
 			m_needShowHSlider = XFalse;
 			m_curLineLeft = 0;
-			m_horizontalSlider.setCurValue(0.0f);
+			m_horizontalSlider.setCurValue(0.0f, true);
 			for(unsigned int i = 0;i < m_lineData.size();++ i)
 			{
 				m_lineData[i]->m_font.disClip();	//取消所有裁剪
@@ -948,7 +931,7 @@ void XDirectoryList::updateShowPosition()
 		tempLine = m_lineData[i + m_showStartLine];
 		tempLine->m_font.setScale(m_scale);
 		tempLine->m_font.setClipRect(m_curLineLeft,0.0f,m_curLineLeft + m_canShowMaxLineWidth,32.0f);	//字体的高度
-		tempLine->m_font.setPosition(m_position + XVector2(0.0f - m_curLineLeft,m_edit.getMouseRect().getHeight() + m_curTextHeight * i) * m_scale);
+		tempLine->m_font.setPosition(m_position + XVec2(0.0f - m_curLineLeft,m_edit.getMouseRect().getHeight() + m_curTextHeight * i) * m_scale);
 		if(tempLine->m_needCheck)
 		{
 			tempLine->m_check->setScale(m_scale);

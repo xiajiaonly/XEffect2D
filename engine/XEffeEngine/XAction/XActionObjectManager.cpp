@@ -18,11 +18,11 @@ char * XActionObjectDescription::getStrFromData()
 	if(str == NULL) return NULL;
 	//下面开始打印数据
 	int offset = 0;
-	sprintf(str + offset,"ID:%d,\n",m_objectID);
+	sprintf_s(str + offset,MAX_ACTION_OBJECT_DES_LEN - offset,"ID:%d,\n",m_objectID);
 	offset = strlen(str);
-	sprintf(str + offset,"Name:%s\n",m_objectFilename);
+	sprintf_s(str + offset,MAX_ACTION_OBJECT_DES_LEN - offset,"Name:%s\n",m_objectFilename);
 	offset = strlen(str);
-	sprintf(str + offset,"Type:%d,\n",m_objectType);
+	sprintf_s(str + offset,MAX_ACTION_OBJECT_DES_LEN - offset,"Type:%d,\n",m_objectType);
 	offset = strlen(str);
 	switch(m_objectType)
 	{
@@ -35,7 +35,7 @@ char * XActionObjectDescription::getStrFromData()
 				XMem::XDELETE_ARRAY(str);
 				return NULL;
 			}
-			sprintf(str + offset,"%s",paramStr);
+			sprintf_s(str + offset,MAX_ACTION_OBJECT_DES_LEN - offset,"%s",paramStr);
 			XMem::XDELETE_ARRAY(paramStr);
 		}
 		break;
@@ -47,7 +47,7 @@ char * XActionObjectDescription::getStrFromData()
 				XMem::XDELETE_ARRAY(str);
 				return NULL;
 			}
-			sprintf(str + offset,"%s",paramStr);
+			sprintf_s(str + offset,MAX_ACTION_OBJECT_DES_LEN - offset,"%s",paramStr);
 			XMem::XDELETE_ARRAY(paramStr);
 		}
 		break;

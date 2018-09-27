@@ -19,7 +19,8 @@ public:
 		:m_isInited(false)
 		,m_pFrameEx(NULL)
 	{}
-	bool init(XFrameEx *pFrameEx,const XVector2 &originOffset)
+	virtual ~XFrameExStgObj(){}
+	bool init(XFrameEx *pFrameEx,const XVec2& originOffset)
 	{
 		if(m_isInited || pFrameEx == NULL) return false;
 
@@ -30,15 +31,15 @@ public:
 		return true;
 	}
 //下面两个接口是被内部调用的，外部不能调用
-	virtual void setPosition(float x,float y)
+	virtual void setPosition(const XVec2& p)
 	{
 		if(!m_isInited) return;
-		m_pFrameEx->setPosition(x,y);
+		m_pFrameEx->setPosition(p);
 	}
-	virtual void setScale(float x,float y)
+	virtual void setScale(const XVec2& s)
 	{
 		if(!m_isInited) return;
-		m_pFrameEx->setScale(x,y);
+		m_pFrameEx->setScale(s);
 	}
 	virtual void draw()
 	{

@@ -23,12 +23,12 @@ public:
 		,m_oldPosY(0)
 	{}
 	virtual ~XDragObjectBase(){}
-	virtual void setPosition(float x,float y) = 0;
-	virtual XVector2 getPosition()const = 0;
+	virtual void setPosition(const XVec2& pos) = 0;
+	virtual const XVec2& getPosition()const = 0;
 protected:
-	virtual XBool getIsInDragRect(float x,float y) = 0;	//判断位置是否在拖拽区域内
-	virtual XVector2 correctPos(const XVector2 &pos) = 0;	//更具传入的拖拽位置，修正该位置，当位置出于非法状态时，修正成合法的位置
-	void mouseEventProc(float x,float y,XMouseState mouseState);
+	virtual XBool getIsInDragRect(const XVec2& p) = 0;	//判断位置是否在拖拽区域内
+	virtual XVec2 correctPos(const XVec2& pos) = 0;	//更具传入的拖拽位置，修正该位置，当位置出于非法状态时，修正成合法的位置
+	void mouseEventProc(const XVec2& p,XMouseState mouseState);
 };
 }
 #endif

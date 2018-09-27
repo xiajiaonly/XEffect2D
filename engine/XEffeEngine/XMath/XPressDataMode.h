@@ -7,7 +7,7 @@
 //--------------------------------
 //这是一个压感数据模型，就是当压下时数据开始变化，当释放时数据开始恢复
 //可以分为单向压感模型和双向压感模型
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 #include "XInputEventCore.h"
 namespace XE{
 enum XPressState
@@ -35,11 +35,14 @@ private:
 	float m_maxChangeData;	//最大的变化数据
 	//XBool m_isRecover;		//数据是否完全恢复
 	float m_dataFlag;		//数据变换的符号
+
+	XKeyValue m_pressKey;
 public:
 	XPressDataSingle()
 		:m_startChangeData(1.0f)
 		,m_minChangeData(0.01f)
 		,m_maxChangeData(0.1f)
+		,m_pressKey(XKEY_LEFT)
 	{}
 	//normalValue:普通状态下得值
 	//maxDeformValue:最大变形状态下的值
@@ -69,6 +72,20 @@ public:
 			if(data < m_normalData) data = m_normalData; 
 		}
 		m_curData = data;
+	}
+	//工作模式2：关联按键模式
+	void setKeyValue(XKeyValue pressKey){m_pressKey = pressKey;}
+	void updateState(const XInputEvent &e)
+	{
+		if(e.type != EVENT_KEYBOARD) return;
+		if(e.keyState == KEY_STATE_DOWN)
+		{
+			if(e.keyValue == m_pressKey) setPress();
+		}else
+		if(e.keyState == KEY_STATE_UP)
+		{
+			if(e.keyValue == m_pressKey) setRelease();
+		}
 	}
 };
 //压感数据的回复模式
@@ -171,59 +188,19 @@ private:
 public:
 	XKeyPressModel()
 		:m_isInited(false)
-		,m_sensitivity(500)
-		,m_pressSpeed(100)
-		,m_keyValue(XKEY_LEFT)
+		, m_sensitivity(500)
+		, m_pressSpeed(100)
+		, m_keyValue(XKEY_LEFT)
 	{}
-	bool init(XKeyValue key,int sensitivity = 500,int pressSpeed = 100)
-	{
-		m_keyValue = key;
-		m_sensitivity = sensitivity; 
-		m_pressSpeed = pressSpeed;
-
+	void resetState()
+	{//强制按键弹起
 		m_isPress = false;
-		m_isKeyDown = false;
-		m_timer = 0;
-		m_isInited = true;
-		return true;
+		m_isKeyDown = false; 
 	}
-	bool move(float stepTime)	//返回是否触发按下时间
-	{
-		if(!m_isInited) return false;
-		if(m_isKeyDown)
-		{
-			m_timer += stepTime;
-			if(m_timer >= m_sensitivity)
-			{//下面产生连续按下时间
-				m_isPress = true;
-				m_timer -= m_pressSpeed;
-			}
-		}
-		if(m_isPress)
-		{
-			m_isPress = false;
-			return true;
-		}
-		return false;
-	}
-	void updateState(const XInputEvent &e)
-	{
-		if(!m_isInited) return;
-		if(e.type == EVENT_KEYBOARD && e.keyValue == m_keyValue)
-		{
-			if(e.keyState == KEY_STATE_DOWN)
-			{
-				m_isPress = true;
-				m_isKeyDown = true; 
-				m_timer = 0;
-			}else
-			if(e.keyState == KEY_STATE_UP)
-			{
-				m_isPress = false;
-				m_isKeyDown = false; 
-			}
-		}
-	}
+	bool init(XKeyValue key,int sensitivity = 500,int pressSpeed = 100);
+	bool move(float stepTime);	//返回是否触发按下事件
+	//下面这个函数不需要手动调用
+	void updateState(const XInputEvent& e);
 };
 }
 #endif

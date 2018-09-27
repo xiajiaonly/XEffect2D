@@ -23,7 +23,7 @@ namespace XE{
 class XNumberTexture
 {
 private:
-	XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
+	XResPos m_resoursePosition;	//资源位置 0:外部 1:内部
 	XBool m_isInited;	//是否初始化
 public:
 	//int m_textureSum;		//贴图的数量
@@ -45,7 +45,7 @@ public:
 	XTextureData *m_texture0f;		//.
 
 public:
-	XBool init(const char *fileName,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+	XBool init(const char *fileName,XResPos resPos = RES_SYS_DEF);
 	void release();
 	XNumberTexture();
 };
@@ -61,45 +61,46 @@ private:
 	float m_angleCos;
 public:
 	char *m_number;
-	XVector2 m_position;	//字体的位置，这个是字体放置的位置
-	XVector2 m_setPosition;	//字体被设置的位置，这个位置可能由于旋转等动作在最终被改变
+	XVec2 m_position;	//字体的位置，这个是字体放置的位置
+	XVec2 m_setPosition;	//字体被设置的位置，这个位置可能由于旋转等动作在最终被改变
 	float m_angle;			//字体的角度
 	float m_distance;		//文字之间的距离	
-	XVector2 m_size;		//文字的尺寸（像素大小）
-	XVector2 m_showSize;
-	XVector2 m_rotateBasicPoint;	//字体旋转的中心点
-	char m_blendTypeScr;
-	char m_blendTypeDst;
+	XVec2 m_size;		//文字的尺寸（像素大小）
+	XVec2 m_showSize;
+	XVec2 m_rotateBasicPoint;	//字体旋转的中心点
+//	char m_blendTypeScr;
+//	char m_blendTypeDst;
 private:
 	XBool m_isInited;
 public:
-	void setBlendType(int typeScr,int typeDst)
-	{
-		if(typeScr < 0) typeScr = 0;
-		if(typeDst < 0) typeDst = 0;
-		if(typeScr >= 9 ) typeScr = 8;
-		if(typeDst >= 8 ) typeDst = 7;
-		m_blendTypeScr = typeScr;
-		m_blendTypeDst = typeDst;
-		m_sprite.setBlendType(m_blendTypeScr,m_blendTypeDst);
-	}
+//	void setBlendType(int typeScr,int typeDst)
+//	{
+//		if(typeScr < 0) typeScr = 0;
+//		if(typeDst < 0) typeDst = 0;
+//		if(typeScr >= 9 ) typeScr = 8;
+//		if(typeDst >= 8 ) typeDst = 7;
+//		m_blendTypeScr = typeScr;
+//		m_blendTypeDst = typeDst;
+//		m_sprite.setBlendType(m_blendTypeScr,m_blendTypeDst);
+//	}
+	void setBlendModel(XGL::XBlendModel model) { m_sprite.setBlendModel(model); }
 
-	XBool init(const XNumberTexture *numberTexture,const XVector2 &size);		
+	XBool init(const XNumberTexture *numberTexture,const XVec2& size);		
 	void draw();
 
-	void setScale(const XVector2& scale);		//设置字体的显示大小
-	void setScale(float x,float y);	//设置字体的显示大小
+	void setScale(const XVec2& scale);		//设置字体的显示大小
+//	void setScale(float x,float y);	//设置字体的显示大小
 	void setAngle(float angle);	//设置字体显示的角度
-	void setPosition(const XVector2& position);	//设置字体显示的位置
-	void setPosition(float x,float y);	//设置字体显示的位置
-	void setRotateBasePoint(float x,float y);
+	void setPosition(const XVec2& position);	//设置字体显示的位置
+//	void setPosition(float x,float y);	//设置字体显示的位置
+	void setRotateBasePoint(const XVec2& r);
 
 	XBool setNumber(int temp);								//设置整形数
 	XBool setNumber(float temp,int decimalPartLength);		//设置带小数点的数
 	XBool setNumber(const char *temp);								//设置一段合理的字符串
 	XNumberEx& operator = (const XNumberEx& temp);
 	XBool setACopy(const XNumberEx &temp);
-	void setColor(float r,float g,float b,float a);	//设置颜色
+	void setColor(const XFColor& c);	//设置颜色
 	void setAlpha(float a);
 	float getAlpha() const {return m_sprite.getAlpha();}
 	XBool release();

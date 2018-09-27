@@ -8,12 +8,12 @@
 #include "XPixelCommon.h"
 #include "XMath/XByteFun.h"
 namespace XE{
-XBool XMaskTex::init(const char *filename,XResourcePosition resoursePosition)
+XBool XMaskTex::init(const char *filename,XResPos resPos)
 {
 	if(m_isInited ||
 		filename == NULL) return XFalse;
 	XPixels<XCurPixel> tmpPixels;
-	if(!tmpPixels.load(filename,resoursePosition)) return XFalse;
+	if(!tmpPixels.load(filename,resPos)) return XFalse;
 
 	if(tmpPixels.getColorMode() != COLOR_RGBA) 
 	{
@@ -45,19 +45,19 @@ XBool XMaskTex::init(const char *filename,XResourcePosition resoursePosition)
 		}
 	}
 	tmpPixels.release();
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
-	m_rect.set(0.0f,0.0f,m_sourcePixelSize.x,m_sourcePixelSize.y);
+	m_position.reset();
+	m_scale.set(1.0f);
+	m_rect.set(XVec2::zero,m_sourcePixelSize);
 
 	m_isInited = XTrue;
 	return XTrue;
 }
-XBool XMaskTex::getIsMask(float x,float y) const
+XBool XMaskTex::getIsMask(const XVec2& p) const
 {
 	if(!m_isInited) return XTrue;
-	if(!m_rect.isInRect(x,y)) return XFalse;
-	int index = (int)((x - m_rect.left) / m_scale.x + (y - m_rect.top) / m_scale.y * m_curPixelSize.x) >> 3;
-	int bitIndex = (int)((x - m_rect.left) / m_scale.x) % 8;
+	if(!m_rect.isInRect(p)) return XFalse;
+	int index = (int)((p.x - m_rect.left) / m_scale.x + (p.y - m_rect.top) / m_scale.y * m_curPixelSize.x) >> 3;
+	int bitIndex = (int)((p.x - m_rect.left) / m_scale.x) % 8;
 	return !(XByte::getBit(m_pixelData[index],bitIndex) == 0);
 }
 //void XMaskTex::draw()	//”√”⁄≤‚ ‘

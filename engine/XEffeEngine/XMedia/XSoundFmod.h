@@ -7,13 +7,17 @@
 //--------------------------------
 
 #include "XSoundCore.h"
-#include "../XFrameWork.h"
+//#include "../XFrameWork.h"
 extern "C" 
 {
 	#include "fmod.h"
 //	#include "fmod_errors.h"
 }
-#pragma comment(lib, "../../engine/lib/fmodex/vs/fmodex_vc.lib")
+#ifdef _WIN64
+#pragma comment(lib, "fmodex/vs/fmodex64_vc.lib")
+#else
+#pragma comment(lib, "fmodex/vs/fmodex_vc.lib")
+#endif
 #if WITH_ALL_WARNING == 0
 #pragma warning(disable: 4312)    //'type cast' : conversion from 'int' to 'FMOD_CHANNEL *' of greater size
 #pragma warning(disable: 4311)    //'type cast' : pointer truncation from 'FMOD_CHANNEL *' to 'int'
@@ -22,11 +26,16 @@ namespace XE{
 class XSoundFmod:public XSoundCore
 {
 public:
-	XSoundFmod() 
+	XSoundFmod()
 		:m_musicState(SOUND_STATE_NORMAL)
-		,m_curMusic(NULL)
-		,m_isCallBackOpen(false)
-		,m_musicChannel(NULL)
+		, m_isCallBackOpen(false)
+		, m_channelGroup(nullptr)
+		, m_sys(nullptr)
+		, m_musicChannel(NULL)
+		, m_curMusic(nullptr)
+		, m_cbSound(nullptr)
+		, m_cbChannel(nullptr)
+		, m_cbData(nullptr)
 	{}
 	virtual ~XSoundFmod() {}
 protected:
@@ -40,8 +49,8 @@ private:
 	std::vector<XSoundFadeData> m_soundFadeList;	//队列
 
 	FMOD_CHANNELGROUP *m_channelGroup;
-	FMOD_SYSTEM *m_sys;
-	FMOD_CHANNEL *m_musicChannel;
+	FMOD_SYSTEM* m_sys;
+	FMOD_CHANNEL* m_musicChannel;
 	void *m_curMusic;
 	bool m_isCallBackOpen;
 	FMOD_SOUND *m_cbSound;
@@ -61,9 +70,10 @@ public:
 		}
 		FMOD_System_Close(m_sys);
 		FMOD_System_Release(m_sys);
+		m_sys = nullptr;
 	}
 	//music部分
-	bool loadMusic(const std::string &filename,void *&p)
+	bool loadMusic(const std::string& filename,void *&p)
 	{
 		int fmodFlags = FMOD_HARDWARE | FMOD_CREATESTREAM;
 		FMOD_SOUND *sound = NULL;
@@ -75,7 +85,11 @@ public:
 		return true;
 	}
 
-	void clearMusic(void *p){FMOD_Sound_Release((FMOD_SOUND *)p);}
+	void clearMusic(void *p)
+	{
+		if (m_sys == nullptr) return;
+		FMOD_Sound_Release((FMOD_SOUND *)p);
+	}
 	int setMusicVolume(int v) {return FMOD_Channel_SetVolume(m_musicChannel,v / 128.0f);} 
 	int getMusicVolume()
 	{
@@ -84,19 +98,19 @@ public:
 		else FMOD_Channel_GetVolume(m_musicChannel,&v);	//范围问题 0 - 1.0f;
 		return (int)(v * 128.0f);
 	}
-	int playMusic(void *p,int loop)
+	void* playMusic(void *p,int loop)
 	{
-		FMOD_RESULT result = FMOD_System_PlaySound(m_sys, FMOD_CHANNEL_FREE,(FMOD_SOUND *)p,false,&m_musicChannel);
-		if(result != FMOD_OK) return -1;
+		FMOD_RESULT result = FMOD_System_PlaySound(m_sys, FMOD_CHANNEL_FREE, (FMOD_SOUND *)p, false, &m_musicChannel);
+		if(result != FMOD_OK) return nullptr;
 		if(loop != 0)
 		{
 			FMOD_Channel_SetMode(m_musicChannel,FMOD_LOOP_NORMAL);	//这里不能控制循环次数
 			FMOD_Channel_SetLoopCount(m_musicChannel,loop);	//loop为-1在fmod中是否为无限循环
 		}else FMOD_Channel_SetMode(m_musicChannel,FMOD_LOOP_OFF);
 		m_curMusic = p;
-		return (int)m_musicChannel;
+		return m_musicChannel;
 	}
-	int musicFadeIn(void * p,int loop,int ms);
+	void* musicFadeIn(void * p,int loop,int ms);
 	int musicFadeOut(int ms);
 
 	void pauseMusic(){FMOD_Channel_SetPaused(m_musicChannel,true);}
@@ -124,7 +138,7 @@ public:
 		return FMOD_Channel_Stop(m_musicChannel);
 	} 
 	//sound部分
-	bool loadSound(const std::string &filename,void *&p)	//从文件中读取声音资源
+	bool loadSound(const std::string& filename,void *&p)	//从文件中读取声音资源
 	{
 		int fmodFlags = FMOD_HARDWARE;
 		FMOD_SOUND *sound = NULL;
@@ -147,42 +161,52 @@ public:
 		return true;
 	}
 	void clearSound(void * p) {FMOD_Sound_Release((FMOD_SOUND *)p);}
-	int setVolume(int c,int v) {return FMOD_Channel_SetVolume((FMOD_CHANNEL *)c,v/128.0f);}
-	int getVolume(int c) 
+	int setVolume(void* c,int v) 
+	{
+		if(c != nullptr)
+			return FMOD_Channel_SetVolume((FMOD_CHANNEL *)c,v/128.0f);
+		else
+			return FMOD_ChannelGroup_SetVolume(m_channelGroup, v / 128.0f);
+	}
+	int getVolume(void* c) 
 	{
 		float v;
 		if(c == NULL) FMOD_ChannelGroup_GetVolume(m_channelGroup,&v);
 		else FMOD_Channel_GetVolume((FMOD_CHANNEL *)c,&v);	//范围问题
 		return (int)(v * 128.0f);
 	}
-	int playSound(void *p,int loop) 
+	void* playSound(void *p, int loop)
 	{
-		FMOD_CHANNEL * c = NULL;
-		FMOD_RESULT result = FMOD_System_PlaySound(m_sys, FMOD_CHANNEL_FREE,(FMOD_SOUND *)p,false,&c);
-		if(result != FMOD_OK) return -1;
-		if(loop != 0) FMOD_Channel_SetMode(c,FMOD_LOOP_NORMAL);	//这里不能控制循环次数
-		else FMOD_Channel_SetMode(c,FMOD_LOOP_OFF);
-		return (int)c;
+		FMOD_CHANNEL* c = NULL;
+		FMOD_RESULT result = FMOD_System_PlaySound(m_sys, FMOD_CHANNEL_FREE, (FMOD_SOUND *)p, false, &c);
+		if (result != FMOD_OK) return nullptr;
+		if (loop != 0) FMOD_Channel_SetMode(c, FMOD_LOOP_NORMAL);	//这里不能控制循环次数
+		else FMOD_Channel_SetMode(c, FMOD_LOOP_OFF);
+		return c;
 	}
 
-	int soundFadeIn(void * p,int loop,int ms);
-	int soundFadeOut(int c,int ms);
-	void pauseSound(int c) {FMOD_Channel_SetPaused((FMOD_CHANNEL *)c,true);}
-	void resumeSound(int c) {FMOD_Channel_SetPaused((FMOD_CHANNEL *)c,false);}
-	bool isSoundPause(int c) 
+	void* soundFadeIn(void* p,int loop,int ms);
+	int soundFadeOut(void* c,int ms);
+	void pauseSound(void* c) {FMOD_Channel_SetPaused((FMOD_CHANNEL *)c,true);}
+	void resumeSound(void* c) {FMOD_Channel_SetPaused((FMOD_CHANNEL *)c,false);}
+	bool isSoundPause(void* c)
 	{
 		FMOD_BOOL b = 0;
 		FMOD_Channel_GetPaused((FMOD_CHANNEL *)c,&b);
 		return b != 0;
 	}
-	bool isSoundPlaying(int c) 
+	bool isSoundPlaying(void* c)
 	{
 		FMOD_BOOL b = 0;
 		FMOD_Channel_IsPlaying((FMOD_CHANNEL *)c,&b);
 		return b != 0;
 	}
-	int haltSound() {return FMOD_ChannelGroup_Stop(m_channelGroup);}	//这个存在问题，会关闭music
-	int haltSound(int c) 
+	int haltSound()	//这个存在问题，会关闭music
+	{
+		if (m_channelGroup == nullptr) return 0;
+		return FMOD_ChannelGroup_Stop(m_channelGroup);
+	}
+	int haltSound(void* c)
 	{
 		return FMOD_Channel_Stop((FMOD_CHANNEL *)c);
 	} 
@@ -200,9 +224,9 @@ public:
 
 	//个性化的接口
 	//改变播放的位置vol [-1 +1]
-	void setPan(int c,float vol) {FMOD_Channel_SetPan((FMOD_CHANNEL *)c,vol);}
+	void setPan(void* c,float vol) {FMOD_Channel_SetPan((FMOD_CHANNEL *)c,vol);}
 	//改变播放速度
-	void setSpeed(int c,float spd) {FMOD_Channel_SetFrequency((FMOD_CHANNEL *)c, XEG.getAudioSampleRate() * spd);}
+	void setSpeed(void* c, float spd);
 };
 }
 #endif

@@ -11,7 +11,7 @@
 //3、是否包含子文件夹有设置开关
 //#include "windows.h"
 #include <vector>
-#include "XOSDefine.h"
+#include "XCommonDefine.h"
 namespace XE{
 class XDir;
 class XFileInfo
@@ -25,7 +25,7 @@ public:
 	XBool isDirectory;	//是否是目录
 	XFileInfo()
 		:isEnable(XFalse)
-		,directory(NULL)
+		, directory(NULL)
 //		,allPath(NULL)
 //		,filename(NULL)
 	{}
@@ -44,7 +44,7 @@ public:
 	std::vector<XFileInfo *> files;		//目录下的文件(夹)
 	XDir()
 		:isEnable(XFalse)
-		,level(0)
+		, level(0)
 //		,directoryName(NULL)
 	{}
 	void release();
@@ -57,23 +57,25 @@ private:
 	XBool m_withChildFolder;	//是否包含其子文件夹 
 public:
 	XDir m_curDirectory;	//当前的目录信息
-	XBool init(const char *directoryName,bool withChildFolder = true);	//使用绝对路径，路径不要以‘/’或者是‘\’结束
-	XBool initEx(const char *directoryName,bool withChildFolder = true);	//使用相对路径，相对于工程路径，路径不要以‘/’或者是‘\’结束
+	XBool init(const char *directoryName, bool withChildFolder = true);	//使用绝对路径，路径不要以‘/’或者是‘\’结束
+	XBool initEx(const char *directoryName, bool withChildFolder = true);	//使用相对路径，相对于工程路径，路径不要以‘/’或者是‘\’结束
 
 	XDirectory()
 		:m_isInited(XFalse)
-		,m_withChildFolder(XTrue)
+		, m_withChildFolder(XTrue)
+		, m_curSortMode(SORT_BY_NULL)
 	{}
-	~XDirectory(){release();}
+	~XDirectory() { release(); }
 	void release()
 	{//释放所有的资源
-		if(!m_isInited) return;
+		if (!m_isInited) return;
 		m_curDirectory.release();
 		m_isInited = XFalse;
 	}
 	std::vector<XFileInfo *> m_sortResult;	//排序结果
 	enum XSortMode
 	{
+		SORT_BY_NULL,
 		SORT_BY_SYSTEM,	//系统排序
 		SORT_BY_SIZE,	//按大小排序
 		SORT_BY_TIME,	//按时间排序
@@ -85,8 +87,8 @@ public:
 		m_sortResult.clear();
 		listFiles(m_curDirectory);
 	}
-	void setFilterName(const std::string &name);	//设置过滤的文件扩展名
-	void clearFilter(){m_filterNames.clear();}	//清空过滤器
+	void setFilterName(const std::string& name);	//设置过滤的文件扩展名
+	void clearFilter() { m_filterNames.clear(); }	//清空过滤器
 private:
 	XSortMode m_curSortMode;
 	std::vector<std::string> m_filterNames;	//文件过滤的类型
@@ -96,9 +98,9 @@ namespace XFile
 {
 	extern XBool infoConvert(WIN32_FIND_DATA &fileInfo,XFileInfo &file);
 	extern XBool enumerationFiles(const char *path,XDir &dir,bool witchCilder = true);		//使用绝对路径,解析目录下的文件信息，包含子目录
-	inline XBool enumerationFiles(const std::string &path,XDir &dir,bool witchCilder = true){return enumerationFiles(path.c_str(),dir,witchCilder);}
+	inline XBool enumerationFiles(const std::string& path,XDir &dir,bool witchCilder = true){return enumerationFiles(path.c_str(),dir,witchCilder);}
 	extern XBool enumerationFilesEx(const char *path,XDir &dir,bool witchCilder = true);	//使用相对路径,解析目录下的文件信息，包含子目录
-	inline XBool enumerationFilesEx(const std::string &path,XDir &dir,bool witchCilder = true){return enumerationFilesEx(path.c_str(),dir,witchCilder);}
+	inline XBool enumerationFilesEx(const std::string& path,XDir &dir,bool witchCilder = true){return enumerationFilesEx(path.c_str(),dir,witchCilder);}
 }
 }
 #endif

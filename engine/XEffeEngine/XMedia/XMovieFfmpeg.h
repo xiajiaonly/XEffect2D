@@ -18,6 +18,11 @@ namespace XE{
 //class XTexture;
 //#define SDL_AUDIO_BUFFER_SIZE 1024
 #define BUFF_TIMER (10.0f)		//缓存的时间
+//#define DEBUG_MODE	//是否进行一些数据统计
+
+//#ifndef WITH_DEBUG_INFO
+//#define WITH_DEBUG_INFO	//是否显示调试信息
+//#endif
 class XMovieFfmpeg:public XMovieCore
 {
 private:
@@ -39,7 +44,7 @@ public:
 		return m_curFrameNumber*(1000.0/m_curFrameRate);
 	}
 	int getCurFrameIndex() const {return m_curFrameNumber;}
-	int getCurPlayTime() const {return m_curPlayedTime;}	//返回毫秒级的播放进度
+	double getCurPlayTime() const {return m_curPlayedTime;}	//返回毫秒级的播放进度
 	int getAllFrameSum() const {return m_allFrameSum;}
 	int getAllTime(void) const				//获取影片总时间(单位：毫秒)
 	{
@@ -57,11 +62,13 @@ public:
 	//void setPauseOrPlay(void) {m_isStop = !m_isStop;}		//暂停或继续播放影片
 	void pause() {if(!m_isEnd) m_isStop = true;}
 	void play();
+	void setPosition(const XVec2& p);
 	XBool isPlaying() const {return !m_isStop && !m_isEnd;}
 	void closeClip(void);			//关闭视频播放，并释放相关的资源
-	void gotoFrame(float temp);		//跳到当前视频的某一帧(0 - 1的百分比)	//控制视频流跳转，
-	void gotoFrameIndex(int index);	//跳转到某一帧，快进到某一帧
-	void gotoTime(int t);	//跳转到毫秒级的位置
+	//跳到当前视频的某一帧(0 - 1的百分比)	//控制视频流跳转，
+	void gotoFrame(float temp, bool isForce = false) { gotoFrameIndex(XMath::clamp(temp, 0.0f, 1.0f) * m_allFrameSum, isForce); }
+	void gotoFrameIndex(int index, bool isForce = false);	//跳转到某一帧，快进到某一帧
+	void gotoTime(double t);	//跳转到毫秒级的位置
 	void setAutoTime(bool flag) {m_autoTimer = flag;}	//设置是否自动计时，如果是自动计时，则线程自己推进播放进度，否则由外部控制播放进度。
 	//GLuint * getTexture();			//获取贴图的编号
 private:
@@ -86,7 +93,15 @@ public:
 	XColorMode getColorMode()const{return m_outColorMode;}
 	XSprite *m_movieSprite;	//用于绘图的精灵
 	XBool updateFrame();	//返回是否有新的图像更新，如果有则将像素数据更新到贴图
-	XBool haveNewFrame();	//只返回是否有像素数据更新
+	XBool haveNewFrame()	//只返回是否有像素数据更新
+	{
+		if (!m_isGetFirstFrame && getFirstPixelData())
+			m_isGetFirstFrame = true;
+
+		if (!m_isNewFrame) return XFalse;
+		m_isNewFrame = XFalse;
+		return XTrue;
+	}
 	void pixelLock() {m_mutex.Lock();}
 	unsigned char * getDataP() {return m_curFrameData;}	//注意在使用这个数据是一定要使用线程锁，否则会造成线程不安全
 	void pixelUnlock() {m_mutex.Unlock();}
@@ -123,19 +138,20 @@ private:
 	XBool m_isStop;				//是否暂停播放
 	XBool m_isEnd;					//是否播放完成
 	XBool m_isQuit;				//是否退出播放
-	unsigned long m_curPlayedTime;	//当前播放的时间
+	double m_curPlayedTime;	//当前播放的时间
+	float m_playSpeed;				//播放速度(注意这个速度不会影响到声音的效果，否则请使用XFfmpegSpriteEx)
 	XBool m_isDecodeOver;			//是否解码完成
 
+	XBool m_isLoop;				//视频是否循环播放
+	XBool m_isThreadDecoderExit;	//解码线程是否退出
+	XBool m_isThreadDrawExit;	//绘图线程是否退出
 	unsigned long m_allFrameSum;		//影片的总帧数
 	unsigned long m_curFrameNumber;		//当前播放的帧号
 	float m_curFrameRate;			//当前视频的帧率
 	int m_videoWidth;				//视频的宽度
 	int m_videoHeight;				//视频的高度
-	XBool m_isLoop;				//视频是否循环播放
 	//char videofilename[MAX_FILE_NAME_LENGTH];		//视频的文件名
 	std::string videofilename;		//视频的文件名
-	XBool m_isThreadDecoderExit;	//解码线程是否退出
-	XBool m_isThreadDrawExit;	//绘图线程是否退出
 
 	void getPixelData();				//绘图函数，将视频缓冲中的图片描绘道屏幕上
 	XBool getFirstPixelData();			//获取队列中的第一帧	2015.1.16添加
@@ -149,8 +165,16 @@ private:
 	static DWORD WINAPI drawThread(void *arg);		//绘图线程
 	static void audioCallBack(void *userdata,Uint8 *stream,int len);	//声音回调函数
 #endif
-	void initAudioQueue();				//初始化音频队列
-	void initVideoPictList();			//初始化视频队列
+	void initAudioQueue()				//初始化音频队列
+	{
+		memset(&m_audioQueue, 0, sizeof(XAudioQueue));
+		m_audioQueue.mutex = XMem::createMem<XCritical>();
+	}
+	void initVideoPictList()			//初始化视频队列
+	{
+		memset(&m_videoQueue, 0, sizeof(XVideoQueue));
+		m_videoQueue.mutex = XMem::createMem<XCritical>();
+	}
 	void releaseAudioQueue();			//释放音频队列
 	void releaseVideoPictList();		//释放视频队列
 	int putIntoPacketQueue();					//将当前获得的音频数据推入队列
@@ -169,9 +193,16 @@ private:
 
 	//结束之后设置重播
 public:
+	void setPlaySpeed(float speed) { if (speed > 0.0f) m_playSpeed = speed; }
+	float getPlaySpeed()const { return m_playSpeed; }
 	void replay();
 	bool withVideo()const{return videoStream >= 0;}	//流中是否有视频图像
 	bool withAudio()const{return audioStream >= 0;}	//流中是否有音频信息
+	//下面是一些統計信息
+#ifdef DEBUG_MODE
+	int m_vpSum;
+	int m_vfSum;
+#endif
 };
 #if WITH_INLINE_FILE
 #include "XMovieFfmpeg.inl"

@@ -5,10 +5,12 @@
 //Version:	1.0.0
 //Date:		2014.3.25
 //--------------------------------
+#if CREATE_WINDOW_METHOD == 1
 #include "XWindowCore.h"
 #include <gl/glut.h>
+#include "XStringFun.h"
 namespace XE{
-class XWindowGlut:public XWindowCore
+class XWindowGlut :public XWindowCore
 {
 public:
 	XWindowGlut()
@@ -22,18 +24,18 @@ private:
 	bool m_isShowCurcor;
 	//bool m_isFullScreen;
 public:
-	virtual bool createWindow(int width,int height,const char *windowTitle,int isFullScreen,int withFrame);
-	virtual void setWindowTitle(const std::string &title) {glutSetWindowTitle(title.c_str());}
-	virtual void setCurcor(bool flag) 
+	virtual bool createWindow(int width, int height, const char *windowTitle, bool isFullScreen, bool withFrame);
+	virtual void setWindowTitle(const std::string& title) { glutSetWindowTitle(title.c_str()); }
+	virtual void setCurcor(bool flag)
 	{
 		m_isShowCurcor = flag;
 		glutSetCursor(flag);
 	}
-	virtual bool getCurcor(){return m_isShowCurcor;}
+	virtual bool getCurcor() { return m_isShowCurcor; }
 	virtual void release() {}
-	virtual void update() {glutSwapBuffers();}
+	virtual void update() { glutSwapBuffers(); }
 	virtual int mapKey(int key);
-	virtual unsigned char *getWindowBuff(){return NULL;}
+	virtual unsigned char *getWindowBuff() { return NULL; }
 	//virtual void toggleFullScreen()
 	//{
 	////	if(m_isFullScreen)
@@ -44,4 +46,5 @@ public:
 	//virtual bool getIsFullScreen(){return m_isFullScreen;}
 };
 }
+#endif
 #endif

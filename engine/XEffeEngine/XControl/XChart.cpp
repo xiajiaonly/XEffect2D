@@ -3,7 +3,7 @@
 #include "XObjectManager.h" 
 #include "XControlManager.h"
 //1、考虑线的唯一性，可以选择是否显示某一条线，但是必须至少要有一条线显示出来
-//2、线的线段越界是如何差值保证线的完整且不会画出去
+//2、线的线段越界是如何插值保证线的完整且不会画出去
 //3、坐标系起始坐标和如何显示节点数据的问题
 //4、极端值的处理，比如说线上只有一个点
 namespace XE{
@@ -13,15 +13,14 @@ void XChart::chartChkCtrlFun(void *pClass,int objectID,int eventID)
 	XChart &pPar = *(XChart *)pClass;
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
-		if(objectID == pPar.m_dataChecks[i].getControlID() && !pPar.m_dataChecks[i].getState())
-		{
-			if(!pPar.checkCanHideLine())
-			{//修改为不能改变
-				pPar.m_dataChecks[i].setState(XTrue);
-				return;
-			}
-			break;
+		if (objectID != pPar.m_dataChecks[i].getControlID() && !pPar.m_dataChecks[i].getState())
+			continue;
+		if(!pPar.checkCanHideLine())
+		{//修改为不能改变
+			pPar.m_dataChecks[i].setState(XTrue);
+			return;
 		}
+		break;
 	}
 	pPar.m_neddUpdateCurLineData = true;
 }
@@ -36,7 +35,7 @@ bool XChart::checkCanHideLine()
 	return false;
 }
 XFColor XChart::m_chartLineColor[m_chartMaxLineSum];
-bool XChart::initWithoutSkin(const XRect &rect,const char *caption,const XFontUnicode &font)
+bool XChart::initWithoutSkin(const XRect& rect,const char *caption,const XFontUnicode& font)
 {
 	if(m_isInited) return false;
 
@@ -54,14 +53,14 @@ bool XChart::initWithoutSkin(const XRect &rect,const char *caption,const XFontUn
 	m_chartLineColor[11] = XFColor::aquamarine;
 
 	m_dataRect = rect;
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
 
 	m_horizontalNetSum = 10;
 	m_verticalNetSum = 10;
 
 	m_showDataRange.set(0.0f,0.5f);	//这个是主动设置的数据，下面两个数据是通过具体的数据计算出来的
-	m_baseValue.set(0.0f,0.0f);	//原点的基准数值
+	m_baseValue.set(0.0f);	//原点的基准数值
 	m_sizeValue.set(0.5f,2.0);	//盘面的大小
 
 	if(!m_caption.setACopy(font)) return XFalse;
@@ -72,20 +71,20 @@ bool XChart::initWithoutSkin(const XRect &rect,const char *caption,const XFontUn
 	if(!m_textFont.setACopy(font)) return XFalse;
 	m_textFont.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_textFont.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_UP);
-	m_textFont.setScale(0.5f,0.5f);
-	m_textFont.setColor(0.5f,0.5f,0.5f,1.0f);
+	m_textFont.setScale(0.5f);
+	m_textFont.setColor(XFColor::gray);
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_textFont);
 #endif
 
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
-		m_dataChecks[i].initWithoutSkin(" ",m_caption,0.5f,XRect(0.0f,0.0f,16.0f,16.0f),XVector2(16.0f,8.0f));
+		m_dataChecks[i].initWithoutSkin(" ",m_caption,0.5f,XRect(0.0f,16.0f),XVec2(16.0f,8.0f));
 	//	m_dataChecks[i].setScale(0.5f);
-		m_dataChecks[i].setPosition(m_position.x + m_dataRect.right + 16.0f,m_position.y + m_dataRect.top + 17.0f * i);
+		m_dataChecks[i].setPosition(m_position + m_dataRect.getRT() + XVec2(16.0f,17.0f * i));
 		m_dataChecks[i].setState(XTrue);
 		m_dataChecks[i].setEventProc(chartChkCtrlFun,this);
-		m_dataChecks[i].setTextColor(XFColor(0.5f,0.5f,0.5f,1.0f));
+		m_dataChecks[i].setTextColor(XFColor(0.5f,1.0f));
 		m_dataChecks[i].disVisible();
 		m_dataChecks[i].setWithAction(XFalse);
 		XCtrlManager.decreaseAObject(&m_dataChecks[i]);	//注销这个物件
@@ -105,10 +104,7 @@ bool XChart::initWithoutSkin(const XRect &rect,const char *caption,const XFontUn
 	m_downHeight = 20.0f;			//下面坐标显示的高度
 	m_allLineRectHeight = 100.0f;	//下面显示所有线的区域的高度
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	m_isInited = XTrue;
+	m_isVisible = m_isEnable = m_isActive = m_isInited = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -138,10 +134,10 @@ void XChart::draw()
 	char tmpStr[64];
 	m_caption.draw();
 	//画个背景
-	XRect tmpDrawRect(m_position.x + m_dataRect.left * m_scale.x,m_position.y + m_dataRect.top * m_scale.y,
-		m_position.x + m_dataRect.right * m_scale.x,m_position.y + m_dataRect.bottom * m_scale.y);	//描绘数据的区域
-	XRender::drawFillBoxExA(XVector2(tmpDrawRect.left,tmpDrawRect.top),
-		XVector2(tmpDrawRect.getWidth(),tmpDrawRect.getHeight()),XCCS::lightBGColor * m_color);
+	XRect tmpDrawRect(m_position + m_dataRect.getLT() * m_scale,
+		m_position + m_dataRect.getRB() * m_scale);	//描绘数据的区域
+	XRender::drawFillRectExA(tmpDrawRect.getLT(),
+		tmpDrawRect.getSize(),XCCS::lightBGColor * m_color);
 	//描绘标尺
 		//垂直
 	char printMode[] = "%.4f";
@@ -169,7 +165,7 @@ void XChart::draw()
 				tmpDrawRect.right, tmpDrawRect.bottom - tmpX, 1.0f, XCCS::lightSpecialColor * m_color, XRender::LS_DOTS);
 		}
 
-		sprintf(tmpStr,printMode,tmpDataValue);
+		sprintf_s(tmpStr,64,printMode,tmpDataValue);
 		m_textFont.setString(tmpStr);
 		m_textFont.setPosition(tmpDrawRect.left - m_textFont.getMaxPixelWidth(),tmpDrawRect.bottom - tmpX);
 		m_textFont.draw();
@@ -197,7 +193,7 @@ void XChart::draw()
 		}
 
 		m_textFont.setPosition(tmpDrawRect.left + tmpX,tmpDrawRect.bottom);
-		sprintf(tmpStr,printMode,tmpDataValue);
+		sprintf_s(tmpStr,64,printMode,tmpDataValue);
 		m_textFont.setString(tmpStr);
 		m_textFont.draw();
 		tmpDataValue += m_stepWidth.x;
@@ -211,13 +207,13 @@ void XChart::draw()
 			tmpDrawRect.right, getMousePos().y, 1.0f, XCCS::mouseColor * m_color, XRender::LS_DASHES);
 		XRender::drawLine(getMousePos().x,tmpDrawRect.top,
 			getMousePos().x, tmpDrawRect.bottom, 1.0f, XCCS::mouseColor * m_color, XRender::LS_DASHES);
-		sprintf(tmpStr,"%f",(tmpDrawRect.bottom - getMousePos().y) / pixelPerValueY + m_baseValue.y);
+		sprintf_s(tmpStr,64,"%f",(tmpDrawRect.bottom - getMousePos().y) / pixelPerValueY + m_baseValue.y);
 		m_textFont.setString(tmpStr);
 		if(getMousePos().y < tmpDrawRect.getCenter().y) m_textFont.setPosition(tmpDrawRect.left,getMousePos().y);
 		else m_textFont.setPosition(tmpDrawRect.left,getMousePos().y - m_textFont.getMaxPixelHeight());
 		m_textFont.draw();
 
-		sprintf(tmpStr,"%f",(getMousePos().x - tmpDrawRect.left) / pixelPerValueX + m_baseValue.x);
+		sprintf_s(tmpStr,64,"%f",(getMousePos().x - tmpDrawRect.left) / pixelPerValueX + m_baseValue.x);
 		m_textFont.setString(tmpStr);
 		if(getMousePos().x < tmpDrawRect.getCenter().x) m_textFont.setPosition(getMousePos().x,tmpDrawRect.bottom - 16.0f * m_scale.x);
 		else m_textFont.setPosition(getMousePos().x - m_textFont.getMaxPixelWidth(),tmpDrawRect.bottom - 16.0f * m_scale.x);
@@ -229,33 +225,35 @@ void XChart::draw()
 		if(m_datas[i].size() <= 1) continue;
 		if(m_dataChecks[i].getState())
 		{
-			if(m_linePointSum[i] > 0) XRender::drawLinesVbo(m_curV[i],m_linePointSum[i],1.0f,m_chartLineColor[i].fR * m_color.fR,m_chartLineColor[i].fG * m_color.fG,m_chartLineColor[i].fB * m_color.fB,m_color.fA);
-			if(m_withPoint && m_linePointsSum[i] > 0) XRender::drawPointsVbo(m_curPoint[i],m_linePointsSum[i],2,m_chartLineColor[i].fR * m_color.fR,m_chartLineColor[i].fG * m_color.fG,m_chartLineColor[i].fB * m_color.fB,m_color.fA);
+			if(m_linePointSum[i] > 0) XRender::drawLinesVbo(m_curV[i],m_linePointSum[i],1.0f,
+				XFColor(m_chartLineColor[i] * m_color,m_color.a));
+			if(m_withPoint && m_linePointsSum[i] > 0) XRender::drawPointsVbo(m_curPoint[i],m_linePointsSum[i],2,
+				XFColor(m_chartLineColor[i] * m_color,m_color.a));
 		}
 		//m_dataChecks[i].draw();
-		XRender::drawFillBox(tmpDrawRect.right + 1.0f * m_scale.x,tmpDrawRect.top + (1.0f + 17.0f * i) * m_scale.y,
-			14.0f * m_scale.x,14.0f * m_scale.y,m_chartLineColor[i].fR * m_color.fR,m_chartLineColor[i].fG * m_color.fG,m_chartLineColor[i].fB * m_color.fB,m_color.fA);
+		XRender::drawFillRect(tmpDrawRect.getRT() + XVec2(1.0f,1.0f + 17.0f * i) * m_scale,
+			XVec2(14.0f) * m_scale,XFColor(m_chartLineColor[i] * m_color,m_color.a));
 	}
 	//描绘坐标系
-	XRender::drawLine(tmpDrawRect.left,tmpDrawRect.top,
-		tmpDrawRect.left,tmpDrawRect.bottom,1.0f,0.0f,0.0f,0.0f,m_color.fA);
+	XRender::drawLine(tmpDrawRect.getLT(),
+		tmpDrawRect.getLB(),1.0f,XFColor(0.0f,m_color.a));
 	XRender::drawLine(tmpDrawRect.left,tmpDrawRect.bottom,
-		tmpDrawRect.right,tmpDrawRect.bottom,1.0f,0.0f,0.0f,0.0f,m_color.fA);
+		tmpDrawRect.right,tmpDrawRect.bottom,1.0f,XFColor(0.0f,m_color.a));
 	//下面描绘总体的曲线
-	XRender::drawFillBoxExA(XVector2(tmpDrawRect.left,tmpDrawRect.bottom + m_downHeight * m_scale.y),
-		XVector2(tmpDrawRect.getWidth(),m_allLineRectHeight * m_scale.y),XCCS::lightBGColor * m_color);
+	XRender::drawFillRectExA(XVec2(tmpDrawRect.left,tmpDrawRect.bottom + m_downHeight * m_scale.y),
+		XVec2(tmpDrawRect.getWidth(),m_allLineRectHeight * m_scale.y),XCCS::lightBGColor * m_color);
 	//描绘起点线和终点线
 	if(m_dataRange.getWidth() > 0.0f)
 	{
 		float sX = (m_baseValue.x - m_dataRange.left) / m_dataRange.getWidth() * tmpDrawRect.getWidth() + tmpDrawRect.left;
-		XRender::drawFillBoxExA(XVector2(tmpDrawRect.left,tmpDrawRect.bottom + m_downHeight * m_scale.y),
-			XVector2(sX - tmpDrawRect.left, m_allLineRectHeight * m_scale.y), XCCS::blackOnColor * m_color);//这里需要凸显选中的范围
+		XRender::drawFillRectExA(XVec2(tmpDrawRect.left,tmpDrawRect.bottom + m_downHeight * m_scale.y),
+			XVec2(sX - tmpDrawRect.left, m_allLineRectHeight * m_scale.y), XCCS::blackOnColor * m_color);//这里需要凸显选中的范围
 		XRender::drawLine(sX,tmpDrawRect.bottom + m_downHeight * m_scale.y,
 			sX,tmpDrawRect.bottom + (m_downHeight + m_allLineRectHeight) * m_scale.y,1.0f,XCCS::mouseColor * m_color);
 
 		float eX = (m_baseValue.x + m_sizeValue.x - m_dataRange.left) / m_dataRange.getWidth() * tmpDrawRect.getWidth() + tmpDrawRect.left;
-		XRender::drawFillBoxExA(XVector2(eX,tmpDrawRect.bottom + m_downHeight * m_scale.y),
-			XVector2(tmpDrawRect.getWidth() - (eX - tmpDrawRect.left), m_allLineRectHeight * m_scale.y), XCCS::blackOnColor * m_color);
+		XRender::drawFillRectExA(XVec2(eX,tmpDrawRect.bottom + m_downHeight * m_scale.y),
+			XVec2(tmpDrawRect.getWidth() - (eX - tmpDrawRect.left), m_allLineRectHeight * m_scale.y), XCCS::blackOnColor * m_color);
 		XRender::drawLine(eX,tmpDrawRect.bottom + m_downHeight * m_scale.y,
 			eX,tmpDrawRect.bottom + (m_downHeight + m_allLineRectHeight) * m_scale.y,1.0f,XCCS::mouseColor * m_color);
 	}
@@ -263,7 +261,7 @@ void XChart::draw()
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
 		if(m_datas[i].size() <= 1) continue;
-		XRender::drawLinesVbo(m_v[i],m_datas[i].size(),1.0f,m_chartLineColor[i].fR * m_color.fR,m_chartLineColor[i].fG * m_color.fG,m_chartLineColor[i].fB * m_color.fB,m_color.fA);
+		XRender::drawLinesVbo(m_v[i],m_datas[i].size(),1.0f,XFColor(m_chartLineColor[i] * m_color,m_color.a));
 	}
 }
 void XChart::allLineUpdateVbo()
@@ -279,11 +277,13 @@ void XChart::allLineUpdateVbo()
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
 		if(m_datas[i].size() <= 1) continue;
-		for(unsigned int j = 0;j < m_datas[i].size();++ j)
+		int j = 0;
+		for(auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
 		{
-			m_drawDataBuff[j << 1] = (m_datas[i][j].x - m_dataRange.left) * pixelPerValueX + m_position.x + m_dataRect.left;
-			m_drawDataBuff[(j << 1) + 1] = - (m_datas[i][j].y - m_dataRange.top) * pixelPerValueY + 
+			m_drawDataBuff[j] = (it->x - m_dataRange.left) * pixelPerValueX + m_position.x + m_dataRect.left;
+			m_drawDataBuff[j + 1] = - (it->y - m_dataRange.top) * pixelPerValueY + 
 				m_position.y + (m_dataRect.bottom + m_downHeight + m_allLineRectHeight) * m_scale.y;
+			j += 2;
 		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB,m_v[i]);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB,m_datas[i].size() * 2 * sizeof(float),m_drawDataBuff,GL_STATIC_DRAW_ARB);
@@ -310,25 +310,25 @@ void XChart::curLineUpdateVbo()
 		index = 0;
 		flagHead = false;
 		flagEnd = false;
-		for(unsigned int j = 0;j < m_datas[i].size();++ j)
-		{//这里尚未考虑越界的线如何差值
-			if(m_datas[i][j].x >= m_showDataRange.x && m_datas[i][j].x <= m_showDataRange.y)
+		for(auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
+		{//这里尚未考虑越界的线如何插值
+			if(it->x >= m_showDataRange.x && it->x <= m_showDataRange.y)
 			{//起点和终点都需要符合现实范围
-				m_drawDataBuff[index << 1] = (m_datas[i][j].x - m_baseValue.x) * pixelPerValueX + m_position.x + m_dataRect.left * m_scale.x;
-				m_drawDataBuff[(index << 1) + 1] = - (m_datas[i][j].y - m_baseValue.y) * pixelPerValueY + m_position.y + m_dataRect.bottom * m_scale.y;
+				m_drawDataBuff[index << 1] = (it->x - m_baseValue.x) * pixelPerValueX + m_position.x + m_dataRect.left * m_scale.x;
+				m_drawDataBuff[(index << 1) + 1] = - (it->y - m_baseValue.y) * pixelPerValueY + m_position.y + m_dataRect.bottom * m_scale.y;
 				++ index;
 			}else
-			if(j < (int)(m_datas[i].size()) - 1 && m_datas[i][j].x < m_showDataRange.x && m_datas[i][j + 1].x >= m_showDataRange.x)
+			if(it != (m_datas[i].end() - 1) && it->x < m_showDataRange.x && (it + 1)->x >= m_showDataRange.x)
 			{//跨越前边界
-				tmpValue = XMath::lineSlerp(m_datas[i][j].y,m_datas[i][j + 1].y,(m_showDataRange.x - m_datas[i][j].x) / (m_datas[i][j + 1].x - m_datas[i][j].x));
+				tmpValue = XMath::lineSlerp(it->y,(it + 1)->y,(m_showDataRange.x - it->x) / ((it + 1)->x - it->x));
 				m_drawDataBuff[index << 1] = (m_showDataRange.x - m_baseValue.x) * pixelPerValueX + m_position.x + m_dataRect.left * m_scale.x;
 				m_drawDataBuff[(index << 1) + 1] = - (tmpValue- m_baseValue.y) * pixelPerValueY + m_position.y + m_dataRect.bottom * m_scale.y;
 				++ index;
 				flagHead = true;
 			}else
-			if(j > 0 && m_datas[i][j].x > m_showDataRange.y && m_datas[i][j - 1].x <= m_showDataRange.y)
+				if(it != m_datas[i].begin() && it->x > m_showDataRange.y && (it - 1)->x <= m_showDataRange.y)
 			{//跨越后边界
-				tmpValue = XMath::lineSlerp(m_datas[i][j - 1].y,m_datas[i][j].y,(m_showDataRange.y - m_datas[i][j - 1].x) / (m_datas[i][j].x - m_datas[i][j - 1].x));
+				tmpValue = XMath::lineSlerp((it - 1)->y,it->y,(m_showDataRange.y - (it - 1)->x) / (it->x - (it - 1)->x));
 				m_drawDataBuff[index << 1] = (m_showDataRange.y - m_baseValue.x) * pixelPerValueX + m_position.x + m_dataRect.left * m_scale.x;
 				m_drawDataBuff[(index << 1) + 1] = - (tmpValue - m_baseValue.y) * pixelPerValueY + m_position.y + m_dataRect.bottom * m_scale.y;
 				++ index;
@@ -371,59 +371,60 @@ void XChart::curLineUpdateVbo()
 	}
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB,0);	//取消绑定
 }
-void XChart::setPosition(float x,float y)
+void XChart::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;
-	m_position.set(x,y);
-	m_caption.setPosition(m_position.x + m_dataRect.left * m_scale.x + m_dataRect.getWidth() * 0.5f * m_scale.x,m_position.y - 16.0f * m_scale.y);
+	m_position = p;
+	m_caption.setPosition(m_position + XVec2(m_dataRect.getXCenter(), -16.0f) * m_scale);
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
-		m_dataChecks[i].setPosition(m_position.x + (m_dataRect.right + 16.0f) * m_scale.x,m_position.y + (m_dataRect.top + 17.0f * i) * m_scale.y);
+		m_dataChecks[i].setPosition(m_position + m_dataRect.getRT() + XVec2(16.0f, 17.0f * i) * m_scale);
 	}
 	m_neadUpdateAllLineData = true;
 	m_neddUpdateCurLineData = true;
 }
-void XChart::setScale(float x,float y)
+void XChart::setScale(const XVec2& s)
 {
 	if(!m_isInited) return;
-	m_scale.set(x,y);
-	m_caption.setPosition(m_position.x + m_dataRect.left * m_scale.x + m_dataRect.getWidth() * 0.5f * m_scale.x,m_position.y - 16.0f * m_scale.y);
+	m_scale = s;
+	m_caption.setPosition(m_position + XVec2(m_dataRect.getXCenter(), -16.0f) * m_scale);
 	m_caption.setScale(m_scale);
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
-		m_dataChecks[i].setPosition(m_position.x + (m_dataRect.right + 16.0f) * m_scale.x,m_position.y + (m_dataRect.top + 17.0f * i) * m_scale.y);
+		m_dataChecks[i].setPosition(m_position + XVec2(m_dataRect.right + 16.0f, m_dataRect.top + 17.0f * i) * m_scale);
 		m_dataChecks[i].setScale(m_scale);
 	}
 	m_textFont.setScale(m_scale * 0.5f);
 	m_neadUpdateAllLineData = true;
 	m_neddUpdateCurLineData = true;
 }
-XBool XChart::mouseProc(float x,float y,XMouseState mouseState)
+XBool XChart::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
+	if(m_isSilent) return XFalse;
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
-		m_dataChecks[i].mouseProc(x,y,mouseState);
+		m_dataChecks[i].mouseProc(p,mouseState);
 	}
 	XRect tmpRect;
-	tmpRect.set(m_position.x + m_dataRect.left * m_scale.x,m_position.y + (m_dataRect.bottom + m_downHeight) * m_scale.y,
-		m_position.x + m_dataRect.right * m_scale.x,m_position.y + (m_dataRect.bottom + m_downHeight + m_allLineRectHeight) * m_scale.y);
+	tmpRect.set(m_position + XVec2(m_dataRect.left,m_dataRect.bottom + m_downHeight) * m_scale,
+		m_position + XVec2(m_dataRect.right,m_dataRect.bottom + m_downHeight + m_allLineRectHeight) * m_scale);
 	switch(mouseState)
 	{
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
-		if(tmpRect.isInRect(x,y) && m_dataRange.getWidth() > 0.0f)
+		if(tmpRect.isInRect(p) && m_dataRange.getWidth() > 0.0f)
 		{
 			float sX = (m_baseValue.x - m_dataRange.left) / m_dataRange.getWidth() * m_dataRect.getWidth() * m_scale.x + m_position.x + m_dataRect.left * m_scale.x;
 			float eX = (m_baseValue.x + m_sizeValue.x - m_dataRange.left)/m_dataRange.getWidth() * m_dataRect.getWidth() * m_scale.x + m_position.x + m_dataRect.left * m_scale.x;
-			if(x >= sX - 5 && x <= sX + 5)
+			if(p.x >= sX - 5 && p.x <= sX + 5)
 			{//选择头
 				m_chooseArm = 1;
 			}else
-			if(x >= eX - 5 && x <= eX + 5)
+			if(p.x >= eX - 5 && p.x <= eX + 5)
 			{//选择尾
 				m_chooseArm = 2;
 			}else
@@ -443,9 +444,9 @@ XBool XChart::mouseProc(float x,float y,XMouseState mouseState)
 			{
 				//float sX = (m_baseValue.x - m_dataRange.left) / m_dataRange.getWidth() * m_dataRect.getWidth() + m_position.x + m_dataRect.left;
 				float eX = (m_baseValue.x + m_sizeValue.x - m_dataRange.left)/m_dataRange.getWidth() * m_dataRect.getWidth() * m_scale.x + m_position.x + m_dataRect.left * m_scale.x;
-				if(x < eX - 10)
+				if(p.x < eX - 10)
 				{
-					m_showDataRange.x = (x - (m_position.x + m_dataRect.left * m_scale.x)) / (m_dataRect.getWidth() * m_scale.x) * m_dataRange.getWidth() + m_dataRange.left;
+					m_showDataRange.x = (p.x - (m_position.x + m_dataRect.left * m_scale.x)) / (m_dataRect.getWidth() * m_scale.x) * m_dataRange.getWidth() + m_dataRange.left;
 					if(m_showDataRange.x < m_dataRange.left) m_showDataRange.x = m_dataRange.left;
 				}
 			}
@@ -455,9 +456,9 @@ XBool XChart::mouseProc(float x,float y,XMouseState mouseState)
 			{
 				float sX = (m_baseValue.x - m_dataRange.left) / m_dataRange.getWidth() * m_dataRect.getWidth() * m_scale.x + m_position.x + m_dataRect.left * m_scale.x;
 				//float eX = (m_baseValue.x + m_sizeValue.x - m_dataRange.left)/m_dataRange.getWidth() * m_dataRect.getWidth() + m_position.x + m_dataRect.left;
-				if(x > sX + 10)	
+				if(p.x > sX + 10)	
 				{
-					m_showDataRange.y = (x - (m_position.x + m_dataRect.left * m_scale.x)) / (m_dataRect.getWidth() * m_scale.x) * m_dataRange.getWidth() + m_dataRange.left;
+					m_showDataRange.y = (p.x - (m_position.x + m_dataRect.left * m_scale.x)) / (m_dataRect.getWidth() * m_scale.x) * m_dataRange.getWidth() + m_dataRange.left;
 					if(m_showDataRange.y > m_dataRange.right) m_showDataRange.y = m_dataRange.right;
 				}
 			}
@@ -507,23 +508,23 @@ void XChart::updateRange()
 			m_dataChecks[i].setVisible();
 		}
 		if(m_datas[i].size() <= 1 || !m_dataChecks[i].getState()) continue;
-		for(unsigned int j = 0;j < m_datas[i].size();++ j)
+		for(auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
 		{
-			if(m_datas[i][j].x >= m_showDataRange.x && m_datas[i][j].x <= m_showDataRange.y)
+			if(it->x >= m_showDataRange.x && it->x <= m_showDataRange.y)
 			{//数据在范围内
 				if(flag)
 				{
-					tmpRange.set(m_datas[i][j].x,m_datas[i][j].y,m_datas[i][j].x,m_datas[i][j].y);
+					tmpRange.set(*it,*it);
 					flag = false;
 				}else
 				{
-					if(m_datas[i][j].y < tmpRange.top) tmpRange.top = m_datas[i][j].y;
-					if(m_datas[i][j].y > tmpRange.bottom) tmpRange.bottom = m_datas[i][j].y;
+					if(it->y < tmpRange.top) tmpRange.top = it->y;
+					if(it->y > tmpRange.bottom) tmpRange.bottom = it->y;
 				}
 			}
-			if(j < (int)(m_datas[i].size()) - 1 && m_datas[i][j].x < m_showDataRange.x && m_datas[i][j + 1].x >= m_showDataRange.x)
+			if(it != (m_datas[i].end() - 1) && it->x < m_showDataRange.x && (it + 1)->x >= m_showDataRange.x)
 			{//跨越前边界，这里需要插值，这里使用线性插值
-				tmpValue = XMath::lineSlerp(m_datas[i][j].y,m_datas[i][j + 1].y,(m_showDataRange.x - m_datas[i][j].x) / (m_datas[i][j + 1].x - m_datas[i][j].x));
+				tmpValue = XMath::lineSlerp(it->y,(it + 1)->y,(m_showDataRange.x - it->x) / ((it + 1)->x - it->x));
 				if(flag)
 				{
 					tmpRange.top = tmpValue;
@@ -535,9 +536,9 @@ void XChart::updateRange()
 					if(tmpValue > tmpRange.bottom) tmpRange.bottom = tmpValue;
 				}
 			}
-			if(j > 0 && m_datas[i][j].x > m_showDataRange.y && m_datas[i][j - 1].x < m_showDataRange.y)
+			if(it != m_datas[i].begin() && it->x > m_showDataRange.y && (it - 1)->x < m_showDataRange.y)
 			{//跨越后边界，这里需要插值，这里使用线性插值
-				tmpValue = XMath::lineSlerp(m_datas[i][j - 1].y,m_datas[i][j].y,(m_showDataRange.y - m_datas[i][j - 1].x) / (m_datas[i][j].x - m_datas[i][j - 1].x));
+				tmpValue = XMath::lineSlerp((it - 1)->y,it->y,(m_showDataRange.y - (it - 1)->x) / (it->x - (it - 1)->x));
 				if(flag)
 				{
 					tmpRange.top = tmpValue;
@@ -579,10 +580,8 @@ void XChart::updateRange()
 	}
 	curLineUpdateVbo();
 
-	m_curMouseRect.set(m_position.x + m_dataRect.left * m_scale.x,
-		m_position.y + (m_dataRect.top - 32.0f) * m_scale.x,
-		m_position.x + m_dataRect.right * m_scale.x,
-		m_position.y + (m_dataRect.bottom + m_downHeight + m_allLineRectHeight) * m_scale.x);
+	m_curMouseRect.set(m_position + XVec2(m_dataRect.left, m_dataRect.top - 32.0f) * m_scale,
+		m_position + XVec2(m_dataRect.right, m_dataRect.bottom + m_downHeight + m_allLineRectHeight) * m_scale);
 	float right;
 	for(int i = 0;i < m_chartMaxLineSum;++ i)
 	{
@@ -590,7 +589,7 @@ void XChart::updateRange()
 		if(right > m_curMouseRect.right) m_curMouseRect.right = right;
 	}
 }
-void XChart::insertData(const XVector2 &data,int lineIndex)
+void XChart::insertData(const XVec2& data,int lineIndex)
 {
 	if(lineIndex < 0 || lineIndex >= m_chartMaxLineSum) return;	//数据不合法
 	if (m_maxDataSum <= 0)
@@ -598,26 +597,20 @@ void XChart::insertData(const XVector2 &data,int lineIndex)
 		//下面要排序，这里使用原始的排序算法，可以进行优化
 		if(m_dataSum == 0)
 		{
-			m_dataRange.set(data.x,data.y,data.x,data.y);
+			m_dataRange.set(data,data);
 		}else
 		{
-			if(data.x < m_dataRange.left) m_dataRange.left = data.x;
+			if(data.x < m_dataRange.left) m_dataRange.left = data.x;else
 			if(data.x > m_dataRange.right) m_dataRange.right = data.x;
-			if(data.y < m_dataRange.top) m_dataRange.top = data.y;
+			if(data.y < m_dataRange.top) m_dataRange.top = data.y;else
 			if(data.y > m_dataRange.bottom) m_dataRange.bottom = data.y;
 		}
 		m_datas[lineIndex].push_back(data);
-		for(unsigned int i = 0;i < m_datas[lineIndex].size();++ i)
+		for(auto it = m_datas[lineIndex].begin();it != m_datas[lineIndex].end();++ it)
 		{//对数据进行排序，
-			if(m_datas[lineIndex][i].x > data.x)
-			{//将数据插入
-				for(int j = (int)(m_datas[lineIndex].size()) - 1;j > i;-- j)
-				{
-					m_datas[lineIndex][j] = m_datas[lineIndex][j - 1];
-				}
-				m_datas[lineIndex][i] = data;
-				break;//插入完成之后退出
-			}
+			if(it->x <= data.x) continue;//将数据插入
+			m_datas[lineIndex].insert(it,data);
+			break;//插入完成之后退出
 		}
 		if(m_datas[lineIndex].size() > m_maxLineLen || m_maxLineLen < 0) m_maxLineLen = m_datas[lineIndex].size();
 		++ m_dataSum;	//标记数据
@@ -625,30 +618,24 @@ void XChart::insertData(const XVector2 &data,int lineIndex)
 	else
 	{
 		//下面要排序，这里使用原始的排序算法，可以进行优化
-		if (m_datas[lineIndex].size() <= m_maxDataSum && m_maxDataSum > 0)
+		if (m_datas[lineIndex].size() <= m_maxDataSum)
 		{
 			if(m_dataSum == 0)
 			{
-				m_dataRange.set(data.x,data.y,data.x,data.y);
+				m_dataRange.set(data,data);
 			}else
 			{
-				if(data.x < m_dataRange.left) m_dataRange.left = data.x;
+				if(data.x < m_dataRange.left) m_dataRange.left = data.x;else
 				if(data.x > m_dataRange.right) m_dataRange.right = data.x;
-				if(data.y < m_dataRange.top) m_dataRange.top = data.y;
+				if(data.y < m_dataRange.top) m_dataRange.top = data.y;else
 				if(data.y > m_dataRange.bottom) m_dataRange.bottom = data.y;
 			}
 			m_datas[lineIndex].push_back(data);
-			for(unsigned int i = 0;i < m_datas[lineIndex].size();++ i)
+			for(auto it = m_datas[lineIndex].begin();it != m_datas[lineIndex].end();++ it)
 			{//对数据进行排序，
-				if(m_datas[lineIndex][i].x > data.x)
-				{//将数据插入
-					for(int j = (int)(m_datas[lineIndex].size()) - 1;j > i;-- j)
-					{
-						m_datas[lineIndex][j] = m_datas[lineIndex][j - 1];
-					}
-					m_datas[lineIndex][i] = data;
-					break;//插入完成之后退出
-				}
+				if(it->x <= data.x) continue;
+				m_datas[lineIndex].insert(it,data);
+				break;//插入完成之后退出
 			}
 			if(m_datas[lineIndex].size() > m_maxLineLen || m_maxLineLen < 0) m_maxLineLen = m_datas[lineIndex].size();
 			++ m_dataSum;	//标记数据
@@ -657,34 +644,29 @@ void XChart::insertData(const XVector2 &data,int lineIndex)
 		{//点的数量已经超出限制，这里需要剔除之前的点
 			m_datas[lineIndex].pop_front();	//抛出前面的点
 			m_datas[lineIndex].push_back(data);
-			for(unsigned int i = 0;i < m_datas[lineIndex].size();++ i)
+			for(auto it = m_datas[lineIndex].begin();it != m_datas[lineIndex].end();++ it)
 			{//对数据进行排序，
-				if(m_datas[lineIndex][i].x > data.x)
-				{//将数据插入
-					for(int j = (int)(m_datas[lineIndex].size()) - 1;j > i;-- j)
-					{
-						m_datas[lineIndex][j] = m_datas[lineIndex][j - 1];
-					}
-					m_datas[lineIndex][i] = data;
-					break;//插入完成之后退出
-				}
+				if(it->x <= data.x) continue;
+				//将数据插入
+				m_datas[lineIndex].insert(it,data);
+				break;//插入完成之后退出
 			}
 			if(m_datas[lineIndex].size() > m_maxLineLen || m_maxLineLen < 0) m_maxLineLen = m_datas[lineIndex].size();
 			//重新统计点的范围
 			if(m_dataSum == 0)
 			{
-				m_dataRange.set(data.x,data.y,data.x,data.y);
+				m_dataRange.set(data,data);
 			}else
 			{
-				m_dataRange.set(data.x, data.y, data.x, data.y);
+				m_dataRange.set(data, data);
 				for (int i = 0; i < m_chartMaxLineSum; ++i)
 				{
-					for (unsigned int j = 0; j < m_datas[i].size(); ++j)
+					for (auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
 					{
-						if (m_datas[i][j].x < m_dataRange.left) m_dataRange.left = m_datas[i][j].x;
-						if (m_datas[i][j].x > m_dataRange.right) m_dataRange.right = m_datas[i][j].x;
-						if (m_datas[i][j].y < m_dataRange.top) m_dataRange.top = m_datas[i][j].y;
-						if (m_datas[i][j].y > m_dataRange.bottom) m_dataRange.bottom = m_datas[i][j].y;
+						if (it->x < m_dataRange.left) m_dataRange.left = it->x;else
+						if (it->x > m_dataRange.right) m_dataRange.right = it->x;
+						if (it->y < m_dataRange.top) m_dataRange.top = it->y;else
+						if (it->y > m_dataRange.bottom) m_dataRange.bottom = it->y;
 					}
 				}
 			}
@@ -721,19 +703,19 @@ void XChart::setMaxDataSum(int sum)
 		bool flag = true;
 		for (int i = 0; i < m_chartMaxLineSum; ++i)
 		{
-			for (unsigned int j = 0; j < m_datas[i].size(); ++j)
+			for (auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
 			{
 				if (flag)
 				{//第一次进入
 					flag = false;
-					m_dataRange.set(m_datas[i][j].x, m_datas[i][j].y, m_datas[i][j].x, m_datas[i][j].y);
+					m_dataRange.set(*it, *it);
 				}
 				else
 				{
-					if (m_datas[i][j].x < m_dataRange.left) m_dataRange.left = m_datas[i][j].x;
-					if (m_datas[i][j].x > m_dataRange.right) m_dataRange.right = m_datas[i][j].x;
-					if (m_datas[i][j].y < m_dataRange.top) m_dataRange.top = m_datas[i][j].y;
-					if (m_datas[i][j].y > m_dataRange.bottom) m_dataRange.bottom = m_datas[i][j].y;
+					if (it->x < m_dataRange.left) m_dataRange.left = it->x;else
+					if (it->x > m_dataRange.right) m_dataRange.right = it->x;
+					if (it->y < m_dataRange.top) m_dataRange.top = it->y;else
+					if (it->y > m_dataRange.bottom) m_dataRange.bottom = it->y;
 				}
 			}
 		}
@@ -742,6 +724,21 @@ void XChart::setMaxDataSum(int sum)
 		m_neadUpdateAllLineData = true;
 		//allLineUpdateVbo();
 	}
+}
+void XChart::clearData(int lineIndex)
+{
+	if(lineIndex < 0 || lineIndex >= m_chartMaxLineSum) return;
+	m_datas[lineIndex].clear();
+	m_linePointSum[lineIndex] = 0;
+}
+void XChart::clearAllData()
+{
+	for(int i = 0;i < m_chartMaxLineSum;++ i)
+	{
+		m_datas[i].clear();
+	}
+	memset(m_linePointSum,0,m_chartMaxLineSum * sizeof(int));
+	m_dataSum = 0;
 }
 XBool XChart::readDataFromFile(const char * filename)	//从文件中读取曲线数据
 {
@@ -763,7 +760,7 @@ XBool XChart::readDataFromFile(const char * filename)	//从文件中读取曲线数据
 	m_dataSum = 0;
 
 	//下面依次读取数据
-	XVector2 tmpPoint;
+	XVec2 tmpPoint;
 	int tmpSum;
 	for(int i = 0;i < sum;++ i)
 	{
@@ -802,10 +799,14 @@ XBool XChart::saveDataToFile(const char * filename)	//从将曲线数据保存到文件中
 	{
 		if(m_datas[i].size() <= 1) continue;
 		fprintf(fp,"lineName:%s\n",m_dataChecks[i].getCaptionString());
+#ifdef _WIN64
+		fprintf(fp,"pointSum:%zd,\n",m_datas[i].size());
+#else
 		fprintf(fp,"pointSum:%d,\n",m_datas[i].size());
-		for(unsigned int j = 0;j < m_datas[i].size();++ j)
+#endif
+		for(auto it = m_datas[i].begin();it != m_datas[i].end();++ it)
 		{
-			fprintf(fp,"%f,%f,\n",m_datas[i][j].x,m_datas[i][j].y);
+			fprintf(fp,"%f,%f,\n",it->x,it->y);
 		}
 	}
 	fclose(fp);	
@@ -823,9 +824,9 @@ void XChart::release()
 	}
 	m_isInited = false;
 }
-void XChart::setColor(float r,float g,float b,float a) 
+void XChart::setColor(const XFColor& c) 
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_caption.setColor(m_color);
 	m_textFont.setColor(m_color);
 	for(int i = 0;i < m_chartMaxLineSum;++ i)

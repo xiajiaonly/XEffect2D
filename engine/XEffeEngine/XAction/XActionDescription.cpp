@@ -106,19 +106,19 @@ void XActionCore::move(float delay)
 			case ACTION_TYPE_R:
 				{
 					XFColor tempColor = m_object->getColor();
-					m_object->setColor(m_moveData[0].getCurData(),tempColor.fG,tempColor.fB,tempColor.fA);
+					m_object->setColor(m_moveData[0].getCurData(),tempColor.g,tempColor.b,tempColor.a);
 				}
 				break;
 			case ACTION_TYPE_G:
 				{
 					XFColor tempColor = m_object->getColor();
-					m_object->setColor(tempColor.fG,m_moveData[0].getCurData(),tempColor.fB,tempColor.fA);
+					m_object->setColor(tempColor.g,m_moveData[0].getCurData(),tempColor.b,tempColor.a);
 				}
 				break;
 			case ACTION_TYPE_B:
 				{
 					XFColor tempColor = m_object->getColor();
-					m_object->setColor(tempColor.fR,tempColor.fG,m_moveData[0].getCurData(),tempColor.fA);
+					m_object->setColor(tempColor.r,tempColor.g,m_moveData[0].getCurData(),tempColor.a);
 				}
 				break;
 			case ACTION_TYPE_ALPHA:
@@ -299,10 +299,10 @@ bool XActionDescription::loadFromFolder(const char *filename)	//从文件夹中载入资
 	char tempStr[MAX_FILE_NAME_LENGTH];
 //	if(filename != NULL)
 //	{
-//		sprintf(tempStr,"%s%s",ACTION_DES_PATH,filename);
+//		sprintf_s(tempStr,MAX_FILE_NAME_LENGTH,"%s%s",ACTION_DES_PATH,filename);
 //	}else
 //	{
-//		sprintf(tempStr,"%s%s.acd",ACTION_DES_PATH,m_actionName);
+//		sprintf_s(tempStr,MAX_FILE_NAME_LENGTH,"%s%s.acd",ACTION_DES_PATH,m_actionName);
 //	}
 //	if((fp = fopen(tempStr,"r")) == NULL) return XFalse;	//文件打开失败
 	if((fp = fopen(filename,"r")) == NULL) return XFalse;	//文件打开失败
@@ -386,7 +386,7 @@ bool XActionDescription::loadFromFolder(const char *filename)	//从文件夹中载入资
 			}
 			if(fscanf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",&tempState.position.x,&tempState.position.y,
 				&tempState.angle,&tempState.size.x,&tempState.size.y,
-				&tempState.color.fR,&tempState.color.fG,&tempState.color.fB,&tempState.color.fA) != 9) {fclose(fp);return XFalse;}
+				&tempState.color.r,&tempState.color.g,&tempState.color.b,&tempState.color.a) != 9) {fclose(fp);return XFalse;}
 			temp = XMem::createMem<XActionCore>();
 			temp->set(startTime,endTime,(XActionType)(type),tempMD,&tempState);
 			if(!pushAActionCore(temp))
@@ -419,19 +419,19 @@ bool XActionDescription::loadFromFolder(const char *filename)	//从文件夹中载入资
 			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 			if(tempBool == 1) tempASD->isValidColorR = XTrue;
 			else tempASD->isValidColorR = XFalse;
-			tempASD->color.fR = tempValue;
+			tempASD->color.r = tempValue;
 			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 			if(tempBool == 1) tempASD->isValidColorG = XTrue;
 			else tempASD->isValidColorG = XFalse;
-			tempASD->color.fG = tempValue;
+			tempASD->color.g = tempValue;
 			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 			if(tempBool == 1) tempASD->isValidColorB = XTrue;
 			else tempASD->isValidColorB = XFalse;
-			tempASD->color.fB = tempValue;
+			tempASD->color.b = tempValue;
 			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 			if(tempBool == 1) tempASD->isValidColorA = XTrue;
 			else tempASD->isValidColorA = XFalse;
-			tempASD->color.fA = tempValue;
+			tempASD->color.a = tempValue;
 			if(fscanf(fp,"%d,%f,\n",&tempBool,&tempValue) != 2) {fclose(fp);return XFalse;}
 			if(tempBool == 1) tempASD->isValidAngle = XTrue;
 			else tempASD->isValidAngle = XFalse;
@@ -464,24 +464,24 @@ bool XActionDescription::loadFromWeb(const char *filename)		//从网页中读取资源
 	return false;
 }
 
-XBool XActionDescription::loadAction(const char * filename,XResourcePosition resoursePosition)
+XBool XActionDescription::loadAction(const char * filename,XResPos resPos)
 {
 	if(m_isEnable) return XFalse;
 	if(filename == NULL) return XFalse;
 	m_isEnable = XTrue;
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		if(!loadFromPacker(filename)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
+	case RES_LOCAL_FOLDER:
 		if(!loadFromFolder(filename)) return false;
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		if(!loadFromWeb(filename)) return false;
 		break;
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		if(!loadFromPacker(filename) && !loadFromFolder(filename) &&
 			!loadFromWeb(filename)) return false;
 		break;
@@ -495,10 +495,10 @@ XBool XActionDescription::saveAction(const char *filename)
 	if(filename != NULL)
 	{
 		//sprintf(tempStr,"%s%s",ACTION_DES_PATH,filename);
-		strcpy(tempStr,filename);
+		strcpy_s(tempStr,MAX_FILE_NAME_LENGTH,filename);
 	}else
 	{//默认的保存路径
-		sprintf(tempStr,"%s%s.acd",ACTION_DES_PATH,m_actionName);
+		sprintf_s(tempStr,MAX_FILE_NAME_LENGTH,"%s%s.acd",ACTION_DES_PATH,m_actionName);
 	}
 	if((fp = fopen(tempStr,"w")) == NULL) return XFalse;	//文件打开失败
 	
@@ -528,12 +528,20 @@ XBool XActionDescription::saveAction(const char *filename)
 	}
 
 	fprintf(fp,"Time:%f,%f\n",m_startTime,m_endTime);	
+#ifdef _WIN64
+	fprintf(fp,"OAD Sum:%zd,\n",m_otherAction.size());//附属动作数量;
+#else
 	fprintf(fp,"OAD Sum:%d,\n",m_otherAction.size());//附属动作数量;
+#endif
 	if(m_otherAction.size() > 0)//附属动作的ID和名称
 	{
 		for(unsigned int i = 0;i < m_otherAction.size();++ i)
 		{
+#ifdef _WIN64
+			fprintf(fp,"%zd,\n",m_otherAction[i]->m_ID);	//写入动作ID;
+#else
 			fprintf(fp,"%d,\n",m_otherAction[i]->m_ID);	//写入动作ID;
+#endif
 			fprintf(fp,"%s\n",m_otherAction[i]->m_actionName);//写入动作名称;
 		}
 	}
@@ -555,11 +563,15 @@ XBool XActionDescription::saveAction(const char *filename)
 			}
 			fprintf(fp,"State:%f,%f,%f,%f,%f,%f,%f,%f,%f,\n",m_actionCore[i]->m_stayState.position.x,m_actionCore[i]->m_stayState.position.y,
 				m_actionCore[i]->m_stayState.angle,m_actionCore[i]->m_stayState.size.x,m_actionCore[i]->m_stayState.size.y,
-				m_actionCore[i]->m_stayState.color.fR,m_actionCore[i]->m_stayState.color.fG,m_actionCore[i]->m_stayState.color.fB,m_actionCore[i]->m_stayState.color.fA);
+				m_actionCore[i]->m_stayState.color.r,m_actionCore[i]->m_stayState.color.g,m_actionCore[i]->m_stayState.color.b,m_actionCore[i]->m_stayState.color.a);
 		}
 	}
 	//ASD的数量
+#ifdef _WIN64
+	fprintf(fp,"ASD Sum:%zd,\n",m_stateTable.size());//元动作的数量
+#else
 	fprintf(fp,"ASD Sum:%d,\n",m_stateTable.size());//元动作的数量
+#endif
 	if(m_stateTable.size() > 0)
 	{
 		for(unsigned int i = 0;i < m_stateTable.size();++ i)
@@ -569,13 +581,13 @@ XBool XActionDescription::saveAction(const char *filename)
 			else fprintf(fp,"0,0,\n");
 			if(m_stateTable[i]->isValidPosY) fprintf(fp,"1,%f,\n",m_stateTable[i]->position.y);
 			else fprintf(fp,"0,0,\n");
-			if(m_stateTable[i]->isValidColorR) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.fR);
+			if(m_stateTable[i]->isValidColorR) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.r);
 			else fprintf(fp,"0,0,\n");
-			if(m_stateTable[i]->isValidColorG) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.fG);
+			if(m_stateTable[i]->isValidColorG) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.g);
 			else fprintf(fp,"0,0,\n");
-			if(m_stateTable[i]->isValidColorB) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.fB);
+			if(m_stateTable[i]->isValidColorB) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.b);
 			else fprintf(fp,"0,0,\n");
-			if(m_stateTable[i]->isValidColorA) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.fA);
+			if(m_stateTable[i]->isValidColorA) fprintf(fp,"1,%f,\n",m_stateTable[i]->color.a);
 			else fprintf(fp,"0,0,\n");
 			if(m_stateTable[i]->isValidAngle) fprintf(fp,"1,%f,\n",m_stateTable[i]->angle);
 			else fprintf(fp,"0,0,\n");
@@ -605,9 +617,9 @@ XActionDescription::XActionDescription()
 		if(XActionMananger::GetInstance().getActionDes(myID) == NULL) break;
 	}
 	m_ID = myID;
-	sprintf(m_actionName,"ActionDescription%06d",m_ID);	//这里需要注意名字的唯一性
+	sprintf_s(m_actionName,MAX_FILE_NAME_LENGTH,"ActionDescription%06d",m_ID);	//这里需要注意名字的唯一性
 	//int len = strlen(m_actionName);
-	//sprintf(m_actionName,"ActionDescription%6d",m_ID);	//这里需要注意名字的唯一性
+	//sprintf_s(m_actionName,MAX_FILE_NAME_LENGTH,"ActionDescription%6d",m_ID);	//这里需要注意名字的唯一性
 	//int len = strlen(m_actionName);
 	//for(int i = 0;i < len;++ i)
 	//{
@@ -933,10 +945,10 @@ float XActionDescription::getASValue(int time,XActionStateType type)
 		{
 		case ACTION_STATE_TYPE_POSX: return tempE->position.x; 
 		case ACTION_STATE_TYPE_POS_Y: return tempE->position.y; 
-		case ACTION_STATE_TYPE_COLOR_R: return tempE->color.fR; 
-		case ACTION_STATE_TYPE_COLOR_G: return tempE->color.fG; 
-		case ACTION_STATE_TYPE_COLOR_B: return tempE->color.fB; 
-		case ACTION_STATE_TYPE_COLOR_A: return tempE->color.fA; 
+		case ACTION_STATE_TYPE_COLOR_R: return tempE->color.r; 
+		case ACTION_STATE_TYPE_COLOR_G: return tempE->color.g; 
+		case ACTION_STATE_TYPE_COLOR_B: return tempE->color.b; 
+		case ACTION_STATE_TYPE_COLOR_A: return tempE->color.a; 
 		case ACTION_STATE_TYPE_ANGLE: return tempE->angle; 
 		case ACTION_STATE_TYPE_SIZEX: return tempE->size.x; 
 		case ACTION_STATE_TYPE_SIZE_Y: return tempE->size.y; 
@@ -948,10 +960,10 @@ float XActionDescription::getASValue(int time,XActionStateType type)
 		{
 		case ACTION_STATE_TYPE_POSX: return tempS->position.x; 
 		case ACTION_STATE_TYPE_POS_Y: return tempS->position.y; 
-		case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR; 
-		case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG; 
-		case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB; 
-		case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA; 
+		case ACTION_STATE_TYPE_COLOR_R: return tempS->color.r; 
+		case ACTION_STATE_TYPE_COLOR_G: return tempS->color.g; 
+		case ACTION_STATE_TYPE_COLOR_B: return tempS->color.b; 
+		case ACTION_STATE_TYPE_COLOR_A: return tempS->color.a; 
 		case ACTION_STATE_TYPE_ANGLE: return tempS->angle; 
 		case ACTION_STATE_TYPE_SIZEX: return tempS->size.x; 
 		case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y; 
@@ -965,10 +977,10 @@ float XActionDescription::getASValue(int time,XActionStateType type)
 			{
 			case ACTION_STATE_TYPE_POSX: return tempS->position.x; 
 			case ACTION_STATE_TYPE_POS_Y: return tempS->position.y; 
-			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR; 
-			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG; 
-			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB; 
-			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA; 
+			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.r; 
+			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.g; 
+			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.b; 
+			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.a; 
 			case ACTION_STATE_TYPE_ANGLE: return tempS->angle; 
 			case ACTION_STATE_TYPE_SIZEX: return tempS->size.x; 
 			case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y; 
@@ -979,10 +991,10 @@ float XActionDescription::getASValue(int time,XActionStateType type)
 			{
 			case ACTION_STATE_TYPE_POSX: return tempS->position.x + (tempE->position.x - tempS->position.x) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_POS_Y: return tempS->position.y + (tempE->position.y - tempS->position.y) * (time - tempS->time)/(tempE->time - tempS->time); 
-			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.fR + (tempE->color.fR - tempS->color.fR) * (time - tempS->time)/(tempE->time - tempS->time); 
-			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.fG + (tempE->color.fG - tempS->color.fG) * (time - tempS->time)/(tempE->time - tempS->time); 
-			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.fB + (tempE->color.fB - tempS->color.fB) * (time - tempS->time)/(tempE->time - tempS->time); 
-			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.fA + (tempE->color.fA - tempS->color.fA) * (time - tempS->time)/(tempE->time - tempS->time); 
+			case ACTION_STATE_TYPE_COLOR_R: return tempS->color.r + (tempE->color.r - tempS->color.r) * (time - tempS->time)/(tempE->time - tempS->time); 
+			case ACTION_STATE_TYPE_COLOR_G: return tempS->color.g + (tempE->color.g - tempS->color.g) * (time - tempS->time)/(tempE->time - tempS->time); 
+			case ACTION_STATE_TYPE_COLOR_B: return tempS->color.b + (tempE->color.b - tempS->color.b) * (time - tempS->time)/(tempE->time - tempS->time); 
+			case ACTION_STATE_TYPE_COLOR_A: return tempS->color.a + (tempE->color.a - tempS->color.a) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_ANGLE: return tempS->angle + (tempE->angle - tempS->angle) * (time - tempS->time)/(tempE->time - tempS->time); 
 			case ACTION_STATE_TYPE_SIZEX: return tempS->size.x + (tempE->size.x - tempS->size.x) * (time - tempS->time)/(tempE->time - tempS->time);
 			case ACTION_STATE_TYPE_SIZE_Y: return tempS->size.y + (tempE->size.y - tempS->size.y) * (time - tempS->time)/(tempE->time - tempS->time);
@@ -998,10 +1010,10 @@ XActionState XActionDescription::getActionState(int time)
 
 	retActionState.position.x = getASValue(time,ACTION_STATE_TYPE_POSX);
 	retActionState.position.y = getASValue(time,ACTION_STATE_TYPE_POS_Y);
-	retActionState.color.fR = getASValue(time,ACTION_STATE_TYPE_COLOR_R);
-	retActionState.color.fG = getASValue(time,ACTION_STATE_TYPE_COLOR_G);
-	retActionState.color.fB = getASValue(time,ACTION_STATE_TYPE_COLOR_B);
-	retActionState.color.fA = getASValue(time,ACTION_STATE_TYPE_COLOR_A);
+	retActionState.color.r = getASValue(time,ACTION_STATE_TYPE_COLOR_R);
+	retActionState.color.g = getASValue(time,ACTION_STATE_TYPE_COLOR_G);
+	retActionState.color.b = getASValue(time,ACTION_STATE_TYPE_COLOR_B);
+	retActionState.color.a = getASValue(time,ACTION_STATE_TYPE_COLOR_A);
 	retActionState.angle = getASValue(time,ACTION_STATE_TYPE_ANGLE);
 	retActionState.size.x = getASValue(time,ACTION_STATE_TYPE_SIZEX);
 	retActionState.size.y = getASValue(time,ACTION_STATE_TYPE_SIZE_Y);
@@ -1022,8 +1034,8 @@ void XActionCore::setStart()	//设置开始
 		if(m_actionType == ACTION_TYPE_STAY)
 		{
 			m_object->setPosition(m_stayState.position);
-			m_object->setColor(m_stayState.color.fR,m_stayState.color.fG,
-				m_stayState.color.fB,m_stayState.color.fA);
+			m_object->setColor(m_stayState.color.r,m_stayState.color.g,
+				m_stayState.color.b,m_stayState.color.a);
 			m_object->setScale(m_stayState.size);
 			m_object->setAngle(m_stayState.angle);
 		}

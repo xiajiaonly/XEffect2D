@@ -18,6 +18,7 @@ namespace XE{
 #define FILE_LIST_TEXT_NAME "ResourceFileList.txt"
 #define OUT_FILE_NAME "Resource.dat"
 #define FILE_CODE  "SP:xiajia_1981@163.com"
+#define CUR_FILENAME "ResPack.exe"	//µ±Ç°ÎÄ¼þµÄÃû³Æ
 
 int XResourcePack::makeResourcePack(int packMode)
 {
@@ -54,7 +55,7 @@ int XResourcePack::makeResourcePack(int packMode)
 			if(packMode == 0)
 			{//²»¼ÓÃÜµÄÎÄ¼þ
 				if(fileNameTemp[tempLen - 4]  != '.') continue;
-				strcpy(fileNameTemp1,fileNameTemp);
+				strcpy_s(fileNameTemp1,MAX_FILE_NAME_LENGTH,fileNameTemp);
 				//tempLen = strlen(fileNameTemp1);
 				for(int j = 0;j < tempLen;++j)
 				{
@@ -66,9 +67,9 @@ int XResourcePack::makeResourcePack(int packMode)
 				if(!XFile::fileNameCompare(fileNameTemp1,"normalResource")) continue;	//Ö»ÓÐnormalResourceÄ¿Â¼ÏÂÃæµÄÎÄ¼þ²Å»á¾­¹ýÕâ¸ö´¦Àí
 			}else
 			{
-				if(XFile::fileNameCompare(fileNameTemp,"ResourcePack.exe")) continue;			//È¥µô¿ÉÖ´ÐÐÎÄ¼þ×ÔÉí
-				if(XFile::fileNameCompare(fileNameTemp,"ResourceFileList.txt")) continue;		//È¥µôÎÄ¼þÁÐ±íÎÄµµ
-				if(XFile::fileNameCompare(fileNameTemp,"Resource.dat")) continue;				//È¥µô×ÊÔ´°üÎÄ¼þ
+				if(XFile::fileNameCompare(fileNameTemp,CUR_FILENAME)) continue;			//È¥µô¿ÉÖ´ÐÐÎÄ¼þ×ÔÉí
+				if(XFile::fileNameCompare(fileNameTemp,FILE_LIST_TEXT_NAME)) continue;		//È¥µôÎÄ¼þÁÐ±íÎÄµµ
+				if(XFile::fileNameCompare(fileNameTemp,OUT_FILE_NAME)) continue;				//È¥µô×ÊÔ´°üÎÄ¼þ
 				if(fileNameTemp[tempLen - 4]  != '.') continue;		//Õâ¸ö¿ÉÒÔ²»±ØÒªÈç´Ë´¦Àí,ÕâÒ»ÐÐµÄÄ¿µÄÊÇÎªÁËÈ¥µôÎÄ¼þ¼Ð£¬±£Ö¤Ñ¡È¡µÄ¶¼ÊÇÎÄ¼þ
 				//ÏÂÃæÈ¥µô×ÊÔ´ÓÅ»¯²úÉúµÄ¼¸¸öÁÙÊ±ÎÄ¼þ
 				if(XFile::fileNameCompare(fileNameTemp,PNG_FILE_LIST_NAME)) continue;	//È¥µô×ÊÔ´ÓÅ»¯ÖÐ¼äÎÄ¼þ
@@ -82,7 +83,7 @@ int XResourcePack::makeResourcePack(int packMode)
 				//È¡ÏûÒÑ¾­´¦Àí¹ýµÄÎÄ¼þ
 				if(isOptimized(fileNameTemp) == 1) continue;
 
-				strcpy(fileNameTemp1,fileNameTemp);
+				strcpy_s(fileNameTemp1,MAX_FILE_NAME_LENGTH,fileNameTemp);
 				//tempLen = strlen(fileNameTemp1);
 				for(int j = 0;j < tempLen;++j)
 				{
@@ -546,7 +547,9 @@ XBool XResourcePack::getOptimizeInfo()
 				return XFalse;
 			}
 			m_targetOrder[i] = curGetTargetNameSum;
-			strcpy(m_targetName + curGetTargetNameSum * MAX_FILE_NAME_LENGTH,targetFileName);
+			strcpy_s(m_targetName + curGetTargetNameSum * MAX_FILE_NAME_LENGTH,
+				m_targetTextureSum * MAX_FILE_NAME_LENGTH - curGetTargetNameSum * MAX_FILE_NAME_LENGTH,
+				targetFileName);
 			++curGetTargetNameSum;
 		}
 		if(sscanf((char *)(p + offset),"%d:",&tempFlag) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
@@ -821,12 +824,11 @@ int XResourcePack::unpackResource(const char *fileName,unsigned char *p)	//½â°üÄ
 #endif
 	return 1;
 }
-
 int XResourcePack::makeFileList()
 {
 #ifdef XEE_OS_WINDOWS
 	char temp[512];
-	sprintf(temp,"dir /s/b>%s",FILE_LIST_TEXT_NAME);
+	sprintf_s(temp,512,"dir /s/b>%s",FILE_LIST_TEXT_NAME);
 	system(temp);
 	//´¦ÀíÊä³öÎÄ¼þÎªÏà¶ÔÂ·¾¶
 	FILE *fp;
@@ -884,7 +886,7 @@ int XResourcePack::makeFileList()
 #endif
 #ifdef XEE_OS_LINUX
 	char temp[512];
-	sprintf(temp,"ls -qRF>%s",FILE_LIST_TEXT_NAME);
+	sprintf_s(temp,512,"ls -qRF>%s",FILE_LIST_TEXT_NAME);
 	system(temp);
 	//´¦ÀíÊä³öÎÄ¼þÎªÏà¶ÔÂ·¾¶
 	FILE *fp;
@@ -897,8 +899,8 @@ int XResourcePack::makeFileList()
 	char fileNameTemp[MAX_FILE_NAME_LENGTH];
 //	int pathDeep = 1000;
 //	int tempPathDeep;
-	char tempStr[256];
-	char tempDir[256] = "";
+	char tempStr[MAX_FILE_NAME_LENGTH];
+	char tempDir[MAX_FILE_NAME_LENGTH] = "";
 	XBool firstEnterFlag = XFalse;
 	m_fileSum = 0;
 	int len = 0; 
@@ -915,9 +917,9 @@ int XResourcePack::makeFileList()
 				if(tempStr[len - 1] == '*') tempStr[len - 1] = '\0';
 				if(tempDir[0] != '\0') 
 				{
-					strcpy(fileNameTemp,tempDir + 2);
+					strcpy_s(fileNameTemp,MAX_FILE_NAME_LENGTH,tempDir + 2);
 				}
-				strcat(fileNameTemp,tempStr);
+				strcat_s(fileNameTemp,MAX_FILE_NAME_LENGTH,tempStr);
 				//printf("%s\n",fileNameTemp);	//for test
 				memcpy(m_fileInfo[m_fileSum].fileName,fileNameTemp,sizeof(fileNameTemp));
 
@@ -929,7 +931,7 @@ int XResourcePack::makeFileList()
 		//record the DIR
 		if(tempStr[len - 1] == ':')
 		{
-			strcpy(tempDir,tempStr);
+			strcpy_s(tempDir,MAX_FILE_NAME_LENGTH,tempStr);
 			tempDir[len - 1] = '/';
 		}
 		if(!firstEnterFlag) firstEnterFlag = XTrue;
@@ -979,7 +981,7 @@ int XResourcePack::readNormalFileListFromResouce()
 	{//¶ÁÈ¡ÎÄ¼þÁÐ±íÐÅÏ¢
 		//fread(m_fileInfo[i].fileName,sizeof(m_fileInfo[i].fileName),1,fp);	//ÎªÁËÍ³Ò»Â·¾¶£¬ÕâÀï½øÐÐÒ»Ð©ÐÞ¸Ä
 		fread(tempFilename,sizeof(m_fileInfo[i].fileName),1,fp);	//ÎªÁËÍ³Ò»Â·¾¶£¬ÕâÀï½øÐÐÒ»Ð©ÐÞ¸Ä
-		sprintf(m_fileInfo[i].fileName,"%s%s",BASE_RESOURCE_PATH,tempFilename);
+		sprintf_s(m_fileInfo[i].fileName,MAX_FILE_NAME_LENGTH,"%s%s",BASE_RESOURCE_PATH,tempFilename);
 
 		fread(&(m_fileInfo[i].fileLength),sizeof(m_fileInfo[i].fileLength),1,fp);	
 		fread(&(m_fileInfo[i].filePosition),sizeof(m_fileInfo[i].filePosition),1,fp);	
@@ -1123,7 +1125,7 @@ int XResourcePack::readFileListFromResouce()				//´ÓÑ¹Ëõ°üÖÐ¶ÁÈ¡ÎÄ¼þË÷ÒýÐÅÏ¢
 	{
 		memcpy(tempFilename,m_fileData + m_fileDataPoint,sizeof(m_fileInfo[i].fileName));
 		lockOrUnlockProc((unsigned char *)tempFilename,m_fileDataPoint,sizeof(m_fileInfo[i].fileName));
-		sprintf(m_fileInfo[i].fileName,"%s%s",BASE_RESOURCE_PATH,tempFilename);
+		sprintf_s(m_fileInfo[i].fileName,MAX_FILE_NAME_LENGTH,"%s%s",BASE_RESOURCE_PATH,tempFilename);
 
 		m_fileDataPoint += sizeof(m_fileInfo[i].fileName);
 
@@ -1626,16 +1628,16 @@ void XResourcePack::setOutFileName(const char *temp)
 {
 	if(temp == NULL)
 	{
-		strcpy(m_outFileName,OUT_FILE_NAME);
+		strcpy_s(m_outFileName,MAX_FILE_NAME_LENGTH,OUT_FILE_NAME);
 	//	printf("setOutFileName:%s\n",m_outFileName);
 	}else
 	{
 		if(strlen(temp) >= MAX_FILE_NAME_LENGTH)
 		{
-			strcpy(m_outFileName,OUT_FILE_NAME);
+			strcpy_s(m_outFileName,MAX_FILE_NAME_LENGTH,OUT_FILE_NAME);
 		}else
 		{
-			strcpy(m_outFileName,temp);
+			strcpy_s(m_outFileName,MAX_FILE_NAME_LENGTH,temp);
 		}
 	//	printf("setOutFileName:%s\n",m_outFileName);
 	}

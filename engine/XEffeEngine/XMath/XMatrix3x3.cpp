@@ -7,29 +7,29 @@
 #include "XMatrix3x3.h"
 #include "XMatrix2x2.h"
 namespace XE{
-const XMatrix3x3 XMatrix3x3::identity(1.0f,0.0f,0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,1.0f);	//单位矩阵
-XMatrix3x3 XMatrix3x3::inverse()
-{
-	XMatrix3x3 ret;
-	XMatrix3x3& A = * this;
+const XMat3 XMat3::identity(1.0f,0.0f,0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,1.0f);	//单位矩阵
+XMat3 XMat3::inverse()
+{//经过验证
+	XMat3 ret;
+	XMat3& A = * this;
 	double determinant = getValue();
 	if(determinant == 0.0f) return ret;
-	double invdet = 1/determinant;
-	ret(0,0) =  (A(1,1)*A(2,2)-A(2,1)*A(1,2))*invdet;
-	ret(1,0) = -(A(0,1)*A(2,2)-A(0,2)*A(2,1))*invdet;
-	ret(2,0) =  (A(0,1)*A(1,2)-A(0,2)*A(1,1))*invdet;
-	ret(0,1) = -(A(1,0)*A(2,2)-A(1,2)*A(2,0))*invdet;
-	ret(1,1) =  (A(0,0)*A(2,2)-A(0,2)*A(2,0))*invdet;
-	ret(2,1) = -(A(0,0)*A(1,2)-A(1,0)*A(0,2))*invdet;
-	ret(0,2) =  (A(1,0)*A(2,1)-A(2,0)*A(1,1))*invdet;
-	ret(1,2) = -(A(0,0)*A(2,1)-A(2,0)*A(0,1))*invdet;
-	ret(2,2) =  (A(0,0)*A(1,1)-A(1,0)*A(0,1))*invdet;
+	double invdet = 1.0 / determinant;
+	ret(0, 0) = (A(1, 1)*A(2, 2) - A(2, 1)*A(1, 2))*invdet;
+	ret(0, 1) =-(A(0, 1)*A(2, 2) - A(0, 2)*A(2, 1))*invdet;
+	ret(0, 2) = (A(0, 1)*A(1, 2) - A(0, 2)*A(1, 1))*invdet;
+	ret(1, 0) =-(A(1, 0)*A(2, 2) - A(1, 2)*A(2, 0))*invdet;
+	ret(1, 1) = (A(0, 0)*A(2, 2) - A(0, 2)*A(2, 0))*invdet;
+	ret(1, 2) =-(A(0, 0)*A(1, 2) - A(1, 0)*A(0, 2))*invdet;;
+	ret(2, 0) = (A(1, 0)*A(2, 1) - A(2, 0)*A(1, 1))*invdet;
+	ret(2, 1) =-(A(0, 0)*A(2, 1) - A(2, 0)*A(0, 1))*invdet;
+	ret(2, 2) = (A(0, 0)*A(1, 1) - A(1, 0)*A(0, 1))*invdet;
 	return ret;
 }
-XVector2 XMatrix3x3::resolveEquation()
+XVec2 XMat3::resolveEquation()
 {
-	XVector2 ret;
-	XMatrix2x2 m;
+	XVec2 ret;
+	XMat2 m;
 	m.data[0] = data[0];m.data[1] = data[1];
 	m.data[2] = data[3];m.data[3] = data[4];
 	float d = m.getValue();
@@ -43,9 +43,9 @@ XVector2 XMatrix3x3::resolveEquation()
 	return ret;
 }
 namespace XMath{
-XVector4 toVector4(const XMatrix3x3 &m)
+XVec4 toVector4(const XMat3 &m)
 {//从旋转矩阵到四元数的转换
-	XVector4 ret;
+	XVec4 ret;
 	ret.w = m(0,0) + m(1,1) + m(2,2);
 	ret.x = m(0,0) - m(1,1) - m(2,2);
 	ret.y = m(1,1) - m(0,0) - m(2,2);
@@ -96,6 +96,6 @@ XVector4 toVector4(const XMatrix3x3 &m)
 }
 }
 #if !WITH_INLINE_FILE
-#include "XMatrix3x3.inl"
+#include "XMat3.inl"
 #endif
 }

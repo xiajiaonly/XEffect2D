@@ -5,7 +5,6 @@
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-#include "XOSDefine.h"
 //#include "XMemoryPool.h"
 
 //#include "stdio.h"
@@ -18,8 +17,25 @@
 //#include "XMath/XMath.h"
 //#include "XMemory.h"
 //#include "XFile.h"
+//+++++++++++++++++++++++++++++++++++++++++++++++
+//说明：目前的SDL在VS2015中最后在资源时候时会由于clearup当前资源而造成crash
+//下面的问题是为了解决VS2015中提示未定义__iob_func而增加的
+//方案1：老方案必须只能包含一次
+//#include "stdio.h"
+//extern "C" FILE __iob_func[3] = { __acrt_iob_func(0),__acrt_iob_func(1),__acrt_iob_func(2) };
+//方案2：可以多次包含
+#if _MSC_VER>=1900
+//#include "XOSDefine.h"
+#include "stdio.h" 
+_ACRTIMP_ALT FILE* __cdecl __acrt_iob_func(unsigned);
+#ifdef __cplusplus 
+extern "C"
+#endif 
+FILE* __cdecl __iob_func(unsigned i);
+#endif //_MSC_VER>=1900
+//-----------------------------------------------
 namespace XE{
-class XVector2;
+class XVec2;
 
 //输出HL1与HL2的和的一半，本来想用于声音变慢的，结果好像没用上
 extern void getHalfData(unsigned char H1,unsigned char L1,unsigned char H2,unsigned char L2,unsigned char &Ho,unsigned char &Lo);
@@ -31,6 +47,12 @@ namespace XPixel
 	#endif
 	extern void pixelsZoomRGBA(unsigned char * src,unsigned char * dst,	//原始图像数据，目标图像数据
 						  int sw,int sh,int dw,int dh);	//原始图像的裁剪大小
+	extern void pixelsZoomRGB(unsigned char * src,unsigned char * dst,	//原始图像数据，目标图像数据
+						  int sw,int sh,int dw,int dh);	//原始图像的裁剪大小
+	//将指定矩阵的数据缩放到目标矩阵中
+	extern void datasZoom(int* src, int* dst, int sw, int sh, int dw, int dh);
+	//处理掉0的特殊值
+	extern void datasZoomEx(int* src, int* dst, int sw, int sh, int dw, int dh);
 	//图像缩放算法，双线性插值
 	extern void pixelDataZoomRGB(unsigned char * src,unsigned char * dst,float zoom,	//原始图像数据，目标图像数据，缩放尺寸
 						  int sw,int sh,int dw,int dh,	//原始图像尺寸，目标图像尺寸
@@ -44,16 +66,16 @@ namespace XPixel
 		PIXEL_MODE_ZOOM,		//自适应缩放
 	};
 	extern void pixelDataConvertRGB(unsigned char * src,unsigned char * dst,
-									const XVector2 &srcSize,const XVector2 &dstSize,const XVector2& srcPos,
-									const XVector2 &dstClipSize,XPixelFillMode mode = PIXEL_MODE_CENTER_TILE);
+									const XVec2& srcSize,const XVec2& dstSize,const XVec2& srcPos,
+									const XVec2& dstClipSize,XPixelFillMode mode = PIXEL_MODE_CENTER_TILE);
 	//使用居中平铺的方式将src的数据填充到dst部分
 	template<class T>
 	void pixelFillRGBA(T *src,T *dst,int sw,int sh,int dw,int dh)	//这个函数没有经过验证
 	{
 		//位置
-		XVector2 resSize(XEE_Min(sw,dw),XEE_Min(sh,dh));				//最终确定的源目标尺寸
-		XVector2 resDstPos((XVector2(dw,dh) - resSize) * 0.5f);		//最终确定的目标位置
-		XVector2 resSrcPos((XVector2(sw,sh) - resSize) * 0.5f);	//最终确定的源位置
+		XVec2 resSize((std::min)(sw,dw),(std::min)(sh,dh));				//最终确定的源目标尺寸
+		XVec2 resDstPos((XVec2(dw,dh) - resSize) * 0.5f);		//最终确定的目标位置
+		XVec2 resSrcPos((XVec2(sw,sh) - resSize) * 0.5f);	//最终确定的源位置
 		//下面开始拷贝数据
 		int w = resSize.x * 4 * sizeof(T);
 		int wS = (sw * sizeof(T)) << 2;

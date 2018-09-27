@@ -38,36 +38,40 @@ public:
 
 	XRect m_mouseRect;			//鼠标的响应范围
 	XRect m_mouseRectButton;			//鼠标的响应范围
-	XVector2 m_fontPosition;	//放置文字的位置
+	XVec2 m_fontPosition;	//放置文字的位置
 
 	XSliderSkin();
 	~XSliderSkin(){release();}
 	XBool init(const char *LNormal,const char *LDown,const char *LOn,const char *LDisable,
 		const char *BNormal,const char *BDown,const char *BOn,const char *BDisable,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
-	XBool initEx(const char *filename,XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		XResPos resPos = RES_SYS_DEF);
+	XBool initEx(const char *filename,XResPos resPos = RES_SYS_DEF);
 	void release();
 private:
-	bool loadFromFolder(const char *filename,XResourcePosition resPos);	//从文件夹中载入资源
-	bool loadFromPacker(const char *filename,XResourcePosition resPos);	//从压缩包中载入资源
-	bool loadFromWeb(const char *filename,XResourcePosition resPos);		//从网页中读取资源
+	bool loadFromFolder(const char *filename,XResPos resPos);	//从文件夹中载入资源
+	bool loadFromPacker(const char *filename,XResPos resPos);	//从压缩包中载入资源
+	bool loadFromWeb(const char *filename,XResPos resPos);		//从网页中读取资源
 };
 class XMultiList;
 class XMultiListBasic;
 class XMultiText;
 class XDirectoryList;
 class XSliderEx;
+class XSliderInfinite;
 class XImageList;
 class XPropertyBox;
-class XSlider:public XControlBasic,public XBasicOprate
+class XSubWindowEx;
+class XSlider :public XControlBasic, public XBasicOprate
 {
 	friend XMultiList;
 	friend XMultiListBasic;
 	friend XMultiText;
 	friend XDirectoryList;
 	friend XSliderEx;
+	friend XSliderInfinite;
 	friend XImageList;
 	friend XPropertyBox;
+	friend XSubWindowEx;
 private:
 	XBool m_isInited;
 	XSliderState m_curSliderState;			//滑动条的状态
@@ -102,22 +106,25 @@ private:
 	XBool m_needFont;						//是否需要字体
 	XFontUnicode m_caption;				//字体
 	std::string m_fontString;//格式化字符串
-	XVector2 m_textPosition;				//文字的相对位置
-	XVector2 m_textSize;					//文字的尺寸
+	XVec2 m_textPosition;				//文字的相对位置
+	XVec2 m_textSize;					//文字的尺寸
 	XFColor m_textColor;					//文字的颜色
 	//下面是关于关联变量的接口
 	float *m_pVariable;	//关联的变量
+	bool m_isInteger;	//数据是否为整数类型
 public:
-	void setConnectVar(float * p) 
+	void setIsInteger(bool flag) { m_isInteger = flag; }
+	bool getIsInteger()const { return m_isInteger; }
+	void setConnectVar(float* p)
 	{
 		m_pVariable = p;
-		setCurValue(*p);
+		setCurValue(*p, true);
 	}	//关联变量
-	void disConnectVar() {m_pVariable = NULL;}			//取消变量关联
+	void disConnectVar() { m_pVariable = NULL; }			//取消变量关联
 private:
-	XVector2 m_upMousePoint;		//上次鼠标在滚动条的位置
-	XVector2 m_mouseFlyArea;		//鼠标拖曳是飞出的响应范围
-	XVector2 m_curButtonPosition;//当前滑块按钮的位置
+	XVec2 m_upMousePoint;		//上次鼠标在滚动条的位置
+	XVec2 m_mouseFlyArea;		//鼠标拖曳是飞出的响应范围
+	XVec2 m_curButtonPosition;//当前滑块按钮的位置
 	float m_minValue;			//滑动条的最大值
 	float m_maxValue;			//滑动条的最小值
 	float m_curValue;			//滑动条的当前值
@@ -131,77 +138,93 @@ private:
 
 	void setTexture(const XSliderSkin &tex);
 public:
-	XBool init(const XVector2& position,	//控件所在的位置
+	XBool init(const XVec2& position,	//控件所在的位置
 		const XRect& Area,				//控件的鼠标响应范围
 		const XRect& buttonArea,		//滑动块的鼠标响应范围(这个数据实际上没有起到作用)
-		const XSliderSkin &tex,float max = 100.0f,float min = 0.0f,XSliderType type = SLIDER_TYPE_HORIZONTAL);
-	XBool initEx(const XVector2& position,	//对上面接口的简化
-		const XSliderSkin &tex,float max = 100.0f,float min = 0.0f,XSliderType type = SLIDER_TYPE_HORIZONTAL);
-	XBool initPlus(const char * path,float max = 100.0f,float min = 0.0f,XSliderType type = SLIDER_TYPE_HORIZONTAL,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const XSliderSkin &tex, float maxValue = 100.0f, float minValue = 0.0f, XSliderType type = SLIDER_TYPE_HORIZONTAL);
+	XBool initEx(const XVec2& position,	//对上面接口的简化
+		const XSliderSkin &tex, float maxValue = 100.0f, float minValue = 0.0f, XSliderType type = SLIDER_TYPE_HORIZONTAL);
+	XBool initPlus(const char* path, float maxValue = 100.0f, float minValue = 0.0f, XSliderType type = SLIDER_TYPE_HORIZONTAL,
+		XResPos resPos = RES_SYS_DEF);
 	//narrowBtn是否滑动块为窄边，窄边只有普通的一半大小
-	//int initWithoutSkin(const XRect& area,const XRect& buttonArea,XSliderType type,float max,float min,const XVector2 &fontPosition);
-	XBool initWithoutSkin(const XRect& area,float max = 100.0f,float min = 0.0f,
-		XSliderType type = SLIDER_TYPE_HORIZONTAL,const XVector2 &fontPosition = XVector2(0.0f,16.0f),bool narrowBtn = false);
-	XBool initWithoutSkin(const XVector2& pixelSize,float max = 100.0f,float min = 0.0f,
-		XSliderType type = SLIDER_TYPE_HORIZONTAL,const XVector2 &fontPosition = XVector2(0.0f,16.0f),bool narrowBtn = false)
+	//int initWithoutSkin(const XRect& area,const XRect& buttonArea,XSliderType type,float 
+	//	maxValue,float minValue,const XVec2& fontPosition);
+	XBool initWithoutSkin(const XRect& area, float maxValue = 100.0f, float minValue = 0.0f,
+		XSliderType type = SLIDER_TYPE_HORIZONTAL, const XVec2& fontPosition = XVec2(0.0f, 16.0f),
+		bool narrowBtn = false);
+	XBool initWithoutSkin(const XVec2& pixelSize, float maxValue = 100.0f, float minValue = 0.0f,
+		XSliderType type = SLIDER_TYPE_HORIZONTAL, const XVec2& fontPosition = XVec2(0.0f, 16.0f),
+		bool narrowBtn = false)
 	{
-		return initWithoutSkin(XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),max,min,type,fontPosition,narrowBtn);
+		return initWithoutSkin(XRect(XVec2::zero, pixelSize), maxValue, minValue, 
+			type, fontPosition, narrowBtn);
+	}
+	XBool initWithoutSkin(float len, float maxValue = 100.0f, float minValue = 0.0f,
+		XSliderType type = SLIDER_TYPE_HORIZONTAL, const XVec2& fontPosition = XVec2(0.0f, 16.0f),
+		bool narrowBtn = false)
+	{
+		return initWithoutSkin(XRect(XVec2::zero, XVec2(len,32.0f)), maxValue, minValue,
+			type, fontPosition, narrowBtn);
 	}
 
-	XBool setFont(const char *caption,const XFontUnicode &font,float captionSize = 1.0f,const XVector2 &fontPosition = XVector2(0.0f,16.0f));
-	XBool setFont(const char *caption,const XVector2 &fontPosition)
+	XBool setFont(const char* caption, const XFontUnicode& font, float captionSize = 1.0f, const XVec2& fontPosition = XVec2(0.0f, 16.0f));
+	XBool setFont(const char* caption, const XVec2& fontPosition)
 	{
-		return setFont(caption,getDefaultFont(),1.0f,fontPosition);
+		return setFont(caption, getDefaultFont(), 1.0f, fontPosition);
 	}
 	XBool setFont(const char *caption)
 	{
-		return setFont(caption,getDefaultFont(),1.0f,m_textPosition);
+		return setFont(caption, getDefaultFont(), 1.0f, m_textPosition);
 	}
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
 //	using XControlBasic::getPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);		//设置滑动条的位置
+	void setPosition(const XVec2& p);		//设置滑动条的位置
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
 //	using XControlBasic::getSize;	//避免覆盖的问题
-	void setScale(float x,float y);				//设置滑动条的缩放比例
+	void setScale(const XVec2& s);				//设置滑动条的缩放比例
 
 	void setTextColor(const XFColor& color);	//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const { return m_textColor; }	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
 //	using XControlBasic::getColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 protected:
 	void draw();							//描绘滑动条
 	void drawUp();
-	XBool mouseProc(float x,float y,XMouseState mouseState);	//对于鼠标动作的响应函数
-	XBool keyboardProc(int keyOrder,XKeyState keyState);
-	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return !(m_curSliderState == SLIDER_STATE_DOWN);}
+	XBool mouseProc(const XVec2& p, XMouseState mouseState);	//对于鼠标动作的响应函数
+	XBool keyboardProc(int keyOrder, XKeyState keyState);
+	void insertChar(const char*, int) { ; }
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&) { return !(m_curSliderState == SLIDER_STATE_DOWN); }
 	void setLostFocus();	//设置失去焦点
 	float getMapValue(float v);
 public:
-	void setCurValue(float temp,bool cbFun = true);			//设置滑块当前的值,cbFun是否触发数值变化的回调函数
-	void setRange(float max,float min);
+	void setCurValue(float temp, bool withEvent = false);			//设置滑块当前的值,cbFun是否触发数值变化的回调函数
+	void setRange(float maxValue, float minValue, bool withEvent = true);
 
 	XBool setACopy(const XSlider &temp);			//建立一个副本
 
 	XSlider();
-	~XSlider(){release();}
+	virtual ~XSlider()
+	{
+		release();
+		if (gFrameworkData.pOperateManager != NULL)
+			gFrameworkData.pOperateManager->decreaseObj(this);
+	}
 	void release();
 	//内联函数
 	void disable();		//使控件无效
 	void enable();		//使控件有效
 	float getCurValue() const;	//获取滑块当前的值
-	float getMaxValue() const; 
+	float getMaxValue() const;
 	float getMinValue() const;
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	//virtual void justForTest() {;}
 private:	//为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	XSlider(const XSlider &temp);
@@ -210,13 +233,18 @@ public:
 	virtual void setOprateState(void * data);
 	virtual void *getOprateState() const;
 	virtual void releaseOprateStateData(void *p);
+	virtual void stateChange()
+	{
+		if (m_withUndoAndRedo) XOpManager.addAOperate(this);	//如果需要记录当前状态则将调用动作管理器的相关函数
+		if (m_funStateChange != NULL) m_funStateChange(m_pStateClass);	//调用相关的回调函数
+	}
 	virtual bool isSameState(void * data);
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	//下面是对控件动态支持而定义的相关属性和方法
 private:
 	XMoveData m_actionMoveData;	//动态效果的变量
-	XVector2 m_oldPos;				//动作播放时的位置
-	XVector2 m_oldSize;			//动作播放时的大小
+	XVec2 m_oldPos;				//动作播放时的位置
+	XVec2 m_oldSize;			//动作播放时的大小
 	XMoveData m_lightMD;
 	XRect m_lightRect;
 protected:
@@ -227,16 +255,16 @@ protected:
 public:
 	virtual XBool saveState(TiXmlNode &e)
 	{
-		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
-		if(!XXml::addLeafNode(e,m_ctrlName.c_str(),XString::toString(getCurValue()))) return XFalse; 
+		if (!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		if (!XXml::addLeafNode(e, m_ctrlName.c_str(), XString::toString(getCurValue()))) return XFalse;
 		return XTrue;
 	}
 	virtual XBool loadState(TiXmlNode *e)
 	{
-		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
+		if (!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回
 		float tmp;
-		if(XXml::getXmlAsFloat(e,m_ctrlName.c_str(),tmp) == NULL) return XFalse;
-		setCurValue(tmp);
+		if (XXml::getXmlAsFloat(e, m_ctrlName.c_str(), tmp) == NULL) return XFalse;
+		setCurValue(tmp, true);
 		return XTrue;
 	}
 	//---------------------------------------------------------

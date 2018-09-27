@@ -17,20 +17,20 @@ class XRigidBall
 private:
 	XBool m_isEnable;	//是否有效
 public:
-	XVector2 m_position;	//位置
+	XVec2 m_position;	//位置
 	float m_radius;			//半径,单位米
 	float m_mass;			//质量,单位克
-	XVector2 m_speed;		//速度,直角坐标系的速度,单位米每秒
+	XVec2 m_speed;		//速度,直角坐标系的速度,单位米每秒
 	float m_airResistance;	//空气阻力(在低速的情况下应该可以忽略不计)
 	float m_adhereRate;		//粘附系数
 	float m_adhereRadius;	//粘附半径(原理类似于质量引力)
 
-	XVector2 m_positionS;	//内部计算的点,起始
-	//XVector2 m_positionE;	//内部计算的点,结束
+	XVec2 m_positionS;	//内部计算的点,起始
+	//XVec2 m_positionE;	//内部计算的点,结束
 	//int m_upCrashOrder;		//一次不能同时与两个物体发生碰撞
 	void setEnable(XBool isEnable) {m_isEnable = isEnable;}
 	XBool getIsEnable() const	{return m_isEnable;}
-	void init(const XVector2& position,float radius,float mass,const XVector2& speed,float airResistance,float adhereRate,float adhereRadius)
+	void init(const XVec2& position,float radius,float mass,const XVec2& speed,float airResistance,float adhereRate,float adhereRadius)
 	{
 		m_position = position;	//位置
 		m_radius = radius;			//半径
@@ -42,10 +42,10 @@ public:
 	}
 	XRigidBall()
 		:m_isEnable(XFalse)	//是否有效
-		,m_position(0.0f,0.0f)	//位置
+		,m_position(0.0f)	//位置
 		,m_radius(0.0f)			//半径
 		,m_mass(0.0f)			//质量
-		,m_speed(0.0f,0.0f)		//速度,直角坐标系的速度
+		,m_speed(0.0f)		//速度,直角坐标系的速度
 		,m_airResistance(0.0f)	//空气阻力(在低速的情况下应该可以忽略不计)
 		,m_adhereRate(0.0f)		//粘附系数
 		,m_adhereRadius(0.0f)	//粘附半径(原理类似于质量引力)
@@ -101,13 +101,13 @@ public:
 		crashProc(timeDelay);
 	}
 	void crashProc(int timeDelay);
-	XBool addOneBall(const XVector2& position,float radius,float mass,const XVector2 &speed,float airResistance,float adhereRate,float adhereRadius);	//增加一个例子，返回增加是否成功
-	XBool addOneLine(const XVector2& startPosition,const XVector2 &endPosition);
+	XBool addOneBall(const XVec2& position,float radius,float mass,const XVec2& speed,float airResistance,float adhereRate,float adhereRadius);	//增加一个例子，返回增加是否成功
+	XBool addOneLine(const XVec2& startPosition,const XVec2& endPosition);
 	XRigidBalls();
 	void setEnable(XBool isEnable)	{m_isEnable = isEnable;}
 	XBool getIsEnable() const {return m_isEnable;}
 	XBool getBallIsEnable(int order) const	{return m_pRigidBall[order].getIsEnable();}
-	XVector2 getBallPosition(int order) const {return m_pRigidBall[order].m_position;}
+	XVec2 getBallPosition(int order) const {return m_pRigidBall[order].m_position;}
 };
 }
 #endif

@@ -12,16 +12,16 @@ inline SDL_Surface * loadImageMem(const void *data,int len)	//从内存中载入图片数
 	SDL_Surface *img = IMG_Load_RW(fileData,1);
 	return img;
 }
-SDL_Surface * loadImageEx(const char *pFileName,XResourcePosition resoursePosition)
+SDL_Surface * loadImageEx(const char *pFileName,XResPos resPos)
 {
 	SDL_Surface *temp_back = NULL;
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_FOLDER://这里是没有经过资源管理器的，所以会出现资源管理器没有管理的资源
+	case RES_LOCAL_FOLDER://这里是没有经过资源管理器的，所以会出现资源管理器没有管理的资源
 		temp_back = IMG_Load(XString::ANSI2UTF8(pFileName).c_str());
 		break;
-	case RESOURCE_LOCAL_PACK:
+	case RES_LOCAL_PACK:
 		{//对于内部资源的读取
 			//写入数据
 			int length = XResPack.getFileLength(pFileName);
@@ -39,12 +39,12 @@ SDL_Surface * loadImageEx(const char *pFileName,XResourcePosition resoursePositi
 			XMem::XDELETE_ARRAY(p);
 		}
 		break;
-	case RESOURCE_WEB:
+	case RES_WEB:
 		{
 			XHTTPRequest tempRequest;
 			XHTTPRequestStruct tempGet;
 			char fileName[MAX_FILE_NAME_LENGTH];
-			strcpy(fileName,pFileName);
+			strcpy_s(fileName,MAX_FILE_NAME_LENGTH,pFileName);
 			if(tempRequest.sendRequest(XFalse,fileName,tempGet) != 0)	//获取网络数据
 			{//读取到网络数据
 				temp_back = loadImageMem(tempGet.message,tempGet.messageLength);
@@ -54,7 +54,7 @@ SDL_Surface * loadImageEx(const char *pFileName,XResourcePosition resoursePositi
 			}
 		}
 		break; 
-	case RESOURCE_AUTO:
+	case RES_AUTO:
 		{
 		//packer
 			int length = XResPack.getFileLength(pFileName);
@@ -75,7 +75,7 @@ SDL_Surface * loadImageEx(const char *pFileName,XResourcePosition resoursePositi
 			XHTTPRequest tempRequest;
 			XHTTPRequestStruct tempGet;
 			char fileName[MAX_FILE_NAME_LENGTH];
-			strcpy(fileName,pFileName);
+			strcpy_s(fileName,MAX_FILE_NAME_LENGTH,pFileName);
 			if(tempRequest.sendRequest(XFalse,fileName,tempGet) != 0)	//获取网络数据
 			{//读取到网络数据
 				temp_back = loadImageMem(tempGet.message,tempGet.messageLength);
@@ -86,70 +86,75 @@ SDL_Surface * loadImageEx(const char *pFileName,XResourcePosition resoursePositi
 		}
 		break;
 	}
-    if(temp_back == NULL) LogNull("%s file load error!\n",pFileName);
+    if(temp_back == NULL) LogNull("%s file load error!",pFileName);
     return temp_back;
+}
+bool XPixelSDL::load_(void *_tmp)	//这个是内部调用的接口
+{
+	SDL_Surface *tmp = (SDL_Surface *)_tmp;
+	if(tmp == NULL) return false;
+	switch(tmp->format->BytesPerPixel)
+	{
+	case 4: 
+		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGBA;
+		else m_colorMode = COLOR_BGRA;
+		break;
+	case 3: 
+		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGB;
+		else m_colorMode = COLOR_BGR;
+		break;
+	case 1: m_colorMode = COLOR_GRAY;break;
+	default: return false;
+	}
+	w = tmp->w;
+	h = tmp->h;
+	if(!m_isInited)
+	{
+		m_dataSize = w * h * tmp->format->BytesPerPixel;
+		m_pPixels = XMem::createArrayMem<unsigned char>(m_dataSize);
+		if(m_pPixels == NULL) return false;
+	}else
+	{
+		int size = w * h * tmp->format->BytesPerPixel;
+		if(size != m_dataSize)
+		{//如果大小发生变化则重新分配大小
+			m_dataSize = size;
+			XMem::XDELETE_ARRAY(m_pPixels);
+			m_pPixels = XMem::createArrayMem<unsigned char>(m_dataSize);
+			if(m_pPixels == NULL) return false;
+		}
+	}
+	if (w * tmp->format->BytesPerPixel % 4 == 0)
+	{//注意这里需要4字节对齐
+		memcpy(m_pPixels,tmp->pixels,m_dataSize);
+	}
+	else
+	{
+		int wOffset = w * tmp->format->BytesPerPixel;
+		unsigned char *sP = (unsigned char *)tmp->pixels;
+		for (int i = 0,offsetD = 0,offsetS = 0; i < h; ++i)
+		{
+			memcpy(m_pPixels + offsetD, sP + offsetS, wOffset);
+			offsetD += wOffset;
+			offsetS += tmp->pitch;
+		}
+	}
+	SDL_FreeSurface(tmp);
+
+	m_isInited = true;
+	return true;
 }
 bool XPixelSDL::load(const XBuffer &buff)
 {
-	if(isInited) return false;
-	SDL_Surface * tmp = loadImageMem(buff.getBuffer(),buff.getUsage());
-	if(tmp == NULL) return false;
-	w = tmp->w;
-	h = tmp->h;
-	switch(tmp->format->BytesPerPixel)
-	{
-	case 4: 
-		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGBA;
-		else m_colorMode = COLOR_BGRA;
-		break;
-	case 3: 
-		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGB;
-		else m_colorMode = COLOR_BGR;
-		break;
-	case 1: m_colorMode = COLOR_GRAY;break;
-	default: return false; break;
-	}
-	int size = w * h * tmp->format->BytesPerPixel;
-	m_pPixels = XMem::createArrayMem<unsigned char>(size);
-	if(m_pPixels == NULL) return false;
-	memcpy(m_pPixels,tmp->pixels,size);
-	SDL_FreeSurface(tmp);
-
-	isInited = true;
-	return true;
+	return load_(loadImageMem(buff.getBuffer(),buff.getUsage()));
 }
-bool XPixelSDL::load(const std::string &filename,XResourcePosition resPos)
+bool XPixelSDL::load(const std::string& filename,XResPos resPos)
 {
-	if(isInited) return false;
-	SDL_Surface * tmp = loadImageEx(filename.c_str(),resPos);
-	if(tmp == NULL) return false;
-	w = tmp->w;
-	h = tmp->h;
-	switch(tmp->format->BytesPerPixel)
-	{
-	case 4: 
-		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGBA;
-		else m_colorMode = COLOR_BGRA;
-		break;
-	case 3: 
-		if(tmp->format->Rshift == 0) m_colorMode = COLOR_RGB;
-		else m_colorMode = COLOR_BGR;
-		break;
-	case 1: m_colorMode = COLOR_GRAY;break;
-	default: return false; break;
-	}
-	int size = w * h * tmp->format->BytesPerPixel;
-	m_pPixels = XMem::createArrayMem<unsigned char>(size);
-	if(m_pPixels == NULL) return false;
-	memcpy(m_pPixels,tmp->pixels,size);
-	SDL_FreeSurface(tmp);
-
-	isInited = true;
-	return true;
+	return load_(loadImageEx(filename.c_str(),resPos));
 }
 bool XPixelSDL::fitNPot()
 {
-	if(!isInited ||
+	if(!m_isInited ||
 		!XMath::isNPOT(w,h)) return true;
 	int ow = w;
 	int oh = h;

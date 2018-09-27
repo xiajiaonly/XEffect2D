@@ -7,7 +7,9 @@
 //--------------------------------
 #include "../XObjectBasic.h" 
 #include "XComment.h"
-#include "../XFrameWork.h"
+//#include "XMouseAndKeyBoardDefine.h"
+//#include "XCommonDefine.h"
+#include "XFrameWork.h"
 class TiXmlNode;
 namespace XE{
 #define MIN_FONT_CTRL_SIZE (XEG.m_windowData.systemFontSize + 2.0f)
@@ -54,8 +56,12 @@ enum XCtrlObjType
 	CTRL_OBJ_PROPERTYBOX,	//属性框的控件
 	CTRL_OBJ_COLORCHOOSE,	//颜色选择的控件
 	CTRL_OBJ_SUBWINDOW,	//子窗口控件
+	CTRL_OBJ_SUBWINDOWEX,	//子窗口控件
 	CTRL_OBJ_SOFTBOARD,	//软键盘控件
 	CTRL_OBJ_PARAMCTRL,	//参数控件
+	CTRL_OBJ_MOVEDATAPAD,	//movedataPad控件
+	CTRL_OBJ_SLIDERRING,	//环形拖动条
+	CTRL_OBJ_SLIDERINFINITE,	//无限滑动条
 	CTRL_OBJ_FUNCTION,	//绘图函数
 };
 enum XCtrlSpecialType
@@ -69,7 +75,7 @@ namespace XCtrl
 {
 	inline std::string getCtrlNameByType(XCtrlObjType type);
 	inline std::string getCtrlTypeByString(XCtrlObjType type);
-	inline XCtrlObjType getCtrlTypeByString(const std::string &name);
+	inline XCtrlObjType getCtrlTypeByString(const std::string& name);
 }
 //说明：引入友元的目的是为了让控件管理器可以访问控件的绘图函数和消息处理函数，
 //但是控件的实体被定义之后，定义的程序员不能自己调用这些函数，防止重复绘图和重
@@ -80,6 +86,7 @@ class XToolBar;
 class XTab;
 class XPropertyLine;
 class XSubWindow;
+class XSubWindowEx;
 //控件类的基类
 class XControlBasic:public XObjectBasic
 {
@@ -88,13 +95,14 @@ class XControlBasic:public XObjectBasic
 	friend XTab;
 	friend XPropertyLine;
 	friend XSubWindow;
+	friend XSubWindowEx;
 protected:
 	XCtrlSpecialType m_ctrlSpecialType;
 	XCtrlObjType m_ctrlType;
 	XRect m_mouseRect;		//控件的鼠标响应范围
 	XRect m_curMouseRect;	//当前鼠标的响应范围，这个范围受到位置和大小的变化而变化	(这个值，没有在所有的控件中使用，造成效率下降，2014.4.30修正这个问题)
-	XVector2 m_scale;		//控件的大小
-	XVector2 m_position;	//控件的位置
+	XVec2 m_scale;		//控件的大小
+	XVec2 m_position;	//控件的位置
 	XFColor m_color;		//控件的颜色
 
 	XBool m_isEnable;		//控件是否有效，无效的物件可以看到，但是却显示为不能操作的模式
@@ -105,15 +113,19 @@ protected:
 	XBool m_withAction;	//是否使用控件的动态效果
 	XBool m_isInAction;	//是否正在处于动作过程中
 
+	XBool m_isSilent;	//是否处于无声状态，无声状态下，不会对输入有任何作用
+
 	XComment m_comment;	//注释
 	XBool m_isMouseInRect;	//鼠标是否在范围内
 public:
-	XVector2 getPixelSize() const {return XVector2(m_mouseRect.getWidth(),m_mouseRect.getHeight());}
+	XBool getIsSilent()const{return m_isSilent;}
+	void setSilent(XBool flag){m_isSilent = flag;}
+	const XVec2 getPixelSize() const {return m_mouseRect.getSize();}
 	XCtrlObjType getCtrlType()const{return m_ctrlType;}
 	void setWithAction(XBool flag){m_withAction = flag;}
 	XBool getWithAction()const{return m_withAction;}
 	XBool getIsInAction()const{return m_isInAction;}
-	XRect getMouseRect() const {return m_mouseRect;}
+	const XRect& getMouseRect() const {return m_mouseRect;}
 	float getMouseRectWidth() const {return m_mouseRect.getWidth();}
 	float getMouseRectHeight() const {return m_mouseRect.getHeight();}
 	int getControlID() const {return m_objectID;}	//获取控件的ID
@@ -140,13 +152,13 @@ public:
 	//下面是注释相关的接口
 	void setComment(const char *str) {m_comment.setString(str);}
 	void disComment() {m_comment.setString(NULL);}
-	void setCommentPos(float x,float y){m_comment.setPosition(x,y);}
+	void setCommentPos(const XVec2& p){m_comment.setPosition(p);}
 	//------------------------------------------------
 protected:	//设计为下面的函数不允许在外部调用
 	virtual void update(float){;}	//默认什么也不做
 	virtual void draw() = 0;
 	virtual void drawUp() = 0;	//用于描绘上一个层面的东西，控件分两个层面，底层和漂浮层，漂浮层也就是上层有：例如右键菜单，下拉菜单等
-	virtual XBool mouseProc(float x,float y,XMouseState mouseState) = 0;	//鼠标响应函数,关于这个函数的返回值的意义，各个空间类的定义尚不统一，有返回控件是否发生状态变更的，等等
+	virtual XBool mouseProc(const XVec2& p,XMouseState mouseState) = 0;	//鼠标响应函数,关于这个函数的返回值的意义，各个空间类的定义尚不统一，有返回控件是否发生状态变更的，等等
 	virtual XBool keyboardProc(int keyOrder,XKeyState keyState) = 0;		//键盘响应函数
 	virtual void insertChar(const char * ch,int len) = 0;
 
@@ -156,24 +168,27 @@ protected:	//设计为下面的函数不允许在外部调用
 			m_isVisible &&		//如果不可见直接退出
 			m_isEnable;		//如果无效则直接退出
 	}
-	virtual XBool canGetFocus(float x,float y) = 0;	//是否可以获得焦点
-	virtual XBool canLostFocus(float x,float y) = 0;	//当前控件是否可以失去焦点，用于处理焦点抢夺问题
+	virtual XBool canGetFocus(const XVec2& p) = 0;	//是否可以获得焦点
+	virtual XBool canLostFocus(const XVec2& p) = 0;	//当前控件是否可以失去焦点，用于处理焦点抢夺问题
 	virtual void setLostFocus() {m_isBeChoose = XFalse;}	//设置失去焦点
 	virtual void setFocus() {m_isBeChoose = XTrue;}			//设置为焦点
+	bool m_withWireframe;		//如果被选择的话，是否显示外围的线框
 public:
+	virtual bool getWithWireframe()const{return m_withWireframe;}
+	virtual void setWithWireframe(bool withWireframe){m_withWireframe = withWireframe;}
 	virtual XBool isFocus() {return m_isBeChoose;}		//是否处于焦点
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-//	virtual void setPosition(const XVector2& position) {setPosition(position.x,position.y);}
+//	virtual void setPosition(const XVec2& position) {setPosition(position.x,position.y);}
 //	virtual void setPosition(float x,float y) = 0;
-	virtual XVector2 getPosition() const {return m_position;}
+	virtual const XVec2& getPosition() const {return m_position;}
 
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	virtual XVector2 getScale() const {return m_scale;}
+	virtual const XVec2& getScale() const {return m_scale;}
 
 	using XObjectBasic::setColor;	//避免覆盖的问题
 //	virtual void setColor(float r,float g,float b,float a) = 0;		//+Child处理
-//	virtual void setColor(const XFColor& color) {setColor(color.fR,color.fG,color.fB,color.fA);}
-	virtual XFColor getColor() const {return m_color;}	//获取控件字体的颜色
+//	virtual void setColor(const XFColor& color) {setColor(color.r,color.g,color.b,color.a);}
+	virtual const XFColor& getColor() const {return m_color;}	//获取控件字体的颜色
 
 	float getAngle() const {return 0.0f;}				//获取物件的角度
 	void setAngle(float){updateChildAngle();}					//设置物件的角度
@@ -203,7 +218,7 @@ public:
 	virtual void setNeedSaveAndLoad(bool flag) {m_needSaveAndLoad = flag;}
 	virtual XBool getNeedSaveAndLoad() const {return m_needSaveAndLoad;}
 	virtual void setCtrlName(const std::string& name){m_ctrlName = name;}
-	virtual std::string getCtrlName() const {return m_ctrlName;}
+	virtual const std::string& getCtrlName() const {return m_ctrlName;}
 	virtual XBool saveState(TiXmlNode &)
 	{
 		if(!m_needSaveAndLoad) return XTrue;	//如果不需要保存则直接返回

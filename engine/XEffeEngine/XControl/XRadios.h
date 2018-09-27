@@ -25,8 +25,8 @@ private:
 	int m_radioSum;		//选项的数量
 	int m_curChoose;	//当前所选的项的编号
 	XCheck *m_radio;	//所有单选项的指针
-	XVector2 *m_checkPosition;	//单选项的相对位置
-	XVector2 m_distance;	//设置的每个单选项之间的距离
+	XVec2 *m_checkPosition;	//单选项的相对位置
+	XVec2 m_distance;	//设置的每个单选项之间的距离
 public:
 	enum XRadiosEvent
 	{
@@ -41,88 +41,93 @@ private:
 	XFontUnicode m_caption;
 	float m_captionSize;
 	XFColor m_textColor;	//显示的字体的颜色
-	XVector2 m_textPosition;
+	XVec2 m_textPosition;
 
 	XResourceInfo *m_resInfo;
 	XBool m_withoutTex;	//没有贴图的形式
 public:
 	XBool init(int radioSum,			//选项的数量
-		const XVector2& distance,	//每个单选项之间的距离
-		const XVector2& position,	//控件的位置
-		const XRect &Area,			//选择图标的鼠标响应范围
-		const XRadiosSkin* tex,const XFontUnicode &font,float captionSize,
-		const XVector2& textPosition);		//单选框初始化
+		const XVec2& distance,	//每个单选项之间的距离
+		const XVec2& position,	//控件的位置
+		const XRect& Area,			//选择图标的鼠标响应范围
+		const XRadiosSkin* tex,const XFontUnicode& font,float captionSize,
+		const XVec2& textPosition);		//单选框初始化
 	XBool initEx(int radioSum,			//对上面接口的简化
-		const XVector2& distance,	
-		const XVector2& position,	
-		const XRadiosSkin* tex,const XFontUnicode &font,float captionSize = 1.0);
+		const XVec2& distance,	
+		const XVec2& position,	
+		const XRadiosSkin* tex,const XFontUnicode& font,float captionSize = 1.0);
 	XBool initPlus(int radioSum,			//选项的数量
-		const XVector2& distance,	//每个单选项之间的距离
-		const char *path,const XFontUnicode &font,float captionSize = 1.0f,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const XVec2& distance,	//每个单选项之间的距离
+		const char *path,const XFontUnicode& font,float captionSize = 1.0f,
+		XResPos resPos = RES_SYS_DEF);
 	XBool initWithoutSkin(int radioSum,
-		const XVector2& distance,
-		const XRect &area,
-		const XFontUnicode &font,float captionSize,
-		const XVector2& textPosition);
+		const XVec2& distance,
+		const XRect& area,
+		const XFontUnicode& font,float captionSize,
+		const XVec2& textPosition);
 	XBool initWithoutSkin(int radioSum,
-		const XVector2& distance,
-		const XRect &area,
-		const XFontUnicode &font,
-		const XVector2& textPosition)
+		const XVec2& distance,
+		const XRect& area,
+		const XFontUnicode& font,
+		const XVec2& textPosition)
 	{
 		return initWithoutSkin(radioSum,distance,area,font,1.0f,textPosition);
 	}
 	XBool initWithoutSkin(int radioSum,
-		const XVector2& distance,
-		const XRect &area,
-		const XVector2& textPosition)
+		const XVec2& distance,
+		const XRect& area,
+		const XVec2& textPosition)
 	{
 		return initWithoutSkin(radioSum,distance,area,getDefaultFont(),1.0f,textPosition);
 	}
 	XBool initWithoutSkin(int radioSum,
-		const XVector2& distance,
-		const XVector2 &pixelSize,
-		const XVector2& textPosition)
+		const XVec2& distance = XVec2(0.0f,MIN_FONT_CTRL_SIZE + 2.0f),	//默认为列
+		const XVec2& pixelSize = XVec2(MIN_FONT_CTRL_SIZE),
+		const XVec2& textPosition = XVec2(MIN_FONT_CTRL_SIZE,MIN_FONT_CTRL_SIZE * 0.5f))
 	{
-		return initWithoutSkin(radioSum,distance,XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return initWithoutSkin(radioSum,distance,XRect(XVec2::zero,pixelSize),
 			getDefaultFont(),1.0f,textPosition);
 	}
 protected:
 	void draw();
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);	//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);	//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);		//当处于激活状态的时候，可以通过上下左右4个按键改变选择的值
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}
 public:
 	void disable();
 	void enable();
 	void setChoosed(int temp);									//设置当前选择的单选项
-	void setRadioPosition(const XVector2& position,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
-	void setRadioPosition(float x,float y,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
+	void setRadioPosition(const XVec2& position,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
+//	void setRadioPosition(float x,float y,int order);			//设置单选项中某一项的位置(这里使用相对坐标)
 	
-	void setDistance(const XVector2& distance);
+	void setDistance(const XVec2& distance);
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);				//设置缩放比例
+	void setScale(const XVec2& s);				//设置缩放比例
 
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);		//设置位置
+	void setPosition(const XVec2& p);		//设置位置
 
 	void setTextColor(const XFColor& color);//设置字体的颜色
-	XFColor getTextColor() const {return m_textColor;}	//获取控件字体的颜色
+	const XFColor& getTextColor() const {return m_textColor;}	//获取控件字体的颜色
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);//设置按钮的颜色
+	void setColor(const XFColor& c);//设置按钮的颜色
 	void setAlpha(float a);//设置按钮的颜色
 
 	XBool setACopy(const XRadios &temp);			//设置一个副本
 	XBool setRadioSum(int radioSum);
 
 	XRadios();
-	~XRadios(){release();}
+	virtual ~XRadios()
+	{
+		release();
+		if(gFrameworkData.pOperateManager != NULL)
+		gFrameworkData.pOperateManager->decreaseObj(this);
+	}
     //下面是内联函数
 	void release();	//释放分配的资源
 	//void setCallbackFun(void (* funStateChange)(void *,int),void *pClass = NULL);
@@ -131,29 +136,34 @@ public:
 	void setRadioState(bool state,int order);	//设置单个选项是否可选
 	void setRadiosText(const char * temp);			//设置多项的值，每项之间用';'隔开,如果总项数不匹配，则自动匹配
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	//virtual void justForTest() {}
 private:	//为了防止意外调用造成的错误，这里重载赋值操作符和赋值构造函数
 	XRadios(const XRadios &temp);
 	XRadios& operator = (const XRadios& temp);
 public:
-	void setOprateState(void * data)
+	virtual void setOprateState(void * data)
 	{
 		int index = *(int *)data;
 		setChoosed(index);
 	}
-	void *getOprateState() const
+	virtual void *getOprateState() const
 	{
 		int *data = XMem::createMem<int>();
 		*data =  getCurChoose();
 		return data;
 	}
-	void releaseOprateStateData(void *p)
+	virtual void releaseOprateStateData(void *p)
 	{
 		int *data = (int*)p;
 		XMem::XDELETE(data);
+	}
+	virtual void stateChange()
+	{
+		if(m_withUndoAndRedo) XOpManager.addAOperate(this);	//如果需要记录当前状态则将调用动作管理器的相关函数
+		if(m_funStateChange != NULL) m_funStateChange(m_pStateClass);	//调用相关的回调函数
 	}
 	virtual bool isSameState(void * data)
 	{

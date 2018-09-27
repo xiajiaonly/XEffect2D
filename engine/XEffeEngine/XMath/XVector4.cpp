@@ -6,13 +6,13 @@
 //--------------------------------
 #include "XVector4.h"
 namespace XE{
-const XVector4 XVector4::zero(0.0f,0.0f,0.0f,0.0f);
+const XVec4 XVec4::zero(0.0f,0.0f,0.0f,0.0f);
 
-XVector4 slerp(const XVector4& v0,const XVector4& v1,float r)
+XVec4 slerp(const XVec4& v0,const XVec4& v1,float r)
 {//尚未经过验证
 	if(r <= 0.0f) return v0;
 	if(r >= 1.0f) return v1;
-	XVector4 ret;
+	XVec4 ret;
 	float cosOmega = v0.dot(v1);
 	if(cosOmega < 0.0f)
 	{
@@ -32,10 +32,11 @@ XVector4 slerp(const XVector4& v0,const XVector4& v1,float r)
 		k0 = sin((1.0f - r) * omega) * oneOverSinOmega;
 		k1 = sin(r * omega) * oneOverSinOmega;
 	}
-	ret.set(v0.x * k0 + ret.x * k1,
-		v0.y * k0 + ret.y * k1,
-		v0.z * k0 + ret.z * k1,
-		v0.w * k0 + ret.w * k1);
+	ret = v0 * k0 + ret * k1;
+	//ret.set(v0.x * k0 + ret.x * k1,
+	//	v0.y * k0 + ret.y * k1,
+	//	v0.z * k0 + ret.z * k1,
+	//	v0.w * k0 + ret.w * k1);
 	return ret;
 }
 #if !WITH_INLINE_FILE

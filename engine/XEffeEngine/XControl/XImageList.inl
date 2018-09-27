@@ -1,10 +1,10 @@
-INLINE XBool XImageList::canGetFocus(float x,float y)	//用于判断当前物件是否可以获得焦点
+INLINE XBool XImageList::canGetFocus(const XVec2& p)	//用于判断当前物件是否可以获得焦点
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 	!m_isActive ||		//没有激活的控件不接收控制
 	!m_isVisible ||	//如果不可见直接退出
 	!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
 INLINE void XImageList::disable()		//使控件无效
 {
@@ -59,42 +59,42 @@ INLINE void XImageList::disVisible()
 //	//m_imageSld.setLostFocus();
 //	m_isBeChoose = XFalse;
 //}
-INLINE void XImageList::setPosition(float x,float y)
+INLINE void XImageList::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	m_leftBtn.setPosition(m_position);
 	m_rightBtn.setPosition(m_position.x + (m_buttonWidth + m_imageSize.x * m_showImageSum) * m_scale.x,m_position.y);
 	m_imageSld.setPosition(m_position.x + m_buttonWidth * m_scale.x,m_position.y);
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
 	updateState(false);
 }
-INLINE XBool XImageList::isInRect(float x,float y)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+INLINE XBool XImageList::isInRect(const XVec2& p)		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
 {
 	if(!m_isInited) return XFalse;
-	return m_curMouseRect.isInRect(x,y);
+	return m_curMouseRect.isInRect(p);
 }
-INLINE XVector2 XImageList::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+INLINE XVec2 XImageList::getBox(int order)			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	switch(order)
 	{
-	case 0:return XVector2(m_curMouseRect.left,m_curMouseRect.top);
-	case 1:return XVector2(m_curMouseRect.right,m_curMouseRect.top);
-	case 2:return XVector2(m_curMouseRect.right,m_curMouseRect.bottom);
-	case 3:return XVector2(m_curMouseRect.left,m_curMouseRect.bottom);
+	case 0:return m_curMouseRect.getLT();
+	case 1:return m_curMouseRect.getRT();
+	case 2:return m_curMouseRect.getRB();
+	case 3:return m_curMouseRect.getLB();
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
-INLINE void XImageList::setColor(float r,float g,float b,float a) 
+INLINE void XImageList::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	m_leftBtn.setColor(m_color);
 	m_rightBtn.setColor(m_color);
 	m_imageSld.setColor(m_color);
-	for(unsigned int i = 0;i < m_imageList.size();++ i)
+	for(auto it = m_imageList.begin();it != m_imageList.end();++ it)
 	{
-		m_imageList[i]->setColor(m_color);
+		(*it)->setColor(m_color);
 	}
 }
 INLINE void XImageList::setAlpha(float a) 
@@ -103,9 +103,9 @@ INLINE void XImageList::setAlpha(float a)
 	m_leftBtn.setAlpha(a);
 	m_rightBtn.setAlpha(a);
 	m_imageSld.setAlpha(a);
-	for(unsigned int i = 0;i < m_imageList.size();++ i)
+	for (auto it = m_imageList.begin(); it != m_imageList.end(); ++it)
 	{
-		m_imageList[i]->setAlpha(a);
+		(*it)->setAlpha(a);
 	}
 }
 INLINE void XImageList::drawUp()

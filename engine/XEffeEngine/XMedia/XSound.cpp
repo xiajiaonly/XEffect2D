@@ -14,6 +14,7 @@ void channelFinished(int channel)
 {//当某个通道的音效播放完成的时候会调用这个函数
 	printf("%d finished!\n",channel);
 }
+#if AUDIO_MATHOD == 0
 //void effectFunc(int chan,void *stream,int len,void *udata)
 void effectFunc(int,void *stream,int len,void *)
 {//下面在这里进行转码(现在这里假设实现一个慢播放的功能):会crash，还不知道怎么弄呢。
@@ -33,9 +34,10 @@ void effectFunc(int,void *stream,int len,void *)
 	SDL_MixAudio((Uint8 *)stream,wav_cvt.buf, wav_cvt.len_cvt,128);
 	free(wav_cvt.buf);
 }
+#endif
 XSound::XSound()
 	:m_firstAddSoundFlag(XFalse)
-	,m_resoursePosition(RESOURCE_AUTO)
+	,m_resoursePosition(RES_AUTO)
 {
 	m_sound.clear();
 //	Mix_ChannelFinished(channelFinished);
@@ -44,15 +46,15 @@ XSound::~XSound()
 {
 	clearUp();
 }
-XSndHandle XSound::addSound(const char* filename,XResourcePosition resoursePosition)
+XSndHandle XSound::addSound(const char* filename,XResPos resPos)
 {
 	if(!m_firstAddSoundFlag)
 	{//这里相当于是初始化
 		m_soundVolume = XCurSndCore.getVolume(0);
 		m_firstAddSoundFlag = XTrue;
 	}
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	m_resoursePosition = resoursePosition;
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	m_resoursePosition = resPos;
 	XSoundInfo *temp = XMem::createMem<XSoundInfo>();
 	if(temp == NULL) return -1;
 	temp->resInfo = XResManager.loadResource(filename,RESOURCE_TYPE_SOUND,m_resoursePosition);
@@ -101,8 +103,14 @@ XBool XSound::play(XSndHandle soundHandle,int loops)
 #ifdef DEBUG_MODE
 		printf("sound play %d\n",soundHandle);
 #endif
+#if AUDIO_MATHOD == 0
 		int channel = XCurSndCore.playSound(temp->sound,loops);
 		XCurSndCore.setVolume(channel,m_soundVolume);
+#endif
+#if AUDIO_MATHOD == 1
+		void* channel = XCurSndCore.playSound(temp->sound,loops);
+		XCurSndCore.setVolume(channel,m_soundVolume);
+#endif
 		temp->lateChannel = channel;
 	//	Mix_RegisterEffect(channel,effectFunc,NULL,this);
 		return XTrue;
@@ -226,12 +234,64 @@ XBool XSound::fadeInSound(XSndHandle s,int loops,int ms)
 #ifdef DEBUG_MODE
 		printf("sound play %d\n",s);
 #endif
+#if AUDIO_MATHOD == 0
 		int channel = XCurSndCore.soundFadeIn(m_sound[s]->sound,loops,ms);
 		XCurSndCore.setVolume(channel,m_soundVolume);
+#endif
+#if AUDIO_MATHOD == 1
+		void* channel = XCurSndCore.soundFadeIn(m_sound[s]->sound,loops,ms);
+		XCurSndCore.setVolume(channel,m_soundVolume);
+#endif
 		m_sound[s]->lateChannel = channel;
 	//	Mix_RegisterEffect(channel,effectFunc,NULL,this);
 		return XTrue;
 	}
 	return XFalse;
+}
+void XSound::setAllVolume(int volume)
+{
+	volume = XMath::clamp(volume, 0, 128);
+	m_soundVolume = volume;
+#if AUDIO_MATHOD == 0
+	XCurSndCore.setVolume(-1, m_soundVolume);
+#endif
+#if AUDIO_MATHOD == 1
+	XCurSndCore.setVolume(nullptr, m_soundVolume);
+#endif
+}
+void XSound::pause(XSndHandle s)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
+	XCurSndCore.pauseSound(m_sound[s]->lateChannel);
+}
+void XSound::resume(XSndHandle s)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
+	XCurSndCore.resumeSound(m_sound[s]->lateChannel);
+}
+XBool XSound::isPause(XSndHandle s)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return XFalse;
+	return XCurSndCore.isSoundPause(m_sound[s]->lateChannel);
+}
+void XSound::stop(XSndHandle s)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
+	XCurSndCore.soundFadeOut(m_sound[s]->lateChannel, 100);
+}
+XBool XSound::isEnd(XSndHandle s)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return XTrue;
+	return !XCurSndCore.isSoundPlaying(m_sound[s]->lateChannel);
+}
+void XSound::fadeOutSound(XSndHandle s, int ms)
+{
+	if (s < 0 || s >= m_sound.size() || m_sound[s] == NULL) return;
+	XCurSndCore.soundFadeOut(m_sound[s]->lateChannel, ms);
+}
+void XSound::release()	//注意这里这个类不会自动在析构函数里面调用释放函数，所以一定要记得主动调用释放函数，自动调用的话主要是怕重复调用
+{
+	XCurSndCore.haltSound();//关闭所有的channel
+	clearUp();
 }
 }

@@ -3,30 +3,30 @@
 #include "XObjectManager.h" 
 #include "XControlManager.h"
 namespace XE{
-void XImageList::ctrlProc(void *pClass,int id,int eventID)
+void XImageList::ctrlProc(void *pClass, int id, int eventID)
 {
 	XImageList& pPar = *(XImageList*)pClass;
-	if(pPar.m_leftBtn.getControlID() == id)
+	if (pPar.m_leftBtn.getControlID() == id)
 	{
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 		{
 			--pPar.m_curShowImageIndex;
 			pPar.updateState();
 		}
 		return;
 	}
-	if(pPar.m_rightBtn.getControlID() == id)
+	if (pPar.m_rightBtn.getControlID() == id)
 	{
-		if(eventID == XButton::BTN_MOUSE_DOWN)
+		if (eventID == XButton::BTN_MOUSE_DOWN)
 		{
 			++pPar.m_curShowImageIndex;
 			pPar.updateState();
 		}
 		return;
 	}
-	if(pPar.m_imageSld.getControlID() == id)
+	if (pPar.m_imageSld.getControlID() == id)
 	{
-		if(eventID == XSlider::SLD_MOUSE_MOVE || eventID == XSlider::SLD_VALUE_CHANGE)
+		if (eventID == XSlider::SLD_MOUSE_MOVE || eventID == XSlider::SLD_VALUE_CHANGE)
 		{
 			pPar.m_curShowImageIndex = XMath::toInt((float)((int)(pPar.m_imageList.size()) - pPar.m_showImageSum) * pPar.m_imageSld.getCurValue() * 0.01f);
 			pPar.updateState(false);
@@ -35,7 +35,7 @@ void XImageList::ctrlProc(void *pClass,int id,int eventID)
 	}
 }
 XBool XImageList::initWithoutSkin(float buttonWidth,	//×óÓÒ°´Å¥µÄ¿í¶È
-	const XVector2 &imageSize,	//Í¼Æ¬µÄ³ß´ç
+	const XVec2& imageSize,	//Í¼Æ¬µÄ³ß´ç
 	int showImageSum)	//ÏÔÊ¾Í¼Æ¬µÄÊýÁ¿
 {
 	if(m_isInited) return XFalse;	//·ÀÖ¹ÖØ¸´³õÊ¼»¯
@@ -44,8 +44,8 @@ XBool XImageList::initWithoutSkin(float buttonWidth,	//×óÓÒ°´Å¥µÄ¿í¶È
 		imageSize.y <= 0.0f || 
 		showImageSum <= 0) return XFalse;	//Êý¾Ý²»ºÏ·¨
 
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
 	m_buttonWidth = buttonWidth;
 	m_imageSize = imageSize;
 	m_showImageSum = showImageSum;
@@ -53,11 +53,11 @@ XBool XImageList::initWithoutSkin(float buttonWidth,	//×óÓÒ°´Å¥µÄ¿í¶È
 	m_curShowImageIndex = 0;
 
 	float tmpH = m_imageSize.y + 10.0f;
-	XVector2 area[3];
+	XVec2 area[3];
 	area[0].set(0.0f,tmpH * 0.5f);
 	area[1].set(m_buttonWidth,0.0f);
 	area[2].set(m_buttonWidth,tmpH);
-	m_leftBtn.initWithoutSkin(area,3," ",getDefaultFont(),XVector2::zero);
+	m_leftBtn.initWithoutSkin(area,3," ",getDefaultFont(),XVec2::zero);
 	m_leftBtn.setPosition(m_position);
 	m_leftBtn.setEventProc(ctrlProc,this);
 	m_leftBtn.setWithAction(XFalse);
@@ -65,10 +65,10 @@ XBool XImageList::initWithoutSkin(float buttonWidth,	//×óÓÒ°´Å¥µÄ¿í¶È
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_leftBtn);
 #endif
-	area[0].set(0.0f,0.0);
+	area[0].set(0.0f);
 	area[1].set(m_buttonWidth,tmpH * 0.5f);
 	area[2].set(0.0f,tmpH);
-	m_rightBtn.initWithoutSkin(area,3," ",getDefaultFont(),XVector2::zero);
+	m_rightBtn.initWithoutSkin(area,3," ",getDefaultFont(),XVec2::zero);
 	m_rightBtn.setPosition(m_position.x + m_imageSize.x * m_showImageSum + m_buttonWidth,m_position.y);
 	m_rightBtn.setEventProc(ctrlProc,this);
 	m_rightBtn.setWithAction(XFalse);
@@ -86,17 +86,14 @@ XBool XImageList::initWithoutSkin(float buttonWidth,	//×óÓÒ°´Å¥µÄ¿í¶È
 #endif
 	updateState();
 	m_mouseRect.set(0.0f,0.0f,m_buttonWidth * 2.0f + m_imageSize.x * m_showImageSum,m_imageSize.y + 10.0f);
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
 
 	//if(m_funInit != NULL) m_funInit(m_pClass,m_objectID);
 	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,IMGLST_INIT);
 	else XCtrlManager.eventProc(m_objectID,IMGLST_INIT);	
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
-	m_isInited = XTrue;
+	m_isVisible = m_isEnable = m_isActive = m_isInited = XTrue;
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼þ¹ÜÀíÆ÷ÖÐ×¢²áµ±Ç°Îï¼þ
 #if WITH_OBJECT_MANAGER
@@ -112,7 +109,8 @@ void XImageList::draw()
 	{
 		if(i < 0 || i >= m_imageList.size())
 		{//ÎÞÐ§µÄÖµ
-			XRender::drawFillBoxExA(m_position + XVector2(m_buttonWidth + m_imageSize.x * (i - m_curShowImageIndex),10.0f) * m_scale,m_imageSize * m_scale,
+			XRender::drawFillRectExA(m_position + 
+				XVec2(m_buttonWidth + m_imageSize.x * (i - m_curShowImageIndex),10.0f) * m_scale,m_imageSize * m_scale,
 				XCCS::downColor * m_color);
 		}else
 		{
@@ -124,9 +122,9 @@ void XImageList::draw()
 	m_imageSld.draw();	//»¬¶¯Ìõ
 	if(m_curSelectImageIndex >= 0 && m_curSelectImageIndex >= m_curShowImageIndex && m_curSelectImageIndex < m_showImageSum + m_curShowImageIndex)
 	{//»­¸ö»ÆÉ«µÄÏß¿ò(ÉÐÎ´Íê³É)
-		XVector2 pos = m_position + XVector2(m_buttonWidth + m_imageSize.x * (m_curSelectImageIndex - m_curShowImageIndex + 0.5f),10.0f + m_imageSize.y * 0.5f) * m_scale;
-		XVector2 size = m_imageSize * m_scale * 0.5f;
-		XRender::drawBox(pos.x,pos.y,size.x,size.y,1,m_color);
+		XRender::drawRect(m_position + XVec2(m_buttonWidth + m_imageSize.x * (m_curSelectImageIndex - m_curShowImageIndex + 0.5f),
+			10.0f + m_imageSize.y * 0.5f) * m_scale,
+			m_imageSize * m_scale * 0.5f,1,m_color);
 	}
 }	
 XBool XImageList::addImage(const char * filename)
@@ -154,7 +152,7 @@ XBool XImageList::addImage(const char * filename)
 	//if((int)(m_imageList.size()) - 1 >= m_curShowImageIndex && (int)(m_imageList.size()) - 1 < m_curShowImageIndex + m_curSelectImageIndex)
 	//{//ÔÚÏÔÊ¾·¶Î§Ö®ÄÚ£¬ÐèÒª¸üÐÂÊý¾Ý
 	//	int offset = (int)(m_imageList.size()) - 1 - m_curShowImageIndex;
-	//	tmpSpirte->setPosition(m_position + XVector2(m_buttonWidth + m_imageSize.x * offset,10.0f) * m_scale);
+	//	tmpSpirte->setPosition(m_position + XVec2(m_buttonWidth + m_imageSize.x * offset,10.0f) * m_scale);
 	//}
 	return XTrue;
 }
@@ -163,7 +161,7 @@ void XImageList::updateState(bool flag)
 	if(!m_isInited) return;
 	if(m_showImageSum >= m_imageList.size() && m_showImageSum >= 0)
 	{
-		m_imageSld.setCurValue(0.0f);
+		m_imageSld.setCurValue(0.0f, true);
 		m_imageSld.disable();
 	}else
 	{
@@ -183,7 +181,7 @@ void XImageList::updateState(bool flag)
 	{
 		if(i >= 0 && i < m_imageList.size())
 		{
-			m_imageList[i]->setPosition(m_position + XVector2(m_buttonWidth + m_imageSize.x * (i - m_curShowImageIndex),10.0f) * m_scale);
+			m_imageList[i]->setPosition(m_position + XVec2(m_buttonWidth + m_imageSize.x * (i - m_curShowImageIndex),10.0f) * m_scale);
 		}
 	}
 }
@@ -198,27 +196,28 @@ void XImageList::release()
 	//if(m_funRelease != NULL) m_funRelease(m_pClass,m_objectID);
 	if(m_eventProc != NULL) m_eventProc(m_pClass,m_objectID,IMGLST_RELEASE);
 	else XCtrlManager.eventProc(m_objectID,IMGLST_RELEASE);	
-	for(unsigned int i = 0;i < m_imageList.size();++ i)
+	for(auto it = m_imageList.begin();it != m_imageList.end();++ it)
 	{
-		XMem::XDELETE(m_imageList[i]);
+		XMem::XDELETE(*it);
 	}
 	m_imageList.clear();
 	m_isInited = XFalse;
 }
-XBool XImageList::mouseProc(float x,float y,XMouseState mouseState)				//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
+XBool XImageList::mouseProc(const XVec2& p,XMouseState mouseState)				//¶ÔÓÚÊó±ê¶¯×÷µÄÏìÓ¦º¯Êý
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓÐ¼¤»îµÄ¿Ø¼þ²»½ÓÊÕ¿ØÖÆ
 		!m_isVisible ||	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 		!m_isEnable) return XFalse;		//Èç¹ûÎÞÐ§ÔòÖ±½ÓÍË³ö
-	m_leftBtn.mouseProc(x,y,mouseState);	//×ó±ßµÄ°´Å¥
-	m_rightBtn.mouseProc(x,y,mouseState);	//ÓÒ±ßµÄ°´Å¥
-	m_imageSld.mouseProc(x,y,mouseState);	//»¬¶¯Ìõ
-	if(isInRect(x,y) && (mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK))
+	if(m_isSilent) return XFalse;
+	m_leftBtn.mouseProc(p,mouseState);	//×ó±ßµÄ°´Å¥
+	m_rightBtn.mouseProc(p,mouseState);	//ÓÒ±ßµÄ°´Å¥
+	m_imageSld.mouseProc(p,mouseState);	//»¬¶¯Ìõ
+	if(isInRect(p) && (mouseState == MOUSE_LEFT_BUTTON_DOWN || mouseState == MOUSE_LEFT_BUTTON_DCLICK))
 	{//¼ÆËãÑ¡ÖÐ×´Ì¬
 		for(int i = m_curShowImageIndex;i < m_showImageSum + m_curShowImageIndex;++ i)
 		{
-			if(i >= 0 && i < m_imageList.size() && m_imageList[i]->isInRect(x,y))
+			if(i >= 0 && i < m_imageList.size() && m_imageList[i]->isInRect(p))
 			{//ÔÚ·¶Î§ÄÚ
 				//if(i != m_curSelectImageIndex && m_funSelectChange != NULL) m_funSelectChange(m_pClass,m_objectID);
 				if(i != m_curSelectImageIndex)
@@ -235,23 +234,23 @@ XBool XImageList::mouseProc(float x,float y,XMouseState mouseState)				//¶ÔÓÚÊó±
 	}
 	return XFalse;
 }
-void XImageList::setScale(float x,float y)
+void XImageList::setScale(const XVec2& s)
 {
-	if(x <= 0 || y <= 0 ||
+	if(s.x <= 0.0f || s.y <= 0.0f ||
 		!m_isInited) return;	//Èç¹ûÃ»ÓÐ³õÊ¼»¯Ö±½ÓÍË³ö
-	m_scale.set(x,y);
+	m_scale = s;
 	m_leftBtn.setScale(m_scale);
 	m_rightBtn.setScale(m_scale);
 	m_rightBtn.setPosition(m_position.x + (m_buttonWidth + m_imageSize.x * m_showImageSum) * m_scale.x,m_position.y);
 	m_imageSld.setScale(m_scale);
 	m_imageSld.setPosition(m_position.x + m_buttonWidth * m_scale.x,m_position.y);
-	for(unsigned int i = 0;i < m_imageList.size();++ i)
+	for(auto it = m_imageList.begin();it != m_imageList.end();++ it)
 	{
-		m_imageList[i]->setScale(m_imageSize.x * m_scale.x / m_imageList[i]->getTextureData()->textureSize.x,
-			m_imageSize.y  * m_scale.y / m_imageList[i]->getTextureData()->textureSize.y);
+		(*it)->setScale(m_imageSize.x * m_scale.x / (*it)->getTextureData()->textureSize.x,
+			m_imageSize.y  * m_scale.y / (*it)->getTextureData()->textureSize.y);
 	}
-	m_curMouseRect.set(m_position.x + m_mouseRect.left * m_scale.x,m_position.y + m_mouseRect.top * m_scale.y,
-		m_position.x + m_mouseRect.right * m_scale.x,m_position.y + m_mouseRect.bottom * m_scale.y);
+	m_curMouseRect.set(m_position + m_mouseRect.getLT() * m_scale,
+		m_position + m_mouseRect.getRB() * m_scale);
 	updateState(false);
 }
 #if !WITH_INLINE_FILE

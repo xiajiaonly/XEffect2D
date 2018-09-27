@@ -1,7 +1,7 @@
 INLINE int XFontTTF::releaseTTFFile(int order)	//释放某个字体库文件
 {
-	if(order < 0 || order >= MAX_TTF_FONT_FILE_SUM) return 0;
-	if(!m_fontInfo[order].isEnable) return 0;
+	if(order < 0 || order >= MAX_TTF_FONT_FILE_SUM ||
+		!m_fontInfo[order].isEnable) return 0;
 
 	TTF_CloseFont(m_fontInfo[order].font);
 	m_fontInfo[order].isEnable = XFalse;

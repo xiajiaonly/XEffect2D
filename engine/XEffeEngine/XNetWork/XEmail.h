@@ -64,7 +64,7 @@ protected:
     bool SendHead(SOCKET &sock);		//发送邮件头  
     bool SendTextBody(SOCKET &sock)	//发送邮件文本正文  
 	{
-		memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+		//memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
 		sprintf_s(m_cSendBuff,"--INVT\r\nContent-Type: text/plain;\r\n  charset=\"gb2312\"\r\n\r\n%s\r\n\r\n",m_sMailInfo.m_pcBody.c_str());  
 		return (send(sock,m_cSendBuff,strlen(m_cSendBuff),0) == strlen(m_cSendBuff)); 
 	}

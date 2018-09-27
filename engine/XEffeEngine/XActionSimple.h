@@ -32,7 +32,7 @@ class XActionSimpleEx
 {
 private:
 	//static const int m_maxActionNameLength = 256;
-	XResourcePosition m_resoursePosition;	//资源所在的位置
+	XResPos m_resoursePosition;	//资源所在的位置
 	XBool m_isInited;	//是否初始化
 	XActionSimpleType m_type;
 	XActionSimpleState m_actionState;	//动作的状态
@@ -78,7 +78,7 @@ public:
 		,m_type(ACTION_TYPE_ATOMIC)
 		,m_actionName("")
 	{}
-	XBool init(XResourcePosition resoursePosition,
+	XBool init(XResPos resPos,
 		const char *actionName,
 		XBool (*funIsEnd)(void *),
 		void (*funMove)(float,void *),		
@@ -99,7 +99,7 @@ private:
 	int m_curActionIndex;
 public:
 	//后面传入的参数是复合的子动作的指针
-	XBool initComplex(XResourcePosition resoursePosition,const char *actionName,int actionSum,...);	//复合动作的初始化
+	XBool initComplex(XResPos resPos,const char *actionName,int actionSum,...);	//复合动作的初始化
 };
 
 //动作管理的类

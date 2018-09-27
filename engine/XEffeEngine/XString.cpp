@@ -7,6 +7,12 @@
 #include "XString.h"
 namespace XE{
 //sunday
+XSunday::XSunday()
+	:m_isInited(XTrue)
+	, m_patt(NULL)
+{
+	m_shift = XMem::createArrayMem<int>(m_maxCharsSum);
+}
 XBool XSunday::init(const char *patt)
 {
 	if(patt == NULL ||
@@ -25,7 +31,7 @@ XBool XSunday::init(const char *patt)
 	m_patt = XMem::createArrayMem<char>(m_pattSize + 1);
 	if(m_patt == NULL) return XFalse;
 
-	strcpy(m_patt,patt);
+	strcpy_s(m_patt,m_pattSize + 1,patt);
 	int i;
 	for(i = 0;i < m_maxCharsSum;++ i)
 	{

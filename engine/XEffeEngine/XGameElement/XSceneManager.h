@@ -37,14 +37,14 @@ public:
 	void draw();
 	
 	bool addScene(XScene* newScene);			//添加场景
-	bool goToScene(const std::string &name,XSceneChangeMode mode = SCENE_MODE_NULL,float time = 1.0f);	//设置场景更换
+	bool goToScene(const std::string& name,XSceneChangeMode mode = SCENE_MODE_NULL,float time = 1.0f);	//设置场景更换
 	bool isChanged()const{return !m_isChange;}	//判断场景是否已经变换完成
 
 	void input(const XInputEvent &event);
 	unsigned int getNumScenes()const{return m_scenes.size();}
-	XScene * getCurrentScene(){return m_currentScene;}
-	XScene * getScene(const std::string &name);
-	std::string getCurrentSceneName()const;
+	XScene* getCurrentScene(){return m_currentScene;}
+	XScene* getScene(const std::string& name);
+	const std::string& getCurrentSceneName()const;
 	
 private:
 	std::map <std::string,XScene *> m_scenes; //所有场景的列表
@@ -53,12 +53,12 @@ private:
 	XScene* m_futureScene;			//接下来的场景
 
 	XSceneChangeMode m_changeMode;	//变化模式
-	bool m_isChange;				//是否在发生变化
 	float m_timer;					//发生变化的计时
 	float m_changeSpeed;			//场景变化的速度
 
 	XFBO *m_sceneFbo;
 	XSprite *m_sprite;
+	bool m_isChange;				//是否在发生变化
 };
 #if WITH_INLINE_FILE
 #include "XSceneManager.inl"

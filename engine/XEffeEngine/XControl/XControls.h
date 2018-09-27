@@ -50,7 +50,9 @@
 #include "XColorChoose.h"	//Ñ¡É«¿Ø¼þ
 
 #include "XParameterCtrl.h"
+#include "XMoveDataPad.h"
 
 #include "XTimeLine.h"
+#include "XSubWindowEx.h"
 
 #endif

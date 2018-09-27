@@ -35,7 +35,7 @@ class XSimpleChart:public XControlBasic
 {
 private:
 	bool m_isInited;
-	XVector2 m_size;		//大小
+	XVec2 m_size;		//大小
 	float m_rateY;			//数据目前的缩放系数
 	float m_rateX;			//数据之间的距离，单位为像素
 	XSimpleChartType m_simpleChartType;	//曲线的样式，这个数据尚未生效
@@ -69,7 +69,7 @@ public:
 		,m_maxDataSum(0)
 		,m_rateY(1.0f)
 		,m_rateX(1.0f)
-//		,m_scale(1.0f,1.0f)
+//		,m_scale(1.0f)
 		,m_size(128.0f,512.0f)
 		,m_isAutoRateY(true)
 		,m_showCaption(false)
@@ -91,22 +91,22 @@ public:
 
 	void setIsAutoRateY(bool flag){m_isAutoRateY = flag;}
 	bool getIsAutoRateY()const{return m_isAutoRateY;}
-	XBool init(const XFontUnicode &font,const XVector2 &size,float xRate);
-	XBool init(const XVector2 &size,float xRate)
+	XBool init(const XFontUnicode& font,const XVec2& size,float xRate);
+	XBool init(const XVec2& size,float xRate)
 	{
 		return init(getDefaultFont(),size,xRate);
 	}
 	void setCaption(const char *p);
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 protected:						
 	void draw();
 	void drawUp(){}
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState){return XFalse;}			//返回是否触发按键动作
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);				//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}	//应该是可以随时失去焦点的
+	XBool canGetFocus(const XVec2& p);				//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2& ){return XTrue;}	//应该是可以随时失去焦点的
 //	void setLostFocus();	//设置失去焦点
 public:
 	void update(float stepTime){}
@@ -120,11 +120,11 @@ private:
 	void updateInfoStr();
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 	using XObjectBasic::setScale;	//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 	using XObjectBasic::setColor;	//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 };
 #if WITH_INLINE_FILE

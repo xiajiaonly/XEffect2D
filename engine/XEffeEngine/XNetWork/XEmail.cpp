@@ -133,22 +133,23 @@ bool XEmailSender::CReateSocket(SOCKET &sock)
 }  
 bool XEmailSender::Logon(SOCKET &sock)  
 {//这里没有对返回结果进行判断可能会存在问题
-    recv(sock,m_cReceiveBuff,1024,0);  
+	int ret = 0;
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
   
-    memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+    //memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
     sprintf_s(m_cSendBuff,"HELO []\r\n");  
     //sprintf_s(m_cSendBuff,"HELO mailto:xiajia_1981@sina.cn\r\n");  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);//开始会话  
-	memset(m_cReceiveBuff,0,1024);
-    recv(sock,m_cReceiveBuff,1024,0);  
+	//memset(m_cReceiveBuff,0,1024);
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
     if(m_cReceiveBuff[0]!='2' || m_cReceiveBuff[1]!='5' || m_cReceiveBuff[2]!='0')  
 		return false;  
 
-	memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+	//memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
     sprintf_s(m_cSendBuff,"AUTH LOGIN\r\n");  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);//请求登录  
-	memset(m_cReceiveBuff,0,1024);
-    recv(sock,m_cReceiveBuff,1024,0);  
+	//memset(m_cReceiveBuff,0,1024);
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
     if(m_cReceiveBuff[0]!='3' || m_cReceiveBuff[1]!='3' || m_cReceiveBuff[2]!='4')  
 		return false;  
     memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
@@ -160,8 +161,8 @@ bool XEmailSender::Logon(SOCKET &sock)
     m_cSendBuff[strlen(m_cSendBuff)]='\r';  
     m_cSendBuff[strlen(m_cSendBuff)]='\n';  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);//发送用户名  
-	memset(m_cReceiveBuff,0,1024);
-    recv(sock,m_cReceiveBuff,1024,0);  
+	//memset(m_cReceiveBuff,0,1024);
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
     if(m_cReceiveBuff[0]!='3' || m_cReceiveBuff[1]!='3' || m_cReceiveBuff[2]!='4')  
 	return false;
 	  
@@ -173,34 +174,35 @@ bool XEmailSender::Logon(SOCKET &sock)
     m_cSendBuff[strlen(m_cSendBuff)]='\r';  
     m_cSendBuff[strlen(m_cSendBuff)]='\n';  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);//发送用户密码  
-	memset(m_cReceiveBuff,0,1024);
-    recv(sock,m_cReceiveBuff,1024,0);  
+	//memset(m_cReceiveBuff,0,1024);
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
     if(m_cReceiveBuff[0]!='2' || m_cReceiveBuff[1]!='3' || m_cReceiveBuff[2]!='5')  
 		return false;   
     return true;//登录成功  
 }   
 bool XEmailSender::SendHead(SOCKET &sock)  
 {    
-    memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+ 	int ret = 0;
+   //memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
 	sprintf_s(m_cSendBuff,"MAIL FROM:<%s>\r\n",m_sMailInfo.m_pcSender.c_str());  
       
     if(send(sock,m_cSendBuff,strlen(m_cSendBuff),0) != strlen(m_cSendBuff))  
 		return false;  
-    recv(sock,m_cReceiveBuff,1024,0);  
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
   
-    memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+    //memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
 	sprintf_s(m_cSendBuff,"RCPT TO:<%s>\r\n",m_sMailInfo.m_pcReceiver.c_str());  
     if(send(sock,m_cSendBuff,strlen(m_cSendBuff),0) != strlen(m_cSendBuff))  
 		return false;   
-    recv(sock,m_cReceiveBuff,1024,0);  
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
   
-    memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
-    memcpy(m_cSendBuff,"DATA\r\n",strlen("DATA\r\n"));  
+    //memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+    strcpy_s(m_cSendBuff,"DATA\r\n");  
     if(send(sock,m_cSendBuff,strlen(m_cSendBuff),0) != strlen(m_cSendBuff))  
 		return false;  
-    recv(sock,m_cReceiveBuff,1024,0);  
+    ret = recv(sock,m_cReceiveBuff,1024,0);  
   
-    memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
+    //memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
 	sprintf_s(m_cSendBuff,"From:\"%s\"<%s>\r\n",m_sMailInfo.m_pcSenderName.c_str(),m_sMailInfo.m_pcSender.c_str());  
 	sprintf_s(&m_cSendBuff[strlen(m_cSendBuff)],150,"To:\"%s\"<%s>\r\n",m_sMailInfo.m_pcReceiverName.c_str(),m_sMailInfo.m_pcReceiver.c_str());  
 	sprintf_s(&m_cSendBuff[strlen(m_cSendBuff)],150,"Subject:%s\r\nMime-Version: 1.0\r\nContent-Type: multipart/mixed;   boundary=\"INVT\"\r\n\r\n",m_sMailInfo.m_pcTitle.c_str());  
@@ -224,11 +226,11 @@ bool XEmailSender::SendFileBody(SOCKET &sock)
         while (pt<len)  
         {  
             memset(m_cSendBuff,0,sizeof(m_cSendBuff));  
-            Char2Base64(m_cSendBuff,&m_pcFileBuff[pt],min(len-pt,3000));  
+            Char2Base64(m_cSendBuff,&m_pcFileBuff[pt],(std::min)(len-pt,3000));  
             m_cSendBuff[strlen(m_cSendBuff)]='\r';  
             m_cSendBuff[strlen(m_cSendBuff)]='\n';  
             rt=send(sock,m_cSendBuff,strlen(m_cSendBuff),0);  
-            pt+=min(len-pt,3000);  
+            pt+=(std::min)(len-pt,3000);  
             if(rt != strlen(m_cSendBuff))  
 				return false;  
         }  
@@ -240,7 +242,8 @@ bool XEmailSender::SendEnd(SOCKET &sock)
 {  
     sprintf_s(m_cSendBuff,"--INVT--\r\n.\r\n");  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);  
- 
+	//int ret = recv(sock,m_cReceiveBuff,1024,0);  //缺少这一行将会导致发送失败！
+	recv(sock,m_cReceiveBuff,1024,0);  //缺少这一行将会导致发送失败！
     sprintf_s(m_cSendBuff,"QUIT\r\n");  
     send(sock,m_cSendBuff,strlen(m_cSendBuff),0);  
     closesocket(sock);  

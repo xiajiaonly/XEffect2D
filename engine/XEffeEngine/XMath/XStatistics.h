@@ -16,10 +16,12 @@ extern float getSum(const float *v,int sum);
 extern double getAverageValue(const double *v,int sum);
 extern float getAverageValue(const float *v,int sum);
 extern float getAverageValue(const std::deque<float> &data);
+extern XVec2 getAverageValue(const std::deque<XVec2> &data);
 //求标准差(均方差)，用于描述样本的离散性
 extern double getStandardDeviation(const double *v,int sum);
 extern float getStandardDeviation(const float *v,int sum);
 extern float getStandardDeviation(const std::deque<float> &data);
+extern float getStandardDeviation(const std::deque<XVec2> &data);
 }
 }
 #endif

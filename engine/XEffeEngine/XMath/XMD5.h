@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2011.4.9
 //--------------------------------
-#include "XOSDefine.h"
+#include "../XCommonDefine.h"
 namespace XE{
 class XMD5
 {
@@ -21,6 +21,7 @@ public:
 	uint1 digest[16]; // the result
 
 private:
+	void reset();
 	void init();
 	enum {blocksize = 64}; // VC6 won't eat a const static int here
 
@@ -49,6 +50,10 @@ private:
 namespace XMath
 {
 	extern unsigned char * md5(const unsigned char *data,int len);//注意这个函数多线程不安全
+	inline unsigned char * md5(const std::string& data)
+	{
+		return md5((unsigned char *)data.data(),data.size());
+	}
 }
 }
 #endif

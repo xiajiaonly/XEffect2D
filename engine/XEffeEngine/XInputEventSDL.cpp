@@ -1,4 +1,5 @@
 #include "XStdHead.h"
+#if CREATE_WINDOW_METHOD == 0
 #include "XInputEventSDL.h"
 #include "XWindowCommon.h"
 #include "XTimer.h"
@@ -107,3 +108,4 @@ bool SDLEventToInputEvent(XInputEvent &event,const SDL_Event &tmpEvent)	//½«SDLµ
 	return true;
 }
 }
+#endif

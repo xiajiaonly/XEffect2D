@@ -1,7 +1,11 @@
 //INLINE 函数的定义
-INLINE void XRect::set(const XVector2& leftTop,const XVector2& rightBottom)
+INLINE void XRect::set(const XVec2& leftTop,const XVec2& rightBottom)
 {
-    set(leftTop.x,leftTop.y,rightBottom.x,rightBottom.y);
+    //set(leftTop.x,leftTop.y,rightBottom.x,rightBottom.y);
+	left = leftTop.x;
+	top = leftTop.y;
+	right = rightBottom.x;
+	bottom = rightBottom.y;
 }
 INLINE XBool XRect::setLeft(float xl)
 {
@@ -50,7 +54,7 @@ INLINE XBool XRect::isCrash(const XRect& R0) const
 	//与上面的结果一致，优化了一下
 	return !(right <= R0.left || left >= R0.right || bottom <= R0.top || top >= R0.bottom);
 }
-INLINE XBool XRect::isCrash(const XVector2& leftTop,const XVector2& rightBottom) const
+INLINE XBool XRect::isCrash(const XVec2& leftTop,const XVec2& rightBottom) const
 {
 	//XRect R0(leftTop,rightBottom);
 	return isCrash(XRect(leftTop,rightBottom));
@@ -60,31 +64,31 @@ INLINE XBool XRect::isCrash(float xl,float yt,float xr,float yb) const
 	//XRect R0(xl,yt,xr,yb);
 	return isCrash(XRect(xl,yt,xr,yb));
 }
-INLINE XBool XRect::isInRect(const XVector2& p0) const
+INLINE XBool XRect::isInRect(const XVec2& p0) const
 {
-    return (p0.x >= left && p0.x <= right && p0.y >= top && p0.y <= bottom);
+	return XMath::isInAreaEx(p0.x, right, left) && XMath::isInAreaEx(p0.y, bottom, top);
 }
 INLINE XBool XRect::isInRect(float x,float y) const
 {
 //    if(x >= left && x <= right && y >= top && y <= bottom)
-    return (x > left && x < right && y > top && y < bottom);
+    return XMath::isInArea(x,left,right) && XMath::isInArea(y, top, bottom);
 }
 INLINE float XRect::getArea() const
 {
     float area = (right - left) * (bottom - top);
-    if(area < 0) return -area;
+    if(area < 0.0f) return -area;
     else return area;
 }
-INLINE XVector2 XRect::getCenter() const
+INLINE XVec2 XRect::getCenter() const
 {
-    //XVector2 temp;
+    //XVec2 temp;
     //temp.set((float)((left + right)/ 2.0), (float)((top + bottom)/ 2.0));
     //return temp;
-    return XVector2((left + right) * 0.5f,(top + bottom) * 0.5f);
+    return XVec2(left + right,top + bottom) * 0.5f;
 }
-INLINE XVector2 XRect::getSize() const
+INLINE XVec2 XRect::getSize() const
 {
-	return XVector2(getWidth(),getHeight());
+	return XVec2(getWidth(),getHeight());
 }
 INLINE float XRect::getWidth() const
 {
@@ -100,13 +104,12 @@ INLINE float XRect::getHeight() const
 	//if(temp < 0) return -temp;
 	//else return temp;
 }
-INLINE void XRect::setCenter(float x,float y)
+//INLINE void XRect::setCenter(float x,float y)
+//{
+//    setCenter(XVec2(x,y));
+//}
+INLINE void XRect::setCenter(const XVec2& p)
 {
-    XVector2 temp = getCenter();
-    temp.set(x - temp.x,y - temp.y);
-    set(left + temp.x,top + temp.y,right + temp.x,bottom + temp.y);
-}
-INLINE void XRect::setCenter(const XVector2& p)
-{
-    setCenter(p.x,p.y);
+    XVec2 temp = p - getCenter();
+	set(left + temp.x, top + temp.y, right + temp.x, bottom + temp.y);
 }

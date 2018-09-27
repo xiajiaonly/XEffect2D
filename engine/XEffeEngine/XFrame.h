@@ -21,7 +21,7 @@ private:
 	static const int m_maxFrameSum = 65;//序列帧最多帧的数量
 	XSCounter *m_cp;		//引用计数器
 
-	XResourcePosition m_resoursePosition;	//资源位置 0:外部 1:内部
+	XResPos m_resoursePosition;	//资源位置 0:外部 1:内部
 	XBool m_isInited;		//是否已经进行了初始化
 
 	float angle;			//精灵的角度
@@ -75,14 +75,14 @@ private:
 	float m_centerY;
 	float *m_centerDW;							//每帧的中心偏移
 	float *m_centerDH;			
-	XVector2 *m_keyFramePosition;	//关键帧偏移坐标
+	XVec2 *m_keyFramePosition;	//关键帧偏移坐标
 	//------------------------------------
 public:
 	void setVisible() {m_isVisible = XTrue;}					//设置物件可见
 	void disVisible() {m_isVisible = XFalse;}						//设置物件不可见
 	XBool getVisible() const {return m_isVisible;}					//获取物件是否可见的状态 
 
-	void setAttribute(const XVector2& position,			//序列帧播放的位置
+	void setAttribute(const XVec2& position,			//序列帧播放的位置
 		XBool loop,				//序列帧是否循环
 		XBool endImmediately,		//序列帧是否立即结束
 		int startFrame,				//序列帧的起始帧
@@ -90,9 +90,9 @@ public:
 		XBool disappearAtEnd,		//序列帧动画播放完成之后是否消失
 		XBool isOverturn = XFalse);	//是否翻转
 
-	void setPosition(const XVector2& position);			//设置精灵的坐标
+	void setPosition(const XVec2& position);			//设置精灵的坐标
 	void setPosition(float a,float b);			//设置精灵的坐标
-	XVector2 getPosition() const;
+	XVec2 getPosition() const;
 
 	int getCurX() const;	//获得精灵图片当前的位置X(允许精灵中心偏移之后，这个需要重新考虑)
 	int getCurY() const;	//获得精灵图片当前的位置Y(允许精灵中心偏移之后，这个需要重新考虑)
@@ -102,10 +102,11 @@ public:
 
 	int getInitHalfWidth() const;		//获取第一帧的半宽度,也就是序列帧左上角到序列帧中点的宽度
 	int getInitHalfHeight() const;	//获取第一帧的半高度,也就是序列帧左上角到序列帧中点的高度
-
-	void setSize(const XVector2& size);		//设置精灵的缩放比例
-	void setSize(float x,float y);	//设置精灵的缩放比例
-	XVector2 getSize();
+	XVec2 getInitHalfSize()const { return XVec2(getInitHalfWidth(), getInitHalfHeight()); }
+	void setScale(const XVec2& size);		//设置精灵的缩放比例
+	void setScale(float x,float y);	//设置精灵的缩放比例
+	void setScale(float s);
+	XVec2 getScale();
 
 	XBool getIsEnd() const;	//获得序列帧是否播放完成
 	void setEnd();	//设置序列正播放完成
@@ -115,7 +116,7 @@ public:
 	XTexture * getTexture(bool isAllFrames = false);	//返回当前帧的贴图指针 isAllFrames:是否返回整个序列帧的图片序列数组的指针
 
 	XBool init(const char *filename,			//图片的名称
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);		//资源的位置				
+		XResPos resPos = RES_SYS_DEF);		//资源的位置				
 private:
 	bool loadFromFolder(const char *filename);	//从文件夹中载入资源
 	bool loadFromPacker(const char *filename);	//从压缩包中载入资源
@@ -146,11 +147,10 @@ public:
 	~XFrame();
 	//下面为了资源还原定义一些额外的接口
 	int getAllKeyFrameSum() const {return m_allKeyFramesSum;}
-	XVector2 getKeyFramePos(int index) const {return m_keyFramePosition[index];}
+	XVec2 getKeyFramePos(int index) const {return m_keyFramePosition[index];}
 	int getKeyFrameWre(int index) const {return wre[index];}
 	int getKeyFrameHre(int index) const {return hre[index];}
 };
-
 #if WITH_INLINE_FILE
 #include "XFrame.inl"
 #endif

@@ -82,14 +82,14 @@ void XModelStl::draw()
 	//glRotatef(m_angle.z,0,0,1);
 	//glScalef(m_scale.x,m_scale.y,m_scale.z);
 
-	gFrameworkData.p3DWorld->m_worldMaterial.usetMaterial();	//如果没有材质信息则使用默认的材质
+	gFrameworkData.p3DWorld->m_worldMaterial.bindMaterial();	//如果没有材质信息则使用默认的材质
 	glColor4fv(m_color);
 	gFrameworkData.p3DWorld->useShadow(XFalse,SHADER_SHADOW);
 
 	vbo.drawByArray(GL_TRIANGLES);
 
 	gFrameworkData.p3DWorld->removeShadow();
-
+	gFrameworkData.p3DWorld->m_worldMaterial.unbindMaterial();
 	glPopMatrix();
 }
 }

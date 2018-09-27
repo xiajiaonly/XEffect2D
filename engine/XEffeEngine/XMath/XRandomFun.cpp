@@ -8,21 +8,14 @@
 namespace XE{
 namespace XRand
 {
-	void randomMomery(char *p,int size)
+	void randomMomery(void *p,int size)
 	{
 		if(p == NULL ||
 			size <= 1) return;
-		int order;
-		char temp;
+		unsigned char *tmp = (unsigned char *)p;
 		for(int i = 0;i < size; ++ i)
 		{
-			order = random(size);
-			if(order >= 0 && order < size && order != i)
-			{
-				temp = p[i];
-				p[i] = p[order];
-				p[order] = temp;
-			}
+			tmp[i] = random(256);
 		}
 	}
 }

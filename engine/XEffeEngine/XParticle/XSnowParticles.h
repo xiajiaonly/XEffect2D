@@ -15,9 +15,9 @@ private:
 	char m_isEnd;				//是否结束
 	char m_isSetEnd;				//是否设置结束
 
-	XVector2 m_productArea;		//产生范围（生存区域上方的一条直线）
+	XVec2 m_productArea;		//产生范围（生存区域上方的一条直线）
 	XRect m_liveArea;			//生存范围
-	XVector2 m_flySpeed;			//飘落的速度
+	XVec2 m_flySpeed;			//飘落的速度
 
 	int m_maxAtomSum;			//最大粒子数
 	float m_snowDensity;		//雪飘落的密度
@@ -28,7 +28,7 @@ private:
 	//int m_w;
 	//int m_h;
 public:
-	int init(const XVector2& productArea,const XRect& liveArea,const XVector2& flySpeed,
+	int init(const XVec2& productArea,const XRect& liveArea,const XVec2& flySpeed,
 		int maxAtomSum,float snowDensity,const XTexture *texture);
 	void reset();
 	void move(float timeDelay);

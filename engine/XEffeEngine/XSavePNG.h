@@ -8,7 +8,7 @@
 //#define IMG_COMPRESS_OFF 0
 //#define IMG_COMPRESS_MAX 9
 //#define IMG_COMPRESS_DEFAULT -1
-#include "XOSDefine.h"
+#include "XCommonDefine.h"
 struct SDL_Surface;
 namespace XE{
 #define Z_NO_COMPRESSION (0)
@@ -26,30 +26,30 @@ namespace XPng
 	 * compression level can be 0(min) through 9(max), or -1(default).
 	 */
 	extern int savePNG(const char *fileName,
-				SDL_Surface *surf,
-				int compression = Z_BEST_COMPRESSION);
+		SDL_Surface *surf,
+		int compression = Z_BEST_COMPRESSION);
 
 	//compression 0 - 9,-1 default
-	extern int savePNG(const std::string &filename,
-				const unsigned char * data,int w,int h,XColorMode color,
-				int compression = Z_BEST_COMPRESSION);
+	extern int savePNG(const std::string& filename,
+		const void * data, int w, int h, XColorMode color,
+		int compression = Z_BEST_COMPRESSION);
 	//直接将数据保存成文件
 	extern XBool savePngRGB2RGB(const char *fileName,
-				const unsigned char * data,
-				int w,int h,
-				int compression = Z_BEST_COMPRESSION);	//传入的数据为RGB，保存的文件为RGB
+		const void * data,
+		int w, int h,
+		int compression = Z_BEST_COMPRESSION);	//传入的数据为RGB，保存的文件为RGB
 	extern XBool savePngRGB2RGBA(const char *fileName,
-				const unsigned char * data,
-				int w,int h,
-				int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
+		const unsigned char * data,
+		int w, int h,
+		int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
 	extern XBool savePngRGBA2RGBA(const char *fileName,
-				const unsigned char * data,
-				int w,int h,
-				int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
+		const void * data,
+		int w, int h,
+		int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
 	extern XBool savePngRGBA2RGB(const char *fileName,
-				const unsigned char * data,
-				int w,int h,
-				int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
+		const unsigned char * data,
+		int w, int h,
+		int compression = Z_BEST_COMPRESSION);	//传入的数据位RGB，保存的文件为RGBA，A = 255
 }
 }
 #endif/*__IMG_SAVETOPNG_H__*/

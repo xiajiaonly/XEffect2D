@@ -126,16 +126,15 @@ XBool XNetServer::getDataPacket(unsigned char *buff,int len)
 				offset = PACKET_HEAD_LEN + m_recvPacket->dataLen;
 				m_mutex.Lock();
 				m_recvDataBuff.push_back(m_recvPacket);
-				if(m_recvDataBuff.size() > 64)
+				if(m_recvDataBuff.size() > MAX_RECV_DATA_BUFF)
 				{
 					XNetData *tmp = m_recvDataBuff[0];
 					m_recvDataBuff.pop_front();
-					m_mutex.Unlock();
 					LogStr("XNetServer接收队列数据发生拥堵,丢弃较老的数据!");
 					XMem::XDELETE_ARRAY(tmp->data);
 					XMem::XDELETE(tmp);
-				}else
-					m_mutex.Unlock();
+				}
+				m_mutex.Unlock();
 				m_recvPacketSize = 0;
 				//继续迭代
 				return getDataPacket(buff + offset,len - offset);
@@ -163,7 +162,7 @@ XBool XNetServer::getDataPacket(unsigned char *buff,int len)
 				offset = m_recvPacket->dataLen - m_recvPacketSize + PACKET_HEAD_LEN;
 				m_mutex.Lock();
 				m_recvDataBuff.push_back(m_recvPacket);
-				if(m_recvDataBuff.size() > 64)
+				if(m_recvDataBuff.size() > MAX_RECV_DATA_BUFF)
 				{
 					XNetData *tmp = m_recvDataBuff[0];
 					m_recvDataBuff.pop_front();
@@ -380,8 +379,11 @@ DWORD WINAPI XNetServer::boardcastThread(void * pParam)
     memset(&addrUDP,0,sizeof(addrUDP)); 
 	addrUDP.sin_family = AF_INET;
 	addrUDP.sin_port = htons(BOARDCAST_PORT);
-	addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);       
-	//addrUDP.sin_addr.s_addr = inet_addr("192.168.1.255"); 
+#ifdef WITH_LOCAL_BOARDCAST_IP
+	addrUDP.sin_addr.s_addr = inet_addr(BOARDCASR_IP); 
+#else
+	addrUDP.sin_addr.s_addr = htonl(INADDR_BROADCAST);      
+#endif
 	//下面准备需要发送的数据
 	unsigned char needSendData[BOARDCAST_DATA_LEN];
 	needSendData[0] = 0xcc;needSendData[1] = 0x00;offset = 2;
@@ -441,7 +443,7 @@ DWORD WINAPI XNetServer::boardcastThread(void * pParam)
 				if(tempCheck != szRecvBuffer[2 + sizeof(int) + len]) continue;
 				memcpy(recvProjectStr,szRecvBuffer + 2 + sizeof(int),len);
 				recvProjectStr[len] = '\0';
-				printf("recv:%s\n",recvProjectStr);
+				LogNull("recv:%s",recvProjectStr);
 				if(strcmp(recvProjectStr,pPar.m_projectStr) != 0) continue;
 				//下面回应客户端的请求
 				sendto(sendSocket,(char *)needSendData,offset,0,(sockaddr *)&addrUDP,sizeof(addrUDP));

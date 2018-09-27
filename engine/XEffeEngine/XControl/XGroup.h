@@ -24,14 +24,14 @@ public:
 private:
 	static const int m_groupStateBtnSize = 32;
 	XBool m_isInited;
-//	XVector2 m_position;	//控件的位置
-//	XVector2 m_scale;		//大小
+	bool m_withRect;
+//	XVec2 m_position;	//控件的位置
+//	XVec2 m_scale;		//大小
 	XRect m_rect;			//控件的范围
 	XRect m_drawRect;		//当前空间的范围
-	bool m_withRect;
 
 	XFontUnicode m_caption;
-	XVector2 m_textSize;
+	XVec2 m_textSize;
 
 	XGroupState m_state;
 	XButton m_stateBotton;
@@ -49,33 +49,33 @@ private:
 	static void ctrlProc(void *,int,int);
 	void updateData();		//更新内部数据
 public:
-	XBool init(const XVector2& position,
-		const XRect &rect,
-		const char *caption,const XFontUnicode &font,float captionSize = 1.0f);
-	XBool initWithoutSkin(const XVector2& position,
-		const XRect &rect,
+	XBool init(const XVec2& position,
+		const XRect& rect,
+		const char *caption,const XFontUnicode& font,float captionSize = 1.0f);
+	XBool initWithoutSkin(const XVec2& position,
+		const XRect& rect,
 		const char *caption) {return init(position,rect,caption,getDefaultFont(),1.0f);}
-	XBool initWithoutSkin(const XVector2& position,
-		const XVector2 &pixelSize,
+	XBool initWithoutSkin(const XVec2& position,
+		const XVec2& pixelSize,
 		const char *caption) 
 	{
-		return init(position,XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return init(position,XRect(XVec2::zero,pixelSize),
 			caption,getDefaultFont(),1.0f);
 	}
 	void setState(XGroupState state);
 	XGroupState getState(){return m_state;}	//获取控件的状态
 //	void setCallbackFun(void (* funStateChange)(void *,int),
 //		void *pClass = NULL);
-	void resetSize(const XVector2 &size);
+	void resetSize(const XVec2& size);
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);
+	void setPosition(const XVec2& p);
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	void insertChar(const char *,int){;}			//do nothing
@@ -92,17 +92,24 @@ protected:
 	{
 		//m_stateBotton.update(stepTime);
 	}
-	XBool mouseProc(float x,float y,XMouseState mouseState);		//do nothing
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);		//do nothing
 	XBool keyboardProc(int keyOrder,XKeyState keyState);		//do nothing
-	XBool canGetFocus(float,float){return XFalse;}	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
-	XBool canLostFocus(float,float){return XTrue;}	//do nothing
+	XBool canGetFocus(const XVec2&){return XFalse;}	//do nothing	//事件可以穿透，如果返回XTrue则鼠标事件不能穿透
+	XBool canLostFocus(const XVec2&){return XTrue;}	//do nothing
 public:
 	void drawBG()//描绘一个浅色的背景
 	{
-		XRender::drawFillBoxA(XVector2(m_drawRect.left,m_drawRect.top),XVector2(m_drawRect.getWidth(),m_drawRect.getHeight()),
-			XFColor(m_color.fR * 0.5f,m_color.fG * 0.5f,m_color.fB * 0.5f,m_color.fA * 0.5f),true);
+		XRender::drawFillRectA(m_drawRect.getLT(), m_drawRect.getSize(), m_color * 0.5f, true);
 	}
-	void setLostFocus() {}							//do nothing
+	void setLostFocus() 
+	{
+		if (!m_isInited ||		//如果没有初始化直接退出
+			!m_isActive ||		//没有激活的控件不接收控制
+			!m_isVisible ||		//如果不可见直接退出
+			!m_isEnable) return;		//如果无效则直接退出
+
+		m_isBeChoose = XFalse;	//控件处于焦点状态
+	}							//do nothing
 	void disable()
 	{
 		m_isEnable = XFalse;
@@ -111,8 +118,8 @@ public:
 	void enable(){m_isEnable = XTrue;}
 	void release();
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 	XBool setACopy(const XGroup & temp);
 
 	void setVisible();
@@ -120,8 +127,8 @@ public:
 
 	XGroup()
 		:m_isInited(XFalse)
-//		,m_position(0.0f,0.0f)
-//		,m_scale(1.0f,1.0f)
+//		,m_position(0.0f)
+//		,m_scale(1.0f)
 		,m_state(STATE_NORMAL)
 //		,m_funStateChange(NULL)
 //		,m_pClass(NULL)

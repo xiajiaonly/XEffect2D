@@ -25,8 +25,8 @@ public:
 		m_armNumber = 0.0f;
 	}
 	XMoveNumber()
-	:m_curNumber(0)
-	,m_armNumber(0.0f)
+		:m_curNumber(0)
+		, m_armNumber(0.0f)
 	{}
 };
 }

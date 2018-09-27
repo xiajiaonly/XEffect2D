@@ -13,7 +13,7 @@ XJetParticles::XJetParticles()
 ,m_texture(NULL)
 ,m_textureAtom(NULL)
 {}
-int XJetParticles::init(const XVector2& position,float jetSpeed,float jetAngle,float jetDensity,
+int XJetParticles::init(const XVec2& position,float jetSpeed,float jetAngle,float jetDensity,
 						 const XTexture *texture,const XTexture *textureAton)
 {
 	if(m_isInited != 0) return 0; 
@@ -59,34 +59,17 @@ int XJetParticles::init(const XVector2& position,float jetSpeed,float jetAngle,f
 	m_isSetEnd = 0;
 	return 1;
 }
-void XJetParticles::reset(const XVector2& position)
+void XJetParticles::reset(const XVec2& position)
 {
 	if(m_isInited == 0 ||
 		m_isEnd == 0) return;
-	m_atomBasic->m_isInited = 0;
+	m_atomBasic->m_isInited = false;
 	m_atomBasic->init(m_texture,100,2,position,0.95f,-0.001f);
-	m_atomBasic->m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_atomBasic->m_parentParticle.m_initColor.set(1.0f,1.0f);
 	for(int i = 0;i < m_maxAtomSum;++ i)
 	{
-		m_atom[i].m_isInited = 0;
-		m_atom[i].m_isEnd = 1;
-	}
-	m_curAtomPoint = 0;
-	m_timer = 0;
-	m_isEnd = 0;
-	m_isSetEnd = 0;
-}
-void XJetParticles::reset(float x,float y)
-{
-	if(m_isInited == 0 ||
-		m_isEnd == 0) return;
-	m_atomBasic->m_isInited = 0;
-	m_atomBasic->init(m_texture,100,2,XVector2(x,y),0.95f,-0.001f);
-	m_atomBasic->m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
-	for(int i = 0;i < m_maxAtomSum;++ i)
-	{
-		m_atom[i].m_isInited = 0;
-		m_atom[i].m_isEnd = 1;
+		m_atom[i].m_isInited = false;
+		m_atom[i].m_isEnd = true;
 	}
 	m_curAtomPoint = 0;
 	m_timer = 0;
@@ -103,14 +86,14 @@ void XJetParticles::move(float timeDelay)
 		m_atom[i].move(timeDelay);
 		if(m_atom[i].m_parentParticle.m_stage == STAGE_MOVE)
 		{
-			m_atom[i].m_parentParticle.m_initColor.fA -= 0.00125f * timeDelay;
+			m_atom[i].m_parentParticle.m_initColor.a -= 0.00125f * timeDelay;
 		//	m_atom[i].m_parentParticle.m_initPosition.x += m_atom[i].m_parentParticle.m_dPosition.x * timeDelay;
 		//	m_atom[i].m_parentParticle.m_initPosition.y += m_atom[i].m_parentParticle.m_dPosition.y * timeDelay;
 			m_atom[i].m_parentParticle.m_initPosition += m_atom[i].m_parentParticle.m_dPosition * timeDelay;
 			m_atom[i].setPosition(m_atom[i].m_parentParticle.m_initPosition);
-			if(m_atom[i].m_parentParticle.m_initColor.fA <= 0)
+			if(m_atom[i].m_parentParticle.m_initColor.a <= 0)
 			{
-				m_atom[i].m_parentParticle.m_initColor.fA = 0;
+				m_atom[i].m_parentParticle.m_initColor.a = 0;
 				m_atom[i].m_parentParticle.m_stage = STAGE_SLEEP;
 				m_atom[i].setEnd();
 			}
@@ -126,19 +109,18 @@ void XJetParticles::move(float timeDelay)
 			m_timer = 0;
 			if(m_atom[m_curAtomPoint].getIsEnd() != 0)
 			{//有新的粒子
-				m_atom[m_curAtomPoint].m_isInited = 0;
-				float tempR = 1.0;//random(75)/100.0 + 0.5;
-				m_atom[m_curAtomPoint].m_parentParticle.m_curPosition = m_curPosition;//XVector2(m_curPosition.x + m_w * 0.5,m_curPosition.y + m_h * 0.5);
+				m_atom[m_curAtomPoint].m_isInited = false;
+			//	float tempR = 1.0;//random(75)/100.0 + 0.5;
+				m_atom[m_curAtomPoint].m_parentParticle.m_curPosition = m_curPosition;//XVec2(m_curPosition.x + m_w * 0.5,m_curPosition.y + m_h * 0.5);
 			//	m_atom[m_curAtomPoint].init(&(m_textureAtom->m_texture),64,2,m_atom[m_curAtomPoint].m_parentParticle.m_curPosition,
 			//		0.92,-0.001,m_textureAtom->m_w * tempR,m_textureAtom->m_h * tempR,64);
 				m_atom[m_curAtomPoint].init(m_textureAtom,64,2,m_atom[m_curAtomPoint].m_parentParticle.m_curPosition,
 					0.92f,-0.001f,64);
-				m_atom[m_curAtomPoint].m_parentParticle.m_initSize.set(0.75f,0.75f);
+				m_atom[m_curAtomPoint].m_parentParticle.m_initSize.set(0.75f);
 				m_atom[m_curAtomPoint].m_parentParticle.m_stage = STAGE_MOVE;
-				tempR = (XRand::random(4000) / 2000.0f - 1.0f) * m_jetAngle + m_directionAngle + PI;
-				m_atom[m_curAtomPoint].m_parentParticle.m_dPosition.x = m_initSpeed * cos(tempR);
-				m_atom[m_curAtomPoint].m_parentParticle.m_dPosition.y = m_initSpeed * sin(tempR);
-				m_atom[m_curAtomPoint].m_parentParticle.m_initColor.setColor(1.0f,1.0f,1.0f,1.0f);
+				m_atom[m_curAtomPoint].m_parentParticle.m_dPosition = 
+					XMath::getRotateRate((XRand::random(4000) / 2000.0f - 1.0f) * m_jetAngle + m_directionAngle + PI) * m_initSpeed;
+				m_atom[m_curAtomPoint].m_parentParticle.m_initColor.set(1.0f,1.0f);
 
 				++ m_curAtomPoint;
 				if(m_curAtomPoint >= m_maxAtomSum)

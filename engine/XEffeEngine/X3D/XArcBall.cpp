@@ -6,10 +6,10 @@
 //--------------------------------
 #include "XArcBall.h"
 namespace XE{
-void XArcBall::mapToSphere(const XVector2 &point,XVector3& vec) const	//将2D坐标映射成3D坐标
+void XArcBall::mapToSphere(const XVec2& point,XVec3& vec) const	//将2D坐标映射成3D坐标
 {
 	//Adjust point coords and scale down to range of [-1 ... 1]
-	XVector2 tmpPoint((point.x * m_sizeWRate) - 1.0f,
+	XVec2 tmpPoint((point.x * m_sizeWRate) - 1.0f,
 		1.0f - (point.y * m_sizeHRate));
 	//Compute the square of the length of the vector to the point from the center
 	float length = tmpPoint.getLengthSqure();
@@ -29,11 +29,11 @@ void XArcBall::mapToSphere(const XVector2 &point,XVector3& vec) const	//将2D坐标
 		vec.z = sqrtf(1.0f - length);
 	}
 }
-void XArcBall::drag(const XVector2 &point,XVector4& rotate)
+void XArcBall::drag(const XVec2& point,XVec4& rotate)
 {
 	mapToSphere(point,m_dragVector);	//Map the point to the sphere
 	//Return the quaternion equivalent to the rotation
-	XVector3 perp = m_clickVector * m_dragVector;	//Compute the vector perpendicular to the begin and end vectors
+	XVec3 perp = m_clickVector * m_dragVector;	//Compute the vector perpendicular to the begin and end vectors
 	//Compute the length of the perpendicular vector
 	if(perp.getLength() > (1.0e-5))    //if its non-zero
 	//if(perp.getLength() >= 0.0f)    //if its non-zero

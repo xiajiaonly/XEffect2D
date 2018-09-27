@@ -3,13 +3,13 @@ INLINE XBool XNumber::setNumber(const char *temp)
 {
 	if(temp == NULL) return XFalse;
 	if(strlen(temp) >= MAX_NUMBER_LENGTH) return XFalse;
-	strcpy(m_string,temp);
+	strcpy_s(m_string,MAX_NUMBER_LENGTH,temp);
 	m_needUpdateData = XTrue;
 	return XTrue;
 }
-INLINE void XNumber::setColor(float r,float g,float b,float a)
+INLINE void XNumber::setColor(const XFColor& c)
 {
-	m_sprite.setColor(r,g,b,a);
+	m_sprite.setColor(c);
 	updateChildColor();
 	m_alpha = m_sprite.getAlpha();
 }
@@ -19,11 +19,11 @@ INLINE void XNumber::setAlpha(float a)
 	updateChildAlpha();
 	m_alpha = m_sprite.getAlpha();
 }
-INLINE void XNumber::setScale(float x,float y)
+INLINE void XNumber::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	updateChildScale();
-	m_sprite.setScale(x,y);
+	m_sprite.setScale(s);
 	m_needUpdateData = XTrue;
 }
 INLINE void XNumber::setAngle(float angle)
@@ -34,30 +34,28 @@ INLINE void XNumber::setAngle(float angle)
 	m_angleSin = sin(m_angle * DEGREE2RADIAN);
 	m_angleCos = cos(m_angle * DEGREE2RADIAN);
 
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
+	int x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
 		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
+	int y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
 		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set(tempPosition.x,tempPosition.y);
+	m_position.set(x, y);
 
 	m_needUpdateData = XTrue;
 }
-INLINE void XNumber::setRotateBasePoint(float x,float y)
+INLINE void XNumber::setRotateBasePoint(const XVec2& r)
 {
-	m_rotateBasicPoint.set(x,y);
+	m_rotateBasicPoint = r;
 	setPosition(m_setPosition);
 }
-INLINE void XNumber::setPosition(float x,float y)
+INLINE void XNumber::setPosition(const XVec2& p)
 {
-	m_setPosition.set(x,y);
+	m_setPosition = p;
 	updateChildPos();
-	XVector2 tempPosition;
-	tempPosition.x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
+	int x = m_setPosition.x - (m_rotateBasicPoint.x * m_angleCos 
 		- m_rotateBasicPoint.y * m_angleSin);
-	tempPosition.y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
+	int y = m_setPosition.y - (m_rotateBasicPoint.x * m_angleSin 
 		+ m_rotateBasicPoint.y * m_angleCos);
-	m_position.set(tempPosition.x,tempPosition.y);
+	m_position.set(x, y);
 
 	m_needUpdateData = XTrue;
 }
@@ -69,10 +67,10 @@ INLINE void XNumber::setPositionY(float y)
 {
 	setPosition(m_setPosition.x,y);
 }
-INLINE XBool XNumber::isInRect(float x,float y)
+INLINE XBool XNumber::isInRect(const XVec2& p)
 {
 	if(!m_isInited) return XFalse;
-	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(p, getBox(0), getBox(1), getBox(2), getBox(3));
 }
 INLINE void XNumber::setAlignmentMode(XNumberAlignmentMode mode)
 {

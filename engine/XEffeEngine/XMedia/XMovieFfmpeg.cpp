@@ -6,48 +6,55 @@
 //--------------------------------
 #include "XMovieFfmpeg.h"
 #include "XSoundCommon.h"
-
+#if AUDIO_MATHOD == 1
+#include "SDL_audio.h"
+#endif
 #include "XTimer.h"
 namespace XE{
 XMovieFfmpeg::XMovieFfmpeg(void)
 	:videoStream(-1)
-	,audioStream(-1)
-	,m_isBuffing(XTrue)
-	,m_isLoop(XFalse)
-	,m_videoWidth(0)
-	,m_videoHeight(0)
-	,m_curFrameNumber(0)
-	,m_needVoice(XTrue)
-	,m_autoTimer(XTrue)
+	, audioStream(-1)
+	, m_isBuffing(XTrue)
+	, m_isLoop(XFalse)
+	, m_videoWidth(0)
+	, m_videoHeight(0)
+	, m_curFrameNumber(0)
+	, m_needVoice(XTrue)
+	, m_autoTimer(XTrue)
 	//,m_texture(NULL)
-	,m_isNewFrame(false)
-	,m_movieTex(NULL)
-	,m_movieSprite(NULL)
-	,m_curFrameData(NULL)
-	,m_isLoaded(XFalse)
-	,m_isEnd(XFalse)
-	,m_isQuit(XFalse)
-	,m_isStop(XFalse)
-	,m_isThreadDecoderExit(XTrue)
-	,m_isThreadDrawExit(XTrue)
-	,m_pSwsContext(NULL)
-	,m_pSwrContext(NULL)
-	,m_outColorMode(COLOR_RGB)
-	,videofilename("")
-	,pFormatCtx(NULL)	//视频格式描述内容
-	,pCodeCtx(NULL)		//视频解码描述内容
-	,aCodeCtx(NULL)		//音频解码描述内容
-	,pFrame(NULL)
-	,pAudioFrame(NULL)
-	,m_isGetFirstFrame(false)
-	,m_audioBuf(NULL)
+	, m_isNewFrame(false)
+	, m_movieTex(NULL)
+	, m_movieSprite(NULL)
+	, m_curFrameData(NULL)
+	, m_isLoaded(XFalse)
+	, m_isEnd(XFalse)
+	, m_isQuit(XFalse)
+	, m_isStop(XFalse)
+	, m_isThreadDecoderExit(XTrue)
+	, m_isThreadDrawExit(XTrue)
+	, m_pSwsContext(NULL)
+	, m_pSwrContext(NULL)
+	, m_outColorMode(COLOR_RGB)
+	, videofilename("")
+	, pFormatCtx(NULL)	//视频格式描述内容
+	, pCodeCtx(NULL)		//视频解码描述内容
+	, aCodeCtx(NULL)		//音频解码描述内容
+	, pFrame(NULL)
+	, pAudioFrame(NULL)
+	, m_isGetFirstFrame(false)
+	, m_audioBuf(NULL)
+#ifdef DEBUG_MODE
+	, m_vpSum(0)
+	, m_vfSum(0)
+#endif
+	, m_playSpeed(1.0f)
 {
 	m_videoQueue.nb_pict = 0;
-//	for(int i = 0;i < MAX_BUFF_DEEP;++ i)
-//	{
-//		m_bmp[i] = NULL;
-//	}
-	memset(m_bmp,0,MAX_BUFF_DEEP * sizeof(XVideoFrameData *));
+	//	for(int i = 0;i < MAX_BUFF_DEEP;++ i)
+	//	{
+	//		m_bmp[i] = NULL;
+	//	}
+	memset(m_bmp, 0, MAX_BUFF_DEEP * sizeof(XVideoFrameData *));
 }
 //这个线程用于更具时间将视频数据更新到贴图
 #ifdef XEE_OS_LINUX
@@ -71,11 +78,14 @@ DWORD WINAPI XMovieFfmpeg::drawThread(void *arg)
 	//}	
 
 	int startTime = XTime::getCurrentTicks();		//记录开始播放的时间
-	pthis->m_curPlayedTime = 0;			//播放的时间通过这个来计算
+	pthis->m_curPlayedTime = 0.0f;			//播放的时间通过这个来计算
 
 	while(true)
 	{	
 		if(pthis->m_isQuit) break;
+		if (pthis->m_isBuffing && pthis->m_isDecodeOver)
+			pthis->m_isBuffing = false;
+
 		if(pthis->m_isStop || pthis->m_isEnd || pthis->m_isBuffing)
 		{//停止状态,或者播放完成则等待
 			XEE::sleep(1);
@@ -85,7 +95,7 @@ DWORD WINAPI XMovieFfmpeg::drawThread(void *arg)
 		if(pthis->m_videoQueue.nb_pict > 0 || pthis->videoStream == -1)
 		{//视频队列中有数据
 			pthis->m_gotoMutex1.Lock();
-			if(pthis->m_autoTimer) pthis->m_curPlayedTime += XTime::getCurrentTicks() - startTime;
+			if(pthis->m_autoTimer) pthis->m_curPlayedTime += (XTime::getCurrentTicks() - startTime) * pthis->m_playSpeed;
 			startTime = XTime::getCurrentTicks();
 		//	playedTime = getCurrentTicks() - startTime;
 			if(pthis->m_curPlayedTime >= pthis->m_curFrameNumber * temptime)
@@ -94,38 +104,43 @@ DWORD WINAPI XMovieFfmpeg::drawThread(void *arg)
 				if(pthis->m_curFrameNumber >= pthis->m_allFrameSum)
 				{//如果时间越界，则播放完成
 					pthis->m_isEnd = XTrue;
-					if(pthis->m_audioQueue.cond != NULL) 
-						SDL_CondSignal(pthis->m_audioQueue.cond);
+					//pthis->m_audioQueue.cFlag = true;
+					//if(pthis->m_audioQueue.cond != NULL) 
+					//	SDL_CondSignal(pthis->m_audioQueue.cond);
+#ifdef WITH_DEBUG_INFO
 					LogStr("Time play over+!");
+#endif
 					if(pthis->m_isLoop) pthis->replay();
 					startTime = XTime::getCurrentTicks();
 				}
-			}else
+			}else if(pthis->m_autoTimer)
 			{//否则则等到时间点再播放
-				if(pthis->m_autoTimer)
+				int tempTime = pthis->m_curFrameNumber * temptime - pthis->m_curPlayedTime;
+#ifdef WITH_DEBUG_INFO
+				if(tempTime < 0 || tempTime > 2000)
 				{
-					int tempTime = pthis->m_curFrameNumber * temptime - pthis->m_curPlayedTime;
-					if(tempTime < 0 || tempTime > 2000)
-					{
-						LogStr("haha");
-					}
-					XEE::sleep(tempTime);
+					LogStr("haha");
 				}
-			}
+#endif
+				XEE::sleep(tempTime);
+			} 
 			pthis->m_gotoMutex1.Unlock();
 		}else
 		{
 			if(pthis->m_isDecodeOver)	//视频解码完成
 			{//已经解码完成
 				pthis->m_isEnd = XTrue;
-				if(pthis->m_audioQueue.cond != NULL) 
-					SDL_CondSignal(pthis->m_audioQueue.cond);
+				//pthis->m_audioQueue.cFlag = true;
+#ifdef WITH_DEBUG_INFO
 				LogStr("Time play over-!");
+#endif
 				if(pthis->m_isLoop) pthis->replay();
 				startTime = XTime::getCurrentTicks();
 			}else
 			{//等待继续解码
+#ifdef WITH_DEBUG_INFO
 				LogStr("-->buff over!");
+#endif
 				pthis->m_isBuffing = XTrue;	//设置开始缓冲数据
 			//	mySleep(5000);
 			//	pthis->m_isStop = XFalse;
@@ -158,21 +173,19 @@ void * XMovieFfmpeg::decoderThread(void *arg)
 	unsigned long audioindex = 0;
 	pthis->m_isThreadDecoderExit = XFalse;
 
-	while(true)
+	while(!pthis->m_isQuit)//如果强制线程退出，则这里退出
 	{
-		if(pthis->m_isQuit) break;	//如果强制线程退出，则这里退出
 		if(pthis->m_isDecodeOver)
 		{//如果已经完成一次解码则等待
-			if(pthis->videoStream == -1)
-			{
-				if(pthis->m_audioQueue.nb_packets <= 0 && !pthis->m_isEnd)
-				{//如果没有图像的话直接这里设置播放完成
-					pthis->m_isEnd = XTrue;
-					if(pthis->m_audioQueue.cond != NULL) 
-						SDL_CondSignal(pthis->m_audioQueue.cond);
-					LogStr("Time play over-!");
-					if(pthis->m_isLoop) pthis->replay();
-				}
+			if(pthis->videoStream == -1 && pthis->m_audioQueue.nb_packets <= 0 && 
+				!pthis->m_isEnd)
+			{//如果没有图像的话直接这里设置播放完成
+				pthis->m_isEnd = XTrue;
+				//pthis->m_audioQueue.cFlag = true;
+#ifdef WITH_DEBUG_INFO
+				LogStr("Time play over-!");
+#endif
+				if(pthis->m_isLoop) pthis->replay();
 			}
 			XEE::sleep(1);
 			continue;
@@ -183,14 +196,16 @@ void * XMovieFfmpeg::decoderThread(void *arg)
 		{//如果没有缓冲满则进行缓冲
 			av_init_packet(&pthis->packet);
 			pthis->m_gotoMutex.Lock();
-			if(av_read_frame(pthis->pFormatCtx,&pthis->packet) == 0)
+			int ret = av_read_frame(pthis->pFormatCtx, &pthis->packet);
+			if(ret == 0)
 			{//如果读取帧成功
 				if(pthis->packet.stream_index == pthis->videoStream)// && pthis->packet.duration > 0)
 				{//读取的是视频帧	
 					pthis->putIntoVideoPicList();
-					//++ picIndex;
-				}else
-				if(pthis->packet.stream_index == pthis->audioStream)// && pthis->packet.duration > 0)
+#ifdef DEBUG_MODE
+					++pthis->m_vpSum;
+#endif
+				}else if(pthis->packet.stream_index == pthis->audioStream)// && pthis->packet.duration > 0)
 				{//如果读取的是音频帧
 					audioindex += pthis->packet.duration;
 					if(pthis->m_needVoice) pthis->putIntoPacketQueue();
@@ -199,21 +214,25 @@ void * XMovieFfmpeg::decoderThread(void *arg)
 				{//不知道读取的是啥数据
 					av_free_packet(&pthis->packet);	//(估计这里会出错)
 				}
-			}else	//如果提取帧失败，则默认已经播放完else
+			}else if(ret < 0)	//如果提取帧失败，则默认已经播放完else
 			{//视频解码完毕
 				pthis->m_isDecodeOver = XTrue;
-//				printf("%u\n",audioindex);
+#ifdef WITH_DEBUG_INFO
+				LogStr("DecodeOver");
+#endif
 			}
 			pthis->m_gotoMutex.Unlock();
-		}else//如果显示缓存满了 
-		if(pthis->m_isBuffing)	//第一次播放的时候一定要等缓冲满
+		}else if(pthis->m_isBuffing)	//第一次播放的时候一定要等缓冲满
 		{//缓冲完毕，设置bplay , 进行播放
 			pthis->m_isBuffing = XFalse;
 		}
 		XEE::sleep(1);
 	}
 	pthis->m_isThreadDecoderExit = XTrue;
-//	_endthread();
+#ifdef WITH_DEBUG_INFO
+	LogStr("DecodeThread over");
+#endif
+	//	_endthread();
 #ifdef XEE_OS_WINDOWS
 	return 1;
 #endif
@@ -225,15 +244,17 @@ int XMovieFfmpeg::getFromPacketQueue(AVPacket *pkt)
 	AVPacketList *pkt1; 
 	int ret; 
 
-	SDL_LockMutex(m_audioQueue.mutex); 
 	while(true)
 	{ 
-		if(m_isStop)
-		{//暂停的话这里停止播放声音
-			SDL_UnlockMutex(m_audioQueue.mutex); 
-			return -1;
-		}
+		if(m_isStop) return -1;//暂停的话这里停止播放声音
 
+//#ifdef WITH_DEBUG_INFO
+//		LogStr("57");
+//#endif
+		gUnlock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//		LogStr("58");
+//#endif
 		pkt1 = m_audioQueue.first_pkt; 
 		if(pkt1 != NULL) 
 		{//有数据
@@ -245,27 +266,30 @@ int XMovieFfmpeg::getFromPacketQueue(AVPacket *pkt)
 			XMem::XDELETE(pkt1);	//删除临时数据
 		//	-- createNumber;
 		//	printf("%d,%d\n",createNumber,pClass->m_audioQueue.nb_packets);
+//#ifdef WITH_DEBUG_INFO
+//			LogStr("59");
+//#endif
+			gUnlock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//			LogStr("60");
+//#endif
 			ret = 1; 
 			break; 
 		}else	//这后面的代码有可能会造成声音越来越慢
 		{//等待同步(原因在这里)
+//#ifdef WITH_DEBUG_INFO
+//			LogStr("61");
+//#endif
+			gUnlock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//			LogStr("61");
+//#endif
 			//这里设置为不等待同步
-			if(m_isQuit || m_isEnd)
-			{
-				SDL_UnlockMutex(m_audioQueue.mutex); 
-				return -1;	//不等待同步
-			}
-			SDL_CondWait(m_audioQueue.cond,m_audioQueue.mutex); 
-			if(m_isQuit || m_isEnd) 
-			{
-				SDL_UnlockMutex(m_audioQueue.mutex); 
-				return -1;	//不等待同步
-			}
+			if(m_isQuit || m_isEnd) return -1;	//不等待同步
 		} 
 		XEE::sleep(1);
 	} 
-	SDL_UnlockMutex(m_audioQueue.mutex); 
-	return ret; 
+	return ret;
 } 
 //把音频包解码成音频数据
 int XMovieFfmpeg::audioDecodeFrame(uint8_t *audio_buf,int buf_size)
@@ -284,13 +308,15 @@ int XMovieFfmpeg::audioDecodeFrame(uint8_t *audio_buf,int buf_size)
 
 	if(pkt.size > 0)
 	{
-		while(true)
+		while(pkt1.size > 0)
 		{
 			len = avcodec_decode_audio4(aCodeCtx,pAudioFrame,&isFinished,&pkt1);
 			if(len < 0)
 			{//解压失败
 				av_free_packet(&pkt);
+#ifdef WITH_DEBUG_INFO
 				LogStr("音频中没有数据!");
+#endif
 				return -1;
 			}
 			if(isFinished)
@@ -320,10 +346,9 @@ int XMovieFfmpeg::audioDecodeFrame(uint8_t *audio_buf,int buf_size)
 			pkt_pos += len;//已经解码的长度  
 			pkt1.data = pkt.data + pkt_pos;  
 			pkt1.size = pkt.size - pkt_pos; 
-			if(pkt1.size <= 0) break;
 
-			if(m_isQuit) return -1;
-			if(m_isStop) return -1;//暂停的话这里停止播放声音
+			if(m_isQuit ||
+				m_isStop) return -1;//暂停的话这里停止播放声音
 		}
 	}
 	av_free_packet(&pkt);
@@ -544,10 +569,12 @@ int selectChannelLayout(AVCodec *codec)
         return AV_CH_LAYOUT_STEREO; 
  
     p = codec->channel_layouts; 
-    while (*p) { 
+    while (*p)
+	{ 
         int nb_channels = av_get_channel_layout_nb_channels(*p); 
  
-        if (nb_channels > bestNbChannells) { 
+        if (nb_channels > bestNbChannells) 
+		{ 
             bestChLayout    = *p; 
             bestNbChannells = nb_channels; 
         } 
@@ -680,144 +707,109 @@ XBool XMovieFfmpeg::load(const char *filename,XColorMode mode,bool withVoice)
 		LogStr("malloc Frame failed!");
 		return XFalse;
 	}
-	if(videoStream != -1)
-	{//获取流的一些信息
-		if(pFormatCtx->streams[videoStream]->avg_frame_rate.den <= 0)
-		{
-			m_curFrameRate = (double)(pFormatCtx->streams[videoStream]->time_base.den)/(double)(pFormatCtx->streams[videoStream]->time_base.num);
-		}else
-		{
-			m_curFrameRate = (double)(pFormatCtx->streams[videoStream]->avg_frame_rate.num)/(double)(pFormatCtx->streams[videoStream]->avg_frame_rate.den);
-		}
-		m_allFrameSum = pFormatCtx->streams[videoStream]->duration;
-	}else
+	AVStream* curStr = nullptr;
+	if(videoStream != -1) curStr = pFormatCtx->streams[videoStream];
+	else curStr = pFormatCtx->streams[audioStream];
+
+	if(curStr->avg_frame_rate.den <= 0)
+		m_curFrameRate = (double)(curStr->time_base.den)/(double)(curStr->time_base.num);
+	else
+		m_curFrameRate = (double)(curStr->avg_frame_rate.num)/(double)(curStr->avg_frame_rate.den);
+
+	if (curStr->nb_frames != 0) m_allFrameSum = curStr->nb_frames;
+	else
 	{
-		if(pFormatCtx->streams[audioStream]->avg_frame_rate.den <= 0)
+		if (curStr->duration < 0)
 		{
-			m_curFrameRate = (double)(pFormatCtx->streams[audioStream]->time_base.den)/(double)(pFormatCtx->streams[audioStream]->time_base.num);
-		}else
-		{
-			m_curFrameRate = (double)(pFormatCtx->streams[audioStream]->avg_frame_rate.num)/(double)(pFormatCtx->streams[audioStream]->avg_frame_rate.den);
+			m_allFrameSum = pFormatCtx->duration * 0.000001 * m_curFrameRate;
 		}
-		m_allFrameSum = pFormatCtx->streams[audioStream]->duration;
+		else
+		{
+			m_allFrameSum = curStr->duration * (double)(curStr->time_base.num) /
+				(double)(curStr->time_base.den) * m_curFrameRate;
+		}
+		//m_allFrameSum = curStr->duration;
 	}
 
 	//建立OpenGL贴图
-	if(videoStream != -1)
+	if (videoStream != -1)
 	{
 		XMem::XDELETE(m_movieTex);
 		XMem::XDELETE(m_movieSprite);
 		m_movieTex = XMem::createMem<XTexture>();
-		if(m_movieTex == NULL) return XFalse;
+		if (m_movieTex == NULL) return XFalse;
 		m_movieSprite = XMem::createMem<XSprite>();
-		if(m_movieSprite == NULL) return XFalse;
-		m_movieSprite->init(m_videoWidth,m_videoHeight,0);
+		if (m_movieSprite == NULL) return XFalse;
+		m_movieSprite->init(m_videoWidth, m_videoHeight, 0);
 		XMem::XDELETE_ARRAY(m_curFrameData);
-		switch(m_outColorMode)
+		switch (m_outColorMode)
 		{
 		case COLOR_RGB:
 		case COLOR_BGR:
-			m_movieTex->createTexture(m_videoWidth,m_videoHeight,m_outColorMode);
+			m_movieTex->createTexture(m_videoWidth, m_videoHeight, m_outColorMode);
 			m_curFrameData = XMem::createArrayMem<unsigned char>(m_videoWidth * m_videoHeight * 3);
-			memset(m_curFrameData,0,m_videoWidth * m_videoHeight * 3);
+			memset(m_curFrameData, 0, m_videoWidth * m_videoHeight * 3);
 			break;
 		case COLOR_RGBA:
 		case COLOR_BGRA:
-			m_movieTex->createTexture(m_videoWidth,m_videoHeight,m_outColorMode);
+			m_movieTex->createTexture(m_videoWidth, m_videoHeight, m_outColorMode);
 			m_curFrameData = XMem::createArrayMem<unsigned char>(m_videoWidth * (m_videoHeight << 2));
-			memset(m_curFrameData,0,m_videoWidth * (m_videoHeight << 2));
+			memset(m_curFrameData, 0, m_videoWidth * (m_videoHeight << 2));
 			break;
 		case COLOR_GRAY:
-			m_movieTex->createTexture(m_videoWidth,m_videoHeight,m_outColorMode);
+			m_movieTex->createTexture(m_videoWidth, m_videoHeight, m_outColorMode);
 			m_curFrameData = XMem::createArrayMem<unsigned char>(m_videoWidth * m_videoHeight);
-			memset(m_curFrameData,0,m_videoWidth * m_videoHeight);
+			memset(m_curFrameData, 0, m_videoWidth * m_videoHeight);
 			break;
 		default:
 			return XFalse;	//其他格式目前不支持
 			break;
 		}
-		if(m_curFrameData == NULL) return XFalse;
-//		if(glIsTexture(m_texture)) 
-//		{
-//			printf("delete texture:%d\n",m_texture);
-//			glDeleteTextures(1,&m_texture);
-//		}
-//		glGenTextures(1,&m_texture);
-//		XGL::BindTexture2D(m_texture);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//#if WITHXSPRITE_EX
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//#endif
-//		//这里修改建立一个符合2的n次方的贴图
-//		int wR = (int)powf(2.0, ceilf(logf((float)m_videoWidth)/logf(2.0f)));
-//		int hR = (int)powf(2.0, ceilf(logf((float)m_videoHeight)/logf(2.0f)));
-//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,wR,hR, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-//	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,m_videoWidth,m_videoHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		if (m_curFrameData == NULL) return XFalse;
 
 		//为缓存分配内存空间,将图像数据转换成RGB24的形式
 		int dataSize;
-		switch(m_outColorMode)
+		AVPixelFormat avColorMode;
+		switch (m_outColorMode)
 		{
 		case COLOR_RGB:
 			dataSize = pCodeCtx->width * pCodeCtx->height * 3;
-			m_pSwsContext = sws_getContext(pCodeCtx->width,pCodeCtx->height,pCodeCtx->pix_fmt,   
-				pCodeCtx->width,pCodeCtx->height,PIX_FMT_RGB24,SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
+			avColorMode = AV_PIX_FMT_RGB24;
 			break;
 		case COLOR_BGR:
 			dataSize = pCodeCtx->width * pCodeCtx->height * 3;
-			m_pSwsContext = sws_getContext(pCodeCtx->width,pCodeCtx->height,pCodeCtx->pix_fmt,   
-				pCodeCtx->width,pCodeCtx->height,PIX_FMT_BGR24,SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
+			avColorMode = AV_PIX_FMT_BGR24;
 			break;
 		case COLOR_RGBA:
 			dataSize = pCodeCtx->width * (pCodeCtx->height << 2);
-			m_pSwsContext = sws_getContext(pCodeCtx->width,pCodeCtx->height,pCodeCtx->pix_fmt,   
-				pCodeCtx->width,pCodeCtx->height,PIX_FMT_RGBA,SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
+			avColorMode = AV_PIX_FMT_RGBA;
 			break;
 		case COLOR_BGRA:
 			dataSize = pCodeCtx->width * (pCodeCtx->height << 2);
-			m_pSwsContext = sws_getContext(pCodeCtx->width,pCodeCtx->height,pCodeCtx->pix_fmt,   
-				pCodeCtx->width,pCodeCtx->height,PIX_FMT_BGRA,SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
+			avColorMode = AV_PIX_FMT_BGRA;
 			break;
 		case COLOR_GRAY:
 			dataSize = pCodeCtx->width * pCodeCtx->height;
-			m_pSwsContext = sws_getContext(pCodeCtx->width,pCodeCtx->height,pCodeCtx->pix_fmt,   
-				pCodeCtx->width,pCodeCtx->height,PIX_FMT_GRAY8,SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
+			avColorMode = AV_PIX_FMT_GRAY8;
 			break;
 		default:
 			return XFalse;
 			break;
 		}
-		if(m_pSwsContext == NULL) return XFalse;
+		m_pSwsContext = sws_getContext(pCodeCtx->width, pCodeCtx->height, pCodeCtx->pix_fmt,
+			pCodeCtx->width, pCodeCtx->height, avColorMode, SWS_POINT, NULL, NULL, NULL);	//SWS_BICUBIC
+		if (m_pSwsContext == NULL) return XFalse;
 		//int numBytes = avpicture_get_size(PIX_FMT_RGB24,pCodeCtx->width,pCodeCtx->height);	//获取内存尺寸
 		m_curBuffPoint = 0;
-		for(i = 0;i < MAX_BUFF_DEEP;++ i)
+		for (i = 0; i < MAX_BUFF_DEEP; ++i)
 		{
 			m_bmp[i] = XMem::createMem<XVideoFrameData>();
-			if(m_bmp[i] == NULL) return XFalse;
+			if (m_bmp[i] == NULL) return XFalse;
 
 			m_bmp[i]->data = XMem::createArrayMem<unsigned char>(dataSize);
-			if(m_bmp[i]->data == NULL) return XFalse;
-			switch(m_outColorMode)
-			{
-			case COLOR_RGB:
-				avpicture_fill(&m_framePic[i],m_bmp[i]->data,PIX_FMT_RGB24,pCodeCtx->width,pCodeCtx->height);
-				break;
-			case COLOR_BGR:
-				avpicture_fill(&m_framePic[i],m_bmp[i]->data,PIX_FMT_BGR24,pCodeCtx->width,pCodeCtx->height);
-				break;
-			case COLOR_RGBA:
-				avpicture_fill(&m_framePic[i],m_bmp[i]->data,PIX_FMT_RGBA,pCodeCtx->width,pCodeCtx->height);
-				break;
-			case COLOR_BGRA:
-				avpicture_fill(&m_framePic[i],m_bmp[i]->data,PIX_FMT_BGRA,pCodeCtx->width,pCodeCtx->height);
-				break;
-			case COLOR_GRAY:
-				avpicture_fill(&m_framePic[i],m_bmp[i]->data,PIX_FMT_GRAY8,pCodeCtx->width,pCodeCtx->height);
-				break;
-			}
-
+			if (m_bmp[i]->data == NULL) return XFalse;
+			avpicture_fill(&m_framePic[i], m_bmp[i]->data, avColorMode,
+				pCodeCtx->width, pCodeCtx->height);
 			m_bmp[i]->pict = &m_framePic[i];
 		}
 	}
@@ -857,7 +849,9 @@ XBool XMovieFfmpeg::load(const char *filename,XColorMode mode,bool withVoice)
 		LogStr("open thread error!");
 	}
 #endif
-	LogNull("AllFrames:%u,FPS:%f",(* this).m_allFrameSum,(* this).getVideoFrameRate());
+#ifdef WITH_DEBUG_INFO
+	LogNull("AllFrames:%u,FPS:%f", m_allFrameSum, getVideoFrameRate());
+#endif
 	//m_mutex = SDL_CreateMutex();
 
 	m_isLoaded = XTrue;
@@ -880,22 +874,20 @@ XBool XMovieFfmpeg::load(const char *filename,XColorMode mode,bool withVoice)
 //关闭影片播放
 void XMovieFfmpeg::closeClip(void)
 {
-	if(!m_isLoaded) return;
+	if (!m_isLoaded) return;
 	m_isQuit = XTrue;
-	if(m_audioQueue.cond != NULL) 
-		SDL_CondSignal(m_audioQueue.cond);
+	//m_audioQueue.cFlag = true;
 
 	//mySleep(20);	//等待线程退出
-	while(true)
+	while (!m_isThreadDecoderExit || !m_isThreadDrawExit)
 	{
-		if(m_isThreadDecoderExit && m_isThreadDrawExit) break;
 		Sleep(1);
 	}
-	XCurSndCore.setCallBack(NULL,NULL);	//播放完成之后取消声音
-	if(pFrame != NULL) av_frame_free(&pFrame);
-	if(pAudioFrame != NULL) av_frame_free(&pAudioFrame);
-	if(pCodeCtx != NULL) avcodec_close(pCodeCtx);
-	if(audioStream != -1 && m_needVoice) avcodec_close(aCodeCtx);
+	XCurSndCore.setCallBack(NULL, NULL);	//播放完成之后取消声音
+	if (pFrame != NULL) av_frame_free(&pFrame);
+	if (pAudioFrame != NULL) av_frame_free(&pAudioFrame);
+	if (pCodeCtx != NULL) avcodec_close(pCodeCtx);
+	if (audioStream != -1 && m_needVoice) avcodec_close(aCodeCtx);
 	avformat_close_input(&pFormatCtx);
 	releaseVideoPictList();
 	releaseAudioQueue();
@@ -911,106 +903,80 @@ void XMovieFfmpeg::closeClip(void)
 	//	glDeleteTextures(1,&m_texture);
 	//}
 	//SDL_DestroyMutex(m_mutex);
-	SDL_DestroyMutex(m_audioQueue.mutex);
-	SDL_DestroyCond(m_audioQueue.cond);
-	SDL_DestroyMutex(m_videoQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("69");
+//#endif
+	XMem::XDELETE(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("70");
+//#endif
+	XMem::XDELETE(m_videoQueue.mutex);
 	sws_freeContext(m_pSwsContext);
-	if(audioStream != -1 && m_needVoice) swr_free(&m_pSwrContext);
+	if (audioStream != -1 && m_needVoice) swr_free(&m_pSwrContext);
 	m_isLoaded = XFalse;
 }
-void XMovieFfmpeg::gotoFrame(float temp)	//跳到当前视频的某一帧
+void XMovieFfmpeg::gotoFrameIndex(int index, bool isForce)
 {
-	if(temp < 0.0f) temp = 0.0f;
-	if(temp > 1.0f) temp = 1.0f;
+	if((!isForce && index == m_curFrameNumber) || index < 0 || index > m_allFrameSum) return;
+	m_gotoMutex.Lock();
+	m_gotoMutex1.Lock();
 
-	if(videoStream >= 0)
+	if (av_seek_frame(pFormatCtx, -1, index, AVSEEK_FLAG_BACKWARD) < 0)	//这个方法可能会造成不能读取到数
+		av_seek_frame(pFormatCtx, -1, index, AVSEEK_FLAG_ANY);
+	//if(index == m_curFrameNumber)
+	//	av_seek_frame(pFormatCtx, -1, index, AVSEEK_FLAG_ANY);
+	//else
+	//{
+	//	if(av_seek_frame(pFormatCtx, -1, index, AVSEEK_FLAG_BACKWARD) < 0)
+	//		av_seek_frame(pFormatCtx, -1, index, AVSEEK_FLAG_ANY);
+	//}
+
+	if (videoStream >= 0)
 	{
-		int armTime = temp * m_allFrameSum;
-		m_gotoMutex.Lock();
-		m_gotoMutex1.Lock();
-		av_seek_frame(pFormatCtx,videoStream,armTime,AVSEEK_FLAG_ANY);
-		//av_seek_frame(pFormatCtx,audioStream,armTime,AVSEEK_FLAG_BACKWARD);
-		//printf("%d,%d,%d,%d\n",rt,m_allFrameSum,armTime,pFormatCtx->timestamp);
-		m_curFrameNumber = temp * m_allFrameSum - m_videoQueue.nb_pict;	//让缓冲中的数据快速播放完成
-		m_curPlayedTime = m_curFrameNumber * 1000.0f / m_curFrameRate;	//重新设置时间
-		m_gotoMutex.Unlock();
-		m_gotoMutex1.Unlock();
-	}else
-	{
-		int armTime = temp * pFormatCtx->streams[audioStream]->duration;
-		m_gotoMutex.Lock();
-		m_gotoMutex1.Lock();
-		//av_seek_frame(pFormatCtx,videoStream,armTime,AVSEEK_FLAG_ANY);
-		av_seek_frame(pFormatCtx,audioStream,armTime,AVSEEK_FLAG_BACKWARD);
-		//printf("%d,%d,%d,%d\n",rt,m_allFrameSum,armTime,pFormatCtx->timestamp);
-	//	m_curFrameNumber = temp * m_allFrameSum - m_videoQueue.nb_pict;	//让缓冲中的数据快速播放完成
-	//	m_curPlayedTime = m_curFrameNumber * 1000.0f / m_curFrameRate;	//重新设置时间
-		m_gotoMutex.Unlock();
-		m_gotoMutex1.Unlock();
-	}
-}
-void XMovieFfmpeg::gotoFrameIndex(int index)
-{
-	if(index == m_curFrameNumber) return;
-	if(index < 0 || index > m_allFrameSum) return;
-	if(videoStream >= 0)
-	{
-		m_gotoMutex.Lock();
-		m_gotoMutex1.Lock();
-		av_seek_frame(pFormatCtx,videoStream,index,AVSEEK_FLAG_ANY);
 		m_curFrameNumber = index - m_videoQueue.nb_pict;	//让缓冲中的数据快速播放完成
 		m_curPlayedTime = m_curFrameNumber * 1000.0f / m_curFrameRate;	//重新设置时间
-		m_gotoMutex.Unlock();
-		m_gotoMutex1.Unlock();
-	}else
-	{
-		m_gotoMutex.Lock();
-		m_gotoMutex1.Lock();
-		av_seek_frame(pFormatCtx,audioStream,index,AVSEEK_FLAG_BACKWARD);
-	//	m_curFrameNumber = index - m_videoQueue.nb_pict;	//让缓冲中的数据快速播放完成
-	//	m_curPlayedTime = m_curFrameNumber * 1000.0f / m_curFrameRate;	//重新设置时间
-		m_gotoMutex.Unlock();
-		m_gotoMutex1.Unlock();
 	}
+	m_gotoMutex.Unlock();
+	m_gotoMutex1.Unlock();
 }
 //把YUV格式的视频帧显示到窗口
 void XMovieFfmpeg::getPixelData()
-{  
-	SDL_LockMutex(m_videoQueue.mutex);
+{
+	gLock(m_videoQueue.mutex);
 	unsigned char * p = getFormVideoPicList();
-	if(p == NULL) 
+	if (p == NULL)
 	{
-		SDL_UnlockMutex(m_videoQueue.mutex);
+		gUnlock(m_videoQueue.mutex);
 		return;
 	}
 	m_mutex.Lock();
 	//将数据拷贝出来
-	switch(m_outColorMode)
+	switch (m_outColorMode)
 	{
 	case COLOR_RGB:
 	case COLOR_BGR:
-		memcpy(m_curFrameData,p,m_videoWidth * m_videoHeight * 3);
+		memcpy(m_curFrameData, p, m_videoWidth * m_videoHeight * 3);
 		break;
 	case COLOR_RGBA:
 	case COLOR_BGRA:
-		memcpy(m_curFrameData,p,m_videoWidth * (m_videoHeight << 2));
+		memcpy(m_curFrameData, p, m_videoWidth * (m_videoHeight << 2));
 		break;
 	case COLOR_GRAY:
-		memcpy(m_curFrameData,p,m_videoWidth * m_videoHeight);
+		memcpy(m_curFrameData, p, m_videoWidth * m_videoHeight);
 		break;
 	}
 	m_mutex.Unlock();
-	SDL_UnlockMutex(m_videoQueue.mutex);
+	gUnlock(m_videoQueue.mutex);
 	m_isNewFrame = true;
-	++ m_curFrameNumber;
+	++m_curFrameNumber;
 }
 XBool XMovieFfmpeg::getFirstPixelData()
 {
-	SDL_LockMutex(m_videoQueue.mutex);
+	gLock(m_videoQueue.mutex);
 	unsigned char * p = getAVideoFrame();	//从视频队列中取出一帧，不改变队列的数据
 	if(p == NULL) 
 	{
-		SDL_UnlockMutex(m_videoQueue.mutex);
+		gUnlock(m_videoQueue.mutex);
 		return false;
 	}
 	m_mutex.Lock();
@@ -1030,33 +996,10 @@ XBool XMovieFfmpeg::getFirstPixelData()
 		break;
 	}
 	m_mutex.Unlock();
-	SDL_UnlockMutex(m_videoQueue.mutex);
+	gUnlock(m_videoQueue.mutex);
 	m_isNewFrame = true;
 	return true;
 }
-
-//GLuint * XMovieFfmpeg::getTexture()
-//{
-//	if(m_curFrame != NULL)
-//	{//如果当前帧有数据则将RGB数据刷新到贴图
-//		XGL::EnableTexture2D();
-//		XGL::BindTexture2D(m_texture);
-//		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 
-//			m_videoWidth,m_videoHeight, GL_RGB,//GL_LUMINANCE,	
-//			GL_UNSIGNED_BYTE,m_curFrame);
-//		glDisable( GL_TEXTURE_2D );
-//		m_curFrame = NULL;	//标记数据已经刷新
-//	}
-//	return &m_texture;
-//}
-
-//初始化视频队列
-void XMovieFfmpeg::initVideoPictList()
-{
-	memset(&m_videoQueue,0,sizeof(XVideoQueue));
-	m_videoQueue.mutex = SDL_CreateMutex();
-}
-
 void XMovieFfmpeg::releaseVideoPictList()
 {
 	for(int i = 0;i < MAX_BUFF_DEEP;++ i)
@@ -1069,42 +1012,45 @@ void XMovieFfmpeg::releaseVideoPictList()
 void XMovieFfmpeg::putIntoVideoPicList()
 {
 	int isFinished = 0;
-	if(avcodec_decode_video2(pCodeCtx,pFrame,&isFinished,&packet) < 0) 
-	{//视频解码失败
-		av_free_packet(&packet); 
-		return;	
-	}
-	av_free_packet(&packet); 
-	if(isFinished != 0)
-	{//如果解码成功		
+	while (packet.size > 0)
+	{
+		int ret = avcodec_decode_video2(pCodeCtx, pFrame, &isFinished, &packet);
+		if (ret < 0)
+		{//视频解码失败
+			av_free_packet(&packet);
+			return;
+		}
+		packet.data += ret;
+		packet.size -= ret;
+		if (isFinished == 0) continue;
+		//如果解码成功		
 	//	SDL_LockMutex(m_mutex);
-		SDL_LockMutex(m_videoQueue.mutex);
+		gLock(m_videoQueue.mutex);
 		//将视频数据格式转换成RGB24格式
-		imgConvert(m_bmp[m_curBuffPoint]->pict,(AVPicture *)pFrame,pCodeCtx->height); 
+		imgConvert(m_bmp[m_curBuffPoint]->pict, (AVPicture *)pFrame, pCodeCtx->height);
 		//将视频数据推入队列中
 		m_bmp[m_curBuffPoint]->next = NULL;
-		if(m_videoQueue.last_pict == NULL) m_videoQueue.first_pict = m_bmp[m_curBuffPoint];//如果是空列
+		if (m_videoQueue.last_pict == NULL) m_videoQueue.first_pict = m_bmp[m_curBuffPoint];//如果是空列
 		else m_videoQueue.last_pict->next = m_bmp[m_curBuffPoint];//否则添加一帧
-		
-		m_videoQueue.last_pict = m_bmp[m_curBuffPoint];
-		++ m_videoQueue.nb_pict;
 
-		++ m_curBuffPoint;
-		if(m_curBuffPoint >= MAX_BUFF_DEEP) m_curBuffPoint = 0;	//循环插入
+		m_videoQueue.last_pict = m_bmp[m_curBuffPoint];
+		++m_videoQueue.nb_pict;
+
+		++m_curBuffPoint;
+		if (m_curBuffPoint >= MAX_BUFF_DEEP) m_curBuffPoint = 0;	//循环插入
 	//	SDL_UnlockMutex(m_mutex);
-		SDL_UnlockMutex(m_videoQueue.mutex);
+		gUnlock(m_videoQueue.mutex);
+#ifdef DEBUG_MODE
+		++m_vfSum;
+#endif
 	}
-//	else
-//	{//解码尚未完成
-//		printf("video decode error!\n");
-//	}
+	av_free_packet(&packet);
 }
 //在队列里取出视频帧的像素数据
 unsigned char* XMovieFfmpeg::getFormVideoPicList()
 {
 	XVideoFrameData *vp = NULL;
 	if(m_videoQueue.nb_pict <= 0) return NULL;
-//	SDL_LockMutex(m_videoQueue.mutex);
 	vp = m_videoQueue.first_pict;
 	if(vp != NULL)
 	{
@@ -1112,20 +1058,14 @@ unsigned char* XMovieFfmpeg::getFormVideoPicList()
 		if(m_videoQueue.first_pict == NULL)
 		{
 			m_videoQueue.last_pict = NULL;
+#ifdef WITH_DEBUG_INFO
 			LogStr("buffer no data!");
+#endif
 		}
 		--m_videoQueue.nb_pict;
 	}
-//	SDL_UnlockMutex(m_videoQueue.mutex);
 	if(vp != NULL) return vp->data;
 	else return NULL;
-}
-//初始化音频包队列
-void XMovieFfmpeg::initAudioQueue()
-{
-	memset(&m_audioQueue,0,sizeof(XAudioQueue));
-	m_audioQueue.mutex = SDL_CreateMutex();
-	m_audioQueue.cond = SDL_CreateCond();
 }
 //把音频包pkt放到队列q里
 int XMovieFfmpeg::putIntoPacketQueue()
@@ -1137,7 +1077,7 @@ int XMovieFfmpeg::putIntoPacketQueue()
 		return -1;	//音频解码
 	}
 
-	AVPacketList * pkt_temp = XMem::createMem<AVPacketList>();
+	AVPacketList* pkt_temp = XMem::createMem<AVPacketList>();
 //	++ createNumber;
 //	printf("%d,%d\n",createNumber,m_audioQueue.nb_packets);
 	if(pkt_temp == NULL) return -1;	//内存分配失败
@@ -1145,14 +1085,26 @@ int XMovieFfmpeg::putIntoPacketQueue()
 	pkt_temp->pkt = packet;
 	pkt_temp->next = NULL;
 
-	SDL_LockMutex(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("51");
+//#endif
+	gLock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("52");
+//#endif
 	if(m_audioQueue.last_pkt == NULL) m_audioQueue.first_pkt = pkt_temp;	//如果音频队列为空
 	else m_audioQueue.last_pkt->next = pkt_temp;		
 	m_audioQueue.last_pkt = pkt_temp;
 	++ m_audioQueue.nb_packets;
 	m_audioQueue.size += pkt_temp->pkt.size;
-	SDL_CondSignal(m_audioQueue.cond);
-	SDL_UnlockMutex(m_audioQueue.mutex);
+	//m_audioQueue.cFlag = true;
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("53");
+//#endif
+	gUnlock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("54");
+//#endif
 	return 0;
 }
 //释放所有缓存的视频数据
@@ -1175,24 +1127,39 @@ void XMovieFfmpeg::releaseAudioQueue()
 }
 void XMovieFfmpeg::replay()
 {
+	m_gotoMutex.Lock();	//防止時間偷跑
+	m_gotoMutex1.Lock();	//防止時間偷跑
 	//这里需要清空序列
 //	printf("All times:%d\n",m_curPlayedTime);
-	m_curFrameNumber = 0;
-	m_curPlayedTime = 0;
 //	printf("Loop!\n");
-	gotoFrame(0.0f);
+	gotoFrame(0.0f, true);
 	m_isDecodeOver = XFalse;
 	m_isEnd = XFalse;
 	//这里需要清空缓存
-	m_audioBufSize = 0;
-	m_audioBufIndex = 0;
 	clearAudioQueue();
 	clearVideoQueue();
+	m_curFrameNumber = 0;
+	m_curPlayedTime = 0.0f;
+	m_audioBufSize = 0;
+	m_audioBufIndex = 0;
+#ifdef DEBUG_MODE
+	m_vpSum = 0;
+	m_vfSum = 0;
+	LogStr("replay()");
+#endif
+	m_gotoMutex.Unlock();
+	m_gotoMutex1.Unlock();
 }
 void XMovieFfmpeg::clearAudioQueue()	//清空音频队列
 {
-	SDL_LockMutex(m_audioQueue.mutex);
-	AVPacketList *pkt1 = NULL; 
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("71");
+//#endif
+	gLock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("72");
+//#endif
+	AVPacketList *pkt1 = NULL;
 	while(true)
 	{ 
 		pkt1 = m_audioQueue.first_pkt; 
@@ -1204,37 +1171,34 @@ void XMovieFfmpeg::clearAudioQueue()	//清空音频队列
 		av_free_packet(&(pkt1->pkt));
 		XMem::XDELETE(pkt1); 
 	}
-	SDL_UnlockMutex(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("73");
+//#endif
+	gUnlock(m_audioQueue.mutex);
+//#ifdef WITH_DEBUG_INFO
+//	LogStr("74");
+//#endif
 }
 void XMovieFfmpeg::getData(unsigned char * p)
 {
 	m_mutex.Lock();
-	switch(m_outColorMode)
+	switch (m_outColorMode)
 	{
 	case COLOR_RGB:
 	case COLOR_BGR:
-		memcpy(p,m_curFrameData,m_videoWidth * m_videoHeight * 3);
+		memcpy(p, m_curFrameData, m_videoWidth * m_videoHeight * 3);
 		break;
 	case COLOR_RGBA:
 	case COLOR_BGRA:
-		memcpy(p,m_curFrameData,m_videoWidth * (m_videoHeight << 2));
+		memcpy(p, m_curFrameData, m_videoWidth * (m_videoHeight << 2));
 		break;
 	case COLOR_GRAY:
-		memcpy(p,m_curFrameData,m_videoWidth * m_videoHeight);
+		memcpy(p, m_curFrameData, m_videoWidth * m_videoHeight);
 		break;
 	default:	//其他格式暂时不支持
 		break;
 	}
 	m_mutex.Unlock();
-}
-XBool XMovieFfmpeg::haveNewFrame()
-{
-	if(!m_isGetFirstFrame && getFirstPixelData()) 
-		m_isGetFirstFrame = true;
-
-	if(!m_isNewFrame) return XFalse;
-	m_isNewFrame = XFalse;
-	return XTrue;
 }
 XBool XMovieFfmpeg::updateFrame()
 {

@@ -17,47 +17,51 @@ void XSubWindow::ctrlProc(void *pClass,int id,int eventID)
 		}
 		return;
 	}
-	if(id == pPar.m_titleButton[1].getControlID())
-	{//¹Ø±Õ´°¿ÚµÄ°´Å¥
-		return;
-	}
-	if(id == pPar.m_titleButton[2].getControlID())
-	{//´ıÀ©Õ¹µÄ°´Å¥
-		return;
-	}
+	//ÏÂÃæµÄ¹¦ÄÜÉĞÎ´ÊµÏÖ
+	//if(id == pPar.m_titleButton[1].getControlID())
+	//{//¹Ø±Õ´°¿ÚµÄ°´Å¥
+	//	return;
+	//}
+	//if(id == pPar.m_titleButton[2].getControlID())
+	//{//´ıÀ©Õ¹µÄ°´Å¥
+	//	return;
+	//}
 }
-XBool XSubWindow::initWithoutSkin(const XVector2 &area,const char * title)	//ÎŞÆ¤·ôµÄ³õÊ¼»¯
+XBool XSubWindow::initWithoutSkin(const XVec2& area, const char * title)	//ÎŞÆ¤·ôµÄ³õÊ¼»¯
 {
-	if(m_isInited) return XFalse;
+	if (m_isInited) return XFalse;
 	//ÏÂÃæĞèÒªÅĞ¶ÏÊäÈë²ÎÊıµÄºÏ·¨ĞÔ
-	if(area.x <= 128.0f || area.y <= 128.0f) return XFalse;
-	m_area.set(0.0f,0.0f,area.x,area.y);
+	if (area.x <= 128.0f || area.y <= 128.0f) return XFalse;
+	m_area.set(XVec2::zero, area);
 
-	m_position.set(0.0f,0.0f);
-	m_scale.set(1.0f,1.0f);
-	m_color.setColor(1.0f,1.0f,1.0f,1.0f);
+	m_position.reset();
+	m_scale.set(1.0f);
+	m_color.set(1.0f, 1.0f);
 	m_titleFont.setACopy(getDefaultFont());
 	m_titleFont.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT);
 	m_titleFont.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE);
-	m_titleFont.setPosition(m_position.x + 2.0f,m_position.y + 16.0f);
+	m_titleFont.setPosition(m_position.x + 2.0f, m_position.y + 16.0f);
 	m_titleFont.setColor(XFColor::black);
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(&m_titleFont);
 #endif
 
-	m_titleButton[0].initWithoutSkin("-",32.0f);
-	m_titleButton[0].setPosition(m_position.x + m_area.right - 96.0f,m_position.y);
-	m_titleButton[0].setEventProc(ctrlProc,this);
-//	m_titleButton[0].setWithAction(XFalse);
-	m_titleButton[1].initWithoutSkin("X",32.0f);
-	m_titleButton[1].setPosition(m_position.x + m_area.right - 64.0f,m_position.y);
-	m_titleButton[1].setEventProc(ctrlProc,this);
-//	m_titleButton[1].setWithAction(XFalse);
-	m_titleButton[2].initWithoutSkin("<",32.0f);
-	m_titleButton[2].setPosition(m_position.x + m_area.right - 32.0f,m_position.y);
+	m_titleButton[0].initWithoutSkin("", 32.0f);
+	m_titleButton[0].setPosition(m_position.x + m_area.right - 96.0f, m_position.y);
+	m_titleButton[0].setEventProc(ctrlProc, this);
+	//	m_titleButton[0].setWithAction(XFalse);
+	m_titleButton[0].setSymbol(BTN_SYMBOL_LINE);
+	m_titleButton[1].initWithoutSkin("", 32.0f);
+	m_titleButton[1].setPosition(m_position.x + m_area.right - 64.0f, m_position.y);
+	m_titleButton[1].setEventProc(ctrlProc, this);
+	//	m_titleButton[1].setWithAction(XFalse);
+	m_titleButton[1].setSymbol(BTN_SYMBOL_MASK_WRONG);
+	m_titleButton[2].initWithoutSkin("", 32.0f);
+	m_titleButton[2].setPosition(m_position.x + m_area.right - 32.0f, m_position.y);
 	m_titleButton[2].disable();
-	m_titleButton[2].setEventProc(ctrlProc,this);
+	m_titleButton[2].setEventProc(ctrlProc, this);
 //	m_titleButton[2].setWithAction(XFalse);
+	m_titleButton[2].setSymbol(BTN_SYMBOL_LEFT);
 	XCtrlManager.decreaseAObject(&m_titleButton[0]);	//×¢ÏúÕâ¸öÎï¼ş
 	XCtrlManager.decreaseAObject(&m_titleButton[1]);	//×¢ÏúÕâ¸öÎï¼ş
 	XCtrlManager.decreaseAObject(&m_titleButton[2]);	//×¢ÏúÕâ¸öÎï¼ş
@@ -68,10 +72,7 @@ XBool XSubWindow::initWithoutSkin(const XVector2 &area,const char * title)	//ÎŞÆ
 #endif
 
 	updateMouseRect();
-	m_isInited = XTrue;
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isInited = m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//ÔÚÎï¼ş¹ÜÀíÆ÷ÖĞ×¢²áµ±Ç°Îï¼ş
 	XCtrlManager.moveToFirst(XCtrlManager.findObjectID(this));
@@ -85,11 +86,13 @@ XBool XSubWindow::initWithoutSkin(const XVector2 &area,const char * title)	//ÎŞÆ
 }
 void XSubWindow::release()
 {
+	if (!m_isInited) return;
 	XCtrlManager.decreaseAObject(this);	//×¢ÏúÕâ¸öÎï¼ş
 #if WITH_OBJECT_MANAGER
 	XObjManager.decreaseAObject(this);
 #endif
 	m_ctrlManager.clearAllObject();	//ÕâÀïĞèÒªÇå¿ÕËùÓĞµÄÎï¼ş
+	m_isInited = false;
 }
 void XSubWindow::updateMouseRect()
 {
@@ -98,58 +101,63 @@ void XSubWindow::updateMouseRect()
 	case STATE_NORMAL:
 		if(m_windowType != TYPE_NO_TITLE)
 		{
-			m_curMouseRect.set(m_position.x + m_area.left * m_scale.x,m_position.y + m_area.top * m_scale.y,
-				m_position.x + m_area.right * m_scale.x,m_position.y + (m_area.bottom + 32.0f) * m_scale.y);
+			m_curMouseRect.set(m_position + m_area.getLT() * m_scale,
+				m_position + XVec2(m_area.right,m_area.bottom + 32.0f) * m_scale);
 		}else
 		{
-			m_curMouseRect.set(m_position.x + m_area.left * m_scale.x,m_position.y + m_area.top * m_scale.y,
-				m_position.x + m_area.right * m_scale.x,m_position.y + m_area.bottom * m_scale.y);
+			m_curMouseRect.set(m_position + m_area.getLT() * m_scale,
+				m_position + m_area.getRB() * m_scale);
 		}
 		break;
 	case STATE_MINISIZE:
-		m_curMouseRect.set(m_position.x + m_area.left * m_scale.x,m_position.y + m_area.top * m_scale.y,
-			m_position.x + 256.0f * m_scale.x,m_position.y + 32.0f * m_scale.y);
+		m_curMouseRect.set(m_position + m_area.getLT() * m_scale,
+			m_position + XVec2(256.0f, 32.0f) * m_scale);
 		break;
 	}
 }
 void XSubWindow::draw()
 {
-	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
+	if (!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(m_windowState == STATE_NORMAL)
+	if (m_windowState == STATE_NORMAL)
 	{
-		if(m_windowType != TYPE_NO_TITLE)
+		if (m_windowType != TYPE_NO_TITLE)
 		{//Ãè»æ±êÌâµÄÏà¹ØÄÚÈİ
-			XRender::drawFillBoxA(m_position + XVector2(m_area.left,m_area.top),
-				XVector2(m_area.getWidth(),32.0f) * m_scale,
-				XCCS::normalColor * m_color,true);
+			XRender::drawFillRectA(m_position + m_area.getLT(),
+				XVec2(m_area.getWidth(), 32.0f) * m_scale,
+				XCCS::normalColor * m_color, true);
 			m_titleFont.draw();
 			m_titleButton[0].draw();
 			m_titleButton[1].draw();
 			m_titleButton[2].draw();
 		}
 		//ÏÂÃæÃè»æ¹¤×÷Çø
-		if(m_withBackGround)
+		if (m_withBackGround)
 		{//Èç¹û´æÔÚ±³¾°£¬ÔòÏÂÃæ¿ªÊ¼Ãè»æ±³¾°
-			if(m_windowType == TYPE_NO_TITLE)
+			if (m_windowType == TYPE_NO_TITLE)
 			{
-				XRender::drawFillBoxA(m_position + XVector2(m_area.left,m_area.top),
-					XVector2(m_area.getWidth(),m_area.getHeight()) * m_scale,
-					XCCS::downColor * m_color,true);
-			}else
+				XRender::drawFillRectA(m_position + m_area.getLT(),
+					m_area.getSize() * m_scale,
+					XCCS::downColor * m_color, true);
+			}
+			else
 			{
-				XRender::drawFillBoxA(m_position + XVector2(m_area.left,m_area.top + 32.0f) * m_scale,
-					XVector2(m_area.getWidth(),m_area.getHeight()) * m_scale,
-					XCCS::downColor * m_color,true);
+				XRender::drawFillRectA(m_position + XVec2(m_area.left, m_area.top + 32.0f) * m_scale,
+					m_area.getSize() * m_scale,
+					XCCS::downColor * m_color, true);
 			}
 		}
 		//ÏÂÃæ¿ªÊ¼Ãè»æËùÓĞµÄÎï¼ş
-	}else
-	if(m_windowState == STATE_MINISIZE)
+
+		m_ctrlManager.draw();
+		m_ctrlManager.drawUp();
+	}
+	else
+	//if (m_windowState == STATE_MINISIZE)
 	{
-		XRender::drawFillBoxA(m_position + XVector2(m_area.left,m_area.top),
-			XVector2(256.0f,32.0f) * m_scale,
-			0.75f * m_color.fR,0.75f * m_color.fG,0.75f * m_color.fB,1.0f * m_color.fA,true);
+		XRender::drawFillRectA(m_position + m_area.getLT(),
+			XVec2(256.0f, 32.0f) * m_scale,
+			XFColor(m_color * 0.75f, 1.0f * m_color.a), true);
 		m_titleFont.draw();
 		m_titleButton[0].draw();
 		m_titleButton[1].draw();
@@ -160,23 +168,14 @@ void XSubWindow::draw()
 //	{
 //		m_objects[i].obj->draw();
 //	}
-	m_ctrlManager.draw();
 }
 void XSubWindow::drawUp()
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isVisible) return;	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(m_windowState == STATE_NORMAL)
-	{
-		if(m_windowType != TYPE_NO_TITLE)
-		{//Ãè»æ±êÌâµÄÏà¹ØÄÚÈİ
-			m_titleButton[0].drawUp();
-			m_titleButton[1].drawUp();
-			m_titleButton[2].drawUp();
-		}
-	}else
-	if(m_windowState == STATE_MINISIZE)
-	{
+	if((m_windowState == STATE_NORMAL && m_windowType != TYPE_NO_TITLE) ||
+		m_windowState == STATE_MINISIZE)
+	{//Ãè»æ±êÌâµÄÏà¹ØÄÚÈİ
 		m_titleButton[0].drawUp();
 		m_titleButton[1].drawUp();
 		m_titleButton[2].drawUp();
@@ -185,27 +184,29 @@ void XSubWindow::drawUp()
 //	{
 //		m_objects[i].obj->drawUp();
 //	}
+	//m_ctrlManager.drawUp();
 }
-XBool XSubWindow::mouseProc(float x,float y,XMouseState mouseState)
+XBool XSubWindow::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
 		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
 		!m_isVisible) return XFalse; 	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
 	if(m_withAction && m_isInAction) return XTrue;	//Èç¹ûÖ§³Ö¶¯×÷²¥·Å¶øÇÒÕıÔÚ²¥·Å¶¯»­ÄÇÃ´²»½ÓÊÜÊó±ê¿ØÖÆ
-	m_curMousePosition.set(x,y);
-	if(m_curMouseRect.isInRect(x,y))
+	if(m_isSilent) return XFalse;
+	m_curMousePosition.set(p);
+	if(m_curMouseRect.isInRect(p))
 	{//ÏÂÃæÅĞ¶ÏÍÏ×§¶¯×÷
 		if(m_isBeChoose)
 		{
-			m_titleButton[0].mouseProc(x,y,mouseState);
-			m_titleButton[1].mouseProc(x,y,mouseState);
-			m_titleButton[2].mouseProc(x,y,mouseState);
+			m_titleButton[0].mouseProc(p,mouseState);
+			m_titleButton[1].mouseProc(p,mouseState);
+			m_titleButton[2].mouseProc(p,mouseState);
 		}
 		switch(mouseState)
 		{
 		case MOUSE_LEFT_BUTTON_DCLICK:	
 			//¸Ä±ä´°¿ÚµÄ×´Ì¬
-			if(m_windowType != TYPE_NO_TITLE && getIsInDragRect(x,y))
+			if(m_windowType != TYPE_NO_TITLE && getIsInDragRect(p))
 			{
 				switch(m_windowState)//ÕâÀï±ØĞëÒªÏŞ¶¨ÔÚ±êÌâ·¶Î§ÄÚ£¬·ñÔòºÜÄÑ²Ù×÷
 				{
@@ -220,17 +221,8 @@ XBool XSubWindow::mouseProc(float x,float y,XMouseState mouseState)
 	}
 	if(!m_isBeChoose) return XFalse;		
 	if(m_windowType != TYPE_NO_TITLE)
-		mouseEventProc(x,y,mouseState);
-	m_ctrlManager.mouseProc(x,y,mouseState);
-	return XFalse;
-}
-XBool XSubWindow::keyboardProc(int keyOrder,XKeyState keyState)
-{
-	if(!m_isInited ||	//Èç¹ûÃ»ÓĞ³õÊ¼»¯Ö±½ÓÍË³ö
-		!m_isActive ||		//Ã»ÓĞ¼¤»îµÄ¿Ø¼ş²»½ÓÊÕ¿ØÖÆ
-		!m_isVisible) return XFalse; 	//Èç¹û²»¿É¼ûÖ±½ÓÍË³ö
-	if(m_withAction && m_isInAction) return XTrue;	//Èç¹ûÖ§³Ö¶¯×÷²¥·Å¶øÇÒÕıÔÚ²¥·Å¶¯»­ÄÇÃ´²»½ÓÊÜÊó±ê¿ØÖÆ
-	m_ctrlManager.keyProc(keyOrder,keyState);
+		mouseEventProc(p,mouseState);
+	m_ctrlManager.mouseProc(p,mouseState);
 	return XFalse;
 }
 XBool XSubWindow::addACtrlObj(XControlBasic *obj)	//Ïò´°¿ÚÖĞÌí¼ÓÒ»¸ö¿Ø¼ş
@@ -256,6 +248,24 @@ XBool XSubWindow::addACtrlObj(XControlBasic *obj)	//Ïò´°¿ÚÖĞÌí¼ÓÒ»¸ö¿Ø¼ş
 	tmpObj.obj->setScale(tmpObj.scale * m_scale);
 	return true;
 }
+XBool XSubWindow::desACtrlObj(XControlBasic* obj)
+{
+	if (obj == NULL) return XFalse;
+	int index = getObjectIndex(obj);
+	if(index < 0) return XFalse;	//²»ÄÜÔØÈëÖØ¸´µÄ×ÊÔ´
+
+	m_objects.erase(m_objects.begin() + index);
+	m_ctrlManager.decreaseAObject(obj);
+	//·½°¸1£º¿Ø¼ş¹ÜÀíÆ÷²»¸ºÔğÃè»æÕâ¸ö¿Ø¼ş
+	//XCtrlManager.setNeedDraw(false,obj);	//×¢ÏúÕâ¸öÎï¼ş
+	//XCtrlManager.moveAndInsert(XCtrlManager.findObjectID(obj),XCtrlManager.findObjectID(this));
+	//·½°¸2£º
+	XCtrlManager.addACtrl(obj);
+#if WITH_OBJECT_MANAGER
+	XObjManager.addAObject(obj);
+#endif
+	return true;
+}
 void XSubWindow::setFocus() 
 {
 	m_isBeChoose = XTrue;
@@ -275,10 +285,11 @@ int XSubWindow::getObjectIndex(XControlBasic *obj)
 	}
 	return -1;
 }
-void XSubWindow::setPosition(float x,float y)
+void XSubWindow::setPosition(const XVec2& p)
 {
 	if(!m_isInited) return;
-	m_position.set(x,y);
+	XVec2 tmpOldPos = m_position;
+	m_position = p;
 	m_titleFont.setPosition(m_position.x + 2.0f * m_scale.x,m_position.y + 16.0f * m_scale.y);
 	switch(m_windowState)
 	{
@@ -294,20 +305,28 @@ void XSubWindow::setPosition(float x,float y)
 		break;
 	}
 	updateMouseRect();
-	for(unsigned int i = 0;i < m_objects.size();++ i)
+	//·½°¸1£º
+	//for(unsigned int i = 0;i < m_objects.size();++ i)
+	//{
+	//	m_objects[i].obj->setPosition(m_objects[i].pos * m_scale + m_position);
+	//}
+	//·½°¸2£º
+	XVec2 offset;
+	for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
 	{
-		m_objects[i].obj->setPosition(m_objects[i].pos * m_scale + m_position);
+		it->pos = it->obj->getPosition() - tmpOldPos;
+		it->obj->setPosition(it->pos * m_scale + m_position);
 	}
 }
-void XSubWindow::setScale(float x,float y)
+void XSubWindow::setScale(const XVec2& s)
 {
 	if(!m_isInited) return;
-	m_scale.set(x,y);
-	m_titleFont.setScale(x,y);
+	m_scale = s;
+	m_titleFont.setScale(m_scale);
 	m_titleButton[0].setScale(m_scale);
 	m_titleButton[1].setScale(m_scale);
 	m_titleButton[2].setScale(m_scale);
-	m_titleFont.setPosition(m_position.x + 2.0f * m_scale.x,m_position.y + 16.0f * m_scale.y);
+	m_titleFont.setPosition(m_position + XVec2(2.0f, 16.0f) * m_scale);
 	switch(m_windowState)
 	{
 	case STATE_NORMAL:
@@ -336,7 +355,8 @@ void XSubWindow::setMiniSize()
 
 	m_titleFont.setString(XString::getCanShowString(m_titleString.c_str(),256.0f - 96.0f,15.0f).c_str());
 		
-	m_titleButton[0].setCaptionText("¿Ú");
+	//m_titleButton[0].setCaptionText("¿Ú");
+	m_titleButton[0].setSymbol(BTN_SYMBOL_RECT);
 	m_titleButton[0].setPosition(m_position.x + (256.0f - 96.0f) * m_scale.x,m_position.y);
 	m_titleButton[1].setPosition(m_position.x + (256.0f - 64.0f) * m_scale.x,m_position.y);
 	m_titleButton[2].setPosition(m_position.x + (256.0f - 32.0f) * m_scale.x,m_position.y);
@@ -354,7 +374,8 @@ void XSubWindow::setNormalSize()
 
 	m_titleFont.setString(XString::getCanShowString(m_titleString.c_str(),m_area.getWidth() - 96.0f,15.0f).c_str());
 		
-	m_titleButton[0].setCaptionText("-");
+	//m_titleButton[0].setCaptionText("-");
+	m_titleButton[0].setSymbol(BTN_SYMBOL_LINE);
 	m_titleButton[0].setPosition(m_position.x + (m_area.right - 96.0f) * m_scale.x,m_position.y);
 	m_titleButton[1].setPosition(m_position.x + (m_area.right - 64.0f) * m_scale.x,m_position.y);
 	m_titleButton[2].setPosition(m_position.x + (m_area.right - 32.0f) * m_scale.x,m_position.y);
@@ -364,10 +385,10 @@ void XSubWindow::setNormalSize()
 		m_objects[i].obj->setVisible();
 	}
 }
-void XSubWindow::setColor(float r,float g,float b,float a)
+void XSubWindow::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
-	m_titleFont.setAlpha(a);
+	m_color = c;
+	m_titleFont.setAlpha(c.a);
 	m_titleButton[0].setColor(m_color);
 	m_titleButton[1].setColor(m_color);
 	m_titleButton[2].setColor(m_color);
@@ -390,8 +411,7 @@ void XSubWindow::setAlpha(float a)
 }
 void XSubWindow::changeStage(XSubWindowState state)
 {
-	if(!m_isInited) return;
-	if(m_windowState == state) return;
+	if(!m_isInited || m_windowState == state) return;
 	switch(state)
 	{
 	case STATE_NORMAL:setNormalSize();break;
@@ -408,34 +428,39 @@ void XSubWindow::setLostFocus()	//ÉèÖÃÊ§È¥½¹µã
 		!m_isEnable) return;		//Èç¹ûÎŞĞ§ÔòÖ±½ÓÍË³ö
 	setAlpha(0.5f);
 	m_isBeChoose = XFalse;	//¿Ø¼ş´¦ÓÚ½¹µã×´Ì¬
+	//ĞèÒªÉèÖÃËùÓĞµÄ×ÓÎïÌåÊ§È¥½¹µã
+	for (int i = 0; i < m_objects.size(); ++i)
+	{
+		m_objects[i].obj->setLostFocus();
+	}
 	if(m_eventProc != 0) m_eventProc(m_pClass,getControlID(),SWD_LOSE_FOCUS);
 	else XCtrlManager.eventProc(getControlID(),SWD_LOSE_FOCUS);
 }
 XBool XSubWindow::saveState(TiXmlNode &e)
 {
-	if(!m_needSaveAndLoad) return XTrue;	//Èç¹û²»ĞèÒª±£´æÔòÖ±½Ó·µ»Ø
+	if (!m_needSaveAndLoad) return XTrue;	//Èç¹û²»ĞèÒª±£´æÔòÖ±½Ó·µ»Ø
 	//±éÀúËùÓĞµÄ¿Ø¼ş£¬±£´æÆä×´Ì¬
 	TiXmlElement elmNode(m_ctrlName.c_str());
-	bool flag = true;
-	for(unsigned int i = 0;i < m_objects.size();++ i)
+	bool ret = true;
+	for (unsigned int i = 0; i < m_objects.size(); ++i)
 	{
-		if(!m_objects[i].obj->saveState(elmNode)) flag = false;
+		if (!m_objects[i].obj->saveState(elmNode)) ret = false;
 	}
-	if(e.InsertEndChild(elmNode) == NULL) flag = false;
-	return flag;
+	if (e.InsertEndChild(elmNode) == NULL) ret = false;
+	return ret;
 }
 XBool XSubWindow::loadState(TiXmlNode *e)
 {
-	if(!m_needSaveAndLoad) return XTrue;	//Èç¹û²»ĞèÒª±£´æÔòÖ±½Ó·µ»Ø
+	if (!m_needSaveAndLoad) return XTrue;	//Èç¹û²»ĞèÒª±£´æÔòÖ±½Ó·µ»Ø
 	//±éÀúËùÓĞµÄ¿Õ¼ä£¬¶ÁÈ¡Æä×´Ì¬
 	TiXmlNode * keyNode = e->FirstChildElement(m_ctrlName.c_str());
-	if(keyNode == NULL) return XFalse;
-	bool flag = true;
-	for(unsigned int i = 0;i < m_objects.size();++ i)
+	if (keyNode == NULL) return XFalse;
+	bool ret = true;
+	for (unsigned int i = 0; i < m_objects.size(); ++i)
 	{
-		if(!m_objects[i].obj->loadState(keyNode)) flag = false;
+		if (!m_objects[i].obj->loadState(keyNode)) ret = false;
 	}
-	return flag;
+	return ret;
 }
 #if !WITH_INLINE_FILE
 #include "XSubWindow.inl"

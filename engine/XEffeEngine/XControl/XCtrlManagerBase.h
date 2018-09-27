@@ -41,8 +41,8 @@ protected:
 	std::vector<int> m_ctrlDrawOrderMap;	//这个数据在使用的时候存在问题！！
 	char m_isAutoDraw;	//是否自己管理按钮的绘制
 	bool m_isShiftDown;
-	int m_focusOrder;	//当前获得焦点的控件的编号，只有获得焦点的控件才能对鼠标键盘事件作出响应,序号为原始序号，非映射序号
 	bool m_withWireframe;	//是否在控件外面描绘一个线框
+	int m_focusOrder;	//当前获得焦点的控件的编号，只有获得焦点的控件才能对鼠标键盘事件作出响应,序号为原始序号，非映射序号
 public:
 	int findSpecialObjectID(const void * object) const;	//寻找特殊的物件
 
@@ -84,10 +84,11 @@ public:
 	}
 public:
 	void setWithWireframe(bool flag){m_withWireframe = flag;}
-	void mouseProc(int x,int y,XMouseState mouseState);		//鼠标事件的函数
+	void mouseProc(const XVec2& p,XMouseState mouseState);		//鼠标事件的函数
 	void keyProc(int keyOrder,XKeyState keyState);			//按键事件的函数
 	void insertChar(const char *ch,int len);
 	void draw();
+	void drawUp();
 	void update(float stepTime);
 
 	void draw(const void * obj);	//手动描绘某个物体

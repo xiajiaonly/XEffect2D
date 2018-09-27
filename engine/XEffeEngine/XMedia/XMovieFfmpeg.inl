@@ -1,17 +1,17 @@
 INLINE void XMovieFfmpeg::clearVideoQueue()	//清空视频队列
 {
-	SDL_LockMutex(m_videoQueue.mutex);
+	gLock(m_videoQueue.mutex);
 	m_videoQueue.first_pict = NULL;
 	m_videoQueue.last_pict = NULL;
 	m_videoQueue.nb_pict = 0;
-	SDL_UnlockMutex(m_videoQueue.mutex);
+	gUnlock(m_videoQueue.mutex);
 }
 INLINE void XMovieFfmpeg::play()
 {
 	if(!m_isEnd) m_isStop = false;
 	else replay();
 }
-INLINE void XMovieFfmpeg::gotoTime(int t)	//跳转到毫秒级的位置
+INLINE void XMovieFfmpeg::gotoTime(double t)	//跳转到毫秒级的位置
 {
 	m_gotoMutex1.Lock();
 	m_curPlayedTime = t;	//重新设置时间
@@ -28,6 +28,12 @@ INLINE void XMovieFfmpeg::draw()
 	if(!m_isLoaded) return;
 	if(m_movieSprite != NULL && m_movieTex != NULL && m_isTexInit) 
 		m_movieSprite->draw(&m_movieTex->m_texture);
+}
+INLINE void XMovieFfmpeg::setPosition(const XVec2& p)
+{
+	if(!m_isLoaded) return;
+	if(m_movieSprite != NULL && m_movieTex != NULL && m_isTexInit) 
+		m_movieSprite->setPosition(p);
 }
 INLINE int XMovieFfmpeg::imgConvert(AVPicture *dst,const AVPicture *src,int src_height)
 {

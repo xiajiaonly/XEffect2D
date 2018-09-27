@@ -1,21 +1,21 @@
-INLINE XBool XLineCtrl::isInRect(float x,float y)
+INLINE XBool XLineCtrl::isInRect(const XVec2& p)
 {
 	if(!m_isInited) return XFalse;
-	return XMath::getIsInRect(x,y,getBox(0),getBox(1),getBox(2),getBox(3));
+	return XMath::getIsInRect(p,getBox(0),getBox(1),getBox(2),getBox(3));
 }
-INLINE XVector2 XLineCtrl::getBox(int order)
+INLINE XVec2 XLineCtrl::getBox(int order)
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 
 	switch(order)
 	{
-	case 0:return XVector2(m_position.x - m_truePixelSize.x,m_position.y - m_truePixelSize.y);
-	case 1:return XVector2(m_position.x + m_truePixelSize.x,m_position.y - m_truePixelSize.y);
-	case 2:return XVector2(m_position.x + m_truePixelSize.x,m_position.y + m_truePixelSize.y);
-	case 3:return XVector2(m_position.x - m_truePixelSize.x,m_position.y + m_truePixelSize.y);
+	case 0:return m_position - m_truePixelSize;
+	case 1:return m_position + XVec2(m_truePixelSize.x, - m_truePixelSize.y);
+	case 2:return m_position + m_truePixelSize;
+	case 3:return m_position + XVec2(- m_truePixelSize.x,m_truePixelSize.y);
 	}
 
-	return XVector2::zero;
+	return XVec2::zero;
 }
 INLINE void XLineCtrl::setString(const char * str)
 {
@@ -29,16 +29,16 @@ INLINE void XLineCtrl::setString(const char * str)
 	m_stringFont.setString(m_showString.c_str());
 	m_withString = true;
 }
-INLINE void XLineCtrl::setRange(float min,float max)
+INLINE void XLineCtrl::setRange(float minRange,float maxRange)
 {
 	m_withRange = true;
-	m_range.set(min,max);
+	m_range.set(minRange, maxRange);
 	updateData();
 }
 INLINE float XLineCtrl::getValue() 
 {
 	if(m_withMap) return m_mapValue;
-	if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U) return m_position.x;
+	if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U) return m_position.x;
 	else return m_position.y;
 }
 INLINE void XLineCtrl::setValue(float value)
@@ -46,10 +46,10 @@ INLINE void XLineCtrl::setValue(float value)
 	if(m_withMap) 
 	{
 		m_mapValue = value;
-		if(m_type == LINE_CTRL_TYPEX_D || m_type == LINE_CTRL_TYPEX_U) 
-			m_position.x = XMath::maping1D(m_mapValue,m_mapRange.x,m_mapRange.y,m_range.x,m_range.y);
+		if(m_type == LINE_CTRL_TYPE_X_D || m_type == LINE_CTRL_TYPE_X_U) 
+			m_position.x = XMath::mapping1D(m_mapValue,m_mapRange.x,m_mapRange.y,m_range.x,m_range.y);
 		else 
-			m_position.y = XMath::maping1D(m_mapValue,m_mapRange.x,m_mapRange.y,m_range.x,m_range.y);
+			m_position.y = XMath::mapping1D(m_mapValue,m_mapRange.x,m_mapRange.y,m_range.x,m_range.y);
 		updateData();
 	}
 }
@@ -63,29 +63,29 @@ INLINE void XLineCtrl::setMapRange(float min,float max)
 //	m_funDataChange = funDataChange;
 //	m_pClass = pClass;
 //}
-INLINE XBool XLineCtrl::canGetFocus(float x,float y)
+INLINE XBool XLineCtrl::canGetFocus(const XVec2& p)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
-	return isInRect(x,y);
+	return isInRect(p);
 }
-INLINE void XLineCtrl::setPosition(float x,float y)
+INLINE void XLineCtrl::setPosition(const XVec2& p)
 {
-	m_position.set(x,y);
+	m_position = p;
 	updateData();
 	updateChildPos();
 }
-INLINE void XLineCtrl::setScale(float x,float y) 
+INLINE void XLineCtrl::setScale(const XVec2& s)
 {
-	m_scale.set(x,y);
+	m_scale = s;
 	updateData();
 	updateChildScale();
 }
-INLINE void XLineCtrl::setColor(float r,float g,float b,float a)
+INLINE void XLineCtrl::setColor(const XFColor& c)
 {
-	m_color.setColor(r,g,b,a);
+	m_color = c;
 	updateChildColor();
 }
 INLINE void XLineCtrl::setAlpha(float a)

@@ -32,7 +32,7 @@ public:
 //	void *m_pClass;
 private:
 	XRect m_allArea;		//整个空间的响应范围
-	XVector2 m_upMousePoint;	//上次记录的鼠标在范围内的位置
+	XVec2 m_upMousePoint;	//上次记录的鼠标在范围内的位置
 
 	XResourceInfo *m_resInfo;
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -44,37 +44,37 @@ private:
 public:
 	//这里的Area为单个菜单项的鼠标响应区域，默认所有菜单项都一样
 	XBool init(int menuSum,	//菜单中的物件数量
-		const XVector2& position,	//菜单的位置
+		const XVec2& position,	//菜单的位置
 		const XRect& Area,	//菜单按键的响应范围
 		const XMouseRightButtonMenuSkin &tex,	//菜单的贴图
-		const XFontUnicode &font,float captionSize,const XVector2& textPosition);		//菜单的字体
+		const XFontUnicode& font,float captionSize,const XVec2& textPosition);		//菜单的字体
 	XBool initEx(int menuSum,	//对上面接口的简化
-		const XVector2& position,	
+		const XVec2& position,	
 		const XMouseRightButtonMenuSkin &tex,	
-		const XFontUnicode &font,float captionSize = 1.0f);
+		const XFontUnicode& font,float captionSize = 1.0f);
 	XBool initPlus(const char * path,int menuSum,	//菜单中的物件数量
-		const XFontUnicode &font,float captionSize = 1.0f,
-		XResourcePosition resoursePosition = RESOURCE_SYSTEM_DEFINE);
+		const XFontUnicode& font,float captionSize = 1.0f,
+		XResPos resPos = RES_SYS_DEF);
 	XBool initWithoutSkin(int menuSum,const XRect& area,
-		const XFontUnicode &font,float captionSize, const XVector2& textPosition);
-	XBool initWithoutSkin(int menuSum,const XRect& area,const XVector2& textPosition)
+		const XFontUnicode& font,float captionSize, const XVec2& textPosition);
+	XBool initWithoutSkin(int menuSum,const XRect& area,const XVec2& textPosition)
 	{
 		return initWithoutSkin(menuSum,area,getDefaultFont(),1.0f,textPosition);
 	}
-	XBool initWithoutSkin(int menuSum,const XVector2& pixelSize,const XVector2& textPosition)
+	XBool initWithoutSkin(int menuSum,const XVec2& pixelSize,const XVec2& textPosition)
 	{
-		return initWithoutSkin(menuSum,XRect(0.0f,0.0f,pixelSize.x,pixelSize.y),
+		return initWithoutSkin(menuSum,XRect(XVec2::zero,pixelSize),
 			getDefaultFont(),1.0f,textPosition);
 	}
 protected:
 	void draw();//描绘菜单
 	void drawUp();
 	void update(float stepTime);
-	XBool mouseProc(float x,float y,XMouseState mouseState);	//对于鼠标动作的响应函数
+	XBool mouseProc(const XVec2& p,XMouseState mouseState);	//对于鼠标动作的响应函数
 	XBool keyboardProc(int keyOrder,XKeyState keyState);		//键盘时间的相应可以使用鼠标上下键选择menu项
 	void insertChar(const char *,int){;}
-	XBool canGetFocus(float x,float y);	//用于判断当前物件是否可以获得焦点
-	XBool canLostFocus(float,float){return XTrue;}
+	XBool canGetFocus(const XVec2& p);	//用于判断当前物件是否可以获得焦点
+	XBool canLostFocus(const XVec2&){return XTrue;}
 public:
 	void setCurChoose(int){;}								//设置当前选择的菜单项
 	XBool setACopy(const XMouseRightButtonMenu &temp);		//建立一个与目标实体共用资源的实体
@@ -86,10 +86,10 @@ public:
 	}
 public:
 	using XObjectBasic::setPosition;	//避免覆盖的问题
-	void setPosition(float x,float y);	//设置菜单的位置
+	void setPosition(const XVec2& p);	//设置菜单的位置
 
 	using XObjectBasic::setScale;		//避免覆盖的问题
-	void setScale(float x,float y);
+	void setScale(const XVec2& s);
 
 	XMouseRightButtonMenu();
 	~XMouseRightButtonMenu(){release();}
@@ -103,12 +103,12 @@ public:
 	void setTexture(const XMouseRightButtonMenuSkin &tex,int order);	//改变菜单中某一项的贴图
 	void release();	//释放资源
 	//为了支持物件管理器管理控件，这里提供下面两个接口的支持
-	XBool isInRect(float x,float y);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
-	XVector2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
+	XBool isInRect(const XVec2& p);		//点x，y是否在物件身上，这个x，y是屏幕的绝对坐标
+	XVec2 getBox(int order);			//获取四个顶点的坐标，目前先不考虑旋转和缩放
 
 	//下面的接口尚未实现
 	using XObjectBasic::setColor;		//避免覆盖的问题
-	void setColor(float r,float g,float b,float a);
+	void setColor(const XFColor& c);
 	void setAlpha(float a);
 
 	//virtual void justForTest() {;}

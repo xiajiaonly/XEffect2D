@@ -7,36 +7,38 @@ namespace XE{
 		m_ids.pop_front();
 		for(int i = 0;i < m_sampleIDs.size();++ i)
 		{
-			if(m_sampleIDs[i] == id)
+			if (m_sampleIDs[i] != id) continue;
+			if(m_idSum[i] > 1)
 			{
-				if(m_idSum[i] > 1)
-				{
-					-- m_idSum[i];
-				}else
-				{//计数为零，取消无效的
-					m_sampleIDs.erase(m_sampleIDs.begin() + i);
-					m_idSum.erase(m_idSum.begin() + i);
-				}
-				break;
+				-- m_idSum[i];
+			}else
+			{//计数为零，取消无效的
+				m_sampleIDs.erase(m_sampleIDs.begin() + i);
+				m_idSum.erase(m_idSum.begin() + i);
 			}
+			break;
 		}
 	}
 	void XSamplingFilter::updateID()	//更新ID
 	{
 		int curMaxSum = 0;
 		m_curID = -1;
-		for(int i = 0;i < m_idSum.size();++ i)
+		if (m_isIgnoreInvalidID)
 		{
-			if(m_isIgnoreInvalidID)
+			for (int i = 0; i < m_idSum.size(); ++i)
 			{
-				if(m_idSum[i] >= m_threshold && m_idSum[i] > curMaxSum && m_sampleIDs[i] >= 0)
+				if (m_idSum[i] >= m_threshold && m_idSum[i] > curMaxSum && m_sampleIDs[i] >= 0)
 				{
 					curMaxSum = m_idSum[i];
 					m_curID = m_sampleIDs[i];
 				}
-			}else
+			}
+		}
+		else
+		{
+			for (int i = 0; i < m_idSum.size(); ++i)
 			{
-				if(m_idSum[i] >= m_threshold && m_idSum[i] > curMaxSum)
+				if (m_idSum[i] >= m_threshold && m_idSum[i] > curMaxSum)
 				{
 					curMaxSum = m_idSum[i];
 					m_curID = m_sampleIDs[i];
@@ -50,11 +52,9 @@ namespace XE{
 		int index = -1;
 		for(int i = 0;i < m_sampleIDs.size();++ i)
 		{
-			if(m_sampleIDs[i] == id)
-			{
-				index = i;
-				break;
-			}
+			if (m_sampleIDs[i] != id) continue;
+			index = i;
+			break;
 		}
 		if(index >= 0)
 		{//ID已经存在
@@ -66,17 +66,20 @@ namespace XE{
 		}
 		if(m_ids.size() > m_size) popAIDn();
 		updateID();
+		//for(auto it = m_ids.begin();it != m_ids.end();++ it)
+		//{
+		//	printf("%d,",*it);
+		//}
+		//printf("\n");
 	}
 	void XSamplingFilter::setSize(int size)
 	{
 		m_size = size;
-		if(m_ids.size() > m_size)
+		if (m_ids.size() <= m_size) return;
+		while(m_ids.size() <= m_size)
 		{
-			while(m_ids.size() <= m_size)
-			{
-				popAIDn();
-			}
-			updateID();
+			popAIDn();
 		}
+		updateID();
 	}
 }

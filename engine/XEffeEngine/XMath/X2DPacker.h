@@ -18,7 +18,7 @@ namespace XE{
 //struct XCorner
 //{
 //	XBool m_isEnable;			//这个角落是否有效
-//	XVector2 m_position;	//角落的位置;
+//	XVec2 m_position;	//角落的位置;
 //	int m_type;				//角落的类型
 //};
 
@@ -29,9 +29,9 @@ public:
 	int m_setOrder;			//外部编号，由用户设置的，这个值内部不会改变
     int m_order;			//物件的编号，这个是内部编号
     int m_basicBoxOrder;    //被放置入的封包的编号 -1表示还没有放入
-    XVector2 m_position;	//物件的位置
+    XVec2 m_position;	//物件的位置
 
-    XVector2 m_size;		//物件的尺寸
+    XVec2 m_size;		//物件的尺寸
     float m_acreage;        //物件的面积
 
 	XRect m_AABB;			//物体的盒子，用于判断是否包含
@@ -44,7 +44,7 @@ class XBasicBox
 public:
     int m_order;				//箱子的编号
     int m_beUsed;				//箱子是否被使用:0表示被装过东西，n表示装入了n个东西
-	XVector2 m_size;			//箱子的尺寸
+	XVec2 m_size;			//箱子的尺寸
     float m_releaseAcreage;		//箱子的剩余空间
 
 	int *m_objectBoxesOrder;	//已经放入箱子的盒子的编号列表
@@ -53,7 +53,7 @@ public:
 //    int *m_yEdge;				//有效可以靠的垂直边
 	//这是第一种放置方式
 	int m_mayPositionSum;		//有效放入点的数量
-	XVector2 *m_mayPosition;			//可以放入的点
+	XVec2 *m_mayPosition;			//可以放入的点
 	//这是第二种放置方式
 	//优化遍历所有可能的拐角
 	int m_mayPositionXSum;		//有可能的X的数量
@@ -128,12 +128,12 @@ public:
 
 	X2DPacker()
 		:m_isAdvancedOptimize(false)
-		,m_basicBoxSum(0)
-		,m_basicBox(NULL)
-		,m_objectBoxSum(0)
-		,m_objectBox(NULL)
+		, m_basicBoxSum(0)
+		, m_basicBox(NULL)
+		, m_objectBoxSum(0)
+		, m_objectBox(NULL)
 		//,m_wellRate(1.0f)
-		,m_canRotate(XFalse)
+		, m_canRotate(XFalse)
 	{}
 };
 }

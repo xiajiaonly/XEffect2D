@@ -14,7 +14,7 @@ XCloudParticles::XCloudParticles()
 ,m_texture(NULL)
 {}
 int XCloudParticles::init(float maxCenterPoint,float minCenterPoint,float maxSize,float minSize,
-						   float density,const XRect& liveArea,const XVector2& speed,int maxAtomSum,const XTexture *texture)
+						   float density,const XRect& liveArea,const XVec2& speed,int maxAtomSum,const XTexture *texture)
 {
 	if(m_isInited != 0) return 0;
 	if(minCenterPoint >= maxCenterPoint) return 0;
@@ -116,12 +116,12 @@ void XCloudParticles::move(float timeDelay)
 					temp = XRand::random(75)/100.0f + 0.5f;
 				//	m_atom[i].init(&(m_texture->m_texture),m_texture->m_w * temp,m_texture->m_h * temp);
 					m_atom[i].init(m_texture);
-					m_atom[i].m_curSize.set(temp,temp);
+					m_atom[i].m_curSize.set(temp);
 					m_atom[i].m_stage = STAGE_MOVE;
 					m_atom[i].m_dPosition.x = m_speed.x * (0.75f + XRand::random(1000) * 0.0005f);
 					m_atom[i].m_dPosition.y = (XRand::random(1000) * 0.002f - 1) * m_speed.y;
 					temp = XRand::random(30)/100.0f + 0.2f;
-					m_atom[i].m_curColor.setColor(1.0f,1.0f,1.0f,temp);
+					m_atom[i].m_curColor.set(1.0f,temp);
 					m_atom[i].m_curSize.set(XRand::random(50)/100.0f + 0.75f,XRand::random(50)/100.0f + 0.75f);
 					break;
 				}

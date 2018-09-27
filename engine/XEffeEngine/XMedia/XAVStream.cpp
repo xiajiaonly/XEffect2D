@@ -12,7 +12,7 @@ namespace XE{
 //float STREAM_DURATION = 5.0f;
 //int STREAM_NB_FRAMES = 0;//  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 //这个函数中的音频转换的数据存在问题，需要考量
-void XAVStream::addFrameAudio(const unsigned char * data,int size)
+void XAVStream::addFrameAudio(const unsigned char *data,int size)
 {//将音频数据写入到文件中
 	if(!m_isOpen ||
 		data == NULL ||
@@ -47,7 +47,7 @@ void XAVStream::addFrameAudio(const unsigned char * data,int size)
 	//printf("%d\n",m_audioDataPos);
 	while(m_audioDataPos >= m_audioFrameInSize)	//由于不同的音频格式这里的m_audioFrameSize不对
 	{//数据足够，则写入数据
-		AVCodecContext *c = m_audioST->codec;
+		AVCodecContext *c = m_audioC;
 		int ret;
 		if(c->channel_layout != av_get_default_channel_layout(m_audioInfo.channelSum)
 			|| c->sample_fmt != m_audioInfo.sampleFormat 
@@ -99,9 +99,14 @@ void XAVStream::addFrameAudio(const unsigned char * data,int size)
 		av_init_packet(&m_audioPkt);
 		m_audioPkt.data = NULL;
 		m_audioPkt.size = 0;
-		//注释掉可以避免长时间录的error，但是会造成一开始的warning，不知道尚不知为什么
-		//m_audioFrame->pts = m_audioFrameIndex;	
-		//++m_audioFrameIndex;
+
+		int dst_nb_samples = av_rescale_rnd(swr_get_delay(m_audioSwr, c->sample_rate) + m_audioFrame->nb_samples,
+                                            c->sample_rate, c->sample_rate, AV_ROUND_UP);
+		AVRational tmpRate;
+		tmpRate.den = c->sample_rate;
+		tmpRate.num = 1;
+		m_audioFrame->pts = av_rescale_q(m_audioFrameIndex, tmpRate, c->time_base);
+        m_audioFrameIndex += dst_nb_samples;
 
 		if(avcodec_encode_audio2(c,&m_audioPkt,m_audioFrame,&haveData) < 0) 
 		{  
@@ -109,18 +114,22 @@ void XAVStream::addFrameAudio(const unsigned char * data,int size)
             return;
         }
 		if(haveData)
-		{  
-			if(m_audioPkt.pts != AV_NOPTS_VALUE) m_audioPkt.pts = av_rescale_q(m_audioPkt.pts,	c->time_base, m_audioST->time_base);
-			if(m_audioPkt.dts != AV_NOPTS_VALUE) m_audioPkt.dts = av_rescale_q(m_audioPkt.dts,	c->time_base, m_audioST->time_base);
-			if(m_audioPkt.duration > 0) m_audioPkt.duration = av_rescale_q(m_audioPkt.duration,	c->time_base, m_audioST->time_base);
-
-			m_audioPkt.flags |= AV_PKT_FLAG_KEY;
+		{ 
+			av_packet_rescale_ts(&m_audioPkt, c->time_base, m_audioST->time_base);
 			m_audioPkt.stream_index = m_audioST->index;
+
+		//	if(m_audioPkt.pts != AV_NOPTS_VALUE) m_audioPkt.pts = av_rescale_q(m_audioPkt.pts,	c->time_base, m_audioST->time_base);
+		//	if(m_audioPkt.dts != AV_NOPTS_VALUE) m_audioPkt.dts = av_rescale_q(m_audioPkt.dts,	c->time_base, m_audioST->time_base);
+		//	if(m_audioPkt.duration > 0) m_audioPkt.duration = av_rescale_q(m_audioPkt.duration,	c->time_base, m_audioST->time_base);
+		//	
+		//	m_audioPkt.flags |= AV_PKT_FLAG_KEY;
+		//	m_audioPkt.stream_index = m_audioST->index;
+
 			if(m_aacbsfc != NULL)
-				av_bitstream_filter_filter(m_aacbsfc, m_audioST->codec, NULL, &m_audioPkt.data, &m_audioPkt.size, m_audioPkt.data, m_audioPkt.size, 0);  
-            //if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
+				av_bitstream_filter_filter(m_bsfc, c, NULL, &m_audioPkt.data, &m_audioPkt.size, m_audioPkt.data, m_audioPkt.size, 0);
 			if(av_interleaved_write_frame(m_pOutContext, &m_audioPkt) != 0)
 				LogStr("Error:音频数据写入失败!");
+            //if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
 		}
 
 		m_audioDataPos -= m_audioFrameInSize;
@@ -141,7 +150,6 @@ AVStream *XAVStream::openAudio()
 		LogStr("Error:音频流建立失败!");
 		return NULL;
     }
-    AVCodecContext * c = st->codec;
     //寻找音频编码器
 	AVCodec *codec = avcodec_find_encoder(m_pFormat->audio_codec);
     if(!codec) 
@@ -149,19 +157,19 @@ AVStream *XAVStream::openAudio()
         LogStr("Error:音频编码器寻找失败!");
         return NULL;
     }
-	st->time_base.den = 1;
-	st->time_base.num = 1;
-	avcodec_get_context_defaults3(c,codec);
+	m_audioC = avcodec_alloc_context3(codec);
+	AVCodecContext *c = m_audioC;
+	//avcodec_get_context_defaults3(c,codec);
 	c->bit_rate = 128000;
 	switch(c->codec_id)
 	{
-	case CODEC_ID_MP3:
+	case  AV_CODEC_ID_MP3:
 		c->sample_fmt = AV_SAMPLE_FMT_S16P;
 		break;//不同的音频格式这里不同，需要考虑
-	case CODEC_ID_MP2:
+	case  AV_CODEC_ID_MP2:
 		c->sample_fmt = AV_SAMPLE_FMT_S16;
 		break;
-	case CODEC_ID_AAC:
+	case  AV_CODEC_ID_AAC:
 		m_aacbsfc = av_bitstream_filter_init("aac_adtstoasc");
 		if(m_aacbsfc == NULL) return false;
 		c->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -173,6 +181,11 @@ AVStream *XAVStream::openAudio()
 	c->sample_rate		= m_audioInfo.sampleRate;
 	c->channels			= m_audioInfo.channelSum;
 	c->channel_layout	= av_get_default_channel_layout(m_audioInfo.channelSum);
+	st->time_base.den = c->sample_rate;
+	st->time_base.num = 1;
+
+	if (m_pOutContext->oformat->flags & AVFMT_GLOBALHEADER)
+        c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	//打开音频编码器
     if(avcodec_open2(c, codec,NULL) < 0) 
@@ -180,6 +193,8 @@ AVStream *XAVStream::openAudio()
         LogStr("Error:音频编码器打开失败!");
         return NULL;
     }
+	if(avcodec_parameters_from_context(st->codecpar, m_audioC))
+		LogStr("Error!");
 	//为音频数据建立缓存
     //m_audioOutbufSize = 20000;
     m_audioOutbufSize = 5 * av_samples_get_buffer_size(NULL, c->channels, c->frame_size,c->sample_fmt, 0);
@@ -224,9 +239,8 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
         LogStr("Error:视频数据流建立失败!");
         return NULL;
     }
-    AVCodecContext *c = st->codec;
     //find the video encoder
-    AVCodec * codec = avcodec_find_encoder(m_pFormat->video_codec);
+    AVCodec *codec = avcodec_find_encoder(m_pFormat->video_codec);
     if(!codec) 
 	{
 		LogStr("Error:视频编码器失败!");
@@ -234,14 +248,17 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
     }
 	st->time_base.den = m_videoFrameRate;
 	st->time_base.num = 1;
-	avcodec_get_context_defaults3(c,codec);
-	c->bit_rate = 9000000;	//码率，越大文件越大，压缩比越小
+	m_videoC = avcodec_alloc_context3(codec);
+	AVCodecContext *c = m_videoC;
+	c->bit_rate = 4000000;	//码率，越大文件越大，压缩比越小
     c->width = m_videoWidth;
-    c->height = m_videoHight;
-	c->time_base.den = m_videoFrameRate;
-	c->time_base.num = 1;
+    c->height = m_videoHeight;
+	c->time_base = st->time_base;
     c->gop_size = 12;
-    c->max_b_frames = 1;
+	if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO)
+        c->max_b_frames = 2;
+    if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO)
+        c->mb_decision = 2;
     c->pix_fmt = AV_PIX_FMT_YUV420P;
 	//+++++++++++++++++++++++++
 	//这些参数是为了提升画质
@@ -268,7 +285,8 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
 		c->lumi_masking = 0.0f;
 		c->dark_masking = 0.0f; 
 		break;
-	case AVS_QUALITY_MIDDLE:	//低质量
+	case AVS_QUALITY_MIDDLE:	//中等质量大小
+		c->bit_rate = 2000000;
 		c->qcompress = 0.5f;
 		c->pre_me = 0;
 		c->lmin = 20;
@@ -290,6 +308,7 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
 		c->dark_masking = 0.0f;
 		break;
 	case AVS_QUALITY_LOW:	//低质量，默认值
+		c->bit_rate = 800000;
 		break;
 	}
 
@@ -299,6 +318,8 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
 		if(m_bsfc == NULL) return false;
         av_opt_set(c->priv_data, "preset", "slow", 0);
 	}
+	if (m_pOutContext->oformat->flags & AVFMT_GLOBALHEADER)
+        c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     if(avcodec_open2(c, codec,NULL) < 0) 
 	{
@@ -306,14 +327,17 @@ AVStream *XAVStream::openVideo(XAVStreamQuality quality)
 		return NULL;
     }
 
-    m_videoOutbuf = NULL;
-    if(!(m_pOutContext->oformat->flags & AVFMT_RAWPICTURE)) 
-	{
-        /* allocate output buffer */
-        /* XXX: API change will be done */
-        m_videoOutbufSize = 8000000;
-        m_videoOutbuf = XMem::createArrayMem<uint8_t>(m_videoOutbufSize);//(uint8_t *)malloc(m_videoOutbufSize);
-    }
+ //   m_videoOutbuf = NULL;
+ //   if(!(m_pOutContext->oformat->flags & AVFMT_RAWPICTURE)) 
+	//{
+ //       /* allocate output buffer */
+ //       /* XXX: API change will be done */
+ //       m_videoOutbufSize = 8000000;
+ //       m_videoOutbuf = XMem::createArrayMem<uint8_t>(m_videoOutbufSize);//(uint8_t *)malloc(m_videoOutbufSize);
+ //   }
+	if(avcodec_parameters_from_context(st->codecpar, m_videoC) < 0)
+		LogStr("Error!");
+
 	av_init_packet(&m_videoPkt);
 	return st;
 }    
@@ -354,7 +378,7 @@ void XAVStream::addFrameAudio(XMicrophone &mic,XAudioStream &aStr)
 			m_curUsage[1] += aStr.getDataLen();
 		}
 		if(m_curUsage[0] == 0) break;	//如果麦克风中已经没有数据，则这里出现了数据欠缺的问题
-		int tmpSize = XEE_Min(m_curUsage[0],m_curUsage[1]);
+		int tmpSize = (std::min)(m_curUsage[0],m_curUsage[1]);
 		if(tmpSize == 0) continue;	//如果没有数据则继续解压数据
 		//第三步:将两个音频数据进行混合
 		if(m_audioBuffSize[2] - m_curUsage[2] < tmpSize)
@@ -433,7 +457,7 @@ XBool XAVStream::openFile(const char *filename,int width,int height,int frameRat
 {	
 	//记录相关的数据
 	m_videoWidth = width;
-	m_videoHight = height;
+	m_videoHeight = height;
 	m_videoFrameRate = frameRate;
 	if(info == NULL)
 	{
@@ -472,31 +496,36 @@ XBool XAVStream::openFile(const char *filename,int width,int height,int frameRat
 	//m_pFormat->video_codec = AV_CODEC_ID_MPEG2VIDEO;
 	//m_pFormat->audio_codec = CODEC_ID_MP2;		//CODEC_ID_MP3会存在连带问题，所以这里先确认
 	m_pOutContext->oformat = m_pFormat;
-	strcpy(m_pOutContext->filename,filename);	//复制文件名
+	strcpy_s(m_pOutContext->filename,1024,filename);	//复制文件名
 	//根据视频格式建立对应的视频音频数据
 	m_videoST = NULL;
     m_audioST = NULL;
-    if(m_pFormat->video_codec != CODEC_ID_NONE) m_videoST = openVideo(quality);
-    if(m_pFormat->audio_codec != CODEC_ID_NONE) m_audioST = openAudio();
+    if(m_pFormat->video_codec != AV_CODEC_ID_NONE) m_videoST = openVideo(quality);
+    if(m_pFormat->audio_codec != AV_CODEC_ID_NONE) m_audioST = openAudio();
 	if(m_videoST == NULL || m_audioST == NULL) return XFalse;	//注意：遇到有图像没声音或者是有声音没图像的视频会有问题！！！
 	av_dump_format(m_pOutContext, 0, filename, 1);	//将设置的所有数据显示出来
 
 	m_pictureYUV = av_frame_alloc();
 	if(m_pictureYUV == NULL) return XFalse;
-//	m_pictureYUV->data[0] = XMem::createArrayMem<uint8_t>(m_videoST->codec->width * m_videoST->codec->height);
-//	m_pictureYUV->data[1] = XMem::createArrayMem<uint8_t>(m_videoST->codec->width * m_videoST->codec->height);
-//	m_pictureYUV->data[2] = XMem::createArrayMem<uint8_t>(m_videoST->codec->width * m_videoST->codec->height);
-//	m_pictureYUV->linesize[0] = m_videoST->codec->width;  
-//	m_pictureYUV->linesize[1] = m_videoST->codec->width / 2;  
-//	m_pictureYUV->linesize[2] = m_videoST->codec->width / 2;  
-	m_pictureYUV->format = m_videoST->codec->pix_fmt;
-	m_pictureYUV->width  = m_videoST->codec->width;
-	m_pictureYUV->height = m_videoST->codec->height;
-	if(av_image_alloc(m_pictureYUV->data,m_pictureYUV->linesize,m_videoST->codec->width,m_videoST->codec->height,
-		m_videoST->codec->pix_fmt,32) < 0) return XFalse;
+//	m_pictureYUV->data[0] = XMem::createArrayMem<uint8_t>(m_videoST->codecpar->width * m_videoST->codecpar->height);
+//	m_pictureYUV->data[1] = XMem::createArrayMem<uint8_t>(m_videoST->codecpar->width * m_videoST->codecpar->height);
+//	m_pictureYUV->data[2] = XMem::createArrayMem<uint8_t>(m_videoST->codecpar->width * m_videoST->codecpar->height);
+//	m_pictureYUV->linesize[0] = m_videoST->codecpar->width;  
+//	m_pictureYUV->linesize[1] = m_videoST->codecpar->width / 2;  
+//	m_pictureYUV->linesize[2] = m_videoST->codecpar->width / 2;  
+	m_pictureYUV->format = m_videoC->pix_fmt;
+	m_pictureYUV->width  = m_videoST->codecpar->width;
+	m_pictureYUV->height = m_videoST->codecpar->height;
+	if(av_image_alloc(m_pictureYUV->data,m_pictureYUV->linesize,m_videoST->codecpar->width,m_videoST->codecpar->height,
+		m_videoC->pix_fmt,32) < 0) return XFalse;
 
 	m_pictureRGB = av_frame_alloc();
 	m_pictureRGB->linesize[0] = m_videoWidth * 3; 
+#if AV_THREAD_MODE == 1
+	m_pixelsData = XMem::createArrayMem<unsigned char>(m_videoWidth * m_videoHeight * 3);
+	memset(m_pixelsData,0,m_videoWidth * m_videoHeight * 3);
+	m_isPixelsUpdate = false;
+#endif
 
 	//打开输出文件
 	if(!(m_pFormat->flags & AVFMT_NOFILE)
@@ -506,14 +535,14 @@ XBool XAVStream::openFile(const char *filename,int width,int height,int frameRat
         return XFalse;
     }
 	m_audioDataPos = 0;	//标记音频数据才开始读取
-	if(m_audioST->codec->frame_size == 0) 
+	if(m_audioST->codecpar->frame_size == 0) 
 	{
-		m_audioFrameSize = 2048 * av_get_bytes_per_sample(m_audioST->codec->sample_fmt) * m_audioST->codec->channels;
+		m_audioFrameSize = 2048 * av_get_bytes_per_sample(m_audioC->sample_fmt) * m_audioST->codecpar->channels;
 		m_audioFrameInSize = 2048 * av_get_bytes_per_sample(m_audioInfo.sampleFormat) * m_audioInfo.channelSum;
 	}else
 	{
-		m_audioFrameSize = m_audioST->codec->frame_size * av_get_bytes_per_sample(m_audioST->codec->sample_fmt) * m_audioST->codec->channels;
-		m_audioFrameInSize = m_audioST->codec->frame_size * av_get_bytes_per_sample(m_audioInfo.sampleFormat) * m_audioInfo.channelSum;
+		m_audioFrameSize = m_audioST->codecpar->frame_size * av_get_bytes_per_sample(m_audioC->sample_fmt) * m_audioST->codecpar->channels;
+		m_audioFrameInSize = m_audioST->codecpar->frame_size * av_get_bytes_per_sample(m_audioInfo.sampleFormat) * m_audioInfo.channelSum;
 	}
 
 	m_audioBuffFlag = XTrue;
@@ -523,8 +552,8 @@ XBool XAVStream::openFile(const char *filename,int width,int height,int frameRat
 		LogStr("文件头写入失败!");
 		return XFalse;
 	}
-	m_pSwsContext = sws_getContext(m_videoST->codec->width,m_videoST->codec->height,PIX_FMT_RGB24,   
-									m_videoST->codec->width,m_videoST->codec->height,PIX_FMT_YUV420P,  
+	m_pSwsContext = sws_getContext(m_videoST->codecpar->width,m_videoST->codecpar->height,AV_PIX_FMT_RGB24,   
+									m_videoST->codecpar->width,m_videoST->codecpar->height,AV_PIX_FMT_YUV420P,  
 									SWS_POINT,NULL,NULL,NULL);	//SWS_BICUBIC
 	if(m_pSwsContext == NULL) return XFalse;
 	return XTrue;
@@ -542,49 +571,31 @@ XBool XAVStream::open(const char *filename,int width,int height,int frameRate,XA
 	m_frameTime = 1000.0f / frameRate;
 	m_isOpen = XTrue;
 	m_videoFrameIndex = 0;
-	//m_audioFrameIndex = 0;
+	m_audioFrameIndex = 0;
 	m_inputAudioDataSum = 0;
 	return XTrue;
 }
 bool XAVStream::pushVideoFrame()
 {
-	AVCodecContext * c = m_videoST->codec;
-	//m_pictureYUV->pts = m_videoFrameIndex;
-/*	int outSize = avcodec_encode_video(c, m_videoOutbuf, m_videoOutbufSize,m_pictureYUV); 
+	AVCodecContext *c = m_videoC;
 
-	if(outSize > 0)
-	{
-		if(m_pOutContext->oformat->flags & AVFMT_RAWPICTURE)
-		{
-			m_videoPkt.flags |= AV_PKT_FLAG_KEY;
-			m_videoPkt.stream_index = m_videoST->index;
-			m_videoPkt.data = (uint8_t *)m_pictureYUV;
-			m_videoPkt.size = sizeof(AVPicture);
-		}else
-		{
-			m_videoPkt.pts= av_rescale_q(c->coded_frame->pts, c->time_base, m_videoST->time_base);
-			if(c->coded_frame->key_frame)
-				m_videoPkt.flags |= AV_PKT_FLAG_KEY;
-			m_videoPkt.stream_index = m_videoST->index;
-			m_videoPkt.data = m_videoOutbuf;
-			m_videoPkt.size = outSize;
-		}
-		//m_videoPkt.pts = m_videoFrameIndex;
-		//++ m_videoFrameIndex;
-
-		av_write_frame(m_pOutContext, &m_videoPkt);
-		av_free_packet(&m_videoPkt);
-	}*/
 	av_init_packet(&m_videoPkt);
 	m_videoPkt.data = NULL;
 	m_videoPkt.size = 0;
-	m_pictureYUV->pts = m_videoFrameIndex;
 	++ m_videoFrameIndex;
-
+	
 	int haveData;
 	if(m_withThread)
 	{
 		m_mutex.Lock();
+#if AV_THREAD_MODE == 1
+		if(!m_isPixelsUpdate)
+		{
+			m_isPixelsUpdate = true;
+			m_pictureRGB->data[0] = m_pixelsData;  
+			imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c->height);
+		}
+#endif
 		if(avcodec_encode_video2(c,&m_videoPkt,m_pictureYUV,&haveData) < 0)
 		{
 			LogStr("视频编码失败!");
@@ -601,8 +612,11 @@ bool XAVStream::pushVideoFrame()
 	}
 	if(haveData)
 	{
+		av_packet_rescale_ts(&m_videoPkt, c->time_base, m_videoST->time_base);
+		m_videoPkt.stream_index = m_videoST->index;
+
 		if(m_bsfc != NULL)
-			av_bitstream_filter_filter(m_bsfc, m_videoST->codec, NULL, &m_videoPkt.data, &m_videoPkt.size, m_videoPkt.data, m_videoPkt.size, 0);
+			av_bitstream_filter_filter(m_bsfc, c, NULL, &m_videoPkt.data, &m_videoPkt.size, m_videoPkt.data, m_videoPkt.size, 0);
 		av_interleaved_write_frame(m_pOutContext, &m_videoPkt);
 		//av_write_frame(m_pOutContext, &m_videoPkt);
 	}
@@ -611,64 +625,72 @@ bool XAVStream::pushVideoFrame()
 }
 void XAVStream::addFrameRGB(unsigned char* p)
 {
-	if(!m_isOpen ||
-		p == NULL ||
-		m_videoST == NULL) return;
-	//static int frames = 0;
-	AVCodecContext * c = m_videoST->codec;
-	m_pictureRGB->data[0] = p;  
-	//RGB 2 YUV
-	//img_convert((AVPicture *)m_pictureYUV,PIX_FMT_YUV420P,
-	//	(AVPicture *)m_pictureRGB,PIX_FMT_RGB24,
-	//	c->width,c->height);
 	if(m_withThread)
 	{
+#if AV_THREAD_MODE == 1
+		if(p == NULL || m_pixelsData == NULL) return;
 		m_mutex.Lock();
-		imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c->height);
+		memcpy(m_pixelsData,p,m_videoWidth * m_videoHeight * 3);
+		m_isPixelsUpdate = false;
+		//imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c.height);
 		m_mutex.Unlock();
-		return;
+#endif
+#if AV_THREAD_MODE == 0
+		if(!m_isOpen || p == NULL || m_videoST == NULL) return;
+		AVCodecContext &c = *m_videoC;
+		m_pictureRGB->data[0] = p;  
+		m_mutex.Lock();
+		imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c.height);
+		m_mutex.Unlock();
+#endif
 	}else
 	{
-		imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c->height);
-	}
-	//下面是将图像数据压入到视频流，自动模式不会手动压入
-	//这里做一个测试
-	//RGB2YUV420(m_pictureYUV->data[0],m_pictureYUV->data[1],m_pictureYUV->data[2],p,c->width,c->height);
-	//YUV420P2RGB(m_pictureYUV->data[0],m_pictureYUV->data[1],m_pictureYUV->data[2],p,c->width,c->height);
+		if(!m_isOpen ||
+			p == NULL ||
+			m_videoST == NULL) return;
+		//static int frames = 0;
+		AVCodecContext &c = *m_videoC;
+		m_pictureRGB->data[0] = p;  
+		//RGB 2 YUV
+		//img_convert((AVPicture *)m_pictureYUV,PIX_FMT_YUV420P,
+		//	(AVPicture *)m_pictureRGB,PIX_FMT_RGB24,
+		//	c->width,c->height);
+		imgConvert((AVPicture *)m_pictureYUV,(AVPicture *)m_pictureRGB,c.height);
+		//下面是将图像数据压入到视频流，自动模式不会手动压入
+		//这里做一个测试
+		//RGB2YUV420(m_pictureYUV->data[0],m_pictureYUV->data[1],m_pictureYUV->data[2],p,c.width,c.height);
+		//YUV420P2RGB(m_pictureYUV->data[0],m_pictureYUV->data[1],m_pictureYUV->data[2],p,c.width,c.height);
 	
-	pushVideoFrame();
+		pushVideoFrame();
+	}
 	return;
 }      
 void XAVStream::flushAudioQueue()
 {
 	if(!m_isOpen ||
 		m_inputAudioDataSum <= 0) return;
-	AVCodecContext *c = m_audioST->codec;
+	AVCodecContext *c = m_audioC;
 	int haveData = 0;	//是否有获得数据
 	while(true)
 	{
 		av_init_packet(&m_audioPkt);
 		m_audioPkt.data = NULL;
-		m_audioPkt.size = 0; 
+		m_audioPkt.size = 0;
 		if(avcodec_encode_audio2(c,&m_audioPkt,NULL,&haveData) < 0) 
 		{  
             LogStr("Error encoding audio frame");  
 			break;
         }
 		if(haveData)
-		{  
-			if(m_audioPkt.pts != AV_NOPTS_VALUE)
-				m_audioPkt.pts = av_rescale_q(m_audioPkt.pts,	c->time_base, m_audioST->time_base);
-			if(m_audioPkt.dts != AV_NOPTS_VALUE) 
-				m_audioPkt.dts = av_rescale_q(m_audioPkt.dts,	c->time_base, m_audioST->time_base);
-			if(m_audioPkt.duration > 0) m_audioPkt.duration = av_rescale_q(m_audioPkt.duration,	c->time_base, m_audioST->time_base);
-			m_audioPkt.flags |= AV_PKT_FLAG_KEY;
+		{
+			av_packet_rescale_ts(&m_audioPkt, c->time_base, m_audioST->time_base);
 			m_audioPkt.stream_index = m_audioST->index;
+
 			if(m_aacbsfc != NULL)
-				av_bitstream_filter_filter(m_aacbsfc, m_audioST->codec, NULL, &m_audioPkt.data, &m_audioPkt.size, m_audioPkt.data, m_audioPkt.size, 0);  
-            //if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
+				av_bitstream_filter_filter(m_bsfc, c, NULL, &m_audioPkt.data, &m_audioPkt.size, m_audioPkt.data, m_audioPkt.size, 0);
             if(av_interleaved_write_frame(m_pOutContext, &m_audioPkt) != 0) 
 				LogStr("Error:音频数据写入失败!");
+            //if(av_write_frame(m_pOutContext, &m_audioPkt) != 0) 
 			av_free_packet(&m_audioPkt); 
 		}else
 		{
@@ -681,13 +703,15 @@ void XAVStream::flushAudioQueue()
 void XAVStream::flushVideoQueue()
 {
 	if(!m_isOpen) return;
-	AVCodecContext * c = m_videoST->codec;
+	AVCodecContext * c = m_videoC;
 	int haveData;
 	while(true)
 	{
 		av_init_packet(&m_videoPkt);
 		m_videoPkt.data = NULL;
 		m_videoPkt.size = 0;
+		++ m_videoFrameIndex;
+
 		if(avcodec_encode_video2(c,&m_videoPkt,NULL,&haveData) < 0)
 		{
 			LogStr("视频编码失败!");
@@ -695,10 +719,13 @@ void XAVStream::flushVideoQueue()
 		}
 		if(haveData)
 		{
+			av_packet_rescale_ts(&m_videoPkt, c->time_base, m_videoST->time_base);
+			m_videoPkt.stream_index = m_videoST->index;
+
 			if(m_bsfc != NULL)
-				av_bitstream_filter_filter(m_bsfc, m_videoST->codec, NULL, &m_videoPkt.data, &m_videoPkt.size, m_videoPkt.data, m_videoPkt.size, 0);
-			//av_write_frame(m_pOutContext, &m_videoPkt);
+				av_bitstream_filter_filter(m_bsfc, c, NULL, &m_videoPkt.data, &m_videoPkt.size, m_videoPkt.data, m_videoPkt.size, 0);
 			av_interleaved_write_frame(m_pOutContext, &m_videoPkt);
+			//av_write_frame(m_pOutContext, &m_videoPkt);
 			av_free_packet(&m_videoPkt);
 		}else
 		{
@@ -758,7 +785,9 @@ XBool XAVStream::close()
 //	av_freep(m_pictureYUV->data[2]);
 	av_frame_free(&m_pictureYUV);
 	av_frame_free(&m_pictureRGB);
-
+#if AV_THREAD_MODE == 1
+	XMem::XDELETE_ARRAY(m_pixelsData);
+#endif
 	av_free_packet(&m_videoPkt);
 	av_free_packet(&m_audioPkt);
 	if(m_audioSwr != NULL) swr_free(&m_audioSwr);
@@ -805,7 +834,7 @@ XBool XAVStream::open(const char *filename,int width,int height,int frameRate,
 
 	m_isOpen = XTrue;
 	m_videoFrameIndex = 0;
-	//m_audioFrameIndex = 0;
+	m_audioFrameIndex = 0;
 	m_inputAudioDataSum = 0;
 	return XTrue;
 }
@@ -857,28 +886,36 @@ DWORD WINAPI XAVStream::encodeThread(void * pParam)
 	return 1;
 }
 XBool XAVStream::openEx(const char *filename,int width,int height,int frameRate,
-	const char * deviceName,XAudioDeviceType deviceType)
+	const char * deviceName,XAudioDeviceType deviceType,XAudioInfo *info,XAVStreamQuality quality)
 {//尚未完成
 	if(m_isOpen) return XTrue;	//防止重复打开流
 	//下面打开设备
-	if(deviceType == AUDIO_DEVICE_TYPE_MIC) 
+	switch (deviceType)
 	{
-		if(!m_micDevice.openDevice(deviceName,XEG.getAudioSampleRate(),AL_FORMAT_STEREO16,20000)) return XFalse;
-		m_micDevice.captureStop();
-		if(!open(filename,width,height,frameRate,&m_micDevice,deviceType))
+	case AUDIO_DEVICE_TYPE_NULL:
+		if(!open(filename,width,height,frameRate,NULL,deviceType,info,quality))
 		{
 			m_micDevice.release();
 			return XFalse;
 		}
-	}else 
-	if(deviceType == AUDIO_DEVICE_TYPE_FILE)
-	{
+		break;
+	case AUDIO_DEVICE_TYPE_MIC:
+		if(!m_micDevice.openDevice(deviceName,XEG.getAudioSampleRate(),AL_FORMAT_STEREO16,20000)) return XFalse;
+		m_micDevice.captureStop();
+		if(!open(filename,width,height,frameRate,&m_micDevice,deviceType,info,quality))
+		{
+			m_micDevice.release();
+			return XFalse;
+		}
+		break;
+	case AUDIO_DEVICE_TYPE_FILE:
 		if(!m_AudioStream.load(deviceName)) return XFalse;
-		if(!open(filename,width,height,frameRate,&m_AudioStream,deviceType))
+		if(!open(filename,width,height,frameRate,&m_AudioStream,deviceType,info,quality))
 		{
 			m_AudioStream.close();
 			return XFalse;
 		}
+		break;
 	}
 	m_withDevice = XTrue;
 	return XTrue;

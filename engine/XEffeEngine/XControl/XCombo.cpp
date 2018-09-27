@@ -63,16 +63,16 @@ void XCombo::funCtrlProc(void*pClass,int id,int eventID)
 }
 
 XComboSkin::XComboSkin()
-:m_isInited(XFalse)
-,comboInputNormal(NULL)				//下拉菜单输入框的普通状态
-,comboInputDisable(NULL)			//无效状态下的按钮贴图
+	:m_isInited(XFalse)
+	, comboInputNormal(NULL)				//下拉菜单输入框的普通状态
+	, comboInputDisable(NULL)			//无效状态下的按钮贴图
 {}
 XBool XComboSkin::init(const char *inputNormal,const char *inputDisable,
 		 const char *downButtonNormal,const char *downButtonOn,const char *downButtonDown,const char *downButtonDisable,
 		 const char *downMenuUpNormal,const char *downMenuUpOn,const char *downMenuUpDown,const char *downMenuUpDisable,
 		 const char *downMenuNormal,const char *downMenuOn,const char *downMenuDown,const char *downMenuDisable,
 		 const char *downMenuDownNormal,const char *downMenuDownOn,const char *downMenuDownDown,const char *downMenuDownDisable,
-		 XResourcePosition resoursePosition)
+		 XResPos resPos)
 {
 	if(m_isInited) return XFalse;	//防止重复初始化
 	if(inputNormal == NULL || inputDisable == NULL ||
@@ -85,26 +85,26 @@ XBool XComboSkin::init(const char *inputNormal,const char *inputDisable,
 	}
 	int ret = 1;
 	//下面依次载入所有的贴图资源
-	if((comboInputNormal = createATextureData(inputNormal,resoursePosition)) == NULL) ret = 0;
+	if((comboInputNormal = createATextureData(inputNormal,resPos)) == NULL) ret = 0;
 	if(ret != 0 &&
-		(comboInputDisable = createATextureData(inputDisable,resoursePosition)) == NULL) ret = 0;
+		(comboInputDisable = createATextureData(inputDisable,resPos)) == NULL) ret = 0;
 	if(ret != 0 && 
-		!downButtonTex.init(downButtonNormal,downButtonDown,downButtonOn,downButtonDisable,resoursePosition))
+		!downButtonTex.init(downButtonNormal,downButtonDown,downButtonOn,downButtonDisable,resPos))
 	{
 		ret = 0;
 	}
 	if(ret != 0 && 
-		!downMenuUpButtonTex.init(downMenuUpNormal,downMenuUpDown,downMenuUpOn,downMenuUpDisable,resoursePosition))
+		!downMenuUpButtonTex.init(downMenuUpNormal,downMenuUpDown,downMenuUpOn,downMenuUpDisable,resPos))
 	{
 		ret = 0;
 	}
 	if(ret != 0 && 
-		!downMenuButtonTex.init(downMenuNormal,downMenuDown,downMenuOn,downMenuDisable,resoursePosition))
+		!downMenuButtonTex.init(downMenuNormal,downMenuDown,downMenuOn,downMenuDisable,resPos))
 	{
 		ret = 0;
 	}
 	if(ret != 0 && 
-		!downMenuDownButtonTex.init(downMenuDownNormal,downMenuDownDown,downMenuDownOn,downMenuDownDisable,resoursePosition))
+		!downMenuDownButtonTex.init(downMenuDownNormal,downMenuDownDown,downMenuDownOn,downMenuDownDisable,resPos))
 	{
 		ret = 0;
 	}
@@ -118,10 +118,10 @@ XBool XComboSkin::init(const char *inputNormal,const char *inputDisable,
 	return XTrue;
 }
 #define COMBO_CONFIG_FILENAME "Combo.txt"
-bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	//从文件夹中载入资源
+bool XComboSkin::loadFromFolder(const char *filename,XResPos resPos)	//从文件夹中载入资源
 {
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,COMBO_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,COMBO_CONFIG_FILENAME);
 	FILE *fp = NULL;
 	if((fp = fopen(tempFilename,"r")) == NULL) return XFalse; //信息文件读取失败
 	//下面开始依次读取数据
@@ -135,7 +135,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((comboInputNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		fclose(fp);
@@ -150,7 +150,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((comboInputDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -166,7 +166,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -182,7 +182,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuUpButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -198,7 +198,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -214,7 +214,7 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 		return XFalse;
 	}
 	if(fscanf(fp,"%s",resFilename) != 1) {fclose(fp);return XFalse;}
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuDownButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -229,10 +229,10 @@ bool XComboSkin::loadFromFolder(const char *filename,XResourcePosition resPos)	/
 	fclose(fp);
 	return true;
 }
-bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	//从压缩包中载入资源
+bool XComboSkin::loadFromPacker(const char *filename,XResPos resPos)	//从压缩包中载入资源
 {
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,COMBO_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,COMBO_CONFIG_FILENAME);
 	unsigned char *p = XResPack.getFileData(tempFilename);
 	if(p == NULL) return XFalse;
 	//下面开始依次读取数据
@@ -249,7 +249,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((comboInputNormal = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		XMem::XDELETE_ARRAY(p);
@@ -266,7 +266,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if((comboInputDisable = createATextureData(tempFilename,resPos)) == NULL)
 	{//资源读取失败
 		releaseTex();
@@ -284,7 +284,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -302,7 +302,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuUpButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -320,7 +320,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -338,7 +338,7 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	}
 	if(sscanf((char *)(p + offset),"%s",resFilename) != 1) {XMem::XDELETE_ARRAY(p);return XFalse;}
 	offset += XString::getCharPosition((char *)(p + offset),'\n') + 1;
-	sprintf(tempFilename,"%s/%s",filename,resFilename);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,resFilename);
 	if(!downMenuDownButtonTex.initEx(tempFilename,resPos))
 	{//资源读取失败
 		releaseTex();
@@ -354,31 +354,31 @@ bool XComboSkin::loadFromPacker(const char *filename,XResourcePosition resPos)	/
 	XMem::XDELETE_ARRAY(p);
 	return true;
 }
-bool XComboSkin::loadFromWeb(const char *filename,XResourcePosition resPos)		//从网页中读取资源
+bool XComboSkin::loadFromWeb(const char *filename,XResPos resPos)		//从网页中读取资源
 {
 	return false;
 }
-XBool XComboSkin::initEx(const char *filename,XResourcePosition resoursePosition)
+XBool XComboSkin::initEx(const char *filename,XResPos resPos)
 {
 	if(m_isInited || filename == NULL) return XFalse;
 	char tempFilename[MAX_FILE_NAME_LENGTH];
-	sprintf(tempFilename,"%s/%s",filename,COMBO_CONFIG_FILENAME);
+	sprintf_s(tempFilename,MAX_FILE_NAME_LENGTH,"%s/%s",filename,COMBO_CONFIG_FILENAME);
 	//先打开配置文件
-	if(resoursePosition == RESOURCE_SYSTEM_DEFINE) resoursePosition = getDefResPos();
-	switch(resoursePosition)
+	if(resPos == RES_SYS_DEF) resPos = getDefResPos();
+	switch(resPos)
 	{
-	case RESOURCE_LOCAL_PACK:
-		if(!loadFromPacker(filename,resoursePosition)) return false;
+	case RES_LOCAL_PACK:
+		if(!loadFromPacker(filename,resPos)) return false;
 		break;
-	case RESOURCE_LOCAL_FOLDER:
-		if(!loadFromFolder(filename,resoursePosition)) return false;
+	case RES_LOCAL_FOLDER:
+		if(!loadFromFolder(filename,resPos)) return false;
 		break;
-	case RESOURCE_WEB:
-		if(!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_WEB:
+		if(!loadFromWeb(filename,resPos)) return false;
 		break;
-	case RESOURCE_AUTO:
-		if(!loadFromPacker(filename,resoursePosition) && !loadFromFolder(filename,resoursePosition) &&
-			!loadFromWeb(filename,resoursePosition)) return false;
+	case RES_AUTO:
+		if(!loadFromPacker(filename,resPos) && !loadFromFolder(filename,resPos) &&
+			!loadFromWeb(filename,resPos)) return false;
 		break;
 	}
 	m_isInited = XTrue;
@@ -386,13 +386,13 @@ XBool XComboSkin::initEx(const char *filename,XResourcePosition resoursePosition
 }
 XCombo::XCombo()
 	:m_isInited(XFalse)
-	,m_comboInputNormal(NULL)			//下拉菜单输入框的普通状态
-	,m_comboInputDisable(NULL)			//无效状态下的按钮贴图
-	,m_menuData("")
-	,m_buttom(NULL)
-	,m_resInfo(NULL)
-	,m_withoutTex(XFalse)
-	,m_curStyle(CMB_STYLE_DOWN)
+	, m_comboInputNormal(NULL)			//下拉菜单输入框的普通状态
+	, m_comboInputDisable(NULL)			//无效状态下的按钮贴图
+	, m_menuData("")
+	, m_buttom(NULL)
+	, m_resInfo(NULL)
+	, m_withoutTex(XFalse)
+	, m_curStyle(CMB_STYLE_DOWN)
 {
 	m_ctrlType = CTRL_OBJ_COMBO;
 }
@@ -413,7 +413,7 @@ void XCombo::release()
 	m_isInited = XFalse;
 }
 XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
-		const XVector2& position,		//控件的位置
+		const XVec2& position,		//控件的位置
 		const XRect& inputArea,		//输入框的有效范围
 		const XRect& downButtonArea,	//下拉按钮的响应范围
 		const XRect& downMenuUpArea,	//上翻页的响应范围
@@ -421,7 +421,7 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 		const XRect& downMenuDownArea,	//下翻页的响应范围
 		int menuSum,					//下拉菜单中的选项的数量
 		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
-		const XFontUnicode &font,		//显示文字使用的字体
+		const XFontUnicode& font,		//显示文字使用的字体
 		float fontSize)				//字体的大小
 {
 	if(m_isInited ||				//防止重复初始化
@@ -437,7 +437,7 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 	m_comboInputDisable = tex.comboInputDisable;				//无效状态下的按钮贴图
 
 	//拷贝数值
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	m_menuSum = menuSum;
 	m_menuDrawSum = drawMenuSum;
 	m_menuStartDrawOrder = 0;
@@ -455,12 +455,13 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 	m_caption.setString("");
-	m_caption.setPosition(m_position.x + (m_inputArea.left + m_comboLeftDistance) * m_scale.x,m_position.y + (m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale.y);
-	m_textSize.set(fontSize,fontSize);
-	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_caption.setPosition(m_position + XVec2(m_inputArea.left + m_comboLeftDistance,
+		m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale);
+	m_textSize.set(fontSize);
+	m_caption.setScale(m_textSize * m_scale);
 
 	//建立按钮
 	m_buttom = XMem::createArrayMem<XButton>(m_menuDrawSum + 3);
@@ -468,24 +469,24 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 	//下面初始化所有按钮
 	//XButtonTexture tempButtonTex;
 	//tempButtonTex.set(m_comboDownButtonNormal,m_comboDownButtonDown,m_comboDownButtonOn,m_comboDownButtonDisable);
-	if(!m_buttom[0].init(XVector2(m_position.x + (m_inputArea.right - m_downButtonArea.left) * m_scale.x,m_position.y),
-		m_downButtonArea,tex.downButtonTex,"",font,m_textSize.x,XVector2::zero)) return XFalse;		//下拉菜单左边的下拉菜单的按钮
+	if(!m_buttom[0].init(m_position + XVec2((m_inputArea.right - m_downButtonArea.left) * m_scale.x,0.0f),
+		m_downButtonArea,tex.downButtonTex,"",font,m_textSize.x,XVec2::zero)) return XFalse;		//下拉菜单左边的下拉菜单的按钮
 	m_buttom[0].setScale(m_scale);
 	m_buttom[0].setEventProc(funCtrlProc,this);
 	//tempButtonTex.set(m_comboDownMenuUpNormal,m_comboDownMenuUpDown,m_comboDownMenuUpOn,m_comboDownMenuUpDisable);
-	if(!m_buttom[1].init(XVector2::zero,m_downMenuUpArea,tex.downMenuUpButtonTex,"",font,m_textSize.x,XVector2::zero)) return XFalse;		//下拉菜单，菜单上面的按钮
+	if(!m_buttom[1].init(XVec2::zero,m_downMenuUpArea,tex.downMenuUpButtonTex,"",font,m_textSize.x,XVec2::zero)) return XFalse;		//下拉菜单，菜单上面的按钮
 	m_buttom[1].setScale(m_scale);
 	m_buttom[1].setEventProc(funCtrlProc,this);
 	//tempButtonTex.set(m_comboDownMenuDownNormal,m_comboDownMenuDownDown,m_comboDownMenuDownOn,m_comboDownMenuDownDisable);
-	if(!m_buttom[2].init(XVector2::zero,m_downMenuDownArea,tex.downMenuDownButtonTex,"",font,m_textSize.x,XVector2::zero)) return XFalse;		//下拉菜单，菜单下面面的按钮
+	if(!m_buttom[2].init(XVec2::zero,m_downMenuDownArea,tex.downMenuDownButtonTex,"",font,m_textSize.x,XVec2::zero)) return XFalse;		//下拉菜单，菜单下面面的按钮
 	m_buttom[2].setScale(m_scale);
 	m_buttom[2].setEventProc(funCtrlProc,this);
 
 	//tempButtonTex.set(m_comboDownMenuNormal,m_comboDownMenuDown,m_comboDownMenuOn,m_comboDownMenuDisable);
 	for(int i = 0;i < m_menuDrawSum;++ i)
 	{
-		if(!m_buttom[3 + i].init(XVector2::zero,m_downMenuArea,tex.downMenuButtonTex,"",font,m_textSize.x,
-			XVector2(m_downMenuArea.left + m_downMenuArea.getWidth() * 0.5f,m_downMenuArea.top + m_downMenuArea.getHeight() * 0.5f))) return XFalse;		//下拉菜单，菜单下面面的按钮
+		if(!m_buttom[3 + i].init(XVec2::zero,m_downMenuArea,tex.downMenuButtonTex,"",font,m_textSize.x,
+			m_downMenuArea.getCenter())) return XFalse;		//下拉菜单，菜单下面面的按钮
 		m_buttom[3 + i].setScale(m_scale);
 		m_buttom[3 + i].setEventProc(funCtrlProc,this);
 	}
@@ -521,20 +522,13 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 	char tempMenu[32] = "MenuXXXX\n";
 	for(int i = 0;i < m_menuSum;++ i)
 	{//初始化所有的菜单项的内容为空格
-	//	tempMenu[4] = (i /1000) % 10 + '0';
-	//	tempMenu[5] = (i /100) % 10 + '0';
-	//	tempMenu[6] = (i /10) % 10 + '0';
-	//	tempMenu[7] = i % 10 + '0';
-	//	strcat(m_menuData,tempMenu);
-		sprintf(tempMenu,"Menu%04d\n",i);
+		sprintf_s(tempMenu,32,"Menu%04d\n",i);
 		m_menuData = m_menuData + tempMenu;
 	}
 	m_isDrawDownMenu = XFalse;
 	m_curChooseOrder = 0;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -547,7 +541,7 @@ XBool XCombo::init(const XComboSkin &tex,	//控件的贴图
 }
 void XCombo::updateMenuBtnPosition()
 {
-	XVector2 tempPosition;
+	XVec2 tempPosition;
 	switch (m_curStyle)
 	{
 	case CMB_STYLE_DOWN:
@@ -561,10 +555,9 @@ void XCombo::updateMenuBtnPosition()
 				+ m_downMenuArea.getHeight() * i - m_downMenuArea.top) * m_scale.y);
 			m_buttom[3 + i].setPosition(tempPosition);
 		}
-		m_allArea.set(m_position.x + m_inputArea.left * m_scale.x,m_position.y + m_inputArea.top * m_scale.y,
-			m_position.x + m_downMenuArea.right * m_scale.x,
-			m_position.y + (m_inputArea.top + m_inputArea.getHeight() + m_downMenuUpArea.getHeight() 
-			+ m_downMenuArea.getHeight() * m_menuDrawSum + m_downMenuDownArea.getHeight()) * m_scale.y);
+		m_allArea.set(m_position + m_inputArea.getLT() * m_scale,
+			m_position + XVec2(m_downMenuArea.right, m_inputArea.top + m_inputArea.getHeight() + m_downMenuUpArea.getHeight()
+				+ m_downMenuArea.getHeight() * m_menuDrawSum + m_downMenuDownArea.getHeight()) * m_scale);
 		break;
 	case CMB_STYLE_UP:
 		tempPosition.set(m_position.x,m_position.y + (m_inputArea.top - m_downMenuDownArea.getHeight() 
@@ -601,10 +594,9 @@ void XCombo::setInputLen(int len)
 	switch (m_curStyle)
 	{
 	case CMB_STYLE_DOWN:
-		m_allArea.set(m_position.x + m_inputArea.left * m_scale.x,m_position.y + m_inputArea.top * m_scale.y,
-			m_position.x + m_downMenuArea.right * m_scale.x,
-			m_position.y + (m_inputArea.top + m_inputArea.getHeight() + m_downMenuUpArea.getHeight() 
-			+ m_downMenuArea.getHeight() * m_menuDrawSum + m_downMenuDownArea.getHeight()) * m_scale.y);
+		m_allArea.set(m_position + m_inputArea.getLT() * m_scale,
+			m_position + XVec2(m_downMenuArea.right, m_inputArea.top + m_inputArea.getHeight() + m_downMenuUpArea.getHeight()
+				+ m_downMenuArea.getHeight() * m_menuDrawSum + m_downMenuDownArea.getHeight()) * m_scale);
 		break;
 	case CMB_STYLE_UP:
 		m_allArea.set(m_position.x + m_inputArea.left * m_scale.x,
@@ -630,7 +622,7 @@ void XCombo::setInputLen(int len)
 XBool XCombo::initWithoutSkin(int inputLen,
 		int menuSum,					//下拉菜单中的选项的数量
 		int drawMenuSum,				//下拉菜单中显示的菜单项的数量
-		const XFontUnicode &font,		//显示文字使用的字体
+		const XFontUnicode& font,		//显示文字使用的字体
 		float fontSize)
 {
 	if(m_isInited ||				//防止重复初始化
@@ -638,14 +630,14 @@ XBool XCombo::initWithoutSkin(int inputLen,
 		menuSum <= 0 ||					//菜单中不能没有菜单项
 		drawMenuSum <= 0 || drawMenuSum > menuSum ||
 		fontSize <= 0) return XFalse;
-	m_position.set(0.0f,0.0f);
+	m_position.reset();
 	//拷贝数值
-	m_scale.set(1.0f,1.0f);
+	m_scale.set(1.0f);
 	m_menuSum = menuSum;
 	m_menuDrawSum = drawMenuSum;
 	m_menuStartDrawOrder = 0;
 	m_inputArea.set(0.0f,0.0f,inputLen,DEFAULT_COMBO_BT_SIZE);
-	m_downButtonArea.set(0.0f,0.0f,DEFAULT_COMBO_BT_SIZE,DEFAULT_COMBO_BT_SIZE);
+	m_downButtonArea.set(0.0f,DEFAULT_COMBO_BT_SIZE);
 
 	m_downMenuUpArea.set(0.0f,0.0f,inputLen + DEFAULT_COMBO_BT_SIZE,DEFAULT_COMBO_UD_HEIGHT);
 	m_downMenuArea.set(0.0f,0.0f,inputLen + DEFAULT_COMBO_BT_SIZE,DEFAULT_COMBO_MN_HEIGHT);
@@ -660,12 +652,13 @@ XBool XCombo::initWithoutSkin(int inputLen,
 #endif
 	m_caption.setAlignmentModeX(FONT_ALIGNMENT_MODE_X_LEFT); //设置字体左对齐
 	m_caption.setAlignmentModeY(FONT_ALIGNMENT_MODE_Y_MIDDLE); //设置字体居中对齐
-	m_textColor.setColor(0.0f,0.0f,0.0f,1.0f);
+	m_textColor.set(0.0f,1.0f);
 	m_caption.setColor(m_textColor);							//设置字体的颜色为黑色
 	m_caption.setString("");
-	m_caption.setPosition(m_position.x + (m_inputArea.left + m_comboLeftDistance) * m_scale.x,m_position.y + (m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale.y);
-	m_textSize.set(fontSize,fontSize);
-	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_caption.setPosition(m_position + XVec2(m_inputArea.left + m_comboLeftDistance,
+		m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale);
+	m_textSize.set(fontSize);
+	m_caption.setScale(m_textSize * m_scale);
 	//建立按钮
 	m_buttom = XMem::createArrayMem<XButton>(m_menuDrawSum + 3);
 	if(m_buttom == NULL) return XFalse;
@@ -687,7 +680,7 @@ XBool XCombo::initWithoutSkin(int inputLen,
 	for(int i = 0;i < m_menuDrawSum;++ i)
 	{
 		if(!m_buttom[3 + i].initWithoutSkin("",font,m_textSize.x,m_downMenuArea,
-			XVector2(m_downMenuArea.left + m_downMenuArea.getWidth() * 0.5f,m_downMenuArea.top + m_downMenuArea.getHeight() * 0.5f))) return XFalse;		//下拉菜单，菜单下面面的按钮
+			m_downMenuArea.getLT() + m_downMenuArea.getSize() * 0.5f)) return XFalse;		//下拉菜单，菜单下面面的按钮
 		m_buttom[3 + i].setScale(m_scale);
 		m_buttom[3 + i].setEventProc(funCtrlProc,this);
 	}
@@ -716,20 +709,13 @@ XBool XCombo::initWithoutSkin(int inputLen,
 	char tempMenu[32] = "MenuXXXX\n";
 	for(int i = 0;i < m_menuSum;++ i)
 	{//初始化所有的菜单项的内容为空格
-	//	tempMenu[4] = (i /1000) % 10 + '0';
-	//	tempMenu[5] = (i /100) % 10 + '0';
-	//	tempMenu[6] = (i /10) % 10 + '0';
-	//	tempMenu[7] = i % 10 + '0';
-	//	strcat(m_menuData,tempMenu);
-		sprintf(tempMenu,"Menu%04d\n",i);
+		sprintf_s(tempMenu,32,"Menu%04d\n",i);
 		m_menuData = m_menuData + tempMenu;
 	}
 	m_isDrawDownMenu = XFalse;
 	m_curChooseOrder = 0;
 
-	m_isVisible = XTrue;
-	m_isEnable = XTrue;
-	m_isActive = XTrue;
+	m_isVisible = m_isEnable = m_isActive = XTrue;
 
 	XCtrlManager.addACtrl(this);	//在物件管理器中注册当前物件
 #if WITH_OBJECT_MANAGER
@@ -768,13 +754,10 @@ bool XCombo::resetMenuSum(int menuSum,int showMenuSum)
 	for(int i = 0;i < m_menuDrawSum;++ i)
 	{
 		if(!m_buttom[3 + i].initWithoutSkin("",m_caption,m_textSize.x,m_downMenuArea,
-			XVector2(m_downMenuArea.left + m_downMenuArea.getWidth() * 0.5f,m_downMenuArea.top + m_downMenuArea.getHeight() * 0.5f))) return XFalse;		//下拉菜单，菜单下面面的按钮
+			m_downMenuArea.getLT() + m_downMenuArea.getSize() * 0.5f)) return XFalse;		//下拉菜单，菜单下面面的按钮
 		m_buttom[3 + i].setScale(m_scale);
 		m_buttom[3 + i].setEventProc(funCtrlProc,this);
 	}
-
-	updateMenuBtnPosition();
-
 	//从控件管理器中注销这些按钮
 	for(int i = 0;i < m_menuDrawSum + 3;++ i)
 	{
@@ -783,6 +766,9 @@ bool XCombo::resetMenuSum(int menuSum,int showMenuSum)
 		XObjManager.decreaseAObject(&m_buttom[i]);
 #endif
 	}
+
+	updateMenuBtnPosition();
+
 
 	if(m_curChooseOrder >= m_menuSum) m_curChooseOrder = 0;
 	int sum = 0;
@@ -817,14 +803,12 @@ void XCombo::draw()
 	{
 		if(m_isEnable)
 		{
-			XRender::drawFillBoxExA(m_position + XVector2(m_inputArea.left * m_scale.x,m_inputArea.top * m_scale.y),
-					XVector2(m_inputArea.getWidth() * m_scale.x,
-					m_inputArea.getHeight() * m_scale.y),XCCS::blackOnColor * m_color,true); 
+			XRender::drawFillRectExA(m_position + m_inputArea.getLT() * m_scale,
+				m_inputArea.getSize() * m_scale, XCCS::blackOnColor * m_color, true);
 		}else
 		{
-			XRender::drawFillBoxExA(m_position + XVector2(m_inputArea.left * m_scale.x,m_inputArea.top * m_scale.y),
-					XVector2(m_inputArea.getWidth() * m_scale.x,
-					m_inputArea.getHeight() * m_scale.y),XCCS::specialColor * m_color,true); 
+			XRender::drawFillRectExA(m_position + m_inputArea.getLT() * m_scale,
+				m_inputArea.getSize() * m_scale, XCCS::specialColor * m_color, true);
 		}
 	}else
 	{
@@ -852,21 +836,22 @@ void XCombo::drawUp()
 	}
 	m_comment.draw();
 }
-XBool XCombo::mouseProc(float x,float y,XMouseState mouseState)
+XBool XCombo::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	if(!m_isInited ||	//如果没有初始化直接退出
 		!m_isActive ||		//没有激活的控件不接收控制
 		!m_isVisible ||	//如果不可见直接退出
 		!m_isEnable) return XFalse;		//如果无效则直接退出
 	//if(m_withAction && m_isInAction) return XFalse;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
-	if(isInRect(x,y))
+	if(m_isSilent) return XFalse;
+	if(isInRect(p))
 	{
 		if(!m_isMouseInRect)
 		{
 			m_isMouseInRect = XTrue;
 			m_comment.setShow();
-			setCommentPos(x,y + 16.0f);
 		}
+		m_comment.updatePosition(p + XVec2(0.0f, 16.0f));
 		if(mouseState != MOUSE_MOVE && m_comment.getIsShow())
 			m_comment.disShow();	//鼠标的任意操作都会让说明框消失
 	}else
@@ -882,7 +867,7 @@ XBool XCombo::mouseProc(float x,float y,XMouseState mouseState)
 	case MOUSE_LEFT_BUTTON_DOWN:
 	case MOUSE_LEFT_BUTTON_DCLICK:
 		//m_mouseButtonDownIsUseable = 0;
-		if(m_allArea.isInRect(x,y)) 
+		if(m_allArea.isInRect(p)) 
 		{
 			if(m_isDrawDownMenu)
 				m_isBeChoose = XTrue;	//控件处于焦点状态
@@ -893,17 +878,15 @@ XBool XCombo::mouseProc(float x,float y,XMouseState mouseState)
 		if(m_isDrawDownMenu)
 			m_isBeChoose = XTrue;	//控件处于焦点状态
 
-		if(XRect(m_position.x + m_inputArea.left * m_scale.x,
-			m_position.y + m_inputArea.top * m_scale.y,
-			m_position.x + m_inputArea.right * m_scale.x,
-			m_position.y + m_inputArea.bottom * m_scale.y).isInRect(x,y))
+		if(XRect(m_position + m_inputArea.getLT() * m_scale,
+			m_position + m_inputArea.getRB() * m_scale).isInRect(p))
 		{
 			m_isBeChoose = XTrue;
 			changeDownMenuState();
 		}
 		break;
 	case MOUSE_WHEEL_UP_DOWN:
-		if(isInRect(x,y))
+		if(isInRect(p))
 		{
 			if(!m_isDrawDownMenu)
 			{
@@ -921,7 +904,7 @@ XBool XCombo::mouseProc(float x,float y,XMouseState mouseState)
 		}
 		break;
 	case MOUSE_WHEEL_DOWN_DOWN:
-		if(isInRect(x,y))
+		if(isInRect(p))
 		{
 			if(!m_isDrawDownMenu)
 			{
@@ -939,12 +922,12 @@ XBool XCombo::mouseProc(float x,float y,XMouseState mouseState)
 		}
 		break;
 	}
-	m_buttom[0].mouseProc(x,y,mouseState);	//下拉按钮对鼠标事件进行响应
+	m_buttom[0].mouseProc(p,mouseState);	//下拉按钮对鼠标事件进行响应
 	if(m_isDrawDownMenu)
 	{
 		for(int i = 1;i < m_menuDrawSum + 3;++ i)
 		{
-			m_buttom[i].mouseProc(x,y,mouseState);
+			m_buttom[i].mouseProc(p,mouseState);
 		}
 	}
 //	if(mouseState == MOUSE_STATE_DOWN && m_mouseButtonDownIsUseable == 0)
@@ -961,6 +944,7 @@ XBool XCombo::keyboardProc(int keyOrder,XKeyState keyState)
 		!m_isEnable ||
 		!m_isBeChoose) return XFalse;		//如果无效则直接退出
 	if(m_withAction && m_isInAction) return XFalse;	//如果支持动作播放而且正在播放动画那么不接受鼠标控制
+	if(m_isSilent) return XFalse;
 	if(keyState == KEY_STATE_UP)
 	{
 		switch(keyOrder)
@@ -1015,8 +999,6 @@ XBool XCombo::setMenuStr(const char *str,int order)
 	//	str == NULL ||
 	//	strlen(str) >= m_comboMaxMenuLength) return XFalse;
 	std::string tmp1 = str;
-	//char temp1[m_comboMaxMenuLength];
-	//strcpy(temp1,str);
 	//这里检查字符串是否符合要求
 	//for(int i = 0;i < m_comboMaxMenuLength;++ i)
 	for(unsigned int i = 0;i < tmp1.size();++ i)
@@ -1040,14 +1022,11 @@ XBool XCombo::setMenuStr(const char *str,int order)
 			if(m_menuData[i] == '\n')
 			{
 				m_menuData = m_menuData.substr(i,(int)(m_menuData.size()) - i);
-				//strcpy(temp,m_menuData + i);
 				break;
 			}
 		}
 		if(m_menuData[0] != '\n') m_menuData = "";	//字符串以\0结束
 	//	if(len + addLen - i>= m_comboMaxMenuLength) return XFalse;
-	//	strcpy(m_menuData,temp1);
-	//	strcat(m_menuData,temp);
 		m_menuData = tmp1.c_str() + m_menuData;
 		updateString();
 	}else
@@ -1078,10 +1057,6 @@ XBool XCombo::setMenuStr(const char *str,int order)
 			tmp = "\n";
 		}
 		m_menuData = m_menuData.substr(0,start + 1) + tmp1 + tmp;
-	//	strcpy(temp,m_menuData + end);
-		//m_menuData[start + 1] = '\0';
-	//	strcat(m_menuData,temp1);
-	//	strcat(m_menuData,temp);
 		updateString();
 	}
 	return XTrue;
@@ -1134,26 +1109,31 @@ void XCombo::updateString()
 		}
 	}
 }
-void XCombo::setScale(float x,float y)			//设置控件的尺寸
+void XCombo::setScale(const XVec2&s)			//设置控件的尺寸
 {
-	if(x <= 0 || y <= 0 ||	//尺寸的值必须合理
+	if(s.x <= 0 || s.y <= 0 ||	//尺寸的值必须合理
 		!m_isInited) return;				//如果没有初始化，则直接返回	
-	m_scale.set(x,y);
-	m_caption.setPosition(m_position.x + (m_inputArea.left + m_comboLeftDistance) * m_scale.x,m_position.y + (m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale.y);
-	m_caption.setScale(m_textSize.x * m_scale.x,m_textSize.y * m_scale.y);
+	m_scale = s;
+	m_caption.setPosition(m_position + XVec2(m_inputArea.left + m_comboLeftDistance,
+		m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale);
+	m_caption.setScale(m_textSize * m_scale);
 	m_buttom[0].setPosition(m_position.x + (m_inputArea.right - m_downButtonArea.left) * m_scale.x,m_position.y);
 	m_buttom[0].setScale(m_scale);
 	m_buttom[1].setScale(m_scale);
 	m_buttom[2].setScale(m_scale);
-
+	for(int i = 0;i < m_menuDrawSum;++ i)
+	{
+		m_buttom[3 + i].setScale(m_scale);
+	}
 	updateMenuBtnPosition();
 	if(!m_withoutTex) m_sprite.setScale(m_scale);
 }
-void XCombo::setPosition(float x,float y)	//设置空间的位置
+void XCombo::setPosition(const XVec2&p)	//设置空间的位置
 {
 	if(!m_isInited) return;				//如果没有初始化，则直接返回
-	m_position.set(x,y);
-	m_caption.setPosition(m_position.x + (m_inputArea.left + m_comboLeftDistance) * m_scale.x,m_position.y + (m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale.y);
+	m_position = p;
+	m_caption.setPosition(m_position.x + (m_inputArea.left + m_comboLeftDistance) * m_scale.x,
+		m_position.y + (m_inputArea.top + m_inputArea.getHeight() * 0.5f + m_comboTopDistance) * m_scale.y);
 	m_buttom[0].setPosition(m_position.x + (m_inputArea.right - m_downButtonArea.left) * m_scale.x,m_position.y);
 
 	updateMenuBtnPosition();
@@ -1201,9 +1181,6 @@ XBool XCombo::setACopy(const XCombo &temp)
 	m_textSize = temp.m_textSize;			//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 	m_textColor = temp.m_textColor;			//文字显示的尺寸，这个尺寸会与空间的缩放尺寸叠加
 
-	//m_menuData = XMem::createArrayMem<char>(m_comboMaxMenuLength);
-	//if(m_menuData == NULL) return XFalse;		//内存分配失败 	
-	//strcpy(m_menuData,temp.m_menuData);
 	m_menuData = temp.m_menuData;
 
 	m_buttom = XMem::createArrayMem<XButton>(m_menuDrawSum + 3);
@@ -1236,17 +1213,17 @@ XBool XCombo::setACopy(const XCombo &temp)
 	m_actionMoveData = temp.m_actionMoveData;
 	return XTrue;
 }
-XVector2 XCombo::getBox(int order)
+XVec2 XCombo::getBox(int order)
 {
-	if(!m_isInited) return XVector2::zero;
+	if(!m_isInited) return XVec2::zero;
 	if(m_isDrawDownMenu)
 	{//是否显示下拉菜单
 		switch(order)
 		{
-		case 0: return XVector2(m_allArea.left,m_allArea.top);
-		case 1: return XVector2(m_allArea.right,m_allArea.top);
-		case 2: return XVector2(m_allArea.right,m_allArea.bottom);
-		case 3: return XVector2(m_allArea.left,m_allArea.bottom);
+		case 0: return m_allArea.getLT();
+		case 1: return m_allArea.getRT();
+		case 2: return m_allArea.getRB();
+		case 3: return m_allArea.getLB();
 		}
 	}else
 	{//
@@ -1255,24 +1232,24 @@ XVector2 XCombo::getBox(int order)
 		case CMB_STYLE_DOWN:
 			switch(order)
 			{
-			case 0: return XVector2(m_allArea.left,m_allArea.top);
-			case 1: return XVector2(m_allArea.right,m_allArea.top);
-			case 2: return XVector2(m_allArea.right,m_position.y + m_inputArea.bottom * m_scale.y);
-			case 3: return XVector2(m_allArea.left,m_position.y + m_inputArea.bottom * m_scale.y);
+			case 0: return m_allArea.getLT();
+			case 1: return m_allArea.getRT();
+			case 2: return XVec2(m_allArea.right,m_position.y + m_inputArea.bottom * m_scale.y);
+			case 3: return XVec2(m_allArea.left,m_position.y + m_inputArea.bottom * m_scale.y);
 			}
 			break;
 		case CMB_STYLE_UP:
 			switch(order)
 			{
-			case 0: return XVector2(m_allArea.left,m_position.y + m_inputArea.top * m_scale.y);
-			case 1: return XVector2(m_allArea.right,m_position.y + m_inputArea.top * m_scale.y);
-			case 2: return XVector2(m_allArea.right,m_allArea.bottom);
-			case 3: return XVector2(m_allArea.left,m_allArea.bottom);
+			case 0: return XVec2(m_allArea.left,m_position.y + m_inputArea.top * m_scale.y);
+			case 1: return XVec2(m_allArea.right,m_position.y + m_inputArea.top * m_scale.y);
+			case 2: return m_allArea.getRB();
+			case 3: return m_allArea.getLB();
 			}
 			break;
 		}
 	}
-	return XVector2::zero;
+	return XVec2::zero;
 }
 void XCombo::changeDownMenuState()
 {
@@ -1351,7 +1328,7 @@ std::string XCombo::getMenuStr() const
 }
 std::string XCombo::getMenuStr(int order)
 {
-	if(order < 0 || order >= m_menuSum) return "";
+	if(order < 0 || order >= m_menuSum) return XString::gNullStr;
 	//char tmp[m_comboMaxMenuLength];
 	//memcpy(tmp,m_menuData,m_comboMaxMenuLength);
 	std::string tmp = m_menuData;
@@ -1380,10 +1357,11 @@ std::string XCombo::getMenuStr(int order)
 			if(index == order) s = i + 1;
 		}
 	}
-	return "";
+	return XString::gNullStr;
 }
 void XCombo::update(float stepTime)
 {
+	if (!m_isInited) return;
 	m_comment.update(stepTime);
 	for(int i = 0;i < m_menuDrawSum + 3;++ i)
 	{
@@ -1409,8 +1387,8 @@ void XCombo::update(float stepTime)
 				}
 			}
 		}
-		m_buttom[1].setAlpha(action * m_color.fA);
-		m_buttom[2].setAlpha(action * m_color.fA);
+		m_buttom[1].setAlpha(action * m_color.a);
+		m_buttom[2].setAlpha(action * m_color.a);
 
 		switch (m_curStyle)
 		{
@@ -1420,7 +1398,7 @@ void XCombo::update(float stepTime)
 				+ m_downMenuArea.getHeight() * m_menuDrawSum * action - m_downMenuDownArea.top) * m_scale.y);
 			for(int i = 0;i < m_menuDrawSum;++ i)
 			{
-				m_buttom[3 + i].setAlpha(action * m_color.fA);
+				m_buttom[3 + i].setAlpha(action * m_color.a);
 				m_buttom[3 + i].setPosition(m_position.x,m_position.y + (m_inputArea.bottom + m_downMenuUpArea.getHeight() 
 					+ m_downMenuArea.getHeight() * i * action - m_downMenuArea.top) * m_scale.y);
 			}
@@ -1432,7 +1410,7 @@ void XCombo::update(float stepTime)
 			//	+ m_downMenuArea.getHeight() * m_menuDrawSum * action - m_downMenuDownArea.top) * m_scale.y);
 			for(int i = 0;i < m_menuDrawSum;++ i)
 			{
-				m_buttom[3 + i].setAlpha(action * m_color.fA);
+				m_buttom[3 + i].setAlpha(action * m_color.a);
 				m_buttom[3 + i].setPosition(m_position.x,m_position.y + (m_inputArea.top - m_downMenuDownArea.getHeight() 
 					- m_downMenuArea.getHeight() * (i + 1) * action  - m_downMenuArea.top) * m_scale.y);
 			}

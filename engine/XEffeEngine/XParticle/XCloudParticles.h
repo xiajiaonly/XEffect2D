@@ -25,7 +25,7 @@ private:
 	float m_curSize;			//流云产生的当前范围	(变化需要连贯性)
 	float m_density;			//当前流云产生的密度	(变化需要连贯性)
 	XRect m_liveArea;			//流云粒子生存的空间
-	XVector2 m_speed;			//流云移动的速度	(变化范围不能太大)
+	XVec2 m_speed;			//流云移动的速度	(变化范围不能太大)
 
 	int m_maxAtomSum;			//最大粒子数
 	XAloneParticles *m_atom;	//粒子
@@ -36,7 +36,7 @@ private:
 
 public:
 	int init(float maxCenterPoint,float minCenterPoint,float maxSize,float minSize,
-		float density,const XRect& liveArea,const XVector2& speed,int maxAtomSum,const XTexture *tex);
+		float density,const XRect& liveArea,const XVec2& speed,int maxAtomSum,const XTexture *tex);
 	void reset();
 	void move(float timeDelay);
 	void draw() const;

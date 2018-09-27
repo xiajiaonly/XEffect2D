@@ -61,8 +61,8 @@ void X2DPacker::orderObjectByBigEdgeAndArea()
 		flag = XFalse;
 		for(int i = 0;i < m_objectBoxSum - 1;++ i)
 		{
-			if(max(m_objectBox[i].m_size.x,m_objectBox[i].m_size.y) < 
-				max(m_objectBox[i + 1].m_size.x,m_objectBox[i + 1].m_size.y))
+			if((std::max)(m_objectBox[i].m_size.x,m_objectBox[i].m_size.y) < 
+				(std::max)(m_objectBox[i + 1].m_size.x,m_objectBox[i + 1].m_size.y))
 			{
 				XMath::swapTwoSum(m_objectBox[i],m_objectBox[i + 1]);
 			//	temp = m_objectBox[i];
@@ -74,7 +74,6 @@ void X2DPacker::orderObjectByBigEdgeAndArea()
 		if(!flag) break;
 	}
 }
-
 int X2DPacker::findResult(int orderMode)
 {
 	//这里没有进行详细的数据合理性检查，之后需要进行详细的检查
@@ -139,7 +138,6 @@ int X2DPacker::findResult(int orderMode)
 	}
 	return 1;
 }
-
 int X2DPacker::putInABox(XObjectBox &objectBox)
 {
 	if(objectBox.m_basicBoxOrder >= 0) return 1;//如果物件已经放入过了，则不重新放
@@ -149,11 +147,10 @@ int X2DPacker::putInABox(XObjectBox &objectBox)
 	}
 	return 0;	//所有盒子都装不下则直接返回装箱失败
 }
-
 void X2DPacker::updatePutOperate(XObjectBox &objectBox,XBasicBox &basicBox,XBool needRotate,float positionX,float positionY)
 {
-	XVector2 tempSize(0.0f,0.0f);
-	if(!needRotate) tempSize.set(objectBox.m_size.x,objectBox.m_size.y);
+	XVec2 tempSize(0.0f);
+	if(!needRotate) tempSize.set(objectBox.m_size);
 	else tempSize.set(objectBox.m_size.y,objectBox.m_size.x);
 
 	objectBox.m_basicBoxOrder = basicBox.m_order;
@@ -164,7 +161,6 @@ void X2DPacker::updatePutOperate(XObjectBox &objectBox,XBasicBox &basicBox,XBool
 	++ basicBox.m_beUsed;	//标记已经放入了一个物件
 	basicBox.m_releaseAcreage -= objectBox.m_acreage;		//减去已经放入的面积
 }
-
 void X2DPacker::updateNewPoint(XBasicBox &basicBox,int sizeX,int sizeY,int pointOrder)
 {
 	basicBox.m_mayPosition[basicBox.m_mayPositionSum].set(basicBox.m_mayPosition[pointOrder].x,basicBox.m_mayPosition[pointOrder].y + sizeY);	//下边的点
@@ -172,7 +168,6 @@ void X2DPacker::updateNewPoint(XBasicBox &basicBox,int sizeX,int sizeY,int point
 	basicBox.m_mayPosition[pointOrder].set(basicBox.m_mayPosition[pointOrder].x + sizeX,basicBox.m_mayPosition[pointOrder].y);	//左边的点
 	++ basicBox.m_mayPositionSum;
 }
-
 void X2DPacker::updateNewXY(XBasicBox &basicBox,int x,int y)
 {
 	XBool isInsert = XFalse;	//是否已经插入
@@ -393,7 +388,6 @@ int X2DPacker::canPutIn(XObjectBox &objectBox,XBasicBox &basicBox)
 	}
 	return 0;
 }
-
 int X2DPacker::getNeedBoxSum() const
 {
 	if(m_basicBox == NULL) return 0;
@@ -403,7 +397,6 @@ int X2DPacker::getNeedBoxSum() const
 	}
 	return 0;
 }
-
 void X2DPacker::reset()
 {
 	for(int i = 0;i < m_basicBoxSum;++ i)
@@ -412,7 +405,7 @@ void X2DPacker::reset()
 		m_basicBox[i].m_releaseAcreage = m_basicBox[i].m_size.x * m_basicBox[i].m_size.y;
 
 		m_basicBox[i].m_mayPositionSum = 1;
-		m_basicBox[i].m_mayPosition[0].set(0.0f,0.0f);
+		m_basicBox[i].m_mayPosition[0].reset();
 
 		m_basicBox[i].m_mayPositionXSum = 1;
 		m_basicBox[i].m_mayPositionX[0] = 0;
@@ -423,7 +416,7 @@ void X2DPacker::reset()
 	{
 		m_objectBox[i].m_order = i;
 		m_objectBox[i].m_setOrder = i;
-		m_objectBox[i].m_position.set(0.0f,0.0f);
+		m_objectBox[i].m_position.reset();
 		m_objectBox[i].m_basicBoxOrder = -1;
 	}
 }

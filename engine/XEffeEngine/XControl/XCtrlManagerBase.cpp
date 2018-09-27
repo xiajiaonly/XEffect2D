@@ -11,7 +11,7 @@
 #include "XCombo.h"
 #include "../XGameBasic.h"
 namespace XE{
-XBool XCtrlManagerBase::addACtrl(XControlBasic * object)
+XBool XCtrlManagerBase::addACtrl(XControlBasic* object)
 {
 	if(object == NULL) return XFalse;
 	if(object->m_ctrlSpecialType == CTRL_TYPE_NORMAL)
@@ -53,29 +53,25 @@ void XCtrlManagerBase::decreaseAObject(int objectID)
 	if(objectID < 0 || objectID >= m_ctrlObjInfos.size()) return;	//输入参数非法
 	if(objectID == (int)(m_ctrlObjInfos.size()) - 1)
 	{//删除的是最后一个元素
-		for(unsigned int i = 0;i < m_ctrlDrawOrderMap.size();++ i)
+		for (auto it = m_ctrlDrawOrderMap.begin(); it != m_ctrlDrawOrderMap.end(); ++it)
 		{
-			if(m_ctrlDrawOrderMap[i] == objectID)
-			{
-				m_ctrlDrawOrderMap.erase(m_ctrlDrawOrderMap.begin() + i);
-				break;
-			}
+			if (*it != objectID) continue;
+			m_ctrlDrawOrderMap.erase(it);
+			break;
 		}
 		m_ctrlObjInfos.pop_back();
 	}else
 	{
 		m_ctrlObjInfos.erase(m_ctrlObjInfos.begin() + objectID);
-		for(unsigned int i = 0;i < m_ctrlDrawOrderMap.size();++ i)
+		for (auto it = m_ctrlDrawOrderMap.begin(); it != m_ctrlDrawOrderMap.end(); ++it)
 		{
-			if(m_ctrlDrawOrderMap[i] == objectID)
-			{
-				m_ctrlDrawOrderMap.erase(m_ctrlDrawOrderMap.begin() + i);
-				break;
-			}
+			if (*it != objectID) continue;
+			m_ctrlDrawOrderMap.erase(it);
+			break;
 		}
-		for(unsigned int i = 0;i < m_ctrlDrawOrderMap.size();++ i)
+		for (auto it = m_ctrlDrawOrderMap.begin(); it != m_ctrlDrawOrderMap.end(); ++it)
 		{
-			if(m_ctrlDrawOrderMap[i] > objectID) --m_ctrlDrawOrderMap[i];
+			if(*it > objectID) --(*it);
 		}
 	}
 	if(m_focusOrder == objectID) m_focusOrder = -1;	//焦点物件被删除的话，这里需要重置焦点
@@ -84,31 +80,31 @@ void XCtrlManagerBase::decreaseAObject(int objectID)
 int XCtrlManagerBase::findObjectID(const void * object) const
 {
 	if(object == NULL) return -1;
-	for(unsigned int i = 0;i < m_ctrlObjInfos.size();++ i)
+	for (auto it = m_ctrlObjInfos.begin(); it != m_ctrlObjInfos.end(); ++it)
 	{
-		if(m_ctrlObjInfos[i].pObject == object) return i;
+		if(it->pObject == object) return it - m_ctrlObjInfos.begin();
 	}
 	return -1;
 }
 int XCtrlManagerBase::findSpecialObjectID(const void * object) const	//寻找特殊的物件
 {
 	if(object == NULL) return -1;
-	for(unsigned int i = 0;i < m_specialCtrls.size();++ i)
+	for (auto it = m_specialCtrls.begin(); it != m_specialCtrls.end(); ++it)
 	{
-		if(m_specialCtrls[i] == object) return i;
+		if(*it == object) return it - m_specialCtrls.begin();
 	}
 	return -1;
 }
 int XCtrlManagerBase::findObjectID(void (* function)()) const
 {
 	if(function == NULL) return -1;
-	for(unsigned int i = 0;i < m_ctrlObjInfos.size();++ i)
+	for (auto it = m_ctrlObjInfos.begin(); it != m_ctrlObjInfos.end(); ++it)
 	{
-		if(m_ctrlObjInfos[i].pFunction == function) return i;
+		if(it->pFunction == function) return it - m_ctrlObjInfos.begin();
 	}
 	return -1;
 }
-void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
+void XCtrlManagerBase::mouseProc(const XVec2& p,XMouseState mouseState)
 {
 	//if(m_focusOrder >= 0 && m_focusOrder < m_ctrlObjInfos.size())
 	//{
@@ -118,10 +114,10 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 	//		m_focusOrder = -1;
 	//	}
 	//}
-	for(int i = 0;i < m_specialCtrls.size();++ i)
+	for (auto it = m_specialCtrls.begin(); it != m_specialCtrls.end(); ++it)
 	{//下面描绘特殊物体更新
-		if(m_specialCtrls[i]->mouseProc(x,y,mouseState) &&
-			m_specialCtrls[i]->m_ctrlSpecialType == CTRL_TYPE_MOUSE)
+		if((*it)->mouseProc(p,mouseState) &&
+			(*it)->m_ctrlSpecialType == CTRL_TYPE_MOUSE)
 			return;	//阻断消息传递
 	}
 	int index;
@@ -133,13 +129,11 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 			{
 				index = m_ctrlDrawOrderMap[i];
 				if(m_ctrlObjInfos[index].pObject != NULL
-					&& m_ctrlObjInfos[index].needInput) 
+					&& m_ctrlObjInfos[index].needInput && 
+					m_ctrlObjInfos[index].pObject->canGetFocus(p)) 
 				{
-					if(m_ctrlObjInfos[index].pObject->canGetFocus(x,y)) 
-					{
-						m_focusOrder = index;
-						break;
-					}
+					m_focusOrder = index;
+					break;
 				}
 			}
 		}else
@@ -150,25 +144,30 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 				if(index != m_focusOrder && m_ctrlObjInfos[index].pObject != NULL
 					&& m_ctrlObjInfos[index].needInput) 
 				{//不是焦点的物件也可以响应鼠标悬浮事件
-					m_ctrlObjInfos[index].pObject->mouseProc(x,y,mouseState);
+					m_ctrlObjInfos[index].pObject->mouseProc(p,mouseState);
 				}
 			}
 		}
 	}else
 	{
-		if(mouseState != MOUSE_MOVE)
-		{
-			if(m_ctrlObjInfos[m_focusOrder].pObject->canLostFocus(x,y))
-			{//如果当前物件可以失去焦点，则这里可以处理焦点争执问题
+		if(mouseState != MOUSE_MOVE &&
+			m_ctrlObjInfos[m_focusOrder].pObject->canLostFocus(p))
+		{//如果当前物件可以失去焦点，则这里可以处理焦点争执问题
+			//20171127优先考虑自身获取焦点(没有比亚)
+			//if (m_ctrlObjInfos[m_focusOrder].needInput &&
+			//	m_ctrlObjInfos[m_focusOrder].pObject->canGetFocus(p))
+			//{//如果自身任然能接受控制，则继续成为焦点不变				
+			//}
+			//else
+			{
 				int tempFocus = -1;
 				for(unsigned int i = 0;i < m_ctrlObjInfos.size();++ i)
 				{
-					index = m_ctrlDrawOrderMap[i];
-					if(m_ctrlObjInfos[index].pObject != NULL &&
-						m_ctrlObjInfos[index].needInput && 
-						m_ctrlObjInfos[index].pObject->canGetFocus(x,y)) 
+					XCtrlObjetInfo& ref = m_ctrlObjInfos[m_ctrlDrawOrderMap[i]];
+					if(ref.pObject != NULL && ref.needInput &&
+						ref.pObject->canGetFocus(p))
 					{
-						tempFocus = index;
+						tempFocus = m_ctrlDrawOrderMap[i];
 						break;
 					}
 				}
@@ -187,7 +186,7 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 	{
 		if(m_ctrlObjInfos[m_focusOrder].pObject != NULL && m_ctrlObjInfos[m_focusOrder].needInput) 
 		{
-			m_ctrlObjInfos[m_focusOrder].pObject->mouseProc(x,y,mouseState);
+			m_ctrlObjInfos[m_focusOrder].pObject->mouseProc(p,mouseState);
 		}
 		if(mouseState == MOUSE_MOVE)
 		{
@@ -196,7 +195,7 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 				index = m_ctrlDrawOrderMap[i];
 				if(index != m_focusOrder && m_ctrlObjInfos[index].pObject != NULL && m_ctrlObjInfos[index].needInput) 
 				{//不是焦点的物件也可以响应鼠标悬浮事件
-					m_ctrlObjInfos[index].pObject->mouseProc(x,y,mouseState);
+					m_ctrlObjInfos[index].pObject->mouseProc(p,mouseState);
 				}
 			}
 		}
@@ -212,10 +211,10 @@ void XCtrlManagerBase::mouseProc(int x,int y,XMouseState mouseState)
 }
 void XCtrlManagerBase::keyProc(int keyOrder,XKeyState keyState)
 {
-	for(int i = 0;i < m_specialCtrls.size();++ i)
+	for (auto it = m_specialCtrls.begin(); it != m_specialCtrls.end(); ++it)
 	{//下面描绘特殊物体更新
-		if(m_specialCtrls[i]->keyboardProc(keyOrder,keyState) &&
-			m_specialCtrls[i]->m_ctrlSpecialType == CTRL_TYPE_KYBOARD)
+		if((*it)->keyboardProc(keyOrder,keyState) &&
+			(*it)->m_ctrlSpecialType == CTRL_TYPE_KYBOARD)
 			return;	//阻断消息传递
 	}
 	if(keyOrder == XKEY_LSHIFT)
@@ -333,18 +332,18 @@ void XCtrlManagerBase::keyProc(int keyOrder,XKeyState keyState)
 }
 void XCtrlManagerBase::update(float stepTime)
 {
-	if(m_ctrlObjInfos.size() <= 0) return;
+	if (m_ctrlObjInfos.size() <= 0) return;
 	int index;
-	for(int i = (int)(m_ctrlObjInfos.size()) - 1;i >= 0;-- i)
+	for (int i = (int)(m_ctrlObjInfos.size()) - 1; i >= 0; --i)
 	{
 		index = m_ctrlDrawOrderMap[i];
-		if(m_ctrlObjInfos[index].pObject != NULL) 
+		if (m_ctrlObjInfos[index].pObject != NULL)
 			m_ctrlObjInfos[index].pObject->update(stepTime);
 	}
 	//下面描绘特殊物体更新
-	for(int i = 0;i < m_specialCtrls.size();++ i)
+	for (auto it = m_specialCtrls.begin(); it != m_specialCtrls.end(); ++it)
 	{
-		m_specialCtrls[i]->update(stepTime);
+		(*it)->update(stepTime);
 	}
 }
 void XCtrlManagerBase::draw()
@@ -362,25 +361,32 @@ void XCtrlManagerBase::draw()
 		else 
 			m_ctrlObjInfos[index].pObject->draw();
 	}
+	//下面描绘特殊物体
+	for(auto it = m_specialCtrls.begin();it != m_specialCtrls.end();++ it)
+	{
+		(*it)->draw();
+	}
+}
+void XCtrlManagerBase::drawUp()
+{
+	if (m_isAutoDraw == 0 ||
+		m_ctrlObjInfos.size() <= 0) return;
+	int index;
 	//描绘上层
 	XControlBasic *p = NULL;
-	for(int i = (int)(m_ctrlObjInfos.size()) - 1;i >= 0;-- i)
+	for (int i = (int)(m_ctrlObjInfos.size()) - 1; i >= 0; --i)
 	{
 		index = m_ctrlDrawOrderMap[i];
-		if(m_ctrlObjInfos[index].pObject == NULL) continue; 
+		if (m_ctrlObjInfos[index].pObject == NULL) continue;
 		p = m_ctrlObjInfos[index].pObject;
-		if(m_ctrlObjInfos[index].needDraw) p->drawUp();
-		if(p->isFocus() && m_ctrlObjInfos[i].needDraw && m_withWireframe)//如果处于激活状态，则这里画一个边框，标记为可以接受鼠标和键盘事件
-			XRender::drawRectAntiColor(XRect(p->getBox(0) - XVector2(1.0f,1.0f),p->getBox(2) + XVector2(1.0f,1.0f)),0.5f,XRender::LS_DASHES);
+		if (m_ctrlObjInfos[index].needDraw) p->drawUp();
+		if (p->isFocus() && m_ctrlObjInfos[i].needDraw && m_withWireframe && p->getWithWireframe())//如果处于激活状态，则这里画一个边框，标记为可以接受鼠标和键盘事件
+			XRender::drawRectAntiColor(XRect(p->getBox(0) - XVec2::one, p->getBox(2) + XVec2::one), 0.5f, XRender::LS_DASHES);
 	}
 	//下面描绘特殊物体
-	for(int i = 0;i < m_specialCtrls.size();++ i)
+	for (auto it = m_specialCtrls.begin(); it != m_specialCtrls.end(); ++it)
 	{
-		m_specialCtrls[i]->draw();
-	}
-	for(int i = 0;i < m_specialCtrls.size();++ i)
-	{
-		m_specialCtrls[i]->drawUp();
+		(*it)->drawUp();
 	}
 }
 void XCtrlManagerBase::moveAndInsert(int objectID,int insertObjectID)

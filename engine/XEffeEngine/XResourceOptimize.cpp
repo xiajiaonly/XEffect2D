@@ -23,11 +23,11 @@ namespace XE{
 //两种方法效果相同，效率后面明显要高，而且不会造成bug。
 struct XPicProcData
 {
-	XVector2 leftTopPoint;			//图片裁剪的左上角裁剪距离
-	XVector2 rightBottomPoint;		//图片裁剪的右下角裁剪距离
-	XVector2 picTureSize;			//图片的原始尺寸
-	XVector2 picOutSize;			//图片裁剪之后的尺寸
-	XVector2 picOffsetPosition;		//图片放置的偏移坐标 在新图片中的位置
+	XVec2 leftTopPoint;			//图片裁剪的左上角裁剪距离
+	XVec2 rightBottomPoint;		//图片裁剪的右下角裁剪距离
+	XVec2 picTureSize;			//图片的原始尺寸
+	XVec2 picOutSize;			//图片裁剪之后的尺寸
+	XVec2 picOffsetPosition;		//图片放置的偏移坐标 在新图片中的位置
 	int textureOrder;				//图片的总编号
 	int sameTexOrder;				//相同图片的编号
 	SDL_Surface *pPic;				//图像的指针
@@ -37,12 +37,12 @@ struct XPicProcData
 	std::string outFileName;
 	
 	XPicProcData()
-		:leftTopPoint(0.0f,0.0f)
-		,rightBottomPoint(0.0f,0.0f)
-		,picTureSize(0.0f,0.0f)
-		,picOutSize(0.0f,0.0f)
+		:leftTopPoint(0.0f)
+		,rightBottomPoint(0.0f)
+		,picTureSize(0.0f)
+		,picOutSize(0.0f)
 		,pPic(NULL)
-		,picOffsetPosition(0.0f,0.0f)
+		,picOffsetPosition(0.0f)
 		,textureOrder(0)
 		,sameTexOrder(-1)
 	{}
@@ -151,10 +151,14 @@ bool XResourceOptimize::getPictureRect(XPicProcData &result,int maxPixelsOffset)
 	//读取图片
 	if(!result.loadImage()) return false;
 	//寻找矩形
-	int top = getPixelsTop((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
-	int left = getPixelsLeft((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
-	int bottom = getPixelsBottom((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
-	int right = getPixelsRight((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
+	int top = 0,left = 0,bottom = result.pPic->h - 1,right = result.pPic->w - 1;
+	if(result.pPic->format->BytesPerPixel == 4)
+	{
+		top = getPixelsTop((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
+		left = getPixelsLeft((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
+		bottom = getPixelsBottom((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
+		right = getPixelsRight((unsigned char *)result.pPic->pixels,result.pPic->w,result.pPic->h,maxPixelsOffset);
+	}
 
 //	if(top >= bottom) return 0;
 //	if(left >= right) return 0;
@@ -186,15 +190,15 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 	//寻找最大的包围合
 	int maxW = MAX_BOXSIZE;
 	int maxH = MAX_BOXSIZE;
-	for(int i = 0;i< picData.size();++ i)
+	for(auto it = picData.begin();it != picData.end();++ it)
 	{
-		if(XMath::getMinWellSize2n(picData[i].picOutSize.x + 1) > maxW)
+		if(XMath::getMinWellSize2n(it->picOutSize.x + 1) > maxW)
 		{
-			maxW = XMath::getMinWellSize2n(picData[i].picOutSize.x + 1);
+			maxW = XMath::getMinWellSize2n(it->picOutSize.x + 1);
 		}
-		if(XMath::getMinWellSize2n(picData[i].picOutSize.y + 1) > maxH)
+		if(XMath::getMinWellSize2n(it->picOutSize.y + 1) > maxH)
 		{
-			maxH = XMath::getMinWellSize2n(picData[i].picOutSize.y + 1);
+			maxH = XMath::getMinWellSize2n(it->picOutSize.y + 1);
 		}
 	}
 	//拼合图片
@@ -214,9 +218,9 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 			tempPacker.m_basicBox[i].m_size.set(maxW,maxH);
 			tempPacker.m_basicBox[i].m_releaseAcreage = tempPacker.m_basicBox[i].m_size.x * tempPacker.m_basicBox[i].m_size.y;
 
-			tempPacker.m_basicBox[i].m_mayPosition = XMem::createArrayMem<XVector2>(4 * picData.size());
+			tempPacker.m_basicBox[i].m_mayPosition = XMem::createArrayMem<XVec2>(4 * picData.size());
 			tempPacker.m_basicBox[i].m_mayPositionSum = 1;
-			tempPacker.m_basicBox[i].m_mayPosition[0].set(0.0f,0.0f);
+			tempPacker.m_basicBox[i].m_mayPosition[0].set(0.0f);
 
 			tempPacker.m_basicBox[i].m_mayPositionX = XMem::createArrayMem<int>(2 * picData.size());
 			tempPacker.m_basicBox[i].m_mayPositionXSum = 1;
@@ -229,20 +233,18 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 
 		tempPacker.m_objectBox = XMem::createArrayMem<XObjectBox>(picData.size());	//定义了MAX_OBJECTSUM个物件
 		int truePicSum = 0;	//由于相同的资源会被优化掉，所以这里需要重新统计实际使用到的资源数量
-		for(int i = 0;i < picData.size();++ i)
+		for(auto it = picData.begin();it != picData.end();++ it)
 		{
-			if(picData[i].sameTexOrder < 0)
-			{
-				tempPacker.m_objectBox[truePicSum].m_order = truePicSum;
-				tempPacker.m_objectBox[truePicSum].m_setOrder = i;
-				tempPacker.m_objectBox[truePicSum].m_position.set(0.0f,0.0f);
-				tempPacker.m_objectBox[truePicSum].m_basicBoxOrder = -1;
-				//这里为了防止图像裁剪缩放造成的杂色，需要每个图片之间间隔一个像素
-			//	tempPacker.m_objectBox[truePicSum].m_size = picData[i].picOutSize;
-				tempPacker.m_objectBox[truePicSum].m_size.set(picData[i].picOutSize.x + 1,picData[i].picOutSize.y + 1);
-				tempPacker.m_objectBox[truePicSum].m_acreage = tempPacker.m_objectBox[truePicSum].m_size.x * tempPacker.m_objectBox[truePicSum].m_size.y;
-				++ truePicSum;
-			}
+			if (it->sameTexOrder >= 0) continue;
+			tempPacker.m_objectBox[truePicSum].m_order = truePicSum;
+			tempPacker.m_objectBox[truePicSum].m_setOrder = it - picData.begin();
+			tempPacker.m_objectBox[truePicSum].m_position.reset();
+			tempPacker.m_objectBox[truePicSum].m_basicBoxOrder = -1;
+			//这里为了防止图像裁剪缩放造成的杂色，需要每个图片之间间隔一个像素
+		//	tempPacker.m_objectBox[truePicSum].m_size = it->picOutSize;
+			tempPacker.m_objectBox[truePicSum].m_size.set(it->picOutSize.x + 1,it->picOutSize.y + 1);
+			tempPacker.m_objectBox[truePicSum].m_acreage = tempPacker.m_objectBox[truePicSum].m_size.x * tempPacker.m_objectBox[truePicSum].m_size.y;
+			++ truePicSum;
 		}
 		//tempPacker.m_objectBoxSum = picSum;
 		tempPacker.m_objectBoxSum = truePicSum;
@@ -303,9 +305,9 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 				}
 				tempPacker.m_basicBox[i].m_releaseAcreage = tempPacker.m_basicBox[i].m_size.x * tempPacker.m_basicBox[i].m_size.y;
 
-				tempPacker.m_basicBox[i].m_mayPosition = XMem::createArrayMem<XVector2>(4 * picData.size());
+				tempPacker.m_basicBox[i].m_mayPosition = XMem::createArrayMem<XVec2>(4 * picData.size());
 				tempPacker.m_basicBox[i].m_mayPositionSum = 1;
-				tempPacker.m_basicBox[i].m_mayPosition[0].set(0.0f,0.0f);
+				tempPacker.m_basicBox[i].m_mayPosition[0].set(0.0f);
 
 				tempPacker.m_basicBox[i].m_mayPositionX = XMem::createArrayMem<int>(2 * picData.size());
 				tempPacker.m_basicBox[i].m_mayPositionXSum = 1;
@@ -318,16 +320,16 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 
 			tempPacker.m_objectBox = XMem::createArrayMem<XObjectBox>(picData.size());	//定义了MAX_OBJECTSUM个物件
 			int truePicSum = 0;
-			for(int i = 0;i < picData.size();++ i)
+			for(auto it = picData.begin();it != picData.end();++ it)
 			{//如果存在相同的贴图，则不需要重复放置
-				if(picData[i].sameTexOrder >= 0) continue;
+				if(it->sameTexOrder >= 0) continue;
 				tempPacker.m_objectBox[truePicSum].m_order = truePicSum;
-				tempPacker.m_objectBox[truePicSum].m_setOrder = i;
-				tempPacker.m_objectBox[truePicSum].m_position.set(0.0f,0.0f);
+				tempPacker.m_objectBox[truePicSum].m_setOrder = it - picData.begin();
+				tempPacker.m_objectBox[truePicSum].m_position.reset();
 				tempPacker.m_objectBox[truePicSum].m_basicBoxOrder = -1;
 				//这里为了防止图像裁剪缩放造成的杂色，需要每个图片之间间隔一个像素
-			//	tempPacker.m_objectBox[truePicSum].m_size = picData[i].picOutSize;
-				tempPacker.m_objectBox[truePicSum].m_size.set(picData[i].picOutSize.x + 1,picData[i].picOutSize.y + 1);
+			//	tempPacker.m_objectBox[truePicSum].m_size = it->picOutSize;
+				tempPacker.m_objectBox[truePicSum].m_size.set(it->picOutSize.x + 1, it->picOutSize.y + 1);
 				tempPacker.m_objectBox[truePicSum].m_acreage = tempPacker.m_objectBox[truePicSum].m_size.x * tempPacker.m_objectBox[truePicSum].m_size.y;
 				++ truePicSum;
 			}
@@ -398,8 +400,8 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 	
 	//下面这一段是性能消耗最大的，需要优化
 	//拼合完成之后开始放图
-	char fileName[256];
-	strcpy(fileName,TEXTURE_FILE_NAME);
+	char fileName[MAX_FILE_NAME_LENGTH];
+	strcpy_s(fileName,MAX_FILE_NAME_LENGTH,TEXTURE_FILE_NAME);
 	for(allBasicBoxSum = 0;allBasicBoxSum < MAX_BASICBOXSUM;++ allBasicBoxSum)
 	{
 		if(tempPacker.m_basicBox[allBasicBoxSum].m_beUsed <= 0) break;
@@ -430,18 +432,24 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 			
 			if(!m_isOptimizeInMem)
 				if(!picData[picOrder].loadImage()) return 0;
-
-			p = (unsigned int *)picData[picOrder].pPic->pixels;
-
-			pATemp = pA + (int)(tempPacker.m_objectBox[objBoxOrder].m_position.y) * picArm->w
-				+ (int)(tempPacker.m_objectBox[objBoxOrder].m_position.x);
-			pTemp = p + (int)(picData[picOrder].leftTopPoint.y) * picData[picOrder].pPic->w
-				+ (int)(picData[picOrder].leftTopPoint.x);
-			sizeTemp = (int)(picData[picOrder].picOutSize.x) << 2;
-
-			for(h = 0;h < picData[picOrder].picOutSize.y;++ h)
+			//如果PNG不带透明通道，这里会存在问题
+			if(picData[picOrder].pPic->format->BytesPerPixel == 4)
 			{
-				memcpy(pATemp + h * picArm->w,pTemp + h * picData[picOrder].pPic->w,sizeTemp);
+				p = (unsigned int *)picData[picOrder].pPic->pixels;
+
+				pATemp = pA + (int)(tempPacker.m_objectBox[objBoxOrder].m_position.y) * picArm->w
+					+ (int)(tempPacker.m_objectBox[objBoxOrder].m_position.x);
+				pTemp = p + (int)(picData[picOrder].leftTopPoint.y) * picData[picOrder].pPic->w
+					+ (int)(picData[picOrder].leftTopPoint.x);
+				sizeTemp = (int)(picData[picOrder].picOutSize.x) << 2;
+
+				for(h = 0;h < picData[picOrder].picOutSize.y;++ h)
+				{
+					memcpy(pATemp + h * picArm->w,pTemp + h * picData[picOrder].pPic->w,sizeTemp);
+				}
+			}else
+			{
+				printf("不带透明通道的PNG图片会造成问题，请修改后再进行优化!\n");
 			}
 		/*	for(h = tempPacker.m_objectBox[objBoxOrder].m_position.y;
 				h < tempPacker.m_objectBox[objBoxOrder].m_position.y + picData[picOrder].picOutSize.y;
@@ -466,13 +474,13 @@ int XResourceOptimize::imagePack(std::vector<XPicProcData> &picData,bool withOpt
 		printf("the %d registration completed!\n",allBasicBoxSum);
 	}
 	//下面处理相同图片资源的信息
-	for(int i = 0;i < picData.size();++ i)
+	for(auto it = picData.begin();it != picData.end();++ it)
 	{
-		if(picData[i].sameTexOrder >= 0 && picData[i].sameTexOrder < picData.size())
+		if(it->sameTexOrder >= 0 && it->sameTexOrder < picData.size())
 		{
-			picData[i].outFileName = picData[picData[i].sameTexOrder].outFileName;
-			picData[i].textureOrder = picData[picData[i].sameTexOrder].textureOrder;
-			picData[i].picOffsetPosition = picData[picData[i].sameTexOrder].picOffsetPosition;
+			it->outFileName = picData[it->sameTexOrder].outFileName;
+			it->textureOrder = picData[it->sameTexOrder].textureOrder;
+			it->picOffsetPosition = picData[it->sameTexOrder].picOffsetPosition;
 		}
 	}
 	//下面开始释放资源
@@ -863,7 +871,7 @@ bool XResourceOptimize::optimize(bool optInMem,bool withOpti)		//优化
 		XPicProcData tmp;
 		if(fscanf(fp,"%s",tempFileName) != 1) return XFalse;
 		//这里需要处理掉文件夹：pictureResource,与normalResource
-		strcpy(tempFileName1,tempFileName);
+		strcpy_s(tempFileName1,MAX_FILE_NAME_LENGTH,tempFileName);
 		len = strlen(tempFileName1);
 		for(int j = 0;j < len;++j)
 		{
@@ -875,26 +883,22 @@ bool XResourceOptimize::optimize(bool optInMem,bool withOpti)		//优化
 		if(m_needOptimizeFolder.size() > 0)
 		{
 			bool tmpFlag = false;
-			for(int k = 0;k < m_needOptimizeFolder.size();++ k)
+			for(auto kt = m_needOptimizeFolder.begin();kt != m_needOptimizeFolder.end();++ kt)
 			{
-				if(!XFile::fileNameCompare(tempFileName1,m_needOptimizeFolder[k].c_str()))		//只处理筛选目录的文件夹
-				{
-					tmpFlag = true;
-					break;
-				}
+				if (XFile::fileNameCompare(tempFileName1, (*kt).c_str())) continue;		//只处理筛选目录的文件夹
+				tmpFlag = true;
+				break;
 			}
 			if(tmpFlag) continue;
 		}else
 		if(m_needNotOptimizeFolder.size() > 0)
 		{
 			bool tmpFlag = false;
-			for(int k = 0;k < m_needOptimizeFolder.size();++ k)
+			for (auto kt = m_needNotOptimizeFolder.begin(); kt != m_needNotOptimizeFolder.end(); ++kt)
 			{
-				if(XFile::fileNameCompare(tempFileName1,m_needNotOptimizeFolder[k].c_str()))		//不处理该筛选目录下的图片
-				{
-					tmpFlag = true;
-					break;
-				}
+				if (!XFile::fileNameCompare(tempFileName1, (*kt).c_str())) continue;		//不处理该筛选目录下的图片
+				tmpFlag = true;
+				break;
 			}
 			if(tmpFlag) continue;
 		}
@@ -907,7 +911,11 @@ bool XResourceOptimize::optimize(bool optInMem,bool withOpti)		//优化
 		}
 		picDatas.push_back(tmp);
 	}	
+#ifdef _WIN64
+	printf("All files resizing completed! %zd\n",picDatas.size());
+#else
 	printf("All files resizing completed! %d\n",picDatas.size());
+#endif
 	if(picDatas.size() <= 0)
 	{
 		fclose(fp);
@@ -920,12 +928,12 @@ bool XResourceOptimize::optimize(bool optInMem,bool withOpti)		//优化
 	}
 	//下面开始比较图片是否有相同的
 	int sameTexSum = 0;
-	for(int i = picDatas.size() - 1;i > 0;-- i)
+	for(int i = int(picDatas.size()) - 1;i > 0;-- i)
 	{
 		picDatas[i].sameTexOrder = -1;	//初始化为么有相同的资源
 		if(!m_isOptimizeInMem)
 			if(!picDatas[i].loadImage()) return false;
-		printf("%d / %d\n",i,picDatas.size() - 1);
+		printf("%d / %d\n",i,int(picDatas.size()) - 1);
 		for(int j = 0;j < i;++ j)
 		{
 			//注意：imageCompareEx会修改两张图片的信息，这样:后比较的图片可能会修改之前比较的图片的尺寸造成问题
@@ -961,9 +969,9 @@ bool XResourceOptimize::optimize(bool optInMem,bool withOpti)		//优化
 	
 	fclose(fp);
 	//释放资源
-	for(int i = 0;i < picDatas.size();++ i)
+	for(auto it = picDatas.begin();it != picDatas.end();++ it)
 	{
-		picDatas[i].releaseImage();
+		it->releaseImage();
 	}
 	return XTrue;
 }
@@ -973,26 +981,26 @@ void XResourceOptimize::clearTempFile()	//清除临时文件
 	DeleteFileA(PNG_FILE_LIST_NAME);
 	DeleteFileA(PNG_INFORMATION_FILE_NAME);
 
-	char fileName[256];
-	strcpy(fileName,TEXTURE_FILE_NAME);
+	char fileName[MAX_FILE_NAME_LENGTH];
+	strcpy_s(fileName,MAX_FILE_NAME_LENGTH,TEXTURE_FILE_NAME);
 	for(int i = 0;i < MAX_BASICBOXSUM;++ i)
 	{
 		fileName[strlen(TEXTURE_FILE_NAME) - 5] = (i % 10) + '0';
 		fileName[strlen(TEXTURE_FILE_NAME) - 6] = ((i/10) % 10) + '0';
-		fileName[strlen(TEXTURE_FILE_NAME) - 7] = ((i/100) % 10) + '0';;
+		fileName[strlen(TEXTURE_FILE_NAME) - 7] = ((i/100) % 10) + '0';
 		DeleteFileA(fileName);
 	}
 #else
 	DeleteFile(PNG_FILE_LIST_NAME);
 	DeleteFile(PNG_INFORMATION_FILE_NAME);
 
-	char fileName[256];
-	strcpy(fileName,TEXTURE_FILE_NAME);
+	char fileName[MAX_FILE_NAME_LENGTH];
+	strcpy_s(fileName,MAX_FILE_NAME_LENGTH,TEXTURE_FILE_NAME);
 	for(int i = 0;i < MAX_BASICBOXSUM;++ i)
 	{
 		fileName[strlen(TEXTURE_FILE_NAME) - 5] = (i % 10) + '0';
 		fileName[strlen(TEXTURE_FILE_NAME) - 6] = ((i/10) % 10) + '0';
-		fileName[strlen(TEXTURE_FILE_NAME) - 7] = ((i/100) % 10) + '0';;
+		fileName[strlen(TEXTURE_FILE_NAME) - 7] = ((i/100) % 10) + '0';
 		DeleteFile(fileName);
 	}
 #endif
@@ -1009,14 +1017,14 @@ bool XResourceOptimize::writeFileData(std::vector<XPicProcData> &picData,int all
 
 	fprintf(fp,"%d,%d;\n",picData.size(),allOutputSum);
 	//写入具体的某一帧的信息
-	for(int i = 0;i < picData.size();++ i)
+	for(auto it = picData.begin();it != picData.end();++ it)
 	{
-		fprintf(fp,"%s:%s:%d:%d,%d:%d,%d,%d,%d:%d,%d;\n",picData[i].fileName.c_str(),picData[i].outFileName.c_str(),
-			picData[i].textureOrder,
-			(int)(picData[i].picOffsetPosition.x),(int)(picData[i].picOffsetPosition.y),
-			(int)(picData[i].leftTopPoint.x),(int)(picData[i].leftTopPoint.y),
-			(int)(picData[i].rightBottomPoint.x),(int)(picData[i].rightBottomPoint.y)
-			,(int)(picData[i].picOutSize.x),(int)(picData[i].picOutSize.y));
+		fprintf(fp,"%s:%s:%d:%d,%d:%d,%d,%d,%d:%d,%d;\n",it->fileName.c_str(), it->outFileName.c_str(),
+			it->textureOrder,
+			(int)(it->picOffsetPosition.x),(int)(it->picOffsetPosition.y),
+			(int)(it->leftTopPoint.x),(int)(it->leftTopPoint.y),
+			(int)(it->rightBottomPoint.x),(int)(it->rightBottomPoint.y)
+			,(int)(it->picOutSize.x),(int)(it->picOutSize.y));
 	}
 	fclose(fp);
 
@@ -1026,9 +1034,9 @@ bool XResourceOptimize::writeFileData(std::vector<XPicProcData> &picData,int all
 		return false;
 	}
 	//写入具体的某一帧的信息
-	for(int i = 0;i < picData.size();++ i)
+	for(auto it = picData.begin();it != picData.end();++ it)
 	{
-		fprintf(fp,"%s\n",picData[i].fileName.c_str());
+		fprintf(fp,"%s\n",it->fileName.c_str());
 	}
 	fclose(fp);
 	return true;
@@ -1038,7 +1046,7 @@ int XResourceOptimize::makePNGFileList()
 {
 	char temp[512];
 	//产生所有png文件的列表
-	sprintf(temp,"dir *.png /s/b>%s",PNG_FILE_LIST_NAME);
+	sprintf_s(temp,512,"dir *.png /s/b>%s",PNG_FILE_LIST_NAME);
 	system(temp);
 	//处理输出文件为相对路径
 	//打开文件列表
@@ -1050,7 +1058,7 @@ int XResourceOptimize::makePNGFileList()
 	}
 	//完成文件列表的信息
 	int pathBaseDeep = XFile::getPathDeepByChar(XFile::getCurrentExeFileFullPath().c_str());
-	char fileNameTemp[MAX_FILE_NAME_LENGTH];
+	char fileNameTemp[MAX_FILE_NAME_LENGTH] = "";
 	std::vector<std::string> pngFiles;	//所有的png文件
 	while(!feof(fp))
 	{
@@ -1071,25 +1079,25 @@ int XResourceOptimize::makePNGFileList()
 		printf("Files list file open error!\n");
 		return -1;
 	}
-	for(int i = 0;i < pngFiles.size();++ i)
+	for(auto it = pngFiles.begin();it != pngFiles.end();++ it)
 	{
-		fprintf(fp,"%s\n",&(pngFiles[i].c_str()[pathBaseDeep + 1]));
+		fprintf(fp,"%s\n",&((*it).c_str()[pathBaseDeep + 1]));
 	}
 	fclose(fp);
 
 	return pngFiles.size();
 }
-void XResourceOptimize::addNeedFolder(const std::string &folder)		//增加需要处理的文件夹
+void XResourceOptimize::addNeedFolder(const std::string& folder)		//增加需要处理的文件夹
 {
-	for(int i = 0;i < m_needOptimizeFolder.size(); ++ i)
+	for(unsigned int i = 0;i < m_needOptimizeFolder.size(); ++ i)
 	{
 		if(XFile::fileNameCompare(m_needOptimizeFolder[i].c_str(),folder.c_str())) return;
 	}
 	m_needOptimizeFolder.push_back(folder);
 }
-void XResourceOptimize::addNeedNotFolder(const std::string &folder)	//增加不需要处理的文件夹
+void XResourceOptimize::addNeedNotFolder(const std::string& folder)	//增加不需要处理的文件夹
 {
-	for(int i = 0;i < m_needNotOptimizeFolder.size(); ++ i)
+	for(unsigned int i = 0;i < m_needNotOptimizeFolder.size(); ++ i)
 	{
 		if(XFile::fileNameCompare(m_needNotOptimizeFolder[i].c_str(),folder.c_str())) return;
 	}

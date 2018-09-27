@@ -5,7 +5,7 @@
 //Version:	1.0.0
 //Date:		2011.11.20
 //--------------------------------
-#include "XOSDefine.h"
+#include "XCommonDefine.h"
 namespace XE{
 #pragma pack(push)
 #pragma pack(1)
@@ -44,22 +44,22 @@ class XBMP
 {
 private:
 	static const int m_bmpColorBytes = 3;
-    XBool m_isInited;
+	XBool m_isInited;
 public:
-    int m_width;
-    int m_height;
-    unsigned char *m_data;
+	int m_width;
+	int m_height;
+	unsigned char *m_data;
 public:
-    XBool init(const char *filename,int needAlpha = 0);    //从一个文件中读取图片数据
-    XBool init(int width,int height);                        //建立一个空的图片
-    XBool writeToFile(const char *filename);                //将图片保存到BMP文件中
-    XBool release();                                        //释放所有的资源
-    XBMP()
-    :m_isInited(XFalse)
-    ,m_width(0)
-    ,m_height(0)
-    ,m_data(NULL)
-    {}
+	XBool init(const char *filename, int needAlpha = 0);    //从一个文件中读取图片数据
+	XBool init(int width, int height);                        //建立一个空的图片
+	XBool writeToFile(const char *filename);                //将图片保存到BMP文件中
+	XBool release();                                        //释放所有的资源
+	XBMP()
+		:m_isInited(XFalse)
+		, m_width(0)
+		, m_height(0)
+		, m_data(NULL)
+	{}
 };
 }
 #endif
