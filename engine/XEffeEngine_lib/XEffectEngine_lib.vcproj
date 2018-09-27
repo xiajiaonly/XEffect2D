@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\tinyXML;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
+				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\AtinyXML;..\XEffeEngine\ThirdPart\videoInput;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
 				PreprocessorDefinitions="GLEW_STATIC;WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\tinyXML;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
+				AdditionalIncludeDirectories="..\include\SDL;..\include\GL;..\XEffeEngine\ThirdPart\AtinyXML;..\XEffeEngine\ThirdPart\videoInput;..\XEffeEngine;..\include\ffmpeg;..\include\libpng;..\include\OpenAL;..\include;..\include\FreeType;..\include\fmodex"
 				PreprocessorDefinitions="GLEW_STATIC;WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="1"
@@ -252,6 +252,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XMoveDataPad.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XMultiEdit.h"
 					>
 				</File>
@@ -312,11 +316,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderInfinite.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderRing.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSoftBoard.h"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XSubWindow.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindowEx.h"
 					>
 				</File>
 				<File
@@ -432,6 +448,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XMoveDataPad.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XMultiEdit.cpp"
 					>
 				</File>
@@ -492,11 +512,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderInfinite.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderRing.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSoftBoard.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XControl\XSubWindow.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindowEx.cpp"
 					>
 				</File>
 				<File
@@ -624,6 +656,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSimpleChart.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSimpleLine.inl"
 					>
 				</File>
@@ -636,7 +672,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderInfinite.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSliderRing.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XControl\XSubWindow.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XControl\XSubWindowEx.inl"
 					>
 				</File>
 				<File
@@ -708,6 +756,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XFirefly.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XFireworkParticles.h"
 					>
 				</File>
@@ -724,6 +776,22 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XPicRect.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XPicRectCommon.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XPicRectEx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XRandBG.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XSmoothLine.h"
 					>
 				</File>
@@ -733,6 +801,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XParticle\XTailing.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XTurnBoards.h"
 					>
 				</File>
 				<File
@@ -752,6 +824,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XFirefly.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XFireworkParticles.cpp"
 					>
 				</File>
@@ -764,6 +840,18 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XParticle\XPicRect.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XPicRectEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XRandBG.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XParticle\XSmoothLine.cpp"
 					>
 				</File>
@@ -773,6 +861,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XParticle\XTailing.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XParticle\XTurnBoards.cpp"
 					>
 				</File>
 				<File
@@ -836,6 +928,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMedia\XMaskCorrection.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMedia\XMediaList.h"
 					>
 				</File>
@@ -857,6 +953,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XMusic.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XProjectionCorrection.h"
 					>
 				</File>
 				<File
@@ -903,6 +1003,10 @@
 					RelativePath="..\XEffeEngine\XMedia\XVideoSynch.h"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XVirtualMTouch.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
@@ -933,6 +1037,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XHIKCamera.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XMaskCorrection.cpp"
 					>
 				</File>
 				<File
@@ -1012,6 +1120,10 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XProjectionCorrection.cpp"
+					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMedia\XSerialPort.cpp"
@@ -1125,6 +1237,10 @@
 					RelativePath="..\XEffeEngine\XMedia\XVideoSynch.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMedia\XVirtualMTouch.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Inline Files"
@@ -1226,10 +1342,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\XEffeEngine\XStdHead.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\XEffeEngine\XStringFun.inl"
 					>
 				</File>
@@ -1256,6 +1368,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XBabyBase.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XBasicClass.h"
 					>
 				</File>
@@ -1273,6 +1389,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XBmp.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XCaregiver.h"
 					>
 				</File>
 				<File
@@ -1348,11 +1468,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XInputEventBase.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XInputEventBuff.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XInputEventCommon.h"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XInputEventCore.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XInputEventGlfw.h"
 					>
 				</File>
 				<File
@@ -1392,6 +1524,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMesh2DBz.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMouseAndKeyBoardDefine.h"
 					>
 				</File>
@@ -1428,6 +1564,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XRadarData.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XResourceManager.h"
 					>
 				</File>
@@ -1437,6 +1577,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XResourcePack.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XRuler.h"
 					>
 				</File>
 				<File
@@ -1484,11 +1628,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XTouchPointsInfo.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XWindowCommon.h"
 					>
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XWindowCore.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XWindowGlfw.h"
 					>
 				</File>
 				<File
@@ -1522,6 +1674,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XBabyBase.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XBasicClass.cpp"
 					>
 				</File>
@@ -1539,6 +1695,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XBmp.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XCaregiver.cpp"
 					>
 				</File>
 				<File
@@ -1606,7 +1766,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XInputEventBase.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XInputEventBuff.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XInputEventCore.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XInputEventGlfw.cpp"
 					>
 				</File>
 				<File
@@ -1639,6 +1811,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMesh2D.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMesh2DBz.cpp"
 					>
 				</File>
 				<File
@@ -1682,6 +1858,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XRuler.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XSavePNG.cpp"
 					>
 				</File>
@@ -1695,6 +1875,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XSprite.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XStdHead.cpp"
 					>
 				</File>
 				<File
@@ -1719,6 +1903,10 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XWindowCore.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XWindowGlfw.cpp"
 					>
 				</File>
 				<File
@@ -1874,6 +2062,10 @@
 				Name="Inline Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\X3D\XModelObj.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\X3D\XTerrain.inl"
 					>
 				</File>
@@ -1889,11 +2081,11 @@
 					Name="Header Files"
 					>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinystr.h"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinystr.h"
 						>
 					</File>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinyxml.h"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinyxml.h"
 						>
 					</File>
 				</Filter>
@@ -1901,19 +2093,19 @@
 					Name="Source Files"
 					>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinystr.cpp"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinystr.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinyxml.cpp"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinyxml.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinyxmlerror.cpp"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinyxmlerror.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\XEffeEngine\ThirdPart\tinyXML\tinyxmlparser.cpp"
+						RelativePath="..\XEffeEngine\ThirdPart\AtinyXML\tinyxmlparser.cpp"
 						>
 					</File>
 				</Filter>
@@ -1937,6 +2129,18 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="videoInput"
+				>
+				<File
+					RelativePath="..\XEffeEngine\ThirdPart\videoInput\videoInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\ThirdPart\videoInput\videoInput.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -2006,6 +2210,14 @@
 				Name="Header Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\XMath\Miniball.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\X2DGeometry.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\X2DPacker.h"
 					>
 				</File>
@@ -2022,6 +2234,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XBowyerWatson.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XByteFun.h"
 					>
 				</File>
@@ -2031,6 +2247,22 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\XColorSpace.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XCPURipples.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDataGuess.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDataStatistics.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDES.h"
 					>
 				</File>
 				<File
@@ -2047,6 +2279,18 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\XFilterVec2.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGPURipples.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGraph.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGraphElement.h"
 					>
 				</File>
 				<File
@@ -2086,6 +2330,18 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XMWFilter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XNoise.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XNoiseInterface.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XPressDataMode.h"
 					>
 				</File>
@@ -2098,7 +2354,27 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XRippleRender.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRMBaseCenter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRSA.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XSampling.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSimpleTracker.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSmoothCurve.h"
 					>
 				</File>
 				<File
@@ -2117,10 +2393,18 @@
 					RelativePath="..\XEffeEngine\XMath\XVector4.h"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XVegetationSystem.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
 				>
+				<File
+					RelativePath="..\XEffeEngine\XMath\X2DGeometry.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\X2DPacker.cpp"
 					>
@@ -2192,6 +2476,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XBowyerWatson.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XByteFun.cpp"
 					>
 					<FileConfiguration
@@ -2240,6 +2528,22 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XCPURipples.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDataGuess.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDataStatistics.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDES.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XEquidistantInterpolation.cpp"
 					>
 				</File>
@@ -2253,6 +2557,18 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XMath\XFilterVec2.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGPURipples.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGraph.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XGraphElement.cpp"
 					>
 				</File>
 				<File
@@ -2310,6 +2626,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XMWFilter.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XPressDataMode.cpp"
 					>
 					<FileConfiguration
@@ -2358,7 +2678,27 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XRippleRender.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRMBaseCenter.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XRSA.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XSampling.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSimpleTracker.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XSmoothCurve.cpp"
 					>
 				</File>
 				<File
@@ -2377,12 +2717,24 @@
 					RelativePath="..\XEffeEngine\XMath\XVector4.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XVegetationSystem.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Inline Files"
 				>
 				<File
+					RelativePath="..\XEffeEngine\XMath\XBezierSpline.inl"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XMath\XCColor.inl"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XMath\XDataGuess.inl"
 					>
 				</File>
 				<File
@@ -2534,6 +2886,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XFont\XGLFont.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XFont\XNumber.h"
 					>
 				</File>
@@ -2590,6 +2946,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XFont\XGLFont.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XFont\XNumber.cpp"
 					>
 				</File>
@@ -2638,6 +2998,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSimpleTcpClient.h"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XNetWork\XSocket.h"
 					>
 				</File>
@@ -2647,6 +3011,14 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XNetWork\XSocketEx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XTcpClient.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XTcpServer.h"
 					>
 				</File>
 				<File
@@ -2706,6 +3078,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\XEffeEngine\XNetWork\XSimpleTcpClient.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\XEffeEngine\XNetWork\XSocket.cpp"
 					>
 				</File>
@@ -2715,6 +3091,14 @@
 				</File>
 				<File
 					RelativePath="..\XEffeEngine\XNetWork\XSocketEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XTcpClient.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XNetWork\XTcpServer.cpp"
 					>
 				</File>
 				<File
@@ -2734,7 +3118,11 @@
 				Name="Header Files"
 				>
 				<File
-					RelativePath="..\XEffeEngine\XData\XTempSave.h"
+					RelativePath="..\XEffeEngine\XData\XDatasPool.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XData\XStepSave.h"
 					>
 				</File>
 			</Filter>
@@ -2742,7 +3130,11 @@
 				Name="Source Files"
 				>
 				<File
-					RelativePath="..\XEffeEngine\XData\XTempSave.cpp"
+					RelativePath="..\XEffeEngine\XData\XDatasPool.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XData\XStepSave.cpp"
 					>
 				</File>
 			</Filter>
@@ -2750,11 +3142,67 @@
 				Name="Inline Files"
 				>
 				<File
-					RelativePath="..\XEffeEngine\XData\XTempSave.inl"
+					RelativePath="..\XEffeEngine\XData\XStepSave.inl"
 					>
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="XHardware"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XHardWare\XHardWareID.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Inline Files"
+				>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XHardWare\XHardWareID.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="XFX"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XFX\XBlur.h"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFX\XFXCommon.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\XEffeEngine\XFX\XBlur.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\XEffeEngine\XFX\XFXCommon.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<File
+			RelativePath="..\XEffeEngine\XPersonalizedDefine.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
